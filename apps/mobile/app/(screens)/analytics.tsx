@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { formatCompactNumber } from '@/utils/localeFormat';
-import { View, Text, StyleSheet, ScrollView, Dimensions, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, useWindowDimensions } from 'react-native';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -11,7 +11,8 @@ import { Icon, type IconName } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
-import { colors, spacing, fontSize, radius, fonts } from '@/theme';
+import { colors, spacing, fontSize, fontSizeExt, radius, fonts } from '@/theme';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { usersApi } from '@/services/api';
 import { creatorApi } from '@/services/creatorApi';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -23,8 +24,6 @@ import { navigate } from '@/utils/navigation';
 interface AnalyticsResponse {
   stats: CreatorStat[];
 }
-
-const { width: screenWidth } = Dimensions.get('window');
 
 function SummaryCard({ title, value, change, icon, index }: { title: string; value: string; change?: string; icon: IconName; index: number }) {
   const tc = useThemeColors();
@@ -157,6 +156,7 @@ type GrowthPeriod = '7d' | '30d';
 function FollowerGrowthChart() {
   const { t } = useTranslation();
   const tc = useThemeColors();
+  const haptic = useContextualHaptic();
   const [period, setPeriod] = useState<GrowthPeriod>('7d');
 
   const { data: growthData, isLoading: growthLoading } = useQuery({
@@ -197,10 +197,11 @@ function FollowerGrowthChart() {
       <View style={styles.periodToggle}>
         <Pressable
           accessibilityRole="button"
-          onPress={() => setPeriod('7d')}
-          style={[
+          onPress={() => { setPeriod('7d'); haptic.tick(); }}
+          style={({ pressed }) => [
             styles.periodTab,
             period === '7d' && styles.periodTabActive,
+            pressed && { opacity: 0.7 },
           ]}
         >
           <Text style={[
@@ -212,10 +213,11 @@ function FollowerGrowthChart() {
         </Pressable>
         <Pressable
           accessibilityRole="button"
-          onPress={() => setPeriod('30d')}
-          style={[
+          onPress={() => { setPeriod('30d'); haptic.tick(); }}
+          style={({ pressed }) => [
             styles.periodTab,
             period === '30d' && styles.periodTabActive,
+            pressed && { opacity: 0.7 },
           ]}
         >
           <Text style={[
@@ -282,11 +284,14 @@ function FollowerGrowthChart() {
 // while creator-dashboard uses creatorApi.getOverview() (GET /creator/analytics/overview).
 // These are two separate data sources that may show inconsistent numbers.
 // Should be unified into a single analytics data pipeline.
+const HEADER_OFFSET = spacing['2xl'] * 3;
+
 function AnalyticsContent() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const { t } = useTranslation();
   const tc = useThemeColors();
+  const { width: screenWidth } = useWindowDimensions();
 
   const { data, isLoading, error, refetch } = useQuery<AnalyticsResponse>({
     queryKey: ['analytics'],
@@ -316,7 +321,7 @@ function AnalyticsContent() {
           title={t('analytics.creatorAnalytics')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
-        <View style={{ paddingTop: 100 }}>
+        <View style={{ paddingTop: HEADER_OFFSET }}>
           <EmptyState
             icon="flag"
             title={t('analytics.failedToLoad')}
@@ -417,14 +422,13 @@ export default function AnalyticsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
     padding: spacing.base,
-    paddingTop: 100,
+    paddingTop: HEADER_OFFSET,
   },
   cards: {
     flexDirection: 'row',
@@ -458,24 +462,21 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
     fontFamily: fonts.bodyMedium,
   },
   cardValue: {
     fontSize: fontSize.xl,
-    color: colors.text.primary,
     fontFamily: fonts.bodyBold,
     marginBottom: spacing.xs,
   },
   changeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: spacing.xs,
   },
   cardChange: {
     fontSize: fontSize.xs,
     fontFamily: fonts.bodyMedium,
-    color: colors.text.tertiary,
   },
   positive: {
     color: colors.success,
@@ -502,7 +503,6 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: fontSize.base,
-    color: colors.text.primary,
     fontFamily: fonts.bodySemiBold,
   },
   // Chart with glassmorphism
@@ -533,7 +533,6 @@ const styles = StyleSheet.create({
   },
   barLabel: {
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
     marginTop: spacing.xs,
   },
   // Follower growth
@@ -597,7 +596,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   growthBarLabel: {
-    fontSize: 9,
+    fontSize: fontSizeExt.micro,
     fontFamily: fonts.body,
     marginTop: spacing.xs,
   },

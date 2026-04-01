@@ -1,8 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput,
-  Pressable, ActivityIndicator, Clipboard,
+  Pressable, ActivityIndicator, KeyboardAvoidingView, Platform,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { showToast } from '@/components/ui/Toast';
 import Animated, { FadeInUp, FadeInDown, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,7 +14,7 @@ import { Icon } from '@/components/ui/Icon';
 import type { IconName } from '@/components/ui/Icon';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
+import { colors, spacing, fontSize, radius, fontSizeExt, fonts } from '@/theme';
 import { aiApi } from '@/services/api';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -28,11 +29,13 @@ const TABS: { id: TabId; icon: IconName; label: string }[] = [
   { id: 'ideas', icon: 'loader', label: 'ai.tabs.ideas' },
 ];
 
+const TONE_PURPLE = '#9333EA';
+
 const TONE_COLORS: Record<string, string> = {
   casual: colors.emerald,
   professional: colors.info,
   funny: colors.gold,
-  inspirational: '#9333EA',
+  inspirational: TONE_PURPLE,
 };
 
 export default function AiAssistantScreen() {
@@ -47,13 +50,20 @@ export default function AiAssistantScreen() {
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
+  const generateLockRef = useRef(false);
+
   // Caption suggestion
   const captionMutation = useMutation({
     mutationFn: () => aiApi.suggestCaptions(input),
     onSuccess: (data) => {
       setCaptions(Array.isArray(data) ? data : []);
       haptic.success();
+      showToast({ message: t('ai.generated'), variant: 'success' });
     },
+    onError: () => {
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+    },
+    onSettled: () => { generateLockRef.current = false; },
   });
 
   // Hashtag suggestion
@@ -62,16 +72,27 @@ export default function AiAssistantScreen() {
     onSuccess: (data) => {
       setHashtags(Array.isArray(data) ? data : []);
       haptic.success();
+      showToast({ message: t('ai.generated'), variant: 'success' });
     },
+    onError: () => {
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+    },
+    onSettled: () => { generateLockRef.current = false; },
   });
 
   // Posting time
   const timeMutation = useMutation({
     mutationFn: () => aiApi.suggestPostingTime(),
+    onError: () => {
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+    },
+    onSettled: () => { generateLockRef.current = false; },
   });
 
   const handleGenerate = useCallback(() => {
     if (!input.trim() && activeTab !== 'ideas') return;
+    if (generateLockRef.current) return;
+    generateLockRef.current = true;
     haptic.send();
 
     if (activeTab === 'captions') {
@@ -84,15 +105,17 @@ export default function AiAssistantScreen() {
   }, [activeTab, input]);
 
   const handleCopyCaption = (text: string, index: number) => {
-    Clipboard.setString(text);
+    void Clipboard.setStringAsync(text);
     setCopiedIndex(index);
     haptic.success();
+    showToast({ message: t('common.copied'), variant: 'success' });
     setTimeout(() => setCopiedIndex(null), 2000);
   };
 
   const handleCopyHashtags = () => {
-    Clipboard.setString(hashtags.map(h => `#${h}`).join(' '));
+    void Clipboard.setStringAsync(hashtags.map(h => `#${h}`).join(' '));
     haptic.success();
+    showToast({ message: t('common.copied'), variant: 'success' });
   };
 
   const isLoading = captionMutation.isPending || hashtagMutation.isPending || timeMutation.isPending;
@@ -105,6 +128,7 @@ export default function AiAssistantScreen() {
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
 
+        <KeyboardAvoidingView style={styles.scroll} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
           {/* Tab selector */}
           <Animated.View entering={FadeInUp.duration(300)} style={styles.tabRow}>
@@ -224,7 +248,7 @@ export default function AiAssistantScreen() {
                       accessibilityRole="button"
                       accessibilityLabel={`#${tag}`}
                       style={styles.hashtagChip}
-                      onPress={() => { Clipboard.setString(`#${tag}`); haptic.save(); }}
+                      onPress={() => { void Clipboard.setStringAsync(`#${tag}`); haptic.success(); }}
                     >
                       <Text style={styles.hashtagText}>#{tag}</Text>
                     </Pressable>
@@ -264,13 +288,14 @@ export default function AiAssistantScreen() {
             </Animated.View>
           )}
         </ScrollView>
+        </KeyboardAvoidingView>
       </View>
     </ScreenErrorBoundary>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
   scroll: { flex: 1 },
   content: { padding: spacing.base, paddingBottom: spacing['2xl'] },
   tabRow: {
@@ -286,32 +311,26 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingVertical: spacing.md,
     borderRadius: radius.md,
-    backgroundColor: colors.dark.bgCard,
     borderWidth: 1,
-    borderColor: colors.dark.border,
   },
   tabActive: {
     borderColor: colors.emerald,
     backgroundColor: colors.emerald + '10',
   },
   tabLabel: {
-    color: colors.text.secondary,
     fontSize: fontSize.sm,
     fontWeight: '500',
   },
   tabLabelActive: { color: colors.emerald },
   inputCard: {
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
     marginBottom: spacing.base,
   },
   input: {
-    color: colors.text.primary,
     fontSize: fontSize.base,
     padding: spacing.base,
-    minHeight: 100,
+    minHeight: spacing.base * 6,
     textAlignVertical: 'top',
   },
   generateSection: { marginBottom: spacing.xl },
@@ -326,13 +345,11 @@ const styles = StyleSheet.create({
   },
   generateText: { color: '#FFF', fontSize: fontSize.base, fontWeight: '700' },
   results: { marginBottom: spacing.xl },
-  resultsTitle: { color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '600', marginBottom: spacing.md, textTransform: 'uppercase', letterSpacing: 1 },
+  resultsTitle: { fontSize: fontSize.sm, fontWeight: '600', marginBottom: spacing.md, textTransform: 'uppercase', letterSpacing: 1 },
   captionCard: {
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     padding: spacing.base,
     borderWidth: 1,
-    borderColor: colors.dark.border,
     marginBottom: spacing.md,
   },
   captionHeader: {
@@ -347,7 +364,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
   },
   toneText: { fontSize: fontSize.xs, fontWeight: '600', textTransform: 'capitalize' },
-  captionText: { color: colors.text.primary, fontSize: fontSize.base, lineHeight: 22 },
+  captionText: { fontSize: fontSize.base, lineHeight: 22 },
   hashtagHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -374,8 +391,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.gold + '30',
   },
-  timeTitle: { color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '500', marginTop: spacing.md },
+  timeTitle: { fontSize: fontSize.sm, fontWeight: '500', marginTop: spacing.md },
   timeValue: { color: colors.gold, fontSize: fontSizeExt.jumbo, fontWeight: '700', fontVariant: ['tabular-nums'], marginVertical: spacing.sm },
-  timeReason: { color: colors.text.tertiary, fontSize: fontSize.sm, textAlign: 'center' },
+  timeReason: { fontSize: fontSize.sm, textAlign: 'center' },
   emptyWrap: { marginTop: spacing['2xl'] },
 });

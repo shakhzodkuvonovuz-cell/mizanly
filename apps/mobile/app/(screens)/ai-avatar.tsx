@@ -206,14 +206,13 @@ export default function AiAvatarScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
   scroll: { flex: 1 },
   content: { padding: spacing.base, paddingBottom: spacing['2xl'] },
   previewSection: { alignItems: 'center', marginBottom: spacing.xl },
   previewCard: { alignItems: 'center', gap: spacing.md },
-  previewLabel: { color: colors.text.secondary, fontSize: fontSize.sm },
+  previewLabel: { fontSize: fontSize.sm },
   sectionTitle: {
-    color: colors.text.secondary,
     fontSize: fontSize.sm,
     fontFamily: fonts.bodySemiBold,
     textTransform: 'uppercase',
@@ -227,18 +226,16 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: radius.lg,
     borderWidth: 2,
-    borderColor: colors.dark.border,
-    backgroundColor: colors.dark.bgCard,
     gap: spacing.sm,
   },
   styleIconWrap: {
-    width: 48,
-    height: 48,
+    width: spacing['2xl'] + spacing.base,
+    height: spacing['2xl'] + spacing.base,
     borderRadius: radius.full,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  styleLabel: { color: colors.text.secondary, fontSize: fontSize.xs, fontFamily: fonts.bodyMedium, textAlign: 'center' },
+  styleLabel: { fontSize: fontSize.xs, fontFamily: fonts.bodyMedium, textAlign: 'center' },
   generateSection: { marginBottom: spacing.xl },
   generateBtn: { borderRadius: radius.md, overflow: 'hidden' },
   generateGradient: {
@@ -255,9 +252,7 @@ const styles = StyleSheet.create({
   avatarCard: {
     borderRadius: radius.lg,
     overflow: 'hidden',
-    backgroundColor: colors.dark.bgCard,
     borderWidth: 1,
-    borderColor: colors.dark.border,
   },
   avatarImage: { width: '100%', aspectRatio: 1, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg },
   avatarInfo: {
@@ -266,10 +261,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  styleBadge: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
+  styleBadge: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs / 2, borderRadius: radius.full },
   styleBadgeText: { fontSize: fontSize.xs, fontFamily: fonts.bodyMedium, textTransform: 'capitalize' },
-  setProfileBtn: { paddingHorizontal: spacing.sm, paddingVertical: 2 },
+  setProfileBtn: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs / 2 },
   setProfileText: { color: colors.emerald, fontSize: fontSize.xs, fontFamily: fonts.bodySemiBold },
-  noAvatarHint: { color: colors.text.secondary, fontSize: fontSize.sm, fontFamily: fonts.body, textAlign: 'center', marginBottom: spacing.sm },
+  noAvatarHint: { fontSize: fontSize.sm, fontFamily: fonts.body, textAlign: 'center', marginBottom: spacing.sm },
   emptyWrap: { marginTop: spacing.xl },
 });

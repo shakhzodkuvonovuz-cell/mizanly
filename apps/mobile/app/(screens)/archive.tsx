@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
-  View, StyleSheet, FlatList, Alert, Pressable, Dimensions, type ViewStyle, type ImageStyle,
+  View, StyleSheet, FlatList, Alert, Pressable, useWindowDimensions, type ViewStyle,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
@@ -11,6 +11,8 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, radius } from '@/theme';
 import { Icon } from '@/components/ui/Icon';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
+import { showToast } from '@/components/ui/Toast';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { storiesApi } from '@/services/api';
@@ -23,13 +25,15 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const GRID_COLUMNS = 3;
 const GRID_GAP = spacing.xs;
-const SCREEN_W = Dimensions.get('window').width;
-const ITEM_SIZE = (SCREEN_W - GRID_GAP * (GRID_COLUMNS + 1)) / GRID_COLUMNS;
+const HEADER_OFFSET = spacing['2xl'] * 3;
 
 export default function ArchiveScreen() {
   const router = useRouter();
   const tc = useThemeColors();
+  const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
+  const { width: screenWidth } = useWindowDimensions();
+  const ITEM_SIZE = (screenWidth - GRID_GAP * (GRID_COLUMNS + 1)) / GRID_COLUMNS;
   const queryClient = useQueryClient();
   const user = useStore((s) => s.user);
   const userId = user?.id;
@@ -50,16 +54,24 @@ export default function ArchiveScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stories', 'archive', userId] });
       setBottomSheetVisible(false);
+      haptic.success();
+      showToast({ message: t('screens.archive.unarchived'), variant: 'success' });
+    },
+    onError: () => {
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
     },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (storyId: string) => {
-      return storiesApi.delete(storyId);
-    },
+    mutationFn: (storyId: string) => storiesApi.delete(storyId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stories', 'archive', userId] });
       setBottomSheetVisible(false);
+      haptic.success();
+      showToast({ message: t('screens.archive.deleted'), variant: 'success' });
+    },
+    onError: () => {
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
     },
   });
 
@@ -78,12 +90,14 @@ export default function ArchiveScreen() {
   }, [router]);
 
   const handleStoryLongPress = useCallback((story: Story) => {
+    haptic.tick();
     setSelectedStory(story);
     setBottomSheetVisible(true);
-  }, []);
+  }, [haptic]);
 
   const handleUnarchive = useCallback(() => {
     if (!selectedStory) return;
+    haptic.error();
     Alert.alert(
       t('screens.archive.unarchiveAlertTitle'),
       t('screens.archive.unarchiveAlertMessage'),
@@ -92,10 +106,11 @@ export default function ArchiveScreen() {
         { text: t('screens.archive.unarchiveButton'), style: 'default', onPress: () => unarchiveMutation.mutate(selectedStory.id) },
       ]
     );
-  }, [selectedStory, unarchiveMutation]);
+  }, [selectedStory, unarchiveMutation, haptic, t]);
 
   const handleDelete = useCallback(() => {
     if (!selectedStory) return;
+    haptic.error();
     Alert.alert(
       t('screens.archive.deleteAlertTitle'),
       t('screens.archive.deleteAlertMessage'),
@@ -104,14 +119,14 @@ export default function ArchiveScreen() {
         { text: t('common.delete'), style: 'destructive', onPress: () => deleteMutation.mutate(selectedStory.id) },
       ]
     );
-  }, [selectedStory, deleteMutation]);
+  }, [selectedStory, deleteMutation, haptic, t]);
 
   const renderGridItem = useCallback(({ item, index }: { item: Story; index: number }) => {
     return (
       <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
       <Pressable
         accessibilityRole="button"
-        style={styles.gridItem as ViewStyle}
+        style={({ pressed }) => [styles.gridItem as ViewStyle, { width: ITEM_SIZE, backgroundColor: tc.bgCard }, pressed && { opacity: 0.7 }]}
         onPress={() => handleStoryPress(item)}
         onLongPress={() => handleStoryLongPress(item)}
         delayLongPress={500}
@@ -150,7 +165,7 @@ export default function ArchiveScreen() {
 
   if (isError) {
     return (
-      <View style={styles.container as ViewStyle}>
+      <View style={[styles.container as ViewStyle, { backgroundColor: tc.bg }]}>
         <GlassHeader title={t('screens.archive.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} />
         <EmptyState
           icon="flag"
@@ -165,7 +180,7 @@ export default function ArchiveScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.container as ViewStyle}>
+      <View style={[styles.container as ViewStyle, { backgroundColor: tc.bg }]}>
         <GlassHeader title={t('screens.archive.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} />
         {renderSkeleton()}
       </View>
@@ -174,7 +189,7 @@ export default function ArchiveScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container as ViewStyle}>
+      <View style={[styles.container as ViewStyle, { backgroundColor: tc.bg }]}>
         <GlassHeader title={t('screens.archive.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} />
 
         <FlatList
@@ -204,7 +219,7 @@ export default function ArchiveScreen() {
 
         <BottomSheet
           visible={bottomSheetVisible}
-          onClose={() => setBottomSheetVisible(false)}
+          onClose={() => { setBottomSheetVisible(false); setSelectedStory(null); }}
         >
           <BottomSheetItem
             label={t('screens.archive.unarchiveLabel')}
@@ -227,7 +242,6 @@ export default function ArchiveScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   gridContainer: {
     padding: GRID_GAP,
@@ -237,11 +251,9 @@ const styles = StyleSheet.create({
     marginBottom: GRID_GAP,
   },
   gridItem: {
-    width: ITEM_SIZE,
     aspectRatio: 0.75,
     borderRadius: radius.sm,
     overflow: 'hidden',
-    backgroundColor: colors.dark.bgCard,
   },
   thumbnail: {
     width: '100%',
@@ -256,7 +268,7 @@ const styles = StyleSheet.create({
     padding: spacing.xs,
   },
   skeletonContainer: {
-    paddingTop: 100,
+    paddingTop: HEADER_OFFSET,
     flex: 1,
   },
   skeletonGrid: {
@@ -270,7 +282,6 @@ const styles = StyleSheet.create({
     aspectRatio: 0.75,
     borderRadius: radius.sm,
     overflow: 'hidden',
-    backgroundColor: colors.dark.bgCard,
     justifyContent: 'center',
     alignItems: 'center',
   },

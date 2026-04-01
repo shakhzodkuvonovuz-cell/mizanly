@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,9 +6,8 @@ import {
   ScrollView,
   Pressable,
   TextInput,
-  Dimensions,
-  Image,
   Linking,
+  Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,15 +19,15 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { appealsApi } from '@/services/api';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { showToast } from '@/components/ui/Toast';
-
-const { width } = Dimensions.get('window');
 
 type AppealReason =
   | 'no-violation'
@@ -49,9 +48,11 @@ interface AppealHistory {
 export default function AppealModerationScreen() {
   const router = useRouter();
   const tc = useThemeColors();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const { reportId } = useLocalSearchParams<{ reportId: string }>();
   const queryClient = useQueryClient();
+  const submitLockRef = useRef(false);
   const [selectedReason, setSelectedReason] = useState<AppealReason | null>(null);
   const [details, setDetails] = useState('');
   const [evidenceImages, setEvidenceImages] = useState<string[]>([]);
@@ -64,7 +65,7 @@ export default function AppealModerationScreen() {
     { id: 'other', label: t('appealModeration.reason.other') },
   ];
 
-  const { data: appealHistory, isLoading, refetch, isRefetching } = useQuery({
+  const { data: appealHistory, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ['appealHistory', reportId],
     queryFn: () => appealsApi.getHistory(reportId),
     select: (response): AppealHistory | null => {
@@ -89,12 +90,34 @@ export default function AppealModerationScreen() {
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appealHistory', reportId] });
+      haptic.success();
       showToast({ message: t('appealModeration.submitted'), variant: 'success' });
     },
     onError: () => {
       showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
     },
+    onSettled: () => { submitLockRef.current = false; },
   });
+
+  const handleSubmitAppeal = useCallback(() => {
+    if (submitLockRef.current) return;
+    Alert.alert(
+      t('appealModeration.confirmTitle', 'Submit Appeal?'),
+      t('appealModeration.confirmMessage', 'Are you sure you want to submit this appeal? This action cannot be undone.'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('appealModeration.submitAppeal'),
+          style: 'default',
+          onPress: () => {
+            submitLockRef.current = true;
+            haptic.send();
+            submitAppealMutation.mutate();
+          },
+        },
+      ],
+    );
+  }, [submitAppealMutation, haptic, t]);
 
   const onRefresh = useCallback(() => {
     refetch();
@@ -121,9 +144,9 @@ export default function AppealModerationScreen() {
     if (stepIndex < currentIndex) {
       return { dot: styles.timelineDotCompleted, line: styles.timelineLineCompleted };
     } else if (stepIndex === currentIndex) {
-      return { dot: styles.timelineDotCurrent, line: styles.timelineLineUpcoming };
+      return { dot: styles.timelineDotCurrent, line: [styles.timelineLineUpcoming, { backgroundColor: tc.surface }] };
     } else {
-      return { dot: styles.timelineDotUpcoming, line: styles.timelineLineUpcoming };
+      return { dot: [styles.timelineDotUpcoming, { backgroundColor: tc.surface }], line: [styles.timelineLineUpcoming, { backgroundColor: tc.surface }] };
     }
   };
 
@@ -150,7 +173,7 @@ export default function AppealModerationScreen() {
               <Icon name="flag" size="sm" color={colors.error} />
             </LinearGradient>
             <View style={styles.actionContent}>
-              <Text style={styles.actionTitle}>{t('appealModeration.actionTitle')}</Text>
+              <Text style={[styles.actionTitle, { color: colors.error }]}>{t('appealModeration.actionTitle')}</Text>
               <Text style={[styles.actionReason, { color: tc.text.secondary }]}>
                 {t('appealModeration.actionReason')}
               </Text>
@@ -174,7 +197,7 @@ export default function AppealModerationScreen() {
             <View style={styles.contentPreview}>
               <View style={styles.contentTextContainer}>
                 <Text style={[styles.contentText, { color: tc.text.secondary }]} numberOfLines={2}>
-                  Breaking: New study shows significant benefits of intermittent fasting during Ramadan for metabolic health...
+                  {t('appealModeration.contentPreviewPlaceholder')}
                 </Text>
               </View>
               <View style={[styles.contentThumbnail, { backgroundColor: tc.surface }]}>
@@ -217,7 +240,7 @@ export default function AppealModerationScreen() {
                   styles.reasonRow,
                   index < APPEAL_REASONS.length - 1 && [styles.reasonRowBorder, { borderBottomColor: tc.border }],
                 ]}
-                onPress={() => setSelectedReason(reason.id)}
+                onPress={() => { setSelectedReason(reason.id); haptic.tick(); }}
               >
                 <View
                   style={[
@@ -249,7 +272,7 @@ export default function AppealModerationScreen() {
                 style={styles.detailsCard}
               >
                 <TextInput
-                  style={styles.detailsInput}
+                  style={[styles.detailsInput, { color: tc.text.primary }]}
                   placeholder={t('appealModeration.detailsPlaceholder')}
                   placeholderTextColor={tc.text.tertiary}
                   value={details}
@@ -331,7 +354,7 @@ export default function AppealModerationScreen() {
               <View style={styles.evidenceThumbnails}>
                 {evidenceImages.map((uri, idx) => (
                   <View key={uri} style={styles.evidenceThumbnailWrap}>
-                    <Image source={{ uri }} style={styles.evidenceThumbnailImg} />
+                    <ProgressiveImage uri={uri} width={64} height={64} style={styles.evidenceThumbnailImg} />
                     <Pressable
                       accessibilityRole="button"
                       accessibilityLabel={t('common.remove')}
@@ -372,7 +395,17 @@ export default function AppealModerationScreen() {
               </View>
             )}
 
-            {!isLoading && !appealHistory && (
+            {!isLoading && isError && (
+              <EmptyState
+                icon="flag"
+                title={t('appealModeration.historyError', 'Failed to load history')}
+                subtitle={t('common.tryAgainLater', 'Please try again later')}
+                actionLabel={t('common.retry')}
+                onAction={() => refetch()}
+              />
+            )}
+
+            {!isLoading && !isError && !appealHistory && (
               <EmptyState
                 icon="clock"
                 title={t('appealModeration.noHistory') || 'No appeal history'}
@@ -480,7 +513,7 @@ export default function AppealModerationScreen() {
           accessibilityLabel={t('appealModeration.submitAppeal')}
           accessibilityState={{ disabled: isSubmitDisabled || submitAppealMutation.isPending }}
           disabled={isSubmitDisabled || submitAppealMutation.isPending}
-          onPress={() => submitAppealMutation.mutate()}
+          onPress={handleSubmitAppeal}
         >
           <LinearGradient
             colors={isSubmitDisabled ? ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)'] : [colors.emerald, colors.emeraldDark]}
@@ -502,7 +535,6 @@ export default function AppealModerationScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   scrollContent: {
     padding: spacing.base,
@@ -527,13 +559,11 @@ const styles = StyleSheet.create({
   actionTitle: {
     fontSize: fontSize.md,
     fontFamily: fonts.semibold,
-    color: colors.error,
     marginBottom: spacing.xs,
   },
   actionReason: {
     fontSize: fontSize.sm,
     fontFamily: fonts.regular,
-    color: colors.text.secondary,
     marginBottom: spacing.sm,
   },
   actionMeta: {
@@ -545,12 +575,10 @@ const styles = StyleSheet.create({
   actionDate: {
     fontSize: fontSize.sm,
     fontFamily: fonts.regular,
-    color: colors.text.tertiary,
   },
   actionId: {
     fontSize: fontSize.xs,
     fontFamily: fonts.regular,
-    color: colors.text.tertiary,
   },
   sectionMargin: {
     marginTop: spacing.md,
@@ -564,7 +592,6 @@ const styles = StyleSheet.create({
   contentHeader: {
     fontSize: fontSize.md,
     fontFamily: fonts.semibold,
-    color: colors.text.primary,
     marginBottom: spacing.md,
   },
   contentPreview: {
@@ -578,14 +605,12 @@ const styles = StyleSheet.create({
   contentText: {
     fontSize: fontSize.base,
     fontFamily: fonts.regular,
-    color: colors.text.secondary,
     lineHeight: 22,
   },
   contentThumbnail: {
     width: 60,
     height: 60,
     borderRadius: radius.md,
-    backgroundColor: colors.dark.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -621,12 +646,10 @@ const styles = StyleSheet.create({
   formTitle: {
     fontSize: fontSize.md,
     fontFamily: fonts.semibold,
-    color: colors.text.primary,
   },
   reasonLabel: {
     fontSize: fontSize.base,
     fontFamily: fonts.medium,
-    color: colors.text.primary,
     marginBottom: spacing.md,
   },
   reasonRow: {
@@ -636,15 +659,12 @@ const styles = StyleSheet.create({
   },
   reasonRowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
   },
   radioCircle: {
     width: 24,
     height: 24,
     borderRadius: radius.full,
     borderWidth: 2,
-    borderColor: colors.dark.surface,
-    backgroundColor: colors.dark.bgCard,
     justifyContent: 'center',
     alignItems: 'center',
     marginEnd: spacing.md,
@@ -662,10 +682,8 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: fontSize.base,
     fontFamily: fonts.regular,
-    color: colors.text.secondary,
   },
   reasonTextSelected: {
-    color: colors.text.primary,
     fontFamily: fonts.medium,
   },
   detailsContainer: {
@@ -680,8 +698,7 @@ const styles = StyleSheet.create({
   detailsInput: {
     fontSize: fontSize.base,
     fontFamily: fonts.regular,
-    color: colors.text.primary,
-    minHeight: 100,
+    minHeight: spacing.base * 6,
   },
   charCountContainer: {
     alignItems: 'flex-end',
@@ -696,7 +713,6 @@ const styles = StyleSheet.create({
   evidenceLabel: {
     fontSize: fontSize.base,
     fontFamily: fonts.regular,
-    color: colors.text.secondary,
     marginBottom: spacing.md,
   },
   evidenceButtons: {
@@ -749,10 +765,10 @@ const styles = StyleSheet.create({
   },
   evidenceThumbnailRemove: {
     position: 'absolute',
-    top: 2,
-    end: 2,
-    width: 20,
-    height: 20,
+    top: spacing.xs / 2,
+    end: spacing.xs / 2,
+    width: spacing.xl,
+    height: spacing.xl,
     borderRadius: radius.full,
     backgroundColor: 'rgba(0,0,0,0.6)',
     alignItems: 'center',
@@ -775,7 +791,6 @@ const styles = StyleSheet.create({
   historyTitle: {
     fontSize: fontSize.base,
     fontFamily: fonts.semibold,
-    color: colors.text.primary,
   },
   statusBadge: {
     paddingHorizontal: spacing.sm,
@@ -785,12 +800,10 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: fontSize.xs,
     fontFamily: fonts.semibold,
-    color: colors.text.primary,
   },
   historyDate: {
     fontSize: fontSize.sm,
     fontFamily: fonts.regular,
-    color: colors.text.tertiary,
     marginTop: spacing.xs,
   },
   timeline: {
@@ -818,9 +831,7 @@ const styles = StyleSheet.create({
   timelineDotCurrent: {
     backgroundColor: colors.gold,
   },
-  timelineDotUpcoming: {
-    backgroundColor: colors.dark.surface,
-  },
+  timelineDotUpcoming: {},
   timelineDotPulse: {
     position: 'absolute',
     top: -4,
@@ -841,18 +852,13 @@ const styles = StyleSheet.create({
   timelineLineCompleted: {
     backgroundColor: colors.emerald,
   },
-  timelineLineUpcoming: {
-    backgroundColor: colors.dark.surface,
-  },
+  timelineLineUpcoming: {},
   timelineLabel: {
     fontSize: fontSize.xs,
     fontFamily: fonts.medium,
-    color: colors.text.tertiary,
     marginTop: spacing.xs,
   },
-  timelineLabelActive: {
-    color: colors.text.primary,
-  },
+  timelineLabelActive: {},
   notesCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
@@ -876,7 +882,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: fontSize.sm,
     fontFamily: fonts.regular,
-    color: colors.text.secondary,
   },
   bottomSpacer: {
     height: 100,
@@ -890,14 +895,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: spacing.base,
-    backgroundColor: colors.dark.bg,
     borderTopWidth: 1,
-    borderTopColor: colors.dark.border,
   },
   cancelText: {
     fontSize: fontSize.base,
     fontFamily: fonts.medium,
-    color: colors.text.secondary,
     padding: spacing.sm,
   },
   submitButton: {
@@ -911,9 +913,6 @@ const styles = StyleSheet.create({
   submitText: {
     fontSize: fontSize.base,
     fontFamily: fonts.semibold,
-    color: colors.text.primary,
   },
-  submitTextDisabled: {
-    color: colors.text.tertiary,
-  },
+  submitTextDisabled: {},
 });
