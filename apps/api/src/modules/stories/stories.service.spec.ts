@@ -1,7 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { StoriesService } from './stories.service';
+import { ContentSafetyService } from '../moderation/content-safety.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('StoriesService', () => {
@@ -507,6 +508,87 @@ describe('StoriesService', () => {
     it('should throw ForbiddenException for non-owner', async () => {
       prisma.story.findUnique.mockResolvedValue({ id: 'story-1', userId: 'other' });
       await expect(service.unarchive('story-1', 'user-1')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  // --- R2 Tab4 Part 2: Story text moderation tests (X08-#14) ---
+
+  describe('create story text moderation', () => {
+    let contentSafety: any;
+
+    beforeEach(() => {
+      contentSafety = service['contentSafety'];
+    });
+
+    it('should moderate textOverlay content on story creation', async () => {
+      contentSafety.moderateText.mockClear();
+      contentSafety.moderateText.mockResolvedValue({ safe: true, flags: [] });
+      prisma.story.create.mockResolvedValue({
+        id: 'story-new', userId: 'user-1', mediaUrl: 'https://media.mizanly.app/test.jpg',
+        textOverlay: 'Bismillah', user: { id: 'user-1', username: 'test', displayName: 'Test', avatarUrl: null, isVerified: false },
+      });
+      prisma.user.findMany.mockResolvedValue([]);
+
+      await service.create('user-1', {
+        mediaUrl: 'https://media.mizanly.app/test.jpg',
+        mediaType: 'image',
+        textOverlay: 'Bismillah',
+      });
+
+      expect(contentSafety.moderateText).toHaveBeenCalledWith('Bismillah');
+      expect(prisma.story.create).toHaveBeenCalled();
+    });
+
+    it('should reject story creation when textOverlay is flagged', async () => {
+      contentSafety.moderateText.mockClear();
+      contentSafety.moderateText.mockResolvedValue({ safe: false, flags: ['hate_speech'] });
+
+      await expect(
+        service.create('user-1', {
+          mediaUrl: 'https://media.mizanly.app/test.jpg',
+          mediaType: 'image',
+          textOverlay: 'hate speech text',
+        }),
+      ).rejects.toThrow(BadRequestException);
+      expect(prisma.story.create).not.toHaveBeenCalled();
+    });
+
+    it('should moderate stickerData content on story creation', async () => {
+      contentSafety.moderateText.mockClear();
+      contentSafety.moderateText.mockResolvedValue({ safe: true, flags: [] });
+      prisma.story.create.mockResolvedValue({
+        id: 'story-new', userId: 'user-1', mediaUrl: 'https://media.mizanly.app/test.jpg',
+        stickerData: { question: 'What is your fav surah?' },
+        user: { id: 'user-1', username: 'test', displayName: 'Test', avatarUrl: null, isVerified: false },
+      });
+      prisma.user.findMany.mockResolvedValue([]);
+
+      await service.create('user-1', {
+        mediaUrl: 'https://media.mizanly.app/test.jpg',
+        mediaType: 'image',
+        stickerData: { question: 'What is your fav surah?' },
+      });
+
+      expect(contentSafety.moderateText).toHaveBeenCalledWith(
+        expect.stringContaining('What is your fav surah?'),
+      );
+    });
+
+    it('should skip moderation when no text content', async () => {
+      contentSafety.moderateText.mockClear();
+      prisma.story.create.mockResolvedValue({
+        id: 'story-new', userId: 'user-1', mediaUrl: 'https://media.mizanly.app/test.jpg',
+        user: { id: 'user-1', username: 'test', displayName: 'Test', avatarUrl: null, isVerified: false },
+      });
+      prisma.user.findMany.mockResolvedValue([]);
+
+      await service.create('user-1', {
+        mediaUrl: 'https://media.mizanly.app/test.jpg',
+        mediaType: 'image',
+      });
+
+      expect(contentSafety.moderateText).not.toHaveBeenCalled();
+      expect(prisma.story.create).toHaveBeenCalled();
     });
   });
 });

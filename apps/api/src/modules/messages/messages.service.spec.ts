@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, ForbiddenException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { MessagesService } from './messages.service';
+import { ContentSafetyService } from '../moderation/content-safety.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('MessagesService', () => {
@@ -1415,6 +1416,107 @@ describe('MessagesService', () => {
       prisma.message.findMany.mockResolvedValue([{ id: 'msg-1', content: 'Hello' }]);
       const result = await service.getStarredMessages('user-1');
       expect(result.data).toHaveLength(1);
+    });
+  });
+
+  // --- R2 Tab4 Part 2: scheduleMessage E2E rejection tests (X02-#18) ---
+
+  describe('scheduleMessage E2E rejection', () => {
+    const requireMembershipSpy = () => jest.spyOn(service as any, 'requireMembership').mockResolvedValue({});
+
+    it('should reject scheduling plaintext message in E2E conversation', async () => {
+      requireMembershipSpy();
+      prisma.conversation.findUnique.mockResolvedValue({ isE2E: true });
+      await expect(
+        service.scheduleMessage('conv-e2e', 'user-1', 'hello', new Date(Date.now() + 60000)),
+      ).rejects.toThrow(BadRequestException);
+      expect(prisma.message.create).not.toHaveBeenCalled();
+    });
+
+    it('should allow scheduling in non-E2E conversation', async () => {
+      requireMembershipSpy();
+      prisma.conversation.findUnique.mockResolvedValue({ isE2E: false });
+      prisma.message.create.mockResolvedValue({ id: 'scheduled-1', content: 'hello', isScheduled: true });
+      const result = await service.scheduleMessage('conv-plain', 'user-1', 'hello', new Date(Date.now() + 60000));
+      expect(result).toBeDefined();
+      expect(prisma.message.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ isScheduled: true }) }),
+      );
+    });
+
+    it('should allow scheduling in conversation with isE2E = null (legacy)', async () => {
+      requireMembershipSpy();
+      prisma.conversation.findUnique.mockResolvedValue({ isE2E: null });
+      prisma.message.create.mockResolvedValue({ id: 'scheduled-2', content: 'test', isScheduled: true });
+      const result = await service.scheduleMessage('conv-legacy', 'user-1', 'test', new Date(Date.now() + 60000));
+      expect(result).toBeDefined();
+    });
+  });
+
+  // --- R2 Tab4 Part 2: editMessage content moderation tests (X08-#7) ---
+
+  describe('editMessage content moderation', () => {
+    let contentSafety: any;
+
+    beforeEach(() => {
+      contentSafety = service['contentSafety'];
+    });
+
+    it('should run content moderation on message edit', async () => {
+      prisma.message.findUnique.mockResolvedValue({
+        id: 'msg-1', senderId: 'user-1', isDeleted: false,
+        createdAt: new Date(), isEncrypted: false, e2eVersion: null,
+      });
+      contentSafety.moderateText.mockResolvedValue({ safe: true, flags: [] });
+      prisma.message.update.mockResolvedValue({ id: 'msg-1', content: 'edited text' });
+
+      await service.editMessage('msg-1', 'user-1', 'edited text');
+
+      expect(contentSafety.moderateText).toHaveBeenCalledWith('edited text');
+      expect(prisma.message.update).toHaveBeenCalled();
+    });
+
+    it('should reject edit when content is flagged', async () => {
+      prisma.message.findUnique.mockResolvedValue({
+        id: 'msg-1', senderId: 'user-1', isDeleted: false,
+        createdAt: new Date(), isEncrypted: false, e2eVersion: null,
+      });
+      contentSafety.moderateText.mockResolvedValue({ safe: false, flags: ['hate_speech'] });
+
+      await expect(service.editMessage('msg-1', 'user-1', 'hate speech content'))
+        .rejects.toThrow(BadRequestException);
+      expect(prisma.message.update).not.toHaveBeenCalled();
+    });
+
+    it('should NOT moderate encrypted message edits (rejected before moderation)', async () => {
+      prisma.message.findUnique.mockResolvedValue({
+        id: 'msg-1', senderId: 'user-1', isDeleted: false,
+        createdAt: new Date(), isEncrypted: true, e2eVersion: 2,
+      });
+      contentSafety.moderateText.mockClear();
+
+      await expect(service.editMessage('msg-1', 'user-1', 'some text'))
+        .rejects.toThrow(BadRequestException);
+      expect(contentSafety.moderateText).not.toHaveBeenCalled();
+    });
+  });
+
+  // --- R2 Tab4 Part 2: generateGroupInviteLink select test (J08-#2) ---
+
+  describe('generateGroupInviteLink select optimization', () => {
+    it('should use select on conversation findUnique', async () => {
+      prisma.conversation.findUnique.mockResolvedValue({
+        id: 'conv-group', isGroup: true, createdById: 'user-1',
+      });
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'admin' });
+      prisma.conversation.update.mockResolvedValue({});
+
+      await service.generateGroupInviteLink('conv-group', 'user-1');
+
+      expect(prisma.conversation.findUnique).toHaveBeenCalledWith({
+        where: { id: 'conv-group' },
+        select: { id: true, isGroup: true, createdById: true },
+      });
     });
   });
 
