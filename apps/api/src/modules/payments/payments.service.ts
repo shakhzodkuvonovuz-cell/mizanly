@@ -985,6 +985,16 @@ export class PaymentsService {
 
     // Atomically: mark tip as disputed AND reverse diamond credit to receiver
     await this.prisma.$transaction(async (tx) => {
+      // Idempotency: skip if already disputed (e.g. dispute update event for same PI)
+      const currentTip = await tx.tip.findUnique({
+        where: { id: tipId as string },
+        select: { status: true },
+      });
+      if (currentTip?.status === 'disputed') {
+        this.logger.warn(`Tip ${tipId} already disputed — skipping duplicate reversal`);
+        return;
+      }
+
       const tip = await tx.tip.update({
         where: { id: tipId as string },
         data: {

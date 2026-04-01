@@ -14,6 +14,7 @@ import { PrismaService } from '../../config/prisma.service';
 import { PushTriggerService } from '../notifications/push-trigger.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AiService } from '../ai/ai.service';
+import { ContentSafetyService } from '../moderation/content-safety.service';
 import { MessageType } from '@prisma/client';
 import { randomBytes, scrypt, timingSafeEqual } from 'crypto';
 import { promisify } from 'util';
@@ -113,6 +114,7 @@ export class MessagesService {
     private pushTrigger: PushTriggerService,
     private notifications: NotificationsService,
     private ai: AiService,
+    private contentSafety: ContentSafetyService,
     @Inject('REDIS') private redis: Redis,
   ) {}
 
@@ -335,7 +337,7 @@ export class MessagesService {
         const [isFollowing, recipientPrivacy, recipientUser] = await Promise.all([
           this.prisma.follow.findUnique({
             where: { followerId_followingId: { followerId: senderId, followingId: otherMemberId } },
-            select: { id: true },
+            select: { followerId: true },
           }),
           this.prisma.userSettings.findUnique({
             where: { userId: otherMemberId },
@@ -615,6 +617,12 @@ export class MessagesService {
       throw new BadRequestException('Message can only be edited within 15 minutes');
     }
 
+    // X08-#7: Run content moderation on edited text to prevent bait-and-switch
+    const modResult = await this.contentSafety.moderateText(content);
+    if (!modResult.safe) {
+      throw new BadRequestException('Message content flagged by moderation');
+    }
+
     const updated = await this.prisma.message.update({
       where: { id: messageId },
       data: { content, editedAt: new Date() },
@@ -836,7 +844,10 @@ export class MessagesService {
    * Finding #169: Generate a shareable invite link for a group.
    */
   async generateGroupInviteLink(conversationId: string, userId: string) {
-    const convo = await this.prisma.conversation.findUnique({ where: { id: conversationId } });
+    const convo = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      select: { id: true, isGroup: true, createdById: true },
+    });
     if (!convo || !convo.isGroup) throw new NotFoundException('Group not found');
     const member = await this.requireMembership(conversationId, userId);
 

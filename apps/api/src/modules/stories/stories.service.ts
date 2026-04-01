@@ -8,6 +8,7 @@ import {
 import { PrismaService } from '../../config/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AiService } from '../ai/ai.service';
+import { ContentSafetyService } from '../moderation/content-safety.service';
 import { QueueService } from '../../common/queue/queue.service';
 import { Prisma, MessageType, ReportReason } from '@prisma/client';
 import { sanitizeText } from '../../common/utils/sanitize';
@@ -50,6 +51,7 @@ export class StoriesService {
   constructor(
     private prisma: PrismaService,
     private ai: AiService,
+    private contentSafety: ContentSafetyService,
     private queueService: QueueService,
     private notifications: NotificationsService,
   ) {}
@@ -174,6 +176,25 @@ export class StoriesService {
       subscribersOnly?: boolean;
     },
   ) {
+    // X08-#14: Moderate text content (textOverlay, stickerData) before persisting
+    if (data.textOverlay) {
+      const modResult = await this.contentSafety.moderateText(data.textOverlay);
+      if (!modResult.safe) {
+        throw new BadRequestException('Story text content flagged by moderation');
+      }
+    }
+    if (data.stickerData) {
+      const stickerText = typeof data.stickerData === 'string'
+        ? data.stickerData
+        : JSON.stringify(data.stickerData);
+      if (stickerText.length > 0 && stickerText !== '{}') {
+        const modResult = await this.contentSafety.moderateText(stickerText);
+        if (!modResult.safe) {
+          throw new BadRequestException('Story sticker content flagged by moderation');
+        }
+      }
+    }
+
     const story = await this.prisma.story.create({
       data: {
         userId,
