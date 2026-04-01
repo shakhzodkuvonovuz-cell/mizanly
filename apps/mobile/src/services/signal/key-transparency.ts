@@ -19,7 +19,7 @@
  * Based on SEEMless (Signal's key transparency design) and CONIKS.
  */
 
-import { sha256Hash, concat, uint32BE, toBase64, fromBase64, constantTimeEqual, ed25519Verify } from './crypto';
+import { sha256Hash, concat, uint32BE, toBase64, fromBase64, constantTimeEqual, ed25519Verify, utf8Encode } from './crypto';
 import { loadKnownIdentityKey } from './storage';
 
 // ============================================================
@@ -47,15 +47,59 @@ import { loadKnownIdentityKey } from './storage';
 const TRANSPARENCY_PUBLIC_KEY_B64 = 'XvjbofryahZuejaizXsR2JanznbzUf6WBlmLb5TtQeY=';
 
 /**
+ * F07-#2 FIX: Encode a number as 8 big-endian bytes (uint64).
+ * Used to bind treeSize into the signed transparency root message.
+ * JS numbers are safe for integers up to 2^53, which is more than enough for tree sizes.
+ */
+function uint64BE(value: number): Uint8Array {
+  if (!Number.isInteger(value) || value < 0 || value > Number.MAX_SAFE_INTEGER) {
+    throw new Error(`uint64BE: value must be non-negative safe integer, got ${value}`);
+  }
+  const buf = new Uint8Array(8);
+  // High 32 bits
+  const high = Math.floor(value / 0x100000000);
+  buf[0] = (high >>> 24) & 0xff;
+  buf[1] = (high >>> 16) & 0xff;
+  buf[2] = (high >>> 8) & 0xff;
+  buf[3] = high & 0xff;
+  // Low 32 bits
+  const low = value >>> 0;
+  buf[4] = (low >>> 24) & 0xff;
+  buf[5] = (low >>> 16) & 0xff;
+  buf[6] = (low >>> 8) & 0xff;
+  buf[7] = low & 0xff;
+  return buf;
+}
+
+/**
  * Verify the Ed25519 signature on a transparency root.
  * Returns true if the root is signed by the trusted transparency key.
- * Returns false if the signature is invalid or the public key is not configured.
+ * Throws if the public key is not configured (build configuration error).
+ *
+ * F07-#2 FIX: Signature now covers SHA-256(root || updatedAt || uint64BE(treeSize)),
+ * not just the bare root hash. This prevents an attacker from replaying a valid
+ * signature with a different updatedAt or treeSize (time-warp / tree-shrink attack).
+ *
+ * F07-#3 FIX: Throws when TRANSPARENCY_PUBLIC_KEY_B64 is empty instead of returning true.
+ * Returning true meant a misconfigured build silently bypassed all transparency verification.
+ *
+ * @param rootB64 - Base64-encoded Merkle root hash
+ * @param signatureB64 - Base64-encoded Ed25519 signature
+ * @param updatedAt - ISO 8601 timestamp of last tree rebuild (bound into signed message)
+ * @param treeSize - Number of leaves in the tree (bound into signed message)
  */
-export function verifyRootSignature(rootB64: string, signatureB64: string): boolean {
+export function verifyRootSignature(
+  rootB64: string,
+  signatureB64: string,
+  updatedAt?: string,
+  treeSize?: number,
+): boolean {
+  // F07-#3 FIX: Throw instead of silently returning true when key is not configured.
   if (!TRANSPARENCY_PUBLIC_KEY_B64) {
-    // Public key not configured yet — allow unsigned roots during development.
-    // In production, this constant MUST be set and unsigned roots MUST be rejected.
-    return true;
+    throw new Error(
+      'TRANSPARENCY_PUBLIC_KEY_B64 is not configured — key transparency cannot verify. ' +
+      'This is a build configuration error.',
+    );
   }
   if (!signatureB64) return false; // Server sent no signature — reject
 
@@ -64,6 +108,17 @@ export function verifyRootSignature(rootB64: string, signatureB64: string): bool
   const signature = fromBase64(signatureB64);
 
   if (publicKey.length !== 32 || signature.length !== 64) return false;
+
+  // F07-#2 FIX: Signature covers SHA-256(root || updatedAt || uint64BE(treeSize)).
+  // If updatedAt/treeSize are provided, construct the full signed message.
+  // Backward compat: if omitted (old server), verify against bare root (will fail
+  // if server signs the new format — forces upgrade).
+  if (updatedAt !== undefined && treeSize !== undefined) {
+    const signedMessage = sha256Hash(
+      concat(root, utf8Encode(updatedAt), uint64BE(treeSize)),
+    );
+    return ed25519Verify(publicKey, signedMessage, signature);
+  }
 
   return ed25519Verify(publicKey, root, signature);
 }
@@ -188,7 +243,8 @@ export async function verifyKeyTransparency(
   // F1: Verify the root signature FIRST — before checking the Merkle proof.
   // A compromised server could build a valid (but forged) Merkle tree.
   // The root signature proves the tree was built by the trusted signing key holder.
-  if (!verifyRootSignature(proofData.root, proofData.rootSignature)) {
+  // F07-#2: Pass updatedAt and treeSize so signature covers all three fields.
+  if (!verifyRootSignature(proofData.root, proofData.rootSignature, proofData.updatedAt, proofData.treeSize)) {
     return {
       status: 'mismatch',
       detail: 'Transparency root signature invalid — the server may have forged the Merkle tree',

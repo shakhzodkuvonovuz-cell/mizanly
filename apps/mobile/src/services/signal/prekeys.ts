@@ -33,6 +33,10 @@ import {
   deleteSignedPreKeyPrivate,
   storeOneTimePreKeyPrivate,
   getAndIncrementOTPStartId,
+  // F07-#11 FIX: Static import instead of dynamic import('./storage')
+  secureLoad,
+  secureStore,
+  HMAC_TYPE,
 } from './storage';
 import type {
   Ed25519KeyPair,
@@ -196,6 +200,14 @@ export async function generateOneTimePreKeys(
     keys.map(k => storeOneTimePreKeyPrivate(k.keyId, k.keyPair.privateKey)),
   );
 
+  // F07-#7 FIX: Zero private key bytes after storing in SecureStore.
+  // Private keys are now safely in hardware-backed storage. The Uint8Array copies
+  // on the JS heap are no longer needed. Callers only need the public keys
+  // (for upload to the key server). The keyPair.publicKey remains intact.
+  for (const k of keys) {
+    zeroOut(k.keyPair.privateKey);
+  }
+
   return keys;
 }
 
@@ -296,15 +308,16 @@ export async function checkAndRotateSignedPreKey(
   const identityKeyPair = await loadIdentityKeyPair();
   if (!identityKeyPair) return false;
 
+  // F07-#11 FIX: Use static imports (secureLoad, secureStore, HMAC_TYPE) instead of
+  // dynamic import('./storage'). No circular dependency exists between prekeys.ts and storage.ts.
   // F26 FIX: Load SPK metadata from AEAD-protected MMKV (was plaintext in SecureStore).
   // Migration: try MMKV first, fall back to SecureStore, migrate on first read.
-  const { secureLoad, secureStore: secStore, HMAC_TYPE } = await import('./storage');
   let metadataStr = await secureLoad(HMAC_TYPE.PREKEY_REGISTRY, SPK_METADATA_KEY);
   if (!metadataStr) {
     // Migration from SecureStore
     metadataStr = await SecureStore.getItemAsync(SPK_METADATA_KEY);
     if (metadataStr) {
-      await secStore(HMAC_TYPE.PREKEY_REGISTRY, SPK_METADATA_KEY, metadataStr);
+      await secureStore(HMAC_TYPE.PREKEY_REGISTRY, SPK_METADATA_KEY, metadataStr);
       await SecureStore.deleteItemAsync(SPK_METADATA_KEY);
     }
   }
@@ -313,12 +326,19 @@ export async function checkAndRotateSignedPreKey(
   if (metadata && !shouldRotateSignedPreKey(metadata.createdAt)) {
     // No rotation needed — but still cleanup old keys
     await cleanupOldSignedPreKeys(metadata.previousKeyIds);
+    // F07-#4 FIX: Zero identity key pair private key after use (no signing needed on this path)
+    zeroOut(identityKeyPair.privateKey);
     return false;
   }
 
   // Generate new signed pre-key
   const newKeyId = metadata ? metadata.keyId + 1 : 1;
   const newSPK = await generateSignedPreKey(identityKeyPair, newKeyId);
+
+  // F07-#4 FIX: Zero identity key pair private key after signing operation completes.
+  // The private key was loaded from SecureStore and used to sign the new SPK.
+  // It must not linger on the JS heap longer than necessary.
+  zeroOut(identityKeyPair.privateKey);
 
   // Upload to server
   await uploadToServer(prepareSignedPreKeyUpload(newSPK));
@@ -335,7 +355,7 @@ export async function checkAndRotateSignedPreKey(
   };
 
   // F26: Store in AEAD-protected MMKV (not plaintext SecureStore)
-  await secStore(HMAC_TYPE.PREKEY_REGISTRY, SPK_METADATA_KEY, JSON.stringify(newMetadata));
+  await secureStore(HMAC_TYPE.PREKEY_REGISTRY, SPK_METADATA_KEY, JSON.stringify(newMetadata));
 
   // Cleanup old keys past 30-day retention
   await cleanupOldSignedPreKeys(newMetadata.previousKeyIds);

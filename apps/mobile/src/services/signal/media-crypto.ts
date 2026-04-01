@@ -73,6 +73,13 @@ export interface MediaEncryptionContext {
   header: Uint8Array;
   /** SHA-256 hasher — call digest() after consuming all chunks */
   hasher: ReturnType<typeof sha256Hasher.create>;
+  /**
+   * F08-#1 FIX: One-time use flag. Set to true after encryptMediaChunked consumes
+   * this context. Reusing a context would reuse the same mediaKey with predictable
+   * HKDF-derived nonces, causing catastrophic nonce reuse (same key + same nonce =
+   * XOR of two plaintexts recoverable by attacker).
+   */
+  consumed: boolean;
 }
 
 /**
@@ -95,7 +102,7 @@ export async function prepareMediaEncryption(
   const hasher = sha256Hasher.create();
   hasher.update(header);
 
-  return { mediaKey, totalChunks, fileSize, header, hasher };
+  return { mediaKey, totalChunks, fileSize, header, hasher, consumed: false };
 }
 
 /**
@@ -116,6 +123,18 @@ export async function* encryptMediaChunked(
   onProgress?: (progress: number) => void,
   abortSignal?: AbortSignal,
 ): AsyncGenerator<Uint8Array> {
+  // F08-#1 FIX: Enforce one-time use. Reusing a MediaEncryptionContext reuses the
+  // same mediaKey with HKDF-derived nonces (deterministic per chunk index), causing
+  // catastrophic nonce reuse: same (key, nonce) pair encrypts two different plaintexts,
+  // leaking their XOR to any observer.
+  if (ctx.consumed) {
+    throw new Error(
+      'MediaEncryptionContext already consumed — nonce reuse is catastrophic. ' +
+      'Call prepareMediaEncryption() to create a new context for each file.',
+    );
+  }
+  ctx.consumed = true;
+
   const chunkKey = hkdfDeriveSecrets(ctx.mediaKey, new Uint8Array(32), CHUNK_KEY_INFO, 32);
 
   for (let i = 0; i < ctx.totalChunks; i++) {
@@ -350,7 +369,15 @@ export async function decryptMediaFile(
     onProgress?.((i + 1) / totalChunks);
   }
 
-  // Verify SHA-256 (single pass — already computed during decryption loop)
+  // F08-#5: SHA-256 verification runs AFTER chunk decryption by design.
+  // Per-chunk AEAD (XChaCha20-Poly1305) is the PRIMARY integrity mechanism —
+  // each chunk is individually authenticated with AAD binding its index and
+  // total count (prevents reorder/truncation). The file-level SHA-256 is a
+  // SECONDARY check that catches chunk reordering attacks where an attacker
+  // replaces encrypted chunks from one file with valid chunks from another
+  // file encrypted with the same key (which shouldn't happen given random
+  // per-file keys, but defense in depth). Computing SHA-256 incrementally
+  // during decryption (single pass) is correct and optimal.
   const actualSha256 = hasher.digest();
   let hashDiff = 0;
   for (let i = 0; i < 32; i++) {
@@ -369,10 +396,11 @@ export async function decryptMediaFile(
     encoding: FileSystem.EncodingType.Base64,
   });
 
-  // V4-F10: Auto-cleanup reduced from 60s to 5s. Callers MUST copy data they need
-  // before this timer fires. 5s is enough for the UI to load the file into a
-  // media player or image view (which holds its own memory copy). The shorter
-  // window limits forensic extraction of decrypted media from the filesystem.
+  // F08-#4 FIX: Auto-cleanup reduced from 5s to 500ms. The calling component
+  // (Image/Video player) copies data into its own memory buffer on load, which
+  // happens within a few frames (~50-100ms). 500ms gives ample margin while
+  // minimizing the forensic extraction window for decrypted media on the filesystem.
+  // Previously 60s (V4-F10 reduced to 5s, now F08-#4 reduces to 500ms).
   setTimeout(async () => {
     try {
       const info = await FileSystem.getInfoAsync(decryptedFileUri);
@@ -380,7 +408,7 @@ export async function decryptMediaFile(
         await FileSystem.deleteAsync(decryptedFileUri, { idempotent: true });
       }
     } catch { /* best-effort cleanup */ }
-  }, 5_000);
+  }, 500);
 
   return decryptedFileUri;
 }

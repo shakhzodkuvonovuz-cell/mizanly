@@ -132,12 +132,16 @@ export async function getMMKV(): Promise<MMKV> {
         );
       }
 
+      // F07-#6 FIX: Derive both MMKV CFB key and HMAC key from the single SecureStore read above.
+      // Previously read SecureStore twice — redundant I/O and doubled exposure window.
+      const masterKeyBytes = fromBase64(encryptionKey);
+
       // V4-F5: Re-enable MMKV base encryption to hide HMAC type prefixes and
       // numeric metadata (counts, numbers) from filesystem forensics. AEAD still
       // provides integrity on top. The ~0.1ms/op overhead is negligible.
       // Derive a proper 16-byte key via HKDF with a unique info string.
       // Base64-encode for MMKV's string API (24 chars, full 128-bit entropy).
-      const mmkvKeyBytes = hkdfDeriveSecrets(fromBase64(encryptionKey), new Uint8Array(32), 'MizanlyMMKVCFB', 16);
+      const mmkvKeyBytes = hkdfDeriveSecrets(masterKeyBytes, new Uint8Array(32), 'MizanlyMMKVCFB', 16);
       mmkvInstance = new MMKV({
         id: 'mizanly-signal',
         encryptionKey: toBase64(mmkvKeyBytes),
@@ -146,13 +150,11 @@ export async function getMMKV(): Promise<MMKV> {
       // F4: Pre-load HMAC key for key name hashing (separate from AEAD key).
       // F10: The AEAD encryption key is NEVER cached. Only the HMAC key for
       // key name hashing is cached (different HKDF derivation, different purpose).
-      // F4: Pre-load HMAC key for key name hashing (separate from AEAD key).
       // V7-F7: Permanently cached. See getHMACKeySync() comment for rationale.
-      const encKeyB64 = await SecureStore.getItemAsync(SECURE_STORE_KEYS.MMKV_ENCRYPTION_KEY);
-      if (encKeyB64) {
-        const encKey = fromBase64(encKeyB64);
-        hmacKeyForNames = hkdfDeriveSecrets(encKey, new Uint8Array(32), 'MizanlyHMACKeyNames', 32);
-      }
+      hmacKeyForNames = hkdfDeriveSecrets(masterKeyBytes, new Uint8Array(32), 'MizanlyHMACKeyNames', 32);
+
+      // Zero master key bytes after both derivations complete
+      zeroOut(masterKeyBytes);
 
       return mmkvInstance;
     })();
@@ -447,7 +449,14 @@ export async function storeIdentityKeyPair(
   );
 }
 
-/** Load identity key pair. Returns null if not initialized. */
+/**
+ * Load identity key pair. Returns null if not initialized.
+ *
+ * F07-#5 JS LIMITATION: privB64 is an immutable JS string containing the identity
+ * private key in base64 form. It cannot be zeroed and persists until GC. The decoded
+ * Uint8Array (returned result) CAN be zeroed by callers. A JSI native module that
+ * reads from SecureStore directly into a Uint8Array would avoid this JS heap exposure.
+ */
 export async function loadIdentityKeyPair(): Promise<Ed25519KeyPair | null> {
   const privB64 = await SecureStore.getItemAsync(
     SECURE_STORE_KEYS.IDENTITY_PRIVATE,
@@ -1063,7 +1072,8 @@ export async function cleanupOrphanedOTPKeys(): Promise<number> {
 
   // Collect all OTP key IDs that are in established sessions
   // (they should have been deleted but weren't due to crash)
-  const registryJson = mmkv.getString('prekey_registry:opk');
+  // F07-#1 FIX: Use secureLoad instead of raw mmkv.getString — data lives under HMAC-hashed key
+  const registryJson = await secureLoad(HMAC_TYPE.PREKEY_REGISTRY, 'prekey_registry:opk');
   if (!registryJson) return 0;
 
   const registeredOTPIds: number[] = JSON.parse(registryJson);
@@ -1117,7 +1127,8 @@ export async function cleanupOrphanedOTPKeys(): Promise<number> {
     cleaned++;
   }
   if (cleaned > 0) {
-    mmkv.set('prekey_registry:opk', JSON.stringify([]));
+    // F07-#1 FIX: Use secureStore instead of raw mmkv.set — write to HMAC-hashed key
+    await secureStore(HMAC_TYPE.PREKEY_REGISTRY, 'prekey_registry:opk', JSON.stringify([]));
   }
   return cleaned;
 }
@@ -1169,8 +1180,9 @@ export async function exportAllState(password: string): Promise<Uint8Array> {
   }
 
   // Collect pre-key private keys from SecureStore
-  const spkRegistry = mmkv.getString('prekey_registry:spk');
-  const opkRegistry = mmkv.getString('prekey_registry:opk');
+  // F07-#1 FIX: Use secureLoad instead of raw mmkv.getString — data lives under HMAC-hashed key
+  const spkRegistry = await secureLoad(HMAC_TYPE.PREKEY_REGISTRY, 'prekey_registry:spk');
+  const opkRegistry = await secureLoad(HMAC_TYPE.PREKEY_REGISTRY, 'prekey_registry:opk');
   const spkIds: number[] = spkRegistry ? JSON.parse(spkRegistry) : [];
   const opkIds: number[] = opkRegistry ? JSON.parse(opkRegistry) : [];
   const preKeyPrivates: Record<string, string> = {};
@@ -1370,6 +1382,9 @@ export async function clearAllE2EState(): Promise<void> {
   await SecureStore.deleteItemAsync(SECURE_STORE_KEYS.IDENTITY_PUBLIC);
   await SecureStore.deleteItemAsync(SECURE_STORE_KEYS.REGISTRATION_ID);
   await SecureStore.deleteItemAsync('spk_current_metadata');
+  // F07-#13 FIX: Delete MMKV encryption key — without this, AEAD-encrypted data
+  // remains decryptable if MMKV files are recovered from disk after clearAll().
+  await SecureStore.deleteItemAsync(SECURE_STORE_KEYS.MMKV_ENCRYPTION_KEY);
 
   // Finding 9: Zero key material in MMKV before deletion.
   // F4: Handle BOTH old plaintext prefixes AND new HMAC prefixes.

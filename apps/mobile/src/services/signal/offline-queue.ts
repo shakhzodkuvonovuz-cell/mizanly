@@ -58,7 +58,8 @@ export async function markMessageFailed(messageId: string): Promise<void> {
   await updateQueuedMessageStatus(messageId, 'failed');
   // Dequeue immediately — don't let failed messages accumulate in MMKV forever
   await dequeueMessage(messageId).catch(() => {});
-  recordE2EEvent({ event: 'message_encrypt_failed' as any, metadata: { reason: 'max_retries' } });
+  // F08-#8 FIX: Removed 'as any' — 'message_encrypt_failed' is now in E2EEvent union
+  recordE2EEvent({ event: 'message_encrypt_failed', metadata: { reason: 'max_retries' } });
 }
 
 /**

@@ -172,6 +172,15 @@ export async function getCachedMessages(
 
 /**
  * Check if a message is already cached (avoid re-decrypting).
+ *
+ * F08-#6: This uses mmkv.contains() which is an O(1) key-presence check that
+ * does NOT verify AEAD integrity. This is intentional — contains() is called
+ * on every incoming message to skip re-decryption, so it must be fast.
+ * If the AEAD-wrapped value was tampered with, the actual secureLoad() call
+ * in getCachedMessages() will fail and return null (the message will be
+ * re-decrypted from the Signal session). The worst case of a false positive
+ * here is displaying a stale/missing cached message, which self-heals on
+ * the next getCachedMessages() call.
  */
 export async function isMessageCached(
   conversationId: string,

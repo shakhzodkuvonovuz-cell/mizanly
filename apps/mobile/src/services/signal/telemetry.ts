@@ -17,6 +17,7 @@ type E2EEvent =
   | 'session_establishment_failed'
   | 'session_reset'
   | 'message_encrypted'
+  | 'message_encrypt_failed' // F08-#8 FIX: Added — used by offline-queue.ts markMessageFailed
   | 'message_decrypted'
   | 'message_decrypt_failed'
   | 'group_message_encrypted'

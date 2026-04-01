@@ -254,18 +254,13 @@ describe('V5-F9: Preview encryption uses conversation AAD', () => {
     expect(utf8Decode(decrypted)).toBe('Secret preview');
   });
 
-  it('backward compat: encryptPreview without conversationId still works', () => {
+  it('F08-#12: encryptPreview without conversationId throws', () => {
     const { encryptPreview } = require('../notification-handler');
 
     const key = generateRandomBytes(32);
-    const enc = encryptPreview('test', key); // No conversationId = default ''
-
-    // Manual decrypt without AAD works (empty AAD == no AAD in XChaCha20-Poly1305)
-    const combined = fromBase64(enc);
-    const nonce = combined.slice(0, 24);
-    const ciphertext = combined.slice(24);
-    const decrypted = aeadDecrypt(key, nonce, ciphertext);
-    expect(utf8Decode(decrypted)).toBe('test');
+    // F08-#12: conversationId is now required — calling without it must throw
+    expect(() => encryptPreview('test', key)).toThrow('conversationId is required');
+    expect(() => encryptPreview('test', key, '')).toThrow('conversationId is required');
   });
 });
 

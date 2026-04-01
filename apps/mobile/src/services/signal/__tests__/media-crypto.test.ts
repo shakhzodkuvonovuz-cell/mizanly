@@ -836,4 +836,31 @@ describe('security properties', () => {
     const wrongAad = new Uint8Array([1, 2, 3, 5]); // Changed last byte
     expect(() => aeadDecrypt(key, nonce, encrypted, wrongAad)).toThrow();
   });
+
+  it('F08-#1: MediaEncryptionContext starts with consumed=false', async () => {
+    const uri = 'file:///test/consumed_init.bin';
+    createTestFile(uri, 128);
+    const ctx = await prepareMediaEncryption(uri);
+    expect(ctx.consumed).toBe(false);
+  });
+
+  it('F08-#1: encryptMediaChunked sets consumed=true after first call', async () => {
+    const uri = 'file:///test/consumed_set.bin';
+    createTestFile(uri, 128);
+    const ctx = await prepareMediaEncryption(uri);
+    await collectChunks(encryptMediaChunked(uri, ctx));
+    expect(ctx.consumed).toBe(true);
+  });
+
+  it('F08-#1: reusing consumed context throws nonce reuse error', async () => {
+    const uri = 'file:///test/consumed_reuse.bin';
+    createTestFile(uri, 128);
+    const ctx = await prepareMediaEncryption(uri);
+    await collectChunks(encryptMediaChunked(uri, ctx));
+
+    // Second use should throw
+    await expect(collectChunks(encryptMediaChunked(uri, ctx))).rejects.toThrow(
+      'MediaEncryptionContext already consumed',
+    );
+  });
 });

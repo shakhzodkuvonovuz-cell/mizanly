@@ -340,14 +340,16 @@ describe('notification preview encrypt/decrypt', () => {
 
     const previewKey = grb(32);
     const originalText = 'Assalamu alaikum, how are you?';
-    const encryptedB64 = encryptPreview(originalText, previewKey);
+    const encryptedB64 = encryptPreview(originalText, previewKey, 'conv_test_1');
 
     // Decrypt manually: format is [nonce:24][ciphertext+tag]
     const combined = fromBase64(encryptedB64);
     expect(combined.length).toBeGreaterThan(24);
     const nonce = combined.slice(0, 24);
     const ciphertext = combined.slice(24);
-    const plaintext = aeadDecrypt(previewKey, nonce, ciphertext);
+    const { utf8Encode } = require('../crypto');
+    const aad = utf8Encode('conv_test_1');
+    const plaintext = aeadDecrypt(previewKey, nonce, ciphertext, aad);
     expect(utf8Decode(plaintext)).toBe(originalText);
   });
 
@@ -357,12 +359,14 @@ describe('notification preview encrypt/decrypt', () => {
 
     const previewKey = grb(32);
     const longText = 'x'.repeat(200);
-    const encryptedB64 = encryptPreview(longText, previewKey);
+    const encryptedB64 = encryptPreview(longText, previewKey, 'conv_trunc');
 
     const combined = fromBase64(encryptedB64);
     const nonce = combined.slice(0, 24);
     const ciphertext = combined.slice(24);
-    const plaintext = aeadDecrypt(previewKey, nonce, ciphertext);
+    const { utf8Encode } = require('../crypto');
+    const aad = utf8Encode('conv_trunc');
+    const plaintext = aeadDecrypt(previewKey, nonce, ciphertext, aad);
     expect(utf8Decode(plaintext)).toBe('x'.repeat(100));
   });
 
@@ -371,8 +375,8 @@ describe('notification preview encrypt/decrypt', () => {
     const { encryptPreview } = require('../notification-handler');
 
     const previewKey = grb(32);
-    const enc1 = encryptPreview('same text', previewKey);
-    const enc2 = encryptPreview('same text', previewKey);
+    const enc1 = encryptPreview('same text', previewKey, 'conv_nonce');
+    const enc2 = encryptPreview('same text', previewKey, 'conv_nonce');
     expect(enc1).not.toBe(enc2); // Different nonce → different ciphertext
   });
 
@@ -381,11 +385,13 @@ describe('notification preview encrypt/decrypt', () => {
     const { encryptPreview } = require('../notification-handler');
 
     const previewKey = grb(32);
-    const encryptedB64 = encryptPreview('', previewKey);
+    const encryptedB64 = encryptPreview('', previewKey, 'conv_empty');
     const combined = fromBase64(encryptedB64);
     const nonce = combined.slice(0, 24);
     const ciphertext = combined.slice(24);
-    const plaintext = aeadDecrypt(previewKey, nonce, ciphertext);
+    const { utf8Encode } = require('../crypto');
+    const aad = utf8Encode('conv_empty');
+    const plaintext = aeadDecrypt(previewKey, nonce, ciphertext, aad);
     expect(utf8Decode(plaintext)).toBe('');
   });
 
@@ -395,11 +401,13 @@ describe('notification preview encrypt/decrypt', () => {
 
     const previewKey = grb(32);
     const arabicText = 'بسم الله الرحمن الرحيم';
-    const encryptedB64 = encryptPreview(arabicText, previewKey);
+    const encryptedB64 = encryptPreview(arabicText, previewKey, 'conv_arabic');
     const combined = fromBase64(encryptedB64);
     const nonce = combined.slice(0, 24);
     const ciphertext = combined.slice(24);
-    const plaintext = aeadDecrypt(previewKey, nonce, ciphertext);
+    const { utf8Encode } = require('../crypto');
+    const aad = utf8Encode('conv_arabic');
+    const plaintext = aeadDecrypt(previewKey, nonce, ciphertext, aad);
     expect(utf8Decode(plaintext)).toBe(arabicText);
   });
 
@@ -409,11 +417,13 @@ describe('notification preview encrypt/decrypt', () => {
 
     const previewKey = grb(32);
     const wrongKey = grb(32);
-    const encryptedB64 = encryptPreview('secret message', previewKey);
+    const encryptedB64 = encryptPreview('secret message', previewKey, 'conv_wrongkey');
     const combined = fromBase64(encryptedB64);
     const nonce = combined.slice(0, 24);
     const ciphertext = combined.slice(24);
-    expect(() => aeadDecrypt(wrongKey, nonce, ciphertext)).toThrow();
+    const { utf8Encode } = require('../crypto');
+    const aad = utf8Encode('conv_wrongkey');
+    expect(() => aeadDecrypt(wrongKey, nonce, ciphertext, aad)).toThrow();
   });
 });
 

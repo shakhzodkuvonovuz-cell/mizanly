@@ -52,7 +52,25 @@ import type { SignalMessage } from './types';
  * V5-F11: In-memory Map upgraded to MMKV-backed persistent cache.
  * Previously lost on app restart — first request after restart blindly trusted server.
  */
+/**
+ * F08-#13 FIX: Size-capped device cache. Max 500 entries — when exceeded, the
+ * oldest half is evicted (Map preserves insertion order). Prevents unbounded
+ * memory growth if the app communicates with many users over time.
+ */
+const DEVICE_CACHE_MAX_SIZE = 500;
 const knownDeviceCache = new Map<string, number[]>();
+
+/** Evict oldest half of knownDeviceCache when it exceeds DEVICE_CACHE_MAX_SIZE. */
+function evictDeviceCacheIfNeeded(): void {
+  if (knownDeviceCache.size <= DEVICE_CACHE_MAX_SIZE) return;
+  const evictCount = Math.floor(knownDeviceCache.size / 2);
+  let removed = 0;
+  for (const key of knownDeviceCache.keys()) {
+    if (removed >= evictCount) break;
+    knownDeviceCache.delete(key);
+    removed++;
+  }
+}
 
 /** V5-F11: Load persisted device IDs from MMKV into in-memory cache. */
 async function loadPersistedDeviceIds(userId: string): Promise<number[] | null> {
@@ -113,6 +131,7 @@ export async function getDeviceIds(userId: string): Promise<number[]> {
       }
 
       knownDeviceCache.set(userId, validIds);
+      evictDeviceCacheIfNeeded(); // F08-#13: prevent unbounded growth
       // V5-F11: Persist to MMKV so it survives app restart
       await persistDeviceIds(userId, validIds);
       return validIds;
@@ -222,7 +241,7 @@ export function serializeForWire(
 /**
  * Generate a device linking code.
  *
- * The primary device displays this code (as QR or 6-digit number).
+ * The primary device displays this code (as QR or 8-digit number).
  * The new device scans/enters it to prove physical proximity.
  * After verification, the server allows the new device to register.
  *
@@ -237,9 +256,13 @@ let currentLinkSessionId = '';
 export function generateDeviceLinkCode(): { code: string; secret: Uint8Array } {
   const { generateRandomBytes, toBase64 } = require('./crypto');
   const secret = generateRandomBytes(32);
-  // 6-digit numeric code derived from the secret (for manual entry)
-  const num = ((secret[0] << 16) | (secret[1] << 8) | secret[2]) % 1000000;
-  const code = String(num).padStart(6, '0');
+  // F08-#2 FIX: Use 4 bytes (32 bits) for 8-digit code instead of 3 bytes (24 bits)
+  // for 6-digit. Old: 24 bits % 1,000,000 = 67.8% of range used (32.2% modular bias).
+  // New: 32 bits % 100,000,000 = ~2.3% modular bias (4,294,967,296 / 100,000,000 ≈ 42.9).
+  // 8-digit code = 10^8 = 100M possibilities vs 10^6 = 1M. Combined with MAX_LINK_ATTEMPTS=3,
+  // brute-force probability: 3/100,000,000 = 0.000003%.
+  const num = (((secret[0] << 24) | (secret[1] << 16) | (secret[2] << 8) | secret[3]) >>> 0) % 100000000;
+  const code = String(num).padStart(8, '0');
   // V6-F11: Generate unique session ID and reset both in-memory + persisted counter
   currentLinkSessionId = toBase64(generateRandomBytes(8));
   linkAttemptsCache = 0;
@@ -255,7 +278,9 @@ export function generateDeviceLinkCode(): { code: string; secret: Uint8Array } {
  * Now: counter is persisted in MMKV (AEAD + HMAC) per link session ID.
  * Server-side rate limiting (V4-F20) remains the authoritative control.
  */
-const MAX_LINK_ATTEMPTS = 5;
+// F08-#2 FIX: Reduced from 5 to 3. With 8-digit code (10^8 possibilities),
+// 3 attempts gives brute-force probability of 3/100,000,000 = 0.000003%.
+const MAX_LINK_ATTEMPTS = 3;
 
 async function loadLinkAttempts(sessionId: string): Promise<number> {
   try {
@@ -284,28 +309,30 @@ async function ensureLinkCacheLoaded(): Promise<void> {
   if (persisted > linkAttemptsCache) linkAttemptsCache = persisted;
 }
 
-export function verifyDeviceLinkCode(
+// F08-#3 FIX: Made async to properly await ensureLinkCacheLoaded(). Previously
+// synchronous — fired ensureLinkCacheLoaded() without awaiting, so on first call
+// after app restart, linkAttemptsCache was 0 regardless of persisted value, allowing
+// an attacker to bypass the attempt counter by restarting the app between attempts.
+export async function verifyDeviceLinkCode(
   code: string,
   expectedSecret: Uint8Array,
-): boolean {
-  // V6-F11: Kick off async load of persisted counter (non-blocking).
-  // On first call after restart, linkAttemptsCache may be 0 until the load completes.
-  // The server-side rate limit (V4-F20) is the authoritative guard regardless.
-  ensureLinkCacheLoaded().catch(() => {});
+): Promise<boolean> {
+  await ensureLinkCacheLoaded();
 
   const attempts = linkAttemptsCache;
   if (attempts >= MAX_LINK_ATTEMPTS) {
     return false; // Code invalidated after too many attempts
   }
 
-  const num = ((expectedSecret[0] << 16) | (expectedSecret[1] << 8) | expectedSecret[2]) % 1000000;
-  const expected = String(num).padStart(6, '0');
-  // Constant-time comparison for the 6-digit code
+  // F08-#2 FIX: Match 8-digit derivation from generateDeviceLinkCode
+  const num = (((expectedSecret[0] << 24) | (expectedSecret[1] << 16) | (expectedSecret[2] << 8) | expectedSecret[3]) >>> 0) % 100000000;
+  const expected = String(num).padStart(8, '0');
+  // Constant-time comparison for the 8-digit code
   let diff = 0;
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 8; i++) {
     diff |= code.charCodeAt(i) ^ expected.charCodeAt(i);
   }
-  const isValid = diff === 0 && code.length === 6;
+  const isValid = diff === 0 && code.length === 8;
   if (!isValid) {
     linkAttemptsCache++;
     persistLinkAttempts(currentLinkSessionId, linkAttemptsCache);

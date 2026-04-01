@@ -292,31 +292,38 @@ describe('V4-F17: cache/search counts use AEAD', () => {
 // V4-F20: Device link code attempt limiting
 // ============================================================
 
-describe('V4-F20: device link code brute-force protection', () => {
-  it('rejects after 5 failed attempts', () => {
+describe('V4-F20 + F08-#2/#3: device link code brute-force protection (8-digit, async)', () => {
+  it('generates 8-digit code', () => {
+    const { generateDeviceLinkCode } = require('../multi-device');
+    const { code } = generateDeviceLinkCode();
+    expect(code).toHaveLength(8);
+    expect(/^\d{8}$/.test(code)).toBe(true);
+  });
+
+  it('rejects after 3 failed attempts (F08-#2: reduced from 5)', async () => {
     const { generateDeviceLinkCode, verifyDeviceLinkCode } = require('../multi-device');
     const { code, secret } = generateDeviceLinkCode();
 
-    // 5 wrong attempts
-    for (let i = 0; i < 5; i++) {
-      expect(verifyDeviceLinkCode('000000', secret)).toBe(false);
+    // 3 wrong attempts (MAX_LINK_ATTEMPTS = 3)
+    for (let i = 0; i < 3; i++) {
+      expect(await verifyDeviceLinkCode('00000000', secret)).toBe(false);
     }
 
-    // 6th attempt — even with correct code — should be rejected
-    expect(verifyDeviceLinkCode(code, secret)).toBe(false);
+    // 4th attempt — even with correct code — should be rejected
+    expect(await verifyDeviceLinkCode(code, secret)).toBe(false);
   });
 
-  it('resets attempt counter on new code generation', () => {
+  it('resets attempt counter on new code generation', async () => {
     const { generateDeviceLinkCode, verifyDeviceLinkCode } = require('../multi-device');
 
     // Exhaust attempts on first code
     const first = generateDeviceLinkCode();
-    for (let i = 0; i < 5; i++) verifyDeviceLinkCode('000000', first.secret);
-    expect(verifyDeviceLinkCode(first.code, first.secret)).toBe(false);
+    for (let i = 0; i < 3; i++) await verifyDeviceLinkCode('00000000', first.secret);
+    expect(await verifyDeviceLinkCode(first.code, first.secret)).toBe(false);
 
     // Generate new code — attempts should reset
     const second = generateDeviceLinkCode();
-    expect(verifyDeviceLinkCode(second.code, second.secret)).toBe(true);
+    expect(await verifyDeviceLinkCode(second.code, second.secret)).toBe(true);
   });
 });
 

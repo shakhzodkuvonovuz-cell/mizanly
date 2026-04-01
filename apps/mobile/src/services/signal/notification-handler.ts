@@ -124,14 +124,20 @@ export async function storePreviewKey(
  *
  * @param preview - Plaintext preview (first ~100 chars of message)
  * @param previewKey - Conversation's preview encryption key
- * @param conversationId - V5-F9: Required AAD to prevent cross-conversation swaps
+ * @param conversationId - V5-F9: Required AAD to prevent cross-conversation swaps.
+ *   F08-#12 FIX: Made required (was optional with default ''). Empty string
+ *   conversationId would bind the preview to no conversation, allowing an attacker
+ *   who obtains the preview key to swap previews between conversations.
  * @returns Base64 encoded [nonce:24][ciphertext+tag]
  */
 export function encryptPreview(
   preview: string,
   previewKey: Uint8Array,
-  conversationId: string = '',
+  conversationId: string,
 ): string {
+  if (!conversationId) {
+    throw new Error('conversationId is required for preview encryption AAD — cannot be empty');
+  }
   const { aeadEncrypt, generateRandomBytes, utf8Encode, toBase64, concat } = require('./crypto');
   const nonce = generateRandomBytes(24);
   const plaintext = utf8Encode(preview.slice(0, 100)); // Max 100 chars
