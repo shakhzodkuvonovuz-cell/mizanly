@@ -26,9 +26,6 @@ export function useThemeColors() {
  * Shorthand for the most common pattern: just the background color.
  */
 export function useThemeBg() {
-  const theme = useStore(s => s.theme);
-  if (theme === 'system') {
-    return Appearance.getColorScheme() === 'light' ? colors.light.bg : colors.dark.bg;
-  }
-  return theme === 'light' ? colors.light.bg : colors.dark.bg;
+  const tc = useThemeColors();
+  return tc.bg;
 }

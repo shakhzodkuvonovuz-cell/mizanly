@@ -303,12 +303,12 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
               <Text style={styles.name}>{post.user.displayName}</Text>
               {post.user.isVerified && <VerifiedBadge size={14} />}
               {isFrequentCreator && (
-                <View style={{ marginStart: 4, flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                <View style={styles.frequentCreatorBadge}>
                   <Icon name="heart-filled" size={12} color={colors.gold} />
                 </View>
               )}
               {(post.collaborators?.length ?? 0) > 0 && (
-                <View style={{ marginStart: 4 }}>
+                <View style={styles.collabIcon}>
                   <Icon name="users" size="sm" color={colors.text.secondary} />
                 </View>
               )}
@@ -380,9 +380,9 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
 
       {/* Finding #405: Topic badges */}
       {(post as unknown as Record<string, unknown>).topics && ((post as unknown as Record<string, unknown>).topics as string[]).length > 0 && (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4, marginBottom: 4, paddingHorizontal: spacing.base }}>
+        <View style={styles.topicBadgeContainer}>
           {((post as unknown as Record<string, unknown>).topics as string[]).slice(0, 3).map(topic => (
-            <Text key={topic} style={{ fontSize: 11, color: colors.emerald, backgroundColor: `${colors.emerald}12`, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, fontFamily: 'DMSans_500Medium' }}>
+            <Text key={topic} style={styles.topicBadge}>
               {topic}
             </Text>
           ))}
@@ -393,7 +393,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
       {(post as unknown as Record<string, unknown>).topics && ((post as unknown as Record<string, unknown>).topics as string[]).some(t =>
         ['fiqh', 'fatwa', 'sharia', 'halal', 'haram'].includes(t.toLowerCase())
       ) && (
-        <Text style={{ fontSize: 10, color: colors.gold, paddingHorizontal: spacing.base, marginBottom: 4, fontStyle: 'italic' }}>
+        <Text style={styles.islamicDisclaimer}>
           {tr('islamic.consultScholar', 'This may contain religious content — consult a qualified scholar for guidance.')}
         </Text>
       )}
@@ -716,5 +716,38 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     fontSize: fontSize.sm,
     fontWeight: '600',
+  },
+  frequentCreatorBadge: {
+    marginStart: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  collabIcon: {
+    marginStart: 4,
+  },
+  topicBadgeContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginTop: 4,
+    marginBottom: 4,
+    paddingHorizontal: spacing.base,
+  },
+  topicBadge: {
+    fontSize: 11,
+    color: colors.emerald,
+    backgroundColor: `${colors.emerald}12`,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    fontFamily: 'DMSans_500Medium',
+  },
+  islamicDisclaimer: {
+    fontSize: 10,
+    color: colors.gold,
+    paddingHorizontal: spacing.base,
+    marginBottom: 4,
+    fontStyle: 'italic',
   },
 });

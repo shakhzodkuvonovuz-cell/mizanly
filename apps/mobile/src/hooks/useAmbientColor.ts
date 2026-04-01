@@ -33,10 +33,14 @@ export function useAmbientColor(imageUri: string | undefined | null) {
       return;
     }
 
-    // LRU eviction: cap cache at 50 entries
+    // LRU eviction: batch-evict 10 entries when cap is hit
     if (colorCache.size > 50) {
-      const oldest = colorCache.keys().next().value;
-      if (oldest !== undefined) colorCache.delete(oldest);
+      const keys = colorCache.keys();
+      for (let i = 0; i < 10; i++) {
+        const entry = keys.next();
+        if (entry.done) break;
+        colorCache.delete(entry.value);
+      }
     }
 
     // Check cache first

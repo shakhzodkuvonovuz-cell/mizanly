@@ -407,9 +407,14 @@ export function useLiveKitCall(options: UseLiveKitCallOptions = {}): UseLiveKitC
       keyBytes = null;
     }
 
-    // Enable mic
-    await room.localParticipant.setMicrophoneEnabled(true);
-    if (mountedRef.current) setIsMuted(false);
+    // Enable mic — if permission denied, start with mic off instead of failing the call
+    try {
+      await room.localParticipant.setMicrophoneEnabled(true);
+      if (mountedRef.current) setIsMuted(false);
+    } catch {
+      if (mountedRef.current) setIsMuted(true);
+      if (__DEV__) console.warn('[LiveKit] Mic enable failed — starting muted');
+    }
 
     // Krisp noise filter (LiveKit Cloud only)
     if (isKrispNoiseFilterSupported()) {
@@ -424,12 +429,17 @@ export function useLiveKitCall(options: UseLiveKitCallOptions = {}): UseLiveKitC
       }
     }
 
-    // Enable camera for video calls
+    // Enable camera for video calls — if permission denied, start with camera off
     if (isVideo) {
-      await room.localParticipant.setCameraEnabled(true);
-      if (mountedRef.current) {
-        setIsCameraOn(true);
-        cameraWasOnRef.current = true; // [F3]
+      try {
+        await room.localParticipant.setCameraEnabled(true);
+        if (mountedRef.current) {
+          setIsCameraOn(true);
+          cameraWasOnRef.current = true; // [F3]
+        }
+      } catch {
+        if (mountedRef.current) setIsCameraOn(false);
+        if (__DEV__) console.warn('[LiveKit] Camera enable failed — starting with camera off');
       }
     }
   }, [configureAudioSession, syncRemoteParticipants]);

@@ -23,8 +23,11 @@ export function usePiP({ isPlaying, onPiPChange }: PiPConfig) {
     onPiPChangeRef.current = onPiPChange;
   }, [onPiPChange]);
 
+  const isPlayingRef = useRef(isPlaying);
+  isPlayingRef.current = isPlaying;
+
   const enterPiP = useCallback(() => {
-    if (!isPiPSupported || !isPlaying) return;
+    if (!isPiPSupported || !isPlayingRef.current) return;
     try {
       // Android: Use native PiP mode via activity
       if (Platform.OS === 'android') {
@@ -41,7 +44,7 @@ export function usePiP({ isPlaying, onPiPChange }: PiPConfig) {
     } catch {
       // PiP not available on this device
     }
-  }, [isPiPSupported, isPlaying]);
+  }, [isPiPSupported]);
 
   const exitPiP = useCallback(() => {
     setIsPiPActive(false);
