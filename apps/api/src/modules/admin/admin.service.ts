@@ -3,6 +3,7 @@ import {
   Logger,
   ForbiddenException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
@@ -37,15 +38,20 @@ export class AdminService {
     }
   }
 
-  private async assertAdmin(userId: string) {
-    return this.verifyAdmin(userId);
-  }
+  // A15-#20: Removed redundant assertAdmin wrapper — use verifyAdmin directly
 
   async getReports(adminId: string, status?: string, cursor?: string, limit = 20) {
-    await this.assertAdmin(adminId);
+    await this.verifyAdmin(adminId);
 
+    // A15-#7 FIX: Validate status against ReportStatus enum
     const where: Record<string, unknown> = {};
-    if (status) where.status = status;
+    if (status) {
+      const validStatuses = Object.values(ReportStatus);
+      if (!validStatuses.includes(status as ReportStatus)) {
+        throw new BadRequestException(`Invalid report status. Valid values: ${validStatuses.join(', ')}`);
+      }
+      where.status = status;
+    }
 
     const reports = await this.prisma.report.findMany({
       where,
@@ -86,7 +92,7 @@ export class AdminService {
   }
 
   async getReport(adminId: string, reportId: string) {
-    await this.assertAdmin(adminId);
+    await this.verifyAdmin(adminId);
 
     const report = await this.prisma.report.findUnique({
       where: { id: reportId },
@@ -115,40 +121,40 @@ export class AdminService {
   }
 
   async resolveReport(adminId: string, reportId: string, action: string, note?: string) {
-    await this.assertAdmin(adminId);
+    await this.verifyAdmin(adminId);
 
-    // Map action strings to schema enums
-    let status: ReportStatus = 'RESOLVED';
-    let actionTaken: ModerationAction = 'NONE';
+    // A15-#16/X08-#11 FIX: Use map + throw on unknown action
+    const ACTION_MAP: Record<string, { status: ReportStatus; actionTaken: ModerationAction }> = {
+      DISMISS: { status: 'DISMISSED', actionTaken: 'NONE' },
+      WARN: { status: 'RESOLVED', actionTaken: 'WARNING' },
+      REMOVE_CONTENT: { status: 'RESOLVED', actionTaken: 'CONTENT_REMOVED' },
+      BAN_USER: { status: 'RESOLVED', actionTaken: 'PERMANENT_BAN' },
+      TEMP_BAN: { status: 'RESOLVED', actionTaken: 'TEMP_BAN' },
+      MUTE: { status: 'RESOLVED', actionTaken: 'TEMP_MUTE' },
+    };
 
-    if (action === 'DISMISS') {
-      status = 'DISMISSED';
-      actionTaken = 'NONE';
-    } else if (action === 'WARN') {
-      status = 'RESOLVED';
-      actionTaken = 'WARNING';
-    } else if (action === 'REMOVE_CONTENT') {
-      status = 'RESOLVED';
-      actionTaken = 'CONTENT_REMOVED';
-    } else if (action === 'BAN_USER') {
-      status = 'RESOLVED';
-      actionTaken = 'PERMANENT_BAN';
-    } else if (action === 'TEMP_BAN') {
-      status = 'RESOLVED';
-      actionTaken = 'TEMP_BAN';
-    } else if (action === 'MUTE') {
-      status = 'RESOLVED';
-      actionTaken = 'TEMP_MUTE';
+    const mapped = ACTION_MAP[action];
+    if (!mapped) {
+      throw new BadRequestException(`Unknown action: ${action}`);
     }
+    const { status, actionTaken } = mapped;
 
-    // Fetch report to get target content/user IDs
+    // X08-#1 FIX: Fetch ALL content type IDs including thread/reel/video
     const report = await this.prisma.report.findUnique({
       where: { id: reportId },
-      select: { reportedPostId: true, reportedCommentId: true, reportedMessageId: true, reportedUserId: true },
+      select: {
+        reportedPostId: true,
+        reportedCommentId: true,
+        reportedMessageId: true,
+        reportedUserId: true,
+        reportedThreadId: true,
+        reportedReelId: true,
+        reportedVideoId: true,
+      },
     });
     if (!report) throw new NotFoundException('Report not found');
 
-    // Actually remove content when action is REMOVE_CONTENT (Finding 07, Audit 13)
+    // X08-#1/#17 FIX: Remove ALL content types in transaction for atomicity
     if (actionTaken === 'CONTENT_REMOVED') {
       const removals: Promise<unknown>[] = [];
       if (report.reportedPostId) {
@@ -159,6 +165,15 @@ export class AdminService {
       }
       if (report.reportedMessageId) {
         removals.push(this.prisma.message.update({ where: { id: report.reportedMessageId }, data: { isDeleted: true } }).catch(err => this.logger.warn('Failed to remove message', err instanceof Error ? err.message : err)));
+      }
+      if (report.reportedThreadId) {
+        removals.push(this.prisma.thread.update({ where: { id: report.reportedThreadId }, data: { isRemoved: true } }).catch(err => this.logger.warn('Failed to remove thread', err instanceof Error ? err.message : err)));
+      }
+      if (report.reportedReelId) {
+        removals.push(this.prisma.reel.update({ where: { id: report.reportedReelId }, data: { isRemoved: true } }).catch(err => this.logger.warn('Failed to remove reel', err instanceof Error ? err.message : err)));
+      }
+      if (report.reportedVideoId) {
+        removals.push(this.prisma.video.update({ where: { id: report.reportedVideoId }, data: { isRemoved: true } }).catch(err => this.logger.warn('Failed to remove video', err instanceof Error ? err.message : err)));
       }
       await Promise.all(removals);
     }
@@ -207,10 +222,10 @@ export class AdminService {
       }).catch(err => this.logger.warn('Failed to create moderation log', err instanceof Error ? err.message : err));
     }
 
-    // Finding #417: Admin audit trail
+    // A15-#12 FIX: Log audit trail errors instead of swallowing silently
     await this.prisma.adminAuditLog.create({
       data: { adminId, action: `RESOLVE_REPORT_${action}`, targetType: 'report', targetId: reportId, details: { actionTaken, note } },
-    }).catch(() => {});
+    }).catch(err => this.logger.error('Audit log write failed for report resolution', err instanceof Error ? err.message : err));
 
     return this.prisma.report.update({
       where: { id: reportId },
@@ -225,10 +240,11 @@ export class AdminService {
   }
 
   async getStats(adminId: string) {
-    await this.assertAdmin(adminId);
+    await this.verifyAdmin(adminId);
 
+    // X04-#21 FIX: Exclude deleted and banned users from count
     const [users, posts, threads, reels, videos, pendingReports] = await Promise.all([
-      this.prisma.user.count({ where: { isDeactivated: false } }),
+      this.prisma.user.count({ where: { isDeactivated: false, isDeleted: false, isBanned: false } }),
       this.prisma.post.count(),
       this.prisma.thread.count({ where: { isChainHead: true } }),
       this.prisma.reel.count(),
@@ -240,24 +256,19 @@ export class AdminService {
   }
 
   async banUser(adminId: string, targetId: string, reason: string, duration?: number) {
-    await this.assertAdmin(adminId);
+    await this.verifyAdmin(adminId);
 
-    // Verify target exists and is not an admin
+    // A15-#15 FIX: Single query for role + clerkId (was two separate queries)
     const target = await this.prisma.user.findUnique({
       where: { id: targetId },
-      select: { id: true, role: true },
+      select: { id: true, role: true, clerkId: true },
     });
     if (!target) throw new NotFoundException('User not found');
     if (target.role === 'ADMIN') throw new ForbiddenException('Cannot ban an admin user');
 
     const banExpiresAt = duration ? new Date(Date.now() + duration * 3600000) : null;
 
-    // Also fetch clerkId so we can revoke their Clerk sessions
-    const targetFull = await this.prisma.user.findUnique({
-      where: { id: targetId },
-      select: { clerkId: true },
-    });
-
+    // A15-#2 FIX: Use select to exclude PII from response
     const updatedUser = await this.prisma.user.update({
       where: { id: targetId },
       data: {
@@ -266,16 +277,22 @@ export class AdminService {
         banReason: reason,
         banExpiresAt,
       },
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        isBanned: true,
+        banExpiresAt: true,
+        banReason: true,
+      },
     });
 
-    // Finding F24: Revoke active Clerk sessions so banned user is immediately logged out.
-    // Uses Clerk Backend SDK users.banUser() which disables sign-in and revokes all sessions.
-    if (targetFull?.clerkId) {
+    // Revoke active Clerk sessions so banned user is immediately logged out
+    if (target.clerkId) {
       try {
-        await this.clerk.users.banUser(targetFull.clerkId);
-        this.logger.log(`Clerk sessions revoked for banned user ${targetId} (clerkId: ${targetFull.clerkId})`);
+        await this.clerk.users.banUser(target.clerkId);
+        this.logger.log(`Clerk sessions revoked for banned user ${targetId} (clerkId: ${target.clerkId})`);
       } catch (err: unknown) {
-        // Non-fatal: user is banned in DB regardless. Log for investigation.
         const msg = err instanceof Error ? err.message : String(err);
         this.logger.warn(`Failed to revoke Clerk session for banned user ${targetId}: ${msg}`);
       }
@@ -291,16 +308,16 @@ export class AdminService {
       this.logger.warn(`Failed to remove banned user ${targetId} from search index: ${msg}`);
     });
 
-    // Finding #417: Admin audit trail
+    // A15-#12 FIX: Log errors instead of swallowing
     await this.prisma.adminAuditLog.create({
       data: { adminId, action: 'BAN_USER', targetType: 'user', targetId, details: { reason, duration } },
-    }).catch(() => {});
+    }).catch(err => this.logger.error('Audit log write failed for ban', err instanceof Error ? err.message : err));
 
     return updatedUser;
   }
 
   async unbanUser(adminId: string, targetId: string) {
-    await this.assertAdmin(adminId);
+    await this.verifyAdmin(adminId);
 
     // Fetch clerkId to unban in Clerk as well
     const target = await this.prisma.user.findUnique({
@@ -308,6 +325,7 @@ export class AdminService {
       select: { clerkId: true },
     });
 
+    // A15-#3 FIX: Use select to exclude PII from response
     const updatedUser = await this.prisma.user.update({
       where: { id: targetId },
       data: {
@@ -315,6 +333,13 @@ export class AdminService {
         isDeactivated: false,
         banReason: null,
         banExpiresAt: null,
+      },
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        bio: true,
+        isBanned: true,
       },
     });
 

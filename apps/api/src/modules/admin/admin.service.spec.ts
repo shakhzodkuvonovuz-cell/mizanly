@@ -48,12 +48,18 @@ describe('AdminService', () => {
             },
             thread: {
               count: jest.fn(),
+              update: jest.fn().mockResolvedValue({}),
             },
             reel: {
               count: jest.fn(),
+              update: jest.fn().mockResolvedValue({}),
             },
             video: {
               count: jest.fn(),
+              update: jest.fn().mockResolvedValue({}),
+            },
+            message: {
+              update: jest.fn().mockResolvedValue({}),
             },
             moderationLog: {
               create: jest.fn().mockResolvedValue({}),
@@ -83,22 +89,22 @@ describe('AdminService', () => {
     mockClerkClient.users.unbanUser.mockClear();
   });
 
-  describe('assertAdmin', () => {
+  describe('verifyAdmin', () => {
     it('should not throw if user is ADMIN', async () => {
       prisma.user.findUnique.mockResolvedValue({ role: 'ADMIN' });
-      await expect(service['assertAdmin']('admin-id')).resolves.not.toThrow();
+      await expect(service.verifyAdmin('admin-id')).resolves.not.toThrow();
     });
 
     it('should throw ForbiddenException if user is not ADMIN', async () => {
       prisma.user.findUnique.mockResolvedValue({ role: 'USER' });
-      await expect(service['assertAdmin']('user-id')).rejects.toThrow(
+      await expect(service.verifyAdmin('user-id')).rejects.toThrow(
         ForbiddenException,
       );
     });
 
     it('should throw ForbiddenException if user not found', async () => {
       prisma.user.findUnique.mockResolvedValue(null);
-      await expect(service['assertAdmin']('missing-id')).rejects.toThrow(
+      await expect(service.verifyAdmin('missing-id')).rejects.toThrow(
         ForbiddenException,
       );
     });
@@ -300,17 +306,20 @@ describe('AdminService', () => {
 
     it('should ban user when action is BAN_USER', async () => {
       prisma.user.findUnique
-        .mockResolvedValueOnce({ role: 'ADMIN' }) // assertAdmin (resolveReport)
-        .mockResolvedValueOnce({ role: 'ADMIN' }) // assertAdmin (banUser)
-        .mockResolvedValueOnce({ id: 'target-1', role: 'USER' }) // target role check (banUser)
-        .mockResolvedValueOnce({ clerkId: 'clerk-target-1' }); // clerkId fetch (banUser F24)
+        .mockResolvedValueOnce({ role: 'ADMIN' }) // verifyAdmin (resolveReport)
+        .mockResolvedValueOnce({ role: 'ADMIN' }) // verifyAdmin (banUser)
+        .mockResolvedValueOnce({ id: 'target-1', role: 'USER', clerkId: 'clerk-target-1' }); // merged role+clerkId
       prisma.report.findUnique.mockResolvedValue({
         reportedPostId: null,
         reportedCommentId: null,
+        reportedMessageId: null,
         reportedUserId: 'target-1',
+        reportedThreadId: null,
+        reportedReelId: null,
+        reportedVideoId: null,
       });
       prisma.report.update.mockResolvedValue({ id: 'report-1', status: 'RESOLVED' });
-      prisma.user.update.mockResolvedValue({ id: 'target-1', isBanned: true });
+      prisma.user.update.mockResolvedValue({ id: 'target-1', username: 't', displayName: 'T', isBanned: true, banExpiresAt: null, banReason: 'Spam' });
 
       await service.resolveReport('admin-id', 'report-1', 'BAN_USER', 'Spam');
 
@@ -318,7 +327,6 @@ describe('AdminService', () => {
         where: { id: 'target-1' },
         data: expect.objectContaining({ isBanned: true }),
       }));
-      // F24: Clerk ban should be called via banUser
       expect(mockClerkClient.users.banUser).toHaveBeenCalledWith('clerk-target-1');
     });
 
@@ -352,7 +360,7 @@ describe('AdminService', () => {
 
       const result = await service.getStats('admin-id');
 
-      expect(prisma.user.count).toHaveBeenCalledWith({ where: { isDeactivated: false } });
+      expect(prisma.user.count).toHaveBeenCalledWith({ where: { isDeactivated: false, isDeleted: false, isBanned: false } });
       expect(prisma.post.count).toHaveBeenCalledWith();
       expect(prisma.thread.count).toHaveBeenCalledWith({ where: { isChainHead: true } });
       expect(prisma.reel.count).toHaveBeenCalledWith();
@@ -381,36 +389,34 @@ describe('AdminService', () => {
     it('should deactivate user with reason and revoke Clerk session', async () => {
       prisma.user.findUnique
         .mockResolvedValueOnce({ role: 'ADMIN' }) // admin check
-        .mockResolvedValueOnce({ id: 'user-1', role: 'USER' }) // target role check
-        .mockResolvedValueOnce({ clerkId: 'clerk-user-1' }); // clerkId fetch
-      prisma.user.update.mockResolvedValue({ id: 'user-1', isDeactivated: true });
+        .mockResolvedValueOnce({ id: 'user-1', role: 'USER', clerkId: 'clerk-user-1' }); // merged role+clerkId
+      prisma.user.update.mockResolvedValue({ id: 'user-1', username: 'u1', displayName: 'U1', isBanned: true, banExpiresAt: new Date(), banReason: 'Spam' });
 
       const result = await service.banUser('admin-id', 'user-1', 'Spam', 24);
 
-      expect(prisma.user.update).toHaveBeenCalledWith({
+      expect(prisma.user.update).toHaveBeenCalledWith(expect.objectContaining({
         where: { id: 'user-1' },
         data: expect.objectContaining({
           isDeactivated: true,
           banReason: 'Spam',
           banExpiresAt: expect.any(Date),
         }),
-      });
-      // F24: Verify Clerk session was revoked
+        select: expect.objectContaining({ id: true, username: true }),
+      }));
       expect(mockClerkClient.users.banUser).toHaveBeenCalledWith('clerk-user-1');
     });
 
     it('should still succeed if Clerk ban call fails', async () => {
       prisma.user.findUnique
         .mockResolvedValueOnce({ role: 'ADMIN' })
-        .mockResolvedValueOnce({ id: 'user-1', role: 'USER' })
-        .mockResolvedValueOnce({ clerkId: 'clerk-user-1' });
-      prisma.user.update.mockResolvedValue({ id: 'user-1', isBanned: true });
+        .mockResolvedValueOnce({ id: 'user-1', role: 'USER', clerkId: 'clerk-user-1' });
+      prisma.user.update.mockResolvedValue({ id: 'user-1', username: 'u1', displayName: 'U1', isBanned: true, banExpiresAt: null, banReason: 'Spam' });
       mockClerkClient.users.banUser.mockRejectedValueOnce(new Error('Clerk API unavailable'));
 
-      // Should NOT throw — Clerk failure is non-fatal
       const result = await service.banUser('admin-id', 'user-1', 'Spam');
 
-      expect(result).toEqual({ id: 'user-1', isBanned: true });
+      expect(result.id).toBe('user-1');
+      expect(result.isBanned).toBe(true);
       expect(mockClerkClient.users.banUser).toHaveBeenCalledWith('clerk-user-1');
     });
 
@@ -437,19 +443,18 @@ describe('AdminService', () => {
     it('should set banExpiresAt when duration provided', async () => {
       prisma.user.findUnique
         .mockResolvedValueOnce({ role: 'ADMIN' })
-        .mockResolvedValueOnce({ id: 'user-1', role: 'USER' })
-        .mockResolvedValueOnce({ clerkId: 'clerk-user-1' });
-      prisma.user.update.mockResolvedValue({ id: 'user-1', isBanned: true });
+        .mockResolvedValueOnce({ id: 'user-1', role: 'USER', clerkId: 'clerk-user-1' });
+      prisma.user.update.mockResolvedValue({ id: 'user-1', username: 'u1', displayName: 'U1', isBanned: true, banExpiresAt: new Date(), banReason: 'Temp ban' });
 
       await service.banUser('admin-id', 'user-1', 'Temp ban', 24);
 
-      expect(prisma.user.update).toHaveBeenCalledWith({
+      expect(prisma.user.update).toHaveBeenCalledWith(expect.objectContaining({
         where: { id: 'user-1' },
         data: expect.objectContaining({
           isBanned: true,
           banExpiresAt: expect.any(Date),
         }),
-      });
+      }));
     });
 
     it('should reject non-admin', async () => {
@@ -463,9 +468,8 @@ describe('AdminService', () => {
     it('should skip Clerk call when clerkId not found', async () => {
       prisma.user.findUnique
         .mockResolvedValueOnce({ role: 'ADMIN' })
-        .mockResolvedValueOnce({ id: 'user-1', role: 'USER' })
-        .mockResolvedValueOnce(null); // no clerkId record
-      prisma.user.update.mockResolvedValue({ id: 'user-1', isBanned: true });
+        .mockResolvedValueOnce({ id: 'user-1', role: 'USER', clerkId: null }); // no clerkId
+      prisma.user.update.mockResolvedValue({ id: 'user-1', username: 'u1', displayName: 'U1', isBanned: true, banExpiresAt: null, banReason: 'Spam' });
 
       await service.banUser('admin-id', 'user-1', 'Spam');
 
@@ -478,18 +482,19 @@ describe('AdminService', () => {
       prisma.user.findUnique
         .mockResolvedValueOnce({ role: 'ADMIN' }) // admin check
         .mockResolvedValueOnce({ clerkId: 'clerk-user-1' }); // clerkId fetch
-      prisma.user.update.mockResolvedValue({ id: 'user-1', isDeactivated: false });
+      prisma.user.update.mockResolvedValue({ id: 'user-1', username: 'u1', displayName: 'U1', bio: '', isBanned: false });
 
       const result = await service.unbanUser('admin-id', 'user-1');
 
-      expect(prisma.user.update).toHaveBeenCalledWith({
+      expect(prisma.user.update).toHaveBeenCalledWith(expect.objectContaining({
         where: { id: 'user-1' },
         data: expect.objectContaining({
           isDeactivated: false,
           banReason: null,
           banExpiresAt: null,
         }),
-      });
+        select: expect.objectContaining({ id: true, username: true, bio: true }),
+      }));
       expect(mockClerkClient.users.unbanUser).toHaveBeenCalledWith('clerk-user-1');
     });
 
@@ -497,12 +502,13 @@ describe('AdminService', () => {
       prisma.user.findUnique
         .mockResolvedValueOnce({ role: 'ADMIN' })
         .mockResolvedValueOnce({ clerkId: 'clerk-user-1' });
-      prisma.user.update.mockResolvedValue({ id: 'user-1', isBanned: false });
+      prisma.user.update.mockResolvedValue({ id: 'user-1', username: 'u1', displayName: 'U1', bio: '', isBanned: false });
       mockClerkClient.users.unbanUser.mockRejectedValueOnce(new Error('Clerk API down'));
 
       const result = await service.unbanUser('admin-id', 'user-1');
 
-      expect(result).toEqual({ id: 'user-1', isBanned: false });
+      expect(result.id).toBe('user-1');
+      expect(result.isBanned).toBe(false);
     });
 
     it('should reject non-admin', async () => {

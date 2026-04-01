@@ -244,7 +244,7 @@ export class StreamService {
       // Decrement channel videosCount if the video was previously counted (PUBLISHED/PROCESSING)
       if (video.status !== 'DRAFT' && video.channelId) {
         await this.prisma.$executeRaw`
-          UPDATE "Channel"
+          UPDATE "channels"
           SET "videosCount" = GREATEST("videosCount" - 1, 0)
           WHERE id = ${video.channelId}
         `;

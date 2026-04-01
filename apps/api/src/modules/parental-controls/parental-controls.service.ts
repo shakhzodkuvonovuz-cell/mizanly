@@ -62,12 +62,28 @@ export class ParentalControlsService {
 
     const hashedPin = await hashPin(dto.pin);
 
+    // A15-#5 FIX: Use select to exclude pin hash from response
     const [control] = await this.prisma.$transaction([
       this.prisma.parentalControl.create({
         data: {
           parentUserId,
           childUserId: dto.childUserId,
           pin: hashedPin,
+        },
+        select: {
+          id: true,
+          parentUserId: true,
+          childUserId: true,
+          restrictedMode: true,
+          maxAgeRating: true,
+          dailyLimitMinutes: true,
+          dmRestriction: true,
+          canGoLive: true,
+          canPost: true,
+          canComment: true,
+          activityDigest: true,
+          createdAt: true,
+          updatedAt: true,
         },
       }),
       this.prisma.user.update({
@@ -106,9 +122,23 @@ export class ParentalControlsService {
   }
 
   async getMyChildren(parentUserId: string) {
+    // A15-#18 FIX: Use select instead of include to exclude pin hash from response
     const controls = await this.prisma.parentalControl.findMany({
       where: { parentUserId },
-      include: {
+      select: {
+        id: true,
+        parentUserId: true,
+        childUserId: true,
+        restrictedMode: true,
+        maxAgeRating: true,
+        dailyLimitMinutes: true,
+        dmRestriction: true,
+        canGoLive: true,
+        canPost: true,
+        canComment: true,
+        activityDigest: true,
+        createdAt: true,
+        updatedAt: true,
         child: {
           select: {
             id: true,
@@ -177,9 +207,29 @@ export class ParentalControlsService {
       throw new ForbiddenException('Invalid PIN');
     }
 
+    // A15-#1 FIX: Destructure pin out BEFORE passing to Prisma.
+    // The DTO's `pin` is the plaintext verification PIN. The DB `pin` column stores scrypt hashes.
+    // Spreading the DTO directly would overwrite the hash with plaintext, destroying auth.
+    const { pin: _verifiedPin, ...updateData } = dto;
+
     return this.prisma.parentalControl.update({
       where: { id: control.id },
-      data: dto,
+      data: updateData,
+      select: {
+        id: true,
+        parentUserId: true,
+        childUserId: true,
+        restrictedMode: true,
+        maxAgeRating: true,
+        dailyLimitMinutes: true,
+        dmRestriction: true,
+        canGoLive: true,
+        canPost: true,
+        canComment: true,
+        activityDigest: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
   }
 
@@ -228,9 +278,25 @@ export class ParentalControlsService {
 
     const hashedPin = await hashPin(newPin);
 
+    // A15-#6 FIX: Use select to exclude pin hash from response
     return this.prisma.parentalControl.update({
       where: { id: control.id },
       data: { pin: hashedPin },
+      select: {
+        id: true,
+        parentUserId: true,
+        childUserId: true,
+        restrictedMode: true,
+        maxAgeRating: true,
+        dailyLimitMinutes: true,
+        dmRestriction: true,
+        canGoLive: true,
+        canPost: true,
+        canComment: true,
+        activityDigest: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
   }
 

@@ -227,7 +227,7 @@ export class LiveService {
         data: { leftAt: null, joinedAt: new Date(), role: role as LiveRole },
       });
       await this.prisma.$executeRaw`
-        UPDATE "LiveSession"
+        UPDATE "live_sessions"
         SET "currentViewers" = "currentViewers" + 1,
             "peakViewers" = GREATEST("peakViewers", "currentViewers" + 1)
         WHERE id = ${sessionId}
@@ -238,7 +238,7 @@ export class LiveService {
         data: { sessionId, userId, role: role as LiveRole },
       });
       await this.prisma.$executeRaw`
-        UPDATE "LiveSession"
+        UPDATE "live_sessions"
         SET "currentViewers" = "currentViewers" + 1,
             "totalViews" = "totalViews" + 1,
             "peakViewers" = GREATEST("peakViewers", "currentViewers" + 1)
@@ -265,7 +265,7 @@ export class LiveService {
     });
     // Use GREATEST to prevent negative viewers
     await this.prisma.$executeRaw`
-      UPDATE "LiveSession"
+      UPDATE "live_sessions"
       SET "currentViewers" = GREATEST("currentViewers" - 1, 0)
       WHERE id = ${sessionId}
     `;
