@@ -101,7 +101,6 @@ export class LiveService {
   }
 
   async getActive(liveType?: string, cursor?: string, limit = 20) {
-    // A16-#10 FIX: Filter out sessions from banned/deactivated/deleted hosts
     const where: Prisma.LiveSessionWhereInput = {
       status: LiveStatus.LIVE,
       isRehearsal: false,
@@ -114,15 +113,14 @@ export class LiveService {
       }
       where.liveType = liveType as LiveType;
     }
-    if (cursor) where.id = { lt: cursor };
-
+    // A16-#6 FIX: Use Prisma cursor pagination instead of id-based filter.
+    // orderBy: currentViewers doesn't correlate with id ordering.
     const sessions = await this.prisma.liveSession.findMany({
       where,
-      // Select only fields needed for list views — excludes streamKey (credential)
-      // and other heavy fields not needed in listings
       select: LIVE_SESSION_LIST_SELECT,
       orderBy: { currentViewers: 'desc' },
       take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
     const hasMore = sessions.length > limit;
     if (hasMore) sessions.pop();
@@ -130,11 +128,13 @@ export class LiveService {
   }
 
   async getScheduled(cursor?: string, limit = 20) {
+    // A16-#7 FIX: Use Prisma cursor pagination instead of manual id filter
     const sessions = await this.prisma.liveSession.findMany({
-      where: { status: LiveStatus.SCHEDULED, scheduledAt: { gte: new Date() }, ...(cursor ? { id: { lt: cursor } } : {}) },
+      where: { status: LiveStatus.SCHEDULED, scheduledAt: { gte: new Date() } },
       select: LIVE_SESSION_LIST_SELECT,
       orderBy: { scheduledAt: 'asc' },
       take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
     const hasMore = sessions.length > limit;
     if (hasMore) sessions.pop();

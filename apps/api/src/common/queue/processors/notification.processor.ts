@@ -64,19 +64,17 @@ export class NotificationProcessor implements OnModuleInit, OnModuleDestroy {
       },
     );
 
+    // X07-#5 FIX: Merge duplicate 'completed' handlers into one
     this.worker.on('completed', (job: Job) => {
       this.logger.debug(`Notification job ${job.id} completed`);
+      const duration = job.finishedOn && job.processedOn ? job.finishedOn - job.processedOn : 0;
+      if (duration > 5000) this.logger.warn(`Job ${job.id} (${job.name}) took ${duration}ms`);
     });
 
     this.worker.on('failed', (job: Job | undefined, err: Error) => {
       this.logger.error(`Notification job ${job?.id} failed: ${err.message}`);
       Sentry.captureException(err, { tags: { queue: job?.queueName, jobId: job?.id } });
       this.queueService.moveToDlq(job, err, 'notifications').catch(() => {});
-    });
-
-    this.worker.on('completed', (job: Job) => {
-      const duration = job.finishedOn && job.processedOn ? job.finishedOn - job.processedOn : 0;
-      if (duration > 5000) this.logger.warn(`Job ${job.id} (${job.name}) took ${duration}ms`);
     });
 
     this.logger.log('Notification worker started');

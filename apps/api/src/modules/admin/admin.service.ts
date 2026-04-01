@@ -298,7 +298,7 @@ export class AdminService {
       }
     }
 
-    // Remove banned user from search index
+    // Remove banned user AND their content from search index (X04-#9)
     this.publishWorkflow.onUnpublish({
       contentType: 'user',
       contentId: targetId,
@@ -306,6 +306,11 @@ export class AdminService {
     }).catch(err => {
       const msg = err instanceof Error ? err.message : String(err);
       this.logger.warn(`Failed to remove banned user ${targetId} from search index: ${msg}`);
+    });
+
+    // X04-#9: Also remove banned user's content from search (matching reports.service.ts pattern)
+    this.removeUserContentFromSearch(targetId).catch(err => {
+      this.logger.warn(`Failed to remove banned user content from search: ${err instanceof Error ? err.message : err}`);
     });
 
     // A15-#12 FIX: Log errors instead of swallowing
@@ -371,5 +376,25 @@ export class AdminService {
     });
 
     return updatedUser;
+  }
+
+  /** X04-#9: Remove a user's content from search indexes on ban */
+  private async removeUserContentFromSearch(userId: string): Promise<void> {
+    const [posts, threads, reels, videos] = await Promise.all([
+      this.prisma.post.findMany({ where: { userId }, select: { id: true }, take: 1000 }),
+      this.prisma.thread.findMany({ where: { userId }, select: { id: true }, take: 1000 }),
+      this.prisma.reel.findMany({ where: { userId }, select: { id: true }, take: 1000 }),
+      this.prisma.video.findMany({ where: { userId }, select: { id: true }, take: 1000 }),
+    ]);
+
+    const unpublishOps = [
+      ...posts.map(p => this.publishWorkflow.onUnpublish({ contentType: 'post', contentId: p.id, userId })),
+      ...threads.map(t => this.publishWorkflow.onUnpublish({ contentType: 'thread', contentId: t.id, userId })),
+      ...reels.map(r => this.publishWorkflow.onUnpublish({ contentType: 'reel', contentId: r.id, userId })),
+      ...videos.map(v => this.publishWorkflow.onUnpublish({ contentType: 'video', contentId: v.id, userId })),
+    ];
+
+    await Promise.allSettled(unpublishOps);
+    this.logger.log(`Removed ${unpublishOps.length} content items from search for banned user ${userId}`);
   }
 }

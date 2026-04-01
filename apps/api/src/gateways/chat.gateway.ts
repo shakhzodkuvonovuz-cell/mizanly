@@ -503,14 +503,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
           ...(dto.e2eSenderRatchetKey ? { e2eSenderRatchetKey: Uint8Array.from(Buffer.from(dto.e2eSenderRatchetKey, 'base64')) } : {}),
           ...(dto.e2eCounter !== undefined ? { e2eCounter: dto.e2eCounter } : {}),
           ...(dto.e2ePreviousCounter !== undefined ? { e2ePreviousCounter: dto.e2ePreviousCounter } : {}),
-          ...(dto.e2eSenderKeyId ? { e2eSenderKeyId: dto.e2eSenderKeyId } : {}),
+          // X02-#5 FIX: Use !== undefined instead of truthy check (0 is a valid key ID)
+          ...(dto.e2eSenderKeyId !== undefined ? { e2eSenderKeyId: dto.e2eSenderKeyId } : {}),
           ...(dto.clientMessageId ? { clientMessageId: dto.clientMessageId } : {}),
           ...(dto.encryptedLastMessagePreview ? { encryptedLastMessagePreview: Uint8Array.from(Buffer.from(dto.encryptedLastMessagePreview, 'base64')) } : {}),
           _skipRedisPublish: true, // Prevent double broadcast — gateway emits directly
         } as any,
       );
-    } catch {
-      throw new WsException('Failed to send message');
+    } catch (err) {
+      // X02-#13 FIX: Preserve error context — distinguish permission vs validation vs internal errors
+      const msg = err instanceof Error ? err.message : 'Failed to send message';
+      this.logger.warn(`Message send failed for ${client.data.userId}: ${msg}`);
+      throw new WsException(msg);
     }
 
     // Broadcast to conversation room (sender doesn't receive their own message)

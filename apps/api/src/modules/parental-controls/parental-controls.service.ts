@@ -300,7 +300,8 @@ export class ParentalControlsService {
     });
   }
 
-  async getRestrictions(childUserId: string, parentUserId?: string) {
+  // A15-#14 FIX: parentUserId now required for the parent-views-child path
+  async getRestrictions(childUserId: string, parentUserId: string) {
     const control = await this.prisma.parentalControl.findUnique({
       where: { childUserId },
     });

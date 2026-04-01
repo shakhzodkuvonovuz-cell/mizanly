@@ -61,11 +61,14 @@ export async function getExcludedUserIds(
 
   const result = [...excluded];
 
-  // Cache for 60 seconds (non-blocking)
-  try {
-    await redis.set(cacheKey, JSON.stringify(result), 'EX', CACHE_TTL_SECONDS);
-  } catch {
-    // Redis failure non-blocking
+  // J07-H4 FIX: Skip Redis caching for large sets (>1000 IDs ≈ 27KB+)
+  // to avoid oversized JSON blobs. DB query with indexes is fast enough.
+  if (result.length <= 1000) {
+    try {
+      await redis.set(cacheKey, JSON.stringify(result), 'EX', CACHE_TTL_SECONDS);
+    } catch {
+      // Redis failure non-blocking
+    }
   }
 
   return result;
