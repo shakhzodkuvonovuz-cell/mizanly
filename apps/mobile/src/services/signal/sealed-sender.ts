@@ -56,7 +56,7 @@ import {
   ed25519Verify,
   constantTimeEqual,
 } from './crypto';
-import { loadIdentityKeyPair, loadKnownIdentityKey, storeKnownIdentityKey, secureStore, secureLoad, HMAC_TYPE } from './storage';
+import { loadIdentityKeyPair, loadKnownIdentityKey, storeKnownIdentityKey, secureStore, secureLoad, HMAC_TYPE, withSessionLock } from './storage';
 
 const SEALED_SENDER_INFO = 'MizanlySealedSender';
 
@@ -143,6 +143,10 @@ export async function sealMessage(
   }
 
   // F13: Include timestamp + counter for replay protection
+  // F06-#6: Counter overflow check (JS Number.MAX_SAFE_INTEGER = 2^53-1)
+  if (sealedSenderCounter >= Number.MAX_SAFE_INTEGER) {
+    throw new Error('Sealed sender counter exhausted — re-register identity');
+  }
   sealedSenderCounter++;
   // V7-F8 FIX: Fail the seal on counter persist failure instead of swallowing.
   // Previously: counter incremented in memory but persist failure silently ignored.
@@ -236,6 +240,7 @@ export async function unsealMessage(
   zeroOut(nonce);
 
   const raw = JSON.parse(utf8Decode(plaintext));
+  zeroOut(plaintext); // F06-#9: zero decrypted plaintext (contains senderId in sealed context)
 
   // V7-F1 FIX: Validate all inner fields before processing. Previously, non-numeric
   // ctr values (strings, objects, NaN) poisoned the replay counter permanently:

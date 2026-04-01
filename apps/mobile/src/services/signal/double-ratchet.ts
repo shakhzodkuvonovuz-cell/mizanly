@@ -217,10 +217,11 @@ export function ratchetEncrypt(
   const headerBytes = serializeHeader(header);
   const ciphertext = aeadEncrypt(encKey, nonce, paddedPlaintext, headerBytes);
 
-  // Clean up message key (forward secrecy — this key is never stored)
+  // Clean up message key and plaintext (forward secrecy)
   zeroOut(messageKey);
   zeroOut(encKey);
   zeroOut(nonce);
+  zeroOut(paddedPlaintext); // F05-#2: zero padded plaintext after encryption
 
   return { header, ciphertext };
 }
@@ -314,6 +315,7 @@ export function ratchetDecrypt(
 
   // Remove padding (Finding 8)
   const plaintext = unpadMessage(paddedPlaintext);
+  zeroOut(paddedPlaintext); // F05-#3: zero padded plaintext after unpadding
 
   // Clean up (forward secrecy)
   zeroOut(messageKey);
@@ -350,26 +352,35 @@ function dhRatchetStep(state: SessionState, theirNewRatchetKey: Uint8Array): voi
 
   // Derive new receiving chain
   const dhReceive = x25519DH(state.senderRatchetKeyPair.privateKey, theirNewRatchetKey);
-  // V4-F1: Check DH output for all-zeros (small-subgroup attack protection).
-  // A malicious ratchet key could be the identity point, producing predictable output.
   assertNonZeroDH(dhReceive, 'ratchet-receive');
+  // F05-#1: Zero old rootKey before overwriting
+  const oldRootKey = state.rootKey;
   const { rootKey: rootKey1, chainKey: receivingChainKey } = kdfRK(state.rootKey, dhReceive);
   zeroOut(dhReceive);
+  zeroOut(oldRootKey); // F05-#1: old root key zeroed
 
+  // F05-#1: Zero old receiving chain key before overwriting
+  if (state.receivingChain) {
+    zeroOut(state.receivingChain.chainKey);
+  }
   state.rootKey = rootKey1;
   state.receivingChain = { chainKey: receivingChainKey, counter: 0 };
 
   // Generate new sender ratchet key pair
   const oldKeyPair = state.senderRatchetKeyPair;
+  // F05-#1: Zero old sending chain key before overwriting
+  zeroOut(state.sendingChain.chainKey);
   state.senderRatchetKeyPair = generateX25519KeyPair();
   zeroOut(oldKeyPair.privateKey);
 
   // Derive new sending chain
   const dhSend = x25519DH(state.senderRatchetKeyPair.privateKey, theirNewRatchetKey);
-  // V4-F1: Same check for sending chain DH output
   assertNonZeroDH(dhSend, 'ratchet-send');
+  // F05-#1: Zero intermediate rootKey1 before overwriting
+  const oldRootKey1 = state.rootKey;
   const { rootKey: rootKey2, chainKey: sendingChainKey } = kdfRK(state.rootKey, dhSend);
   zeroOut(dhSend);
+  zeroOut(oldRootKey1); // F05-#1: intermediate root key zeroed
 
   state.rootKey = rootKey2;
   state.sendingChain = { chainKey: sendingChainKey, counter: 0 };

@@ -68,6 +68,8 @@ export async function createInitiatorSession(
   const x3dhResult = await initiateX3DH(bundle, recipientId);
   const localRegId = await getOrCreateRegistrationId();
   const sessionState = createInitiatorSessionState(x3dhResult, localRegId);
+  // F03-#3: Zero X3DH shared secret after use (consumed by HKDF in session state creation)
+  zeroOut(x3dhResult.sharedSecret);
 
   // Acquire session lock for persisting
   const sessionId = `${recipientId}:${deviceId}`;
@@ -80,8 +82,9 @@ export async function createInitiatorSession(
       // First successful decrypt determines which wins.
       existing.previousSessions.push(sessionState);
       // Cap previous sessions to prevent unbounded growth
-      if (existing.previousSessions.length > 5) {
-        existing.previousSessions.shift();
+      while (existing.previousSessions.length > 5) {
+        const evicted = existing.previousSessions.shift();
+        if (evicted) zeroSessionKeys(evicted); // F05-#17: zero evicted session keys
       }
       await storeSessionRecord(recipientId, deviceId, existing);
     } else {
@@ -160,6 +163,11 @@ export async function createResponderSession(
     localRegId,
     preKeyMsg.registrationId,
   );
+  // F03-#3: Zero X3DH shared secret and signedPreKeyPrivate after use
+  zeroOut(x3dhResult.sharedSecret);
+  zeroOut(x3dhResult.signedPreKeyPrivate);
+  // F04-#5: Zero PQ secret key after respondX3DH consumed it
+  if (pqSecretKey) zeroOut(pqSecretKey);
 
   // Acquire session lock for persisting
   const sessionId = `${senderId}:${senderDeviceId}`;
@@ -171,8 +179,9 @@ export async function createResponderSession(
       // Move current active to previous, make this the new active.
       existing.previousSessions.push(existing.activeSession);
       existing.activeSession = sessionState;
-      if (existing.previousSessions.length > 5) {
-        existing.previousSessions.shift();
+      while (existing.previousSessions.length > 5) {
+        const evicted = existing.previousSessions.shift();
+        if (evicted) zeroSessionKeys(evicted); // F05-#17
       }
       await storeSessionRecord(senderId, senderDeviceId, existing);
     } else {
@@ -222,9 +231,21 @@ export async function encryptMessage(
       );
     }
 
-    const message = ratchetEncrypt(record.activeSession, plaintextBytes);
-    await storeSessionRecord(recipientId, deviceId, record);
-    return message;
+    // F05-#4: Clone session state before ratchetEncrypt. If storeSessionRecord
+    // throws after ratchetEncrypt has mutated the active session (advanced chain key,
+    // incremented counter), the in-memory state would be ahead of the persisted state.
+    // On retry, the old persisted state would be reloaded, but the message was
+    // encrypted with keys derived from the advanced state — permanent desync.
+    const clone = cloneSessionState(record.activeSession);
+    try {
+      const message = ratchetEncrypt(clone, plaintextBytes);
+      record.activeSession = clone;
+      await storeSessionRecord(recipientId, deviceId, record);
+      return message;
+    } catch (e) {
+      zeroSessionKeys(clone); // F05-#9: zero clone on failure
+      throw e;
+    }
   });
 }
 
@@ -310,6 +331,7 @@ export async function decryptMessage(
       winningIndex = -1;
     } catch {
       // Active session clone failed — original is untouched
+      zeroSessionKeys(activeClone); // F05-#9: zero failed clone
     }
 
     if (!winningSession) {
@@ -323,6 +345,7 @@ export async function decryptMessage(
           break;
         } catch {
           // This clone failed — original previous session untouched
+          zeroSessionKeys(prevClone); // F05-#9: zero failed clone
         }
       }
     }

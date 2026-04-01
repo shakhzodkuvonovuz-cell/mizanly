@@ -536,6 +536,7 @@ export async function distributeSenderKeyToMembers(
   const retryChainId = state.chainId;
   const retryGeneration = state.generation;
   zeroOut(serialized);
+  zeroOut(state.chainKey); // F06-#5: zero chain key from loaded state after distribution
 
   // F21 FIX: Retry distribution for unacknowledged members after 30 seconds.
   // V6-F6 FIX: Key material is re-loaded from MMKV (not captured from the outer scope).
