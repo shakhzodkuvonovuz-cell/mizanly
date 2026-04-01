@@ -3391,7 +3391,20 @@
     "styleEmoji": "ইমোজি",
     "styleGeometric": "জ্যামিতিক",
     "styleKawaii": "কাওয়াই",
-    "dailyLimitReached": "আপনি দৈনিক স্টিকার সীমায় পৌঁছেছেন"
+    "dailyLimitReached": "আপনি দৈনিক স্টিকার সীমায় পৌঁছেছেন",
+    "title": "স্টিকার",
+    "recent": "সাম্প্রতিক",
+    "myPacks": "আমার প্যাক",
+    "recentlyUsed": "সম্প্রতি ব্যবহৃত",
+    "selectPack": "প্যাক নির্বাচন করুন",
+    "addMore": "আরও যোগ করুন",
+    "stickerPacks": "স্টিকার প্যাক",
+    "searchResults": "অনুসন্ধান ফলাফল",
+    "allStickerPacks": "সব স্টিকার প্যাক",
+    "featured": "বৈশিষ্ট্যযুক্ত",
+    "added": "যোগ করা হয়েছে",
+    "add": "যোগ করুন",
+    "stickersCount": "{{count}} স্টিকার"
   },
   "encryption": {
     "verified": "এনক্রিপশন যাচাই করা হয়েছে",
@@ -4229,5 +4242,22 @@
     "scheduled": "Post scheduled",
     "scheduleButton": "Schedule",
     "today": "Today"
+  },
+  "call": {
+    "inProgress": "কল চলছে",
+    "tapToReturn": "ফিরতে ট্যাপ করুন",
+    "returnToCall": "{{name}}-এর সাথে কলে ফিরুন",
+    "user": "ব্যবহারকারী"
+  },
+  "social": {
+    "likedBy": "পছন্দ করেছে",
+    "and": "এবং",
+    "other": "জন",
+    "others": "জন"
+  },
+  "emoji": {
+    "searchPlaceholder": "ইমোজি খুঁজুন...",
+    "noRecent": "কোনো সাম্প্রতিক ইমোজি নেই",
+    "noResults": "কোনো ইমোজি পাওয়া যায়নি"
   }
 }

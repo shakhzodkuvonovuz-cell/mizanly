@@ -230,7 +230,8 @@ class ApiClient {
 
     let res: Response;
     try {
-      res = await fetch(`${API_URL}${path}`, {
+      const url = path.startsWith('http://') || path.startsWith('https://') ? path : `${API_URL}${path}`;
+      res = await fetch(url, {
         ...options,
         headers: {
           ...(options.body ? { 'Content-Type': 'application/json' } : {}),
@@ -290,7 +291,7 @@ class ApiClient {
         throw new ApiError('Session expired', 401, 'SESSION_EXPIRED');
       }
 
-      const error = await res.json().catch(() => ({ message: 'Request failed' }));
+      const error = await res.json().catch(() => ({ message: res.statusText || 'Request failed' }));
       if (__DEV__) console.error(`[API] ${options.method || 'GET'} ${path} → ${res.status}`, error);
       throw new ApiError(error.message || `HTTP ${res.status}`, res.status);
     }
@@ -1116,11 +1117,11 @@ export const broadcastApi = {
     api.get<PaginatedResponse<BroadcastMessage>>(`/broadcast/${id}/messages${cursor ? `?cursor=${cursor}` : ''}`),
   sendMessage: (id: string, data: { content: string; mediaUrls?: string[]; mediaTypes?: string[] }) =>
     api.post<BroadcastMessage>(`/broadcast/${id}/messages`, data),
-  pinMessage: (_channelId: string, messageId: string) =>
+  pinMessage: (messageId: string) =>
     api.patch(`/broadcast/messages/${messageId}/pin`),
-  unpinMessage: (_channelId: string, messageId: string) =>
+  unpinMessage: (messageId: string) =>
     api.delete(`/broadcast/messages/${messageId}/pin`),
-  deleteMessage: (_channelId: string, messageId: string) =>
+  deleteMessage: (messageId: string) =>
     api.delete(`/broadcast/messages/${messageId}`),
   getPinnedMessages: (id: string) =>
     api.get<BroadcastMessage[]>(`/broadcast/${id}/pinned`),
@@ -1239,15 +1240,15 @@ export const channelPostsApi = {
     api.get<PaginatedResponse<ChannelPost>>(`/channel-posts/channel/${channelId}${cursor ? `?cursor=${cursor}` : ''}`),
   create: (channelId: string, data: { content: string; postType?: string; mediaUrls?: string[]; mediaTypes?: string[] }) =>
     api.post<ChannelPost>(`/channel-posts/${channelId}`, data),
-  like: (channelId: string, postId: string) =>
+  like: (postId: string) =>
     api.post(`/channel-posts/${postId}/like`),
-  unlike: (channelId: string, postId: string) =>
+  unlike: (postId: string) =>
     api.delete(`/channel-posts/${postId}/like`),
-  delete: (channelId: string, postId: string) =>
+  delete: (postId: string) =>
     api.delete(`/channel-posts/${postId}`),
-  getComments: (channelId: string, postId: string, cursor?: string) =>
+  getComments: (postId: string, cursor?: string) =>
     api.get<PaginatedResponse<Comment>>(`/channel-posts/${postId}/comments${cursor ? `?cursor=${cursor}` : ''}`),
-  addComment: (channelId: string, postId: string, content: string) =>
+  addComment: (postId: string, content: string) =>
     api.post(`/channel-posts/${postId}/comments`, { content }),
 };
 

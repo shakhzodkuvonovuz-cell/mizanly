@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, memo } from 'react';
 import {
   View,
   Text,
@@ -38,7 +38,7 @@ function formatCount(count: number): string {
   return count.toLocaleString();
 }
 
-export function AddYoursSticker({
+export const AddYoursSticker = memo(function AddYoursSticker({
   chainId,
   prompt,
   participantCount,
@@ -129,7 +129,7 @@ export function AddYoursSticker({
       </View>
     </Animated.View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

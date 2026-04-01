@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, memo } from 'react';
 import {
   View,
   Text,
@@ -98,7 +98,7 @@ const waveStyles = StyleSheet.create({
  * Music sticker overlay — displays on stories with song info,
  * animated waveform, or scrolling lyrics.
  */
-export function MusicSticker({ data, isPlaying = true, style }: MusicStickerProps) {
+export const MusicSticker = memo(function MusicSticker({ data, isPlaying = true, style }: MusicStickerProps) {
   const tc = useThemeColors();
   const { t } = useTranslation();
 
@@ -229,7 +229,7 @@ export function MusicSticker({ data, isPlaying = true, style }: MusicStickerProp
       )}
     </Animated.View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   // ── Compact mode (pill shape) ──

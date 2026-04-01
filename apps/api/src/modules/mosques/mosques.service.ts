@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { MadhhabType, MosqueMemberRole } from '@prisma/client';
 
 @Injectable()
 export class MosquesService {
@@ -45,7 +46,7 @@ export class MosquesService {
     country: string;
     latitude: number;
     longitude: number;
-    madhab?: string;
+    madhab?: MadhhabType;
     language?: string;
     phone?: string;
     website?: string;
@@ -57,7 +58,7 @@ export class MosquesService {
 
     // Auto-join the creator as admin
     await this.prisma.mosqueMembership.create({
-      data: { mosqueId: mosque.id, userId, role: 'admin' },
+      data: { mosqueId: mosque.id, userId, role: 'admin' as MosqueMemberRole },
     });
 
     return mosque;
@@ -100,9 +101,9 @@ export class MosquesService {
     if (!membership) throw new NotFoundException('Not a member of this mosque');
 
     // Prevent last admin from leaving
-    if (membership.role === 'admin') {
+    if (membership.role === ('admin' as MosqueMemberRole)) {
       const adminCount = await this.prisma.mosqueMembership.count({
-        where: { mosqueId, role: 'admin' },
+        where: { mosqueId, role: 'admin' as MosqueMemberRole },
       });
       if (adminCount <= 1) {
         throw new BadRequestException('Cannot leave — you are the last admin. Transfer admin role first.');

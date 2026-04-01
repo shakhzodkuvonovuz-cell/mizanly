@@ -4,10 +4,9 @@ import {
   Text,
   StyleSheet,
   Linking,
-  Image,
-  Dimensions,
   Pressable,
 } from 'react-native';
+import { Image } from 'expo-image';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from './Icon';
@@ -16,8 +15,6 @@ import { colors, spacing, radius, fontSize, shadow } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useTranslation } from '@/hooks/useTranslation';
 import { api } from '@/services/api';
-
-const { width: screenWidth } = Dimensions.get('window');
 
 export interface LinkPreviewProps {
   url: string;
@@ -138,7 +135,8 @@ export const LinkPreview = memo(function LinkPreview({ url, onPress }: LinkPrevi
               <Image
                 source={{ uri: metadata.imageUrl }}
                 style={styles.previewImage}
-                resizeMode="cover"
+                contentFit="cover"
+                transition={200}
                 accessibilityLabel={metadata?.title ? `Preview image for ${metadata.title}` : 'Link preview image'}
               />
               <LinearGradient

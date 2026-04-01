@@ -3391,7 +3391,20 @@
     "styleEmoji": "Emoji",
     "styleGeometric": "Geometri",
     "styleKawaii": "Kawaii",
-    "dailyLimitReached": "Anda telah mencapai had pelekat harian"
+    "dailyLimitReached": "Anda telah mencapai had pelekat harian",
+    "title": "Pelekat",
+    "recent": "Terbaru",
+    "myPacks": "Pek Saya",
+    "recentlyUsed": "Baru Digunakan",
+    "selectPack": "Pilih pek",
+    "addMore": "Tambah lagi",
+    "stickerPacks": "Pek Pelekat",
+    "searchResults": "Hasil Carian",
+    "allStickerPacks": "Semua Pek Pelekat",
+    "featured": "Ditampilkan",
+    "added": "Ditambah",
+    "add": "Tambah",
+    "stickersCount": "{{count}} pelekat"
   },
   "encryption": {
     "verified": "Penyulitan disahkan",
@@ -4229,5 +4242,22 @@
     "scheduled": "Post scheduled",
     "scheduleButton": "Schedule",
     "today": "Today"
+  },
+  "call": {
+    "inProgress": "Panggilan sedang berlangsung",
+    "tapToReturn": "Ketik untuk kembali",
+    "returnToCall": "Kembali ke panggilan dengan {{name}}",
+    "user": "pengguna"
+  },
+  "social": {
+    "likedBy": "Disukai oleh",
+    "and": "dan",
+    "other": "lagi",
+    "others": "lagi"
+  },
+  "emoji": {
+    "searchPlaceholder": "Cari emoji...",
+    "noRecent": "Tiada emoji terbaru",
+    "noResults": "Tiada emoji dijumpai"
   }
 }

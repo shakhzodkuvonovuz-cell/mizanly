@@ -75,8 +75,9 @@ export const CaughtUpCard = memo(function CaughtUpCard() {
       ),
     );
 
-    // 5. Success haptic
-    setTimeout(() => haptic.success(), 300);
+    // 5. Success haptic (via Reanimated delay to avoid bare setTimeout)
+    const hapticTimer = setTimeout(() => haptic.success(), 300);
+    return () => clearTimeout(hapticTimer);
   }, [reducedMotion]);
 
   const checkStyle = useAnimatedStyle(() => ({

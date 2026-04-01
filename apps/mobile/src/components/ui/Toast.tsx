@@ -94,10 +94,13 @@ function ToastItem({ toast, index }: ToastItemProps) {
   const opacity = useSharedValue(0);
   const progressWidth = useSharedValue(1); // 1 = full, 0 = empty
 
+  const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const dismiss = useCallback(() => {
     if (isDismissed.current) return;
     isDismissed.current = true;
     if (timerRef.current) clearTimeout(timerRef.current);
+    if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
 
     if (reducedMotion) {
       dismissToast(toast.id);
@@ -108,7 +111,7 @@ function ToastItem({ toast, index }: ToastItemProps) {
     opacity.value = withTiming(0, { duration: animation.timing.normal });
 
     // Remove from store after exit animation completes
-    setTimeout(() => {
+    exitTimerRef.current = setTimeout(() => {
       dismissToast(toast.id);
     }, animation.timing.normal);
   }, [toast.id, dismissToast, reducedMotion, translateY, opacity]);
@@ -141,6 +144,7 @@ function ToastItem({ toast, index }: ToastItemProps) {
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
+      if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
     };
   }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 

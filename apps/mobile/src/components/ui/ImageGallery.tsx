@@ -84,6 +84,10 @@ export const ImageGallery = memo(function ImageGallery({
       StatusBar.setHidden(false, 'fade');
       entranceProgress.value = 0;
     }
+    // Restore StatusBar if parent unmounts gallery without setting visible=false
+    return () => {
+      StatusBar.setHidden(false, 'fade');
+    };
   }, [visible, initialIndex, resetImageState, dismissY, backdropOpacity, entranceProgress]);
 
   // Reset when switching images
@@ -249,6 +253,8 @@ export const ImageGallery = memo(function ImageGallery({
           onPressIn={closePress.onPressIn}
           onPressOut={closePress.onPressOut}
           hitSlop={16}
+          accessibilityRole="button"
+          accessibilityLabel="Close gallery"
         >
           <BlurView intensity={glass.medium.blurIntensity} tint="dark" style={styles.glassButtonInner}>
             <Icon name="x" size="md" color={colors.text.primary} />
@@ -264,6 +270,8 @@ export const ImageGallery = memo(function ImageGallery({
           onPressIn={sharePress.onPressIn}
           onPressOut={sharePress.onPressOut}
           hitSlop={16}
+          accessibilityRole="button"
+          accessibilityLabel="Share image"
         >
           <BlurView intensity={glass.medium.blurIntensity} tint="dark" style={styles.glassButtonInner}>
             <Icon name="share" size="md" color={colors.text.primary} />

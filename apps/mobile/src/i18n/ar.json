@@ -3385,7 +3385,20 @@
     "styleEmoji": "إيموجي",
     "styleGeometric": "هندسي",
     "styleKawaii": "كاواي",
-    "dailyLimitReached": "لقد وصلت إلى حد الملصقات اليومي"
+    "dailyLimitReached": "لقد وصلت إلى حد الملصقات اليومي",
+    "title": "ملصقات",
+    "recent": "الأخيرة",
+    "myPacks": "حزمي",
+    "recentlyUsed": "المستخدمة مؤخراً",
+    "selectPack": "اختر حزمة",
+    "addMore": "أضف المزيد",
+    "stickerPacks": "حزم الملصقات",
+    "searchResults": "نتائج البحث",
+    "allStickerPacks": "كل حزم الملصقات",
+    "featured": "مميزة",
+    "added": "مضافة",
+    "add": "إضافة",
+    "stickersCount": "{{count}} ملصقات"
   },
   "encryption": {
     "verified": "تم التحقق من التشفير",
@@ -4223,5 +4236,22 @@
     "scheduled": "Post scheduled",
     "scheduleButton": "Schedule",
     "today": "Today"
+  },
+  "call": {
+    "inProgress": "مكالمة جارية",
+    "tapToReturn": "اضغط للعودة",
+    "returnToCall": "العودة إلى المكالمة مع {{name}}",
+    "user": "مستخدم"
+  },
+  "social": {
+    "likedBy": "أُعجب",
+    "and": "و",
+    "other": "آخر",
+    "others": "آخرون"
+  },
+  "emoji": {
+    "searchPlaceholder": "ابحث عن رموز تعبيرية...",
+    "noRecent": "لا توجد رموز تعبيرية حديثة",
+    "noResults": "لا توجد رموز تعبيرية"
   }
 }

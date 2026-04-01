@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, memo } from 'react';
 import { View, StyleSheet, Pressable, Text, TextInput } from 'react-native';
 import Svg, { Path, G, Defs, Rect } from 'react-native-svg';
 // Mask import — type declarations may be incomplete for some RN SVG versions
@@ -88,7 +88,7 @@ const MIN_MOVE_DISTANCE = 1.5; // minimum px to register a new point
 // Component
 // ---------------------------------------------------------------------------
 
-export function DrawingCanvas({
+export const DrawingCanvas = memo(function DrawingCanvas({
   visible,
   onClose,
   onSave,
@@ -556,7 +556,7 @@ export function DrawingCanvas({
       </View>
     </Animated.View>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Styles

@@ -3441,7 +3441,20 @@
     "styleEmoji": "Emoji",
     "styleGeometric": "Geometric",
     "styleKawaii": "Kawaii",
-    "dailyLimitReached": "You've reached your daily sticker limit"
+    "dailyLimitReached": "You've reached your daily sticker limit",
+    "title": "Stickers",
+    "recent": "Recent",
+    "myPacks": "My Packs",
+    "recentlyUsed": "Recently Used",
+    "selectPack": "Select a pack",
+    "addMore": "Add more",
+    "stickerPacks": "Sticker Packs",
+    "searchResults": "Search Results",
+    "allStickerPacks": "All Sticker Packs",
+    "featured": "Featured",
+    "added": "Added",
+    "add": "Add",
+    "stickersCount": "{{count}} stickers"
   },
   "encryption": {
     "verified": "Encryption verified",
@@ -4228,5 +4241,22 @@
     "scheduled": "Post scheduled",
     "scheduleButton": "Schedule",
     "today": "Today"
+  },
+  "call": {
+    "inProgress": "Call in progress",
+    "tapToReturn": "Tap to return",
+    "returnToCall": "Return to call with {{name}}",
+    "user": "user"
+  },
+  "social": {
+    "likedBy": "Liked by",
+    "and": "and",
+    "other": "other",
+    "others": "others"
+  },
+  "emoji": {
+    "searchPlaceholder": "Search emojis...",
+    "noRecent": "No recent emojis yet",
+    "noResults": "No emojis found"
   }
 }

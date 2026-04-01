@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Prisma, PlaylistCollabRole } from '@prisma/client';
 import { CreatePlaylistDto } from './dto/create-playlist.dto';
 import { UpdatePlaylistDto } from './dto/update-playlist.dto';
 import { AddCollaboratorDto } from './dto/collaborator.dto';
@@ -390,7 +390,7 @@ export class PlaylistsService {
         data: {
           playlistId,
           userId: dto.userId,
-          role: dto.role ?? 'editor',
+          role: (dto.role ?? 'editor') as PlaylistCollabRole,
           addedById: userId,
         },
         include: {
@@ -476,7 +476,7 @@ export class PlaylistsService {
 
     return this.prisma.playlistCollaborator.update({
       where: { playlistId_userId: { playlistId, userId: collaboratorUserId } },
-      data: { role },
+      data: { role: role as PlaylistCollabRole },
       include: {
         user: {
           select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true },

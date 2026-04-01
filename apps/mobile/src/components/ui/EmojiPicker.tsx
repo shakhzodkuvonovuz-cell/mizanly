@@ -13,6 +13,7 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 
 // ── Types ──
@@ -114,9 +115,10 @@ const EmojiCell = memo(function EmojiCell({
   );
 });
 
-export function EmojiPicker({ onSelect, visible, onClose }: EmojiPickerProps) {
+export const EmojiPicker = memo(function EmojiPicker({ onSelect, visible, onClose }: EmojiPickerProps) {
   const tc = useThemeColors();
   const haptic = useContextualHaptic();
+  const { t } = useTranslation();
   const [activeCategory, setActiveCategory] = useState<CategoryKey>('smileys');
   const [searchQuery, setSearchQuery] = useState('');
   const [recentEmojis, setRecentEmojis] = useState<string[]>([]);
@@ -198,7 +200,7 @@ export function EmojiPicker({ onSelect, visible, onClose }: EmojiPickerProps) {
           <Icon name="search" size="sm" color={tc.text.tertiary} />
           <TextInput
             style={[styles.searchInput, { color: tc.text.primary }]}
-            placeholder="Search emojis..."
+            placeholder={t('emoji.searchPlaceholder')}
             placeholderTextColor={tc.text.tertiary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -250,8 +252,8 @@ export function EmojiPicker({ onSelect, visible, onClose }: EmojiPickerProps) {
           <View style={styles.emptyContainer}>
             <Text style={[styles.emptyText, { color: tc.text.secondary }]}>
               {activeCategory === 'recent'
-                ? 'No recent emojis yet'
-                : 'No emojis found'}
+                ? t('emoji.noRecent')
+                : t('emoji.noResults')}
             </Text>
           </View>
         ) : (
@@ -273,7 +275,7 @@ export function EmojiPicker({ onSelect, visible, onClose }: EmojiPickerProps) {
       </View>
     </BottomSheet>
   );
-}
+});
 
 // ── Styles ──
 

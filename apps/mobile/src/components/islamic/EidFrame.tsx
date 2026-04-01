@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radius, fontSize } from '@/theme';
@@ -20,7 +20,7 @@ const OCCASION_CONFIG: Record<Occasion, { greeting: string; greetingAr: string; 
   'hijri-new-year': { greeting: 'Happy Islamic New Year', greetingAr: 'سنة هجرية مباركة', colors: ['#0A7B4F', '#0D9462'] },
 };
 
-export function EidFrame({ occasion, children }: EidFrameProps) {
+export const EidFrame = memo(function EidFrame({ occasion, children }: EidFrameProps) {
   const tc = useThemeColors();
   const config = OCCASION_CONFIG[occasion];
 
@@ -54,7 +54,7 @@ export function EidFrame({ occasion, children }: EidFrameProps) {
       </LinearGradient>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

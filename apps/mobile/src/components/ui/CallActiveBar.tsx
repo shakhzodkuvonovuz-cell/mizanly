@@ -3,12 +3,14 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { useStore } from '@/store';
 import { Icon } from './Icon';
 import { navigate } from '@/utils/navigation';
+import { useTranslation } from '@/hooks/useTranslation';
 
 /**
  * Floating bar shown when an active call is in progress but the user
  * has navigated away from the call screen. Tap to return.
  */
 export function CallActiveBar() {
+  const { t } = useTranslation();
   const activeCallId = useStore(s => s.activeCallId);
   const activeCallName = useStore(s => s.activeCallName);
   const duration = useStore(s => s.activeCallDuration);
@@ -24,15 +26,15 @@ export function CallActiveBar() {
       style={styles.bar}
       onPress={() => navigate(`/(screens)/call/${activeCallId}`)}
       accessibilityRole="button"
-      accessibilityLabel={`Return to call with ${activeCallName || 'user'}`}
+      accessibilityLabel={t('call.returnToCall', { name: activeCallName || t('call.user') })}
     >
       <View style={styles.dot} />
       <Icon name="phone" size="sm" color="#fff" />
       <Text style={styles.text} numberOfLines={1}>
-        {activeCallName || 'Call in progress'}
+        {activeCallName || t('call.inProgress')}
       </Text>
       <Text style={styles.duration}>{durationText}</Text>
-      <Text style={styles.tapHint}>Tap to return</Text>
+      <Text style={styles.tapHint}>{t('call.tapToReturn')}</Text>
     </Pressable>
   );
 }

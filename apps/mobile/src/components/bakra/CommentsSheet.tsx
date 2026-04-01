@@ -13,6 +13,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { showToast } from '@/components/ui/Toast';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -52,8 +53,9 @@ const CommentItem = memo(function CommentItem({ item, reelUserId, reelId, onRepl
     );
     try {
       await api.post(`/reels/${reelId}/comments/${item.id}/like`);
-    } catch {
-      // Silently fail — backend endpoint may not exist yet
+    } catch (err) {
+      if (__DEV__) console.warn('[CommentsSheet] Like failed:', err);
+      showToast({ message: t('common.actionFailed'), variant: 'error' });
     }
   };
 

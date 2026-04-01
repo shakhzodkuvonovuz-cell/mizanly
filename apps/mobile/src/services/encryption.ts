@@ -22,19 +22,21 @@ class DeprecatedEncryptionService {
 
   async encryptMessage(
     _conversationId: string,
-    content: string,
+    _content: string,
   ): Promise<{ ciphertext: string; nonce: string }> {
-    // Pass through unencrypted — old system was dead code anyway
-    return { ciphertext: content, nonce: '' };
+    throw new Error(
+      'DeprecatedEncryptionService.encryptMessage() is disabled. Use signal service: import { signalService } from "@/services/signal"'
+    );
   }
 
   async decryptMessage(
     _conversationId: string,
-    ciphertext: string,
+    _ciphertext: string,
     _nonce: string | null,
   ): Promise<string> {
-    // Pass through — old messages were never actually encrypted
-    return ciphertext;
+    throw new Error(
+      'DeprecatedEncryptionService.decryptMessage() is disabled. Use signal service: import { signalService } from "@/services/signal"'
+    );
   }
 
   getFingerprint(): string {

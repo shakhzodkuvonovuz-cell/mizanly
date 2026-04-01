@@ -38,8 +38,13 @@ const BLOCK_THRESHOLD = 0.6;
 // Threshold for warning — flag but allow
 const WARN_THRESHOLD = 0.3;
 
+// Type for nsfwjs model (avoiding any in non-test code)
+interface NSFWModel {
+  classify(input: unknown): Promise<Array<{ className: string; probability: number }>>;
+}
+
 // Lazy-loaded references
-let nsfwModel: any = null;
+let nsfwModel: NSFWModel | null = null;
 let tfReady = false;
 let loadAttempted = false;
 let loadFailed = false;

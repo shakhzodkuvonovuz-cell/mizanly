@@ -3392,7 +3392,20 @@
     "styleEmoji": "Emoji",
     "styleGeometric": "Geometris",
     "styleKawaii": "Kawaii",
-    "dailyLimitReached": "Anda telah mencapai batas stiker harian"
+    "dailyLimitReached": "Anda telah mencapai batas stiker harian",
+    "title": "Stiker",
+    "recent": "Terbaru",
+    "myPacks": "Paket Saya",
+    "recentlyUsed": "Baru Digunakan",
+    "selectPack": "Pilih paket",
+    "addMore": "Tambah lagi",
+    "stickerPacks": "Paket Stiker",
+    "searchResults": "Hasil Pencarian",
+    "allStickerPacks": "Semua Paket Stiker",
+    "featured": "Unggulan",
+    "added": "Ditambahkan",
+    "add": "Tambah",
+    "stickersCount": "{{count}} stiker"
   },
   "encryption": {
     "verified": "Enkripsi terverifikasi",
@@ -4230,5 +4243,22 @@
     "scheduled": "Post scheduled",
     "scheduleButton": "Schedule",
     "today": "Today"
+  },
+  "call": {
+    "inProgress": "Panggilan berlangsung",
+    "tapToReturn": "Ketuk untuk kembali",
+    "returnToCall": "Kembali ke panggilan dengan {{name}}",
+    "user": "pengguna"
+  },
+  "social": {
+    "likedBy": "Disukai oleh",
+    "and": "dan",
+    "other": "lainnya",
+    "others": "lainnya"
+  },
+  "emoji": {
+    "searchPlaceholder": "Cari emoji...",
+    "noRecent": "Belum ada emoji terbaru",
+    "noResults": "Emoji tidak ditemukan"
   }
 }

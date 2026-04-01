@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, memo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
   View,
@@ -8,10 +8,10 @@ import {
   Image,
   TextInput,
   SafeAreaView,
-  RefreshControl,
   Pressable,
 } from 'react-native';
 import { Icon } from '@/components/ui/Icon';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { BottomSheet } from '@/components/ui/BottomSheet';
@@ -50,7 +50,7 @@ interface StickerPackBrowserProps {
 }
 
 
-export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
+export const StickerPackBrowser = memo(function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
   const tc = useThemeColors();
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
@@ -264,7 +264,7 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
             color={item.isOwned ? colors.emerald : colors.text.primary}
           />
           <Text style={styles.packActionText}>
-            {item.isOwned ? 'Added' : 'Add'}
+            {item.isOwned ? t('stickers.added') : t('stickers.add')}
           </Text>
         </Pressable>
       </View>
@@ -341,10 +341,9 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
             keyExtractor={item => item.id}
             contentContainerStyle={styles.listContent}
             refreshControl={
-              <RefreshControl
+              <BrandedRefreshControl
                 refreshing={refreshing}
                 onRefresh={handleRefresh}
-                tintColor={colors.emerald}
               />
             }
             onEndReached={handleLoadMore}
@@ -368,7 +367,7 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
                 )}
                 {/* All packs title */}
                 <Text style={styles.sectionTitle}>
-                  {searchQuery ? 'Search Results' : 'All Sticker Packs'}
+                  {searchQuery ? t('stickers.searchResults') : t('stickers.allStickerPacks')}
                 </Text>
               </>
             }
@@ -411,7 +410,7 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
                     color={ownedPackIds.has(selectedPack.id) ? colors.emerald : colors.text.primary}
                   />
                   <Text style={styles.sheetActionText}>
-                    {ownedPackIds.has(selectedPack.id) ? 'Added' : 'Add'}
+                    {ownedPackIds.has(selectedPack.id) ? t('stickers.added') : t('stickers.add')}
                   </Text>
                 </Pressable>
               </View>
@@ -431,7 +430,7 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
       </View>
     </SafeAreaView>
   );
-}
+});
 
 const styles = StyleSheet.create({
   safeArea: {

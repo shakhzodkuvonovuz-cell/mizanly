@@ -130,6 +130,9 @@ export const VideoPlayer = memo(function VideoPlayer({
       if (controlsTimeoutRef.current) {
         clearTimeout(controlsTimeoutRef.current);
       }
+      if (seekIndicatorTimeoutRef.current) {
+        clearTimeout(seekIndicatorTimeoutRef.current);
+      }
       // Restore StatusBar if component unmounts while in fullscreen
       StatusBar.setHidden(false, 'fade');
     };
@@ -339,12 +342,14 @@ export const VideoPlayer = memo(function VideoPlayer({
           >
             {/* Top controls row */}
             <View style={styles.topControls}>
-              <Pressable onPress={() => { haptic.tick(); setLooping(!looping); }} style={styles.iconButton}>
+              <Pressable onPress={() => { haptic.tick(); setLooping(!looping); }} style={styles.iconButton}
+                accessibilityRole="button" accessibilityLabel={t('minbar.loop')} accessibilityState={{ selected: looping }}>
                 <Icon name="repeat" size="md" color={looping ? colors.emerald : colors.text.primary} />
               </Pressable>
               <View style={{ flexDirection: 'row', gap: spacing.sm }}>
                 {qualities && qualities.length > 0 && (
-                  <Pressable onPress={() => setQualitySheetVisible(true)} style={styles.iconButton}>
+                  <Pressable onPress={() => setQualitySheetVisible(true)} style={styles.iconButton}
+                    accessibilityRole="button" accessibilityLabel={t('minbar.quality')}>
                     <Text style={styles.speedText}>{selectedQuality === 'auto' ? 'Auto' : selectedQuality}</Text>
                   </Pressable>
                 )}
@@ -354,10 +359,12 @@ export const VideoPlayer = memo(function VideoPlayer({
                     <Icon name="layers" size="md" color={colors.text.primary} />
                   </Pressable>
                 )}
-                <Pressable onPress={toggleFullscreen} style={styles.iconButton}>
+                <Pressable onPress={toggleFullscreen} style={styles.iconButton}
+                  accessibilityRole="button" accessibilityLabel={t('minbar.fullscreen')}>
                   <Icon name="maximize" size="md" color={colors.text.primary} />
                 </Pressable>
-                <Pressable onPress={() => setSpeedSheetVisible(true)} style={styles.iconButton}>
+                <Pressable onPress={() => setSpeedSheetVisible(true)} style={styles.iconButton}
+                  accessibilityRole="button" accessibilityLabel={t('minbar.speed')}>
                   <Text style={styles.speedText}>{playbackSpeed}x</Text>
                 </Pressable>
               </View>
@@ -365,27 +372,31 @@ export const VideoPlayer = memo(function VideoPlayer({
 
             {/* Center play/pause button */}
             <View style={styles.centerControls}>
-              <Pressable onPress={skipBackward} style={styles.skipButton}>
+              <Pressable onPress={skipBackward} style={styles.skipButton}
+                accessibilityRole="button" accessibilityLabel={t('minbar.skipBackward')}>
                 <Icon name="rewind" size="xl" color={colors.text.primary} />
               </Pressable>
-              <Pressable onPress={togglePlayPause} style={styles.playButton}>
+              <Pressable onPress={togglePlayPause} style={styles.playButton}
+                accessibilityRole="button" accessibilityLabel={isPlaying ? t('minbar.pause') : t('minbar.play')}>
                 <Icon name={isPlaying ? 'pause' : 'play'} size={48} color={colors.text.primary} />
               </Pressable>
-              <Pressable onPress={skipForward} style={styles.skipButton}>
+              <Pressable onPress={skipForward} style={styles.skipButton}
+                accessibilityRole="button" accessibilityLabel={t('minbar.skipForward')}>
                 <Icon name="fast-forward" size="xl" color={colors.text.primary} />
               </Pressable>
             </View>
 
             {/* Bottom controls row */}
             <View style={styles.bottomControls}>
-              <Pressable onPress={toggleMute} style={styles.iconButton}>
+              <Pressable onPress={toggleMute} style={styles.iconButton}
+                accessibilityRole="button" accessibilityLabel={isMuted ? t('minbar.unmute') : t('minbar.mute')}>
                 <Icon
                   name={isMuted ? 'volume-x' : volume > 0.5 ? 'volume-2' : 'volume-1'}
                   size="md"
                   color={colors.text.primary}
                 />
               </Pressable>
-              <Text style={styles.timeText}>{formatTime(position)}</Text>
+              <Text style={styles.timeText} accessibilityLabel={`${t('minbar.position')} ${formatTime(position)}`}>{formatTime(position)}</Text>
               {/* Seek bar */}
               <View
                 style={styles.seekBarContainer}
@@ -403,7 +414,9 @@ export const VideoPlayer = memo(function VideoPlayer({
                   )}
                 </View>
                 <Pressable
-                  accessibilityRole="button"
+                  accessibilityRole="adjustable"
+                  accessibilityLabel={t('minbar.seekBar')}
+                  accessibilityValue={{ min: 0, max: 100, now: Math.round(progress * 100) }}
                   style={styles.seekBarTouchable}
                   onPress={(e) => {
                     const { locationX } = e.nativeEvent;

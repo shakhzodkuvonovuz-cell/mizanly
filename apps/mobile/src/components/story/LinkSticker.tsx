@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, memo } from 'react';
 import {
   View,
   Text,
@@ -41,7 +41,7 @@ function truncateUrl(url: string, maxLength: number = 40): string {
   }
 }
 
-export function LinkSticker({
+export const LinkSticker = memo(function LinkSticker({
   url,
   title,
   favicon,
@@ -107,7 +107,7 @@ export function LinkSticker({
       </Pressable>
     </Animated.View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

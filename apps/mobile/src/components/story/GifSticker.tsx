@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo, memo } from 'react';
 import {
   View,
   Text,
@@ -7,9 +7,9 @@ import {
   Pressable,
   FlatList,
   ScrollView,
-  Dimensions,
   StyleProp,
   ViewStyle,
+  useWindowDimensions,
 } from 'react-native';
 import Animated, {
   FadeIn,
@@ -25,10 +25,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { searchGiphy, GIPHY_CATEGORIES, isSDKAvailable, showGiphyPicker, type GiphyMediaItem } from '@/services/giphyService';
 
-const { width: SCREEN_W } = Dimensions.get('window');
 const GIF_COLUMN_COUNT = 2;
 const GIF_ITEM_GAP = spacing.sm;
-const GIF_ITEM_WIDTH = (SCREEN_W - spacing.base * 2 - GIF_ITEM_GAP) / GIF_COLUMN_COUNT;
 
 // ── GIPHY-compatible types ──
 export interface GifItem {
@@ -83,10 +81,12 @@ interface GifSearchProps {
  * GIF Search panel — slides up as BottomSheet content.
  * Provides category chips, search input, and masonry grid of results.
  */
-export function GifSearch({ onSelect, onClose, style }: GifSearchProps) {
+export const GifSearch = memo(function GifSearch({ onSelect, onClose, style }: GifSearchProps) {
   const tc = useThemeColors();
   const { t } = useTranslation();
   const haptic = useContextualHaptic();
+  const { width: SCREEN_W } = useWindowDimensions();
+  const GIF_ITEM_WIDTH = (SCREEN_W - spacing.base * 2 - GIF_ITEM_GAP) / GIF_COLUMN_COUNT;
   const [query, setQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('trending');
   const [gifs, setGifs] = useState<GifItem[]>([]);
@@ -355,7 +355,7 @@ export function GifSearch({ onSelect, onClose, style }: GifSearchProps) {
       </View>
     </View>
   );
-}
+});
 
 // ── Display sticker (on story canvas & viewer) ──
 interface GifStickerDisplayProps {

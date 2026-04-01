@@ -3385,7 +3385,20 @@
     "styleEmoji": "Emoji",
     "styleGeometric": "Geometrik",
     "styleKawaii": "Kawaii",
-    "dailyLimitReached": "Günlük çıkartma sınırınıza ulaştınız"
+    "dailyLimitReached": "Günlük çıkartma sınırınıza ulaştınız",
+    "title": "Çıkartmalar",
+    "recent": "Son",
+    "myPacks": "Paketlerim",
+    "recentlyUsed": "Son Kullanılan",
+    "selectPack": "Paket seç",
+    "addMore": "Daha ekle",
+    "stickerPacks": "Çıkartma Paketleri",
+    "searchResults": "Arama Sonuçları",
+    "allStickerPacks": "Tüm Çıkartma Paketleri",
+    "featured": "Öne Çıkan",
+    "added": "Eklendi",
+    "add": "Ekle",
+    "stickersCount": "{{count}} çıkartma"
   },
   "encryption": {
     "verified": "Şifreleme doğrulandı",
@@ -4223,5 +4236,22 @@
     "scheduled": "Post scheduled",
     "scheduleButton": "Schedule",
     "today": "Today"
+  },
+  "call": {
+    "inProgress": "Arama devam ediyor",
+    "tapToReturn": "Dönmek için dokun",
+    "returnToCall": "{{name}} ile aramaya dön",
+    "user": "kullanıcı"
+  },
+  "social": {
+    "likedBy": "Beğenen",
+    "and": "ve",
+    "other": "kişi",
+    "others": "kişi"
+  },
+  "emoji": {
+    "searchPlaceholder": "Emoji ara...",
+    "noRecent": "Henüz son emoji yok",
+    "noResults": "Emoji bulunamadı"
   }
 }

@@ -55,7 +55,8 @@ export function SchedulePostSheet({
   const [selectedTimeIdx, setSelectedTimeIdx] = useState(() => {
     const now = new Date();
     const nextHour = now.getHours() + 1;
-    return Math.min(TIME_SLOTS.findIndex((s) => s.hours >= nextHour) || 0, TIME_SLOTS.length - 1);
+    const idx = TIME_SLOTS.findIndex((s) => s.hours >= nextHour);
+    return Math.min(idx === -1 ? 0 : idx, TIME_SLOTS.length - 1);
   });
 
   // Reset selections when sheet opens (dates may have shifted)
@@ -64,7 +65,8 @@ export function SchedulePostSheet({
       setSelectedDateIdx(0);
       const now = new Date();
       const nextHour = now.getHours() + 1;
-      setSelectedTimeIdx(Math.min(TIME_SLOTS.findIndex((s) => s.hours >= nextHour) || 0, TIME_SLOTS.length - 1));
+      const idx = TIME_SLOTS.findIndex((s) => s.hours >= nextHour);
+      setSelectedTimeIdx(Math.min(idx === -1 ? 0 : idx, TIME_SLOTS.length - 1));
     }
   }, [visible]);
 

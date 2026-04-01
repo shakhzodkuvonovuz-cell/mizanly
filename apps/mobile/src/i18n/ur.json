@@ -3392,7 +3392,20 @@
     "styleEmoji": "ایموجی",
     "styleGeometric": "ہندسی",
     "styleKawaii": "کاوائی",
-    "dailyLimitReached": "آپ نے روزانہ اسٹیکر کی حد تک پہنچ گئے"
+    "dailyLimitReached": "آپ نے روزانہ اسٹیکر کی حد تک پہنچ گئے",
+    "title": "اسٹیکرز",
+    "recent": "حالیہ",
+    "myPacks": "میرے پیک",
+    "recentlyUsed": "حال ہی میں استعمال شدہ",
+    "selectPack": "پیک منتخب کریں",
+    "addMore": "مزید شامل کریں",
+    "stickerPacks": "اسٹیکر پیک",
+    "searchResults": "تلاش کے نتائج",
+    "allStickerPacks": "تمام اسٹیکر پیک",
+    "featured": "نمایاں",
+    "added": "شامل",
+    "add": "شامل کریں",
+    "stickersCount": "{{count}} اسٹیکرز"
   },
   "encryption": {
     "verified": "انکرپشن تصدیق شدہ",
@@ -4236,5 +4249,22 @@
     "scheduled": "Post scheduled",
     "scheduleButton": "Schedule",
     "today": "Today"
+  },
+  "call": {
+    "inProgress": "کال جاری ہے",
+    "tapToReturn": "واپسی کے لیے تھپتھپائیں",
+    "returnToCall": "{{name}} کے ساتھ کال پر واپس جائیں",
+    "user": "صارف"
+  },
+  "social": {
+    "likedBy": "پسند کیا",
+    "and": "اور",
+    "other": "اور",
+    "others": "دوسرے"
+  },
+  "emoji": {
+    "searchPlaceholder": "ایموجی تلاش کریں...",
+    "noRecent": "کوئی حالیہ ایموجی نہیں",
+    "noResults": "کوئی ایموجی نہیں ملا"
   }
 }

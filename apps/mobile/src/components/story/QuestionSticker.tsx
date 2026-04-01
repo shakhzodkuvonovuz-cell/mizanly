@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
   View,
@@ -43,7 +43,7 @@ interface QuestionStickerProps {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export function QuestionSticker({ data, onResponse, isCreator = false, style }: QuestionStickerProps) {
+export const QuestionSticker = memo(function QuestionSticker({ data, onResponse, isCreator = false, style }: QuestionStickerProps) {
   const tc = useThemeColors();
   const { t } = useTranslation();
   const [inputText, setInputText] = useState('');
@@ -182,7 +182,7 @@ export function QuestionSticker({ data, onResponse, isCreator = false, style }: 
       )}
     </Animated.View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

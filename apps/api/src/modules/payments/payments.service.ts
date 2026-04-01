@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
+import { MemberSubStatus } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import Stripe from 'stripe';
 import Redis from 'ioredis';
@@ -424,7 +425,7 @@ export class PaymentsService {
         // Mark as cancel_pending — don't complete local cancel until Stripe confirms
         await this.prisma.membershipSubscription.update({
           where: { id: internalId },
-          data: { status: 'cancel_pending' },
+          data: { status: 'cancel_pending' as MemberSubStatus },
         });
         return { message: 'Cancellation pending — Stripe confirmation required' };
       }
@@ -904,7 +905,7 @@ export class PaymentsService {
     const graceDeadline = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
     await this.prisma.membershipSubscription.update({
       where: { id: dbSubscriptionId },
-      data: { status: 'past_due', endDate: graceDeadline },
+      data: { status: 'past_due' as MemberSubStatus, endDate: graceDeadline },
     });
 
     this.logger.warn(`Subscription ${dbSubscriptionId} marked as past_due due to failed invoice payment`);
@@ -945,7 +946,7 @@ export class PaymentsService {
     await this.prisma.membershipSubscription.update({
       where: { id: dbSubscriptionId },
       data: {
-        status: mappedStatus,
+        status: mappedStatus as MemberSubStatus,
         endDate: periodEnd ? new Date(periodEnd * 1000) : undefined,
       },
     });

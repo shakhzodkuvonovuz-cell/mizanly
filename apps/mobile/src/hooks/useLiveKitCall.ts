@@ -274,7 +274,10 @@ export function useLiveKitCall(options: UseLiveKitCallOptions = {}): UseLiveKitC
       // deterministic (both parties get the same base64 from the server).
       // DO NOT decode to bytes then re-encode as UTF-8: random bytes are not valid UTF-8
       // and TextDecoder would produce U+FFFD replacements, destroying uniqueness.
-      const saltString = e2eeSalt || `MizanlyE2EE_${Date.now()}`;
+      if (!e2eeSalt) {
+        throw new Error('E2EE salt missing from server response — cannot establish encryption');
+      }
+      const saltString = e2eeSalt;
 
       keyBytes = base64ToBytes(e2eeKey);
       try {
@@ -583,26 +586,30 @@ export function useLiveKitCall(options: UseLiveKitCallOptions = {}): UseLiveKitC
     if (mountedRef.current) setStatus('ended');
   }, [incomingRoomName]);
 
-  // Toggle mute
+  // Toggle mute — uses ref to avoid stale closure on rapid taps
+  const isMutedRef = useRef(isMuted);
+  isMutedRef.current = isMuted;
   const toggleMute = useCallback(async () => {
     const room = roomRef.current;
     if (!room) return;
-    const newMuted = !isMuted;
+    const newMuted = !isMutedRef.current;
     await room.localParticipant.setMicrophoneEnabled(!newMuted);
     if (mountedRef.current) setIsMuted(newMuted);
-  }, [isMuted]);
+  }, []);
 
-  // Toggle camera
+  // Toggle camera — uses ref to avoid stale closure on rapid taps
+  const isCameraOnRef = useRef(isCameraOn);
+  isCameraOnRef.current = isCameraOn;
   const toggleCamera = useCallback(async () => {
     const room = roomRef.current;
     if (!room) return;
-    const newEnabled = !isCameraOn;
+    const newEnabled = !isCameraOnRef.current;
     await room.localParticipant.setCameraEnabled(newEnabled);
     if (mountedRef.current) {
       setIsCameraOn(newEnabled);
       cameraWasOnRef.current = newEnabled; // [F3] sync ref
     }
-  }, [isCameraOn]);
+  }, []);
 
   // Flip camera
   const facingModeRef = useRef<'user' | 'environment'>('user');
@@ -612,34 +619,38 @@ export function useLiveKitCall(options: UseLiveKitCallOptions = {}): UseLiveKitC
     const pub = room.localParticipant.getTrackPublication(Track.Source.Camera);
     if (!pub?.track) return;
     facingModeRef.current = facingModeRef.current === 'user' ? 'environment' : 'user';
-    const track = pub.track as { restartTrack?: (opts: { facingMode: string }) => Promise<void> };
-    if (typeof track.restartTrack === 'function') {
-      await track.restartTrack({ facingMode: facingModeRef.current });
+    const trackAny = pub.track as unknown as Record<string, unknown>;
+    if ('restartTrack' in pub.track && typeof trackAny.restartTrack === 'function') {
+      await (trackAny.restartTrack as (opts: { facingMode: string }) => Promise<void>)({ facingMode: facingModeRef.current });
     } else {
       await room.localParticipant.setCameraEnabled(false);
       await room.localParticipant.setCameraEnabled(true, { facingMode: facingModeRef.current });
     }
   }, []);
 
-  // Toggle speaker
+  // Toggle speaker — uses ref to avoid stale closure on rapid taps
+  const isSpeakerOnRef = useRef(isSpeakerOn);
+  isSpeakerOnRef.current = isSpeakerOn;
   const toggleSpeaker = useCallback(async () => {
-    const newSpeaker = !isSpeakerOn;
+    const newSpeaker = !isSpeakerOnRef.current;
     if (Platform.OS === 'ios') {
       await AudioSession.selectAudioOutput(newSpeaker ? 'force_speaker' : 'default');
     } else {
       await AudioSession.selectAudioOutput(newSpeaker ? 'speaker' : 'earpiece');
     }
     if (mountedRef.current) setIsSpeakerOn(newSpeaker);
-  }, [isSpeakerOn]);
+  }, []);
 
-  // Toggle screen share
+  // Toggle screen share — uses ref to avoid stale closure on rapid taps
+  const isScreenSharingRef = useRef(isScreenSharing);
+  isScreenSharingRef.current = isScreenSharing;
   const toggleScreenShare = useCallback(async () => {
     const room = roomRef.current;
     if (!room) return;
-    const newSharing = !isScreenSharing;
+    const newSharing = !isScreenSharingRef.current;
     await room.localParticipant.setScreenShareEnabled(newSharing);
     if (mountedRef.current) setIsScreenSharing(newSharing);
-  }, [isScreenSharing]);
+  }, []);
 
   // Send data channel message
   const sendDataMessage = useCallback((topic: string, payload: Record<string, unknown>) => {

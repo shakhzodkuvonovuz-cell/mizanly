@@ -77,9 +77,11 @@ export function usePushNotificationHandler(isSignedIn: boolean = true) {
   useEffect(() => {
     if (!isSignedIn) return;
 
+    let cancelled = false;
     const setupListeners = async () => {
       try {
         const Notifications = await import('expo-notifications');
+        if (cancelled) return; // Guard against unmount during async import
 
         // Listener for notifications received while app is foregrounded
         notificationListener.current = Notifications.addNotificationReceivedListener(
@@ -110,6 +112,7 @@ export function usePushNotificationHandler(isSignedIn: boolean = true) {
     setupListeners();
 
     return () => {
+      cancelled = true;
       // Cleanup listeners
       if (notificationListener.current) {
         notificationListener.current.remove();

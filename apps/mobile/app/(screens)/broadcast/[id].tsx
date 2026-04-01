@@ -144,10 +144,10 @@ export default function BroadcastChannelScreen() {
     if (!selectedMessage || !channel) return;
     try {
       if (selectedMessage.isPinned) {
-        await broadcastApi.unpinMessage(channel.id, selectedMessage.id);
+        await broadcastApi.unpinMessage(selectedMessage.id);
         setMessages(prev => prev.map(m => m.id === selectedMessage.id ? { ...m, isPinned: false } : m));
       } else {
-        await broadcastApi.pinMessage(channel.id, selectedMessage.id);
+        await broadcastApi.pinMessage(selectedMessage.id);
         setMessages(prev => prev.map(m => m.id === selectedMessage.id ? { ...m, isPinned: true } : m));
       }
       setMessageSheetVisible(false);
@@ -159,7 +159,7 @@ export default function BroadcastChannelScreen() {
   const handleDeleteMessage = useCallback(async () => {
     if (!selectedMessage || !channel) return;
     try {
-      await broadcastApi.deleteMessage(channel.id, selectedMessage.id);
+      await broadcastApi.deleteMessage(selectedMessage.id);
       setMessages(prev => prev.filter(m => m.id !== selectedMessage.id));
       setMessageSheetVisible(false);
     } catch (error) {

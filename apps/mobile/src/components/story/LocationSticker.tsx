@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo, memo } from 'react';
 import {
   View,
   Text,
@@ -64,7 +64,7 @@ interface LocationSearchProps {
   style?: StyleProp<ViewStyle>;
 }
 
-export function LocationSearch({ onSelect, onClose, style }: LocationSearchProps) {
+export const LocationSearch = memo(function LocationSearch({ onSelect, onClose, style }: LocationSearchProps) {
   const tc = useThemeColors();
   const { t } = useTranslation();
   const haptic = useContextualHaptic();
@@ -230,7 +230,7 @@ export function LocationSearch({ onSelect, onClose, style }: LocationSearchProps
       />
     </View>
   );
-}
+});
 
 // ── Location sticker display (on story canvas) ──
 interface LocationStickerDisplayProps {

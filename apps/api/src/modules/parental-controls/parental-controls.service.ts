@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { Prisma } from '@prisma/client';
 import { randomBytes, scrypt, timingSafeEqual } from 'crypto';
 import { promisify } from 'util';
 import { UpdateParentalControlDto } from './dto/parental-control.dto';
@@ -214,7 +215,7 @@ export class ParentalControlsService {
 
     return this.prisma.parentalControl.update({
       where: { id: control.id },
-      data: updateData,
+      data: updateData as Prisma.ParentalControlUpdateInput,
       select: {
         id: true,
         parentUserId: true,

@@ -6,7 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
-import { EventTypeEnum, EventPrivacy } from '@prisma/client';
+import { EventTypeEnum, EventPrivacy, RsvpStatus } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { CreateEventDto, UpdateEventDto } from './events.controller';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -408,7 +408,7 @@ export class EventsService {
 
     const where: Prisma.EventRSVPWhereInput = { eventId };
     if (status) {
-      where.status = status;
+      where.status = status as RsvpStatus;
     }
 
     const rsvps = await this.prisma.eventRSVP.findMany({

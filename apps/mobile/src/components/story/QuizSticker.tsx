@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import {
   View,
   Text,
@@ -141,7 +141,7 @@ interface QuizStickerProps {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export function QuizSticker({ data, onResponse, isCreator = false, style }: QuizStickerProps) {
+export const QuizSticker = memo(function QuizSticker({ data, onResponse, isCreator = false, style }: QuizStickerProps) {
   const tc = useThemeColors();
   const { t } = useTranslation();
   const haptic = useContextualHaptic();
@@ -302,7 +302,7 @@ export function QuizSticker({ data, onResponse, isCreator = false, style }: Quiz
       )}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

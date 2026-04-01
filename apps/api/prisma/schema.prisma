@@ -310,10 +310,10 @@ enum CoinTransactionType {
 }
 
 enum TipStatus {
-  PENDING
-  COMPLETED
-  FAILED
-  DISPUTED
+  pending
+  completed
+  failed
+  disputed
 }
 
 enum HalalCategory {
@@ -667,6 +667,106 @@ enum CollabInviteStatus {
   COLLAB_DECLINED
 }
 
+// S01/S02 audit: New enums for String→Enum conversions
+// Values are lowercase to match existing DB data and service code.
+
+enum ConversationRole {
+  member
+  admin
+  owner
+}
+
+enum CallParticipantRole {
+  caller
+  callee
+}
+
+enum PermissionLevel {
+  everyone
+  contacts
+  followers
+  nobody
+}
+
+enum AudioRoomStatus {
+  live
+  scheduled
+  ended
+}
+
+enum AudioRoomRole {
+  listener
+  speaker
+  moderator
+  host
+}
+
+enum DonationStatus {
+  pending
+  completed
+  failed
+  refunded
+}
+
+enum FundStatus {
+  active
+  completed
+  closed
+}
+
+enum PlaylistCollabRole {
+  editor
+  viewer
+}
+
+enum MosqueMemberRole {
+  member
+  admin
+  imam
+}
+
+enum AgeRating {
+  G
+  PG
+  PG13 @map("PG-13")
+  R
+}
+
+enum DmRestriction {
+  none
+  contacts_only
+  disabled
+}
+
+enum IslamicKnowledgeLevel {
+  beginner
+  intermediate
+  advanced
+  all
+}
+
+enum RsvpStatus {
+  going
+  maybe
+  not_going
+}
+
+enum PromotionStatus {
+  active
+  paused
+  completed
+  cancelled
+}
+
+enum MemberSubStatus {
+  active
+  cancelled
+  expired
+  pending
+  past_due
+  cancel_pending
+}
+
 // ============================================================
 // USER & PROFILE
 // ============================================================
@@ -965,9 +1065,10 @@ model User {
   adminAuditLogs           AdminAuditLog[]              @relation("adminAuditLogs")
   savedSearches            SavedSearch[]                @relation("savedSearches")
 
-  @@index([username])
-  @@index([clerkId])
+  // @@index([username]) — redundant: username is @unique
+  // @@index([clerkId]) — redundant: clerkId is @unique
   @@index([createdAt(sort: Desc)])
+  @@index([previousUsername]) // B01-#8: username reclaim lookup
   @@map("users")
 }
 
@@ -1123,13 +1224,16 @@ model Story {
   subscribersOnly  Boolean                @default(false)
   isSensitive      Boolean                @default(false)
   isArchived       Boolean                @default(false)
+  isRemoved        Boolean                @default(false) // S01-#7: soft-delete for moderation
   createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt // S01-#20: mutation tracking
   views            StoryView[]
   stickerResponses StoryStickerResponse[]
   chainEntries     StoryChainEntry[]
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([expiresAt])
+  @@index([highlightAlbumId]) // B07-#12: highlight album queries
   @@map("stories")
 }
 
@@ -1270,10 +1374,13 @@ model ReelComment {
   reactions  ReelCommentReaction[]
   content    String                @db.VarChar(500)
   likesCount Int                   @default(0)
+  isRemoved  Boolean               @default(false) // S01-#11: soft-delete for moderation
   createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt // S01-#9: edit tracking
 
   @@index([reelId, createdAt])
   @@index([parentId])
+  @@index([userId]) // S01-#14 equivalent: GDPR export + "my comments" queries
   @@map("reel_comments")
 }
 
@@ -1374,7 +1481,9 @@ model ThreadReply {
   content    String            @db.VarChar(500)
   mediaUrls  String[]          @default([])
   likesCount Int               @default(0)
+  isRemoved  Boolean           @default(false) // S01-#10: soft-delete for moderation
   createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt // S01-#9: edit tracking
   likes      ThreadReplyLike[]
 
   @@index([threadId, createdAt])
@@ -1422,7 +1531,7 @@ model Channel {
   trailerVideoId     String?
   viewerDemographics ViewerDemographic[] @relation("viewerDemographics")
 
-  @@index([handle])
+  // @@index([handle]) — redundant: handle is @unique
   @@index([subscribersCount(sort: Desc)])
   @@map("channels")
 }
@@ -1492,6 +1601,7 @@ model Video {
   @@index([status, isRemoved, createdAt(sort: Desc)])
   @@index([category, viewsCount(sort: Desc)])
   @@index([tags])
+  @@index([userId]) // B05-#25: user's videos lookup
   @@map("videos")
 }
 
@@ -1509,10 +1619,12 @@ model VideoComment {
   timestamp  Float?
   isPinned   Boolean            @default(false)
   createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt // S01-#13: edit tracking
   likes      VideoCommentLike[] @relation("videoCommentLikes")
 
   @@index([videoId, createdAt])
   @@index([parentId])
+  @@index([userId]) // S01-#14: GDPR export + user comment lookups
   @@map("video_comments")
 }
 
@@ -1641,11 +1753,13 @@ model SavedPost {
   postId         String
   collectionName String   @default("default")
   createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt // S01-#27: collection reassignment tracking
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   post           Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@id([userId, postId])
   @@index([userId, createdAt(sort: Desc)])
+  @@index([postId]) // B02-#18: saved count on post
   @@map("saved_posts")
 }
 
@@ -1691,6 +1805,7 @@ model Conversation {
   keyEnvelopes          ConversationKeyEnvelope[] @relation("keyEnvelopes")
 
   @@index([lastMessageAt(sort: Desc)])
+  @@index([createdById]) // B06-#13: admin/creator conversation lookup
   @@map("conversations")
 }
 
@@ -1703,7 +1818,7 @@ model ConversationMember {
   isMuted        Boolean      @default(false)
   isPinned       Boolean      @default(false)
   isArchived     Boolean      @default(false)
-  role           String       @default("member") @db.VarChar(10)
+  role           ConversationRole @default(member)
   isBanned       Boolean      @default(false)
   customTone     String?
   wallpaperUrl   String?
@@ -1776,6 +1891,7 @@ model Message {
   forwardedCopies Message[]         @relation("MessageForwardedFrom")
 
   @@index([conversationId, createdAt(sort: Desc)])
+  @@index([conversationId, isPinned]) // B06-#14: pinned messages query
   @@index([senderId])
   @@index([expiresAt])
   @@index([scheduledAt])
@@ -1796,7 +1912,7 @@ model BroadcastChannel {
   members          ChannelMember[]
   messages         BroadcastMessage[]
 
-  @@index([slug])
+  // @@index([slug]) — redundant: slug is @unique
   @@map("broadcast_channels")
 }
 
@@ -1806,6 +1922,7 @@ model ChannelMember {
   role      ChannelRole      @default(SUBSCRIBER)
   isMuted   Boolean          @default(false)
   joinedAt  DateTime         @default(now())
+  updatedAt DateTime         @updatedAt // S01-#23: role/mute mutation tracking
   channel   BroadcastChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -1877,6 +1994,7 @@ model LiveParticipant {
   role      LiveRole    @default(VIEWER)
   joinedAt  DateTime    @default(now())
   leftAt    DateTime?
+  updatedAt DateTime    @updatedAt // S01-#25: role transition tracking
   session   LiveSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -1951,6 +2069,7 @@ model CircleMember {
   userId   String
   role     CircleRole @default(MEMBER)
   joinedAt DateTime   @default(now())
+  updatedAt DateTime  @updatedAt // S01-#24: role change tracking
   circle   Circle     @relation(fields: [circleId], references: [id], onDelete: Cascade)
   user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -1968,6 +2087,7 @@ model CircleInvite {
   useCount    Int       @default(0)
   expiresAt   DateTime?
   createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt // S01-#39: invite mutation tracking
   circle      Circle    @relation(fields: [circleId], references: [id], onDelete: Cascade)
   createdBy   User      @relation(fields: [createdById], references: [id], onDelete: Cascade)
 
@@ -2058,6 +2178,10 @@ model Report {
   @@index([reportedThreadId])
   @@index([reportedReelId])
   @@index([reportedVideoId])
+  @@index([reportedPostId]) // B11-#9: FK index for post reports
+  @@index([reportedCommentId]) // B11-#9: FK index for comment reports
+  @@index([reportedMessageId]) // B11-#9: FK index for message reports
+  @@index([reviewedById]) // B11-#9: reviewer lookup
   @@map("reports")
 }
 
@@ -2076,7 +2200,9 @@ model ModerationLog {
   appealText      String?
   appealResolved  Boolean?
   appealResult    String?
+  isAutoFlagged   Boolean          @default(false) // B11-#15: auto-moderation tracking
   createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt // B11-#22: mutation tracking
   moderator       User?            @relation("Moderator", fields: [moderatorId], references: [id], onDelete: SetNull)
   targetUser      User?            @relation("ModTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
   targetPost      Post?            @relation("ModPostTarget", fields: [targetPostId], references: [id], onDelete: SetNull)
@@ -2087,6 +2213,8 @@ model ModerationLog {
   @@index([targetUserId, createdAt(sort: Desc)])
   @@index([reportId])
   @@index([moderatorId])
+  @@index([isAppealed, appealResolved]) // B11-#11: appeal queue queries
+  @@index([action, createdAt(sort: Desc)]) // B11-#9: action type filtering
   @@map("moderation_log")
 }
 
@@ -2134,7 +2262,7 @@ model Hashtag {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  @@index([name])
+  // @@index([name]) — redundant: name is @unique
   @@index([postsCount(sort: Desc)])
   @@map("hashtags")
 }
@@ -2244,6 +2372,7 @@ model AudioTrack {
   reelsCount Int      @default(0)
   isOriginal Boolean  @default(false)
   createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt // S01-#21: counter mutation tracking
   reels      Reel[]
 
   @@index([reelsCount(sort: Desc)])
@@ -2325,7 +2454,7 @@ model StoryHighlightAlbum {
   createdAt DateTime @default(now())
   stories   Story[]
 
-  @@index([userId])
+  @@unique([userId, position]) // B07-#18: prevent duplicate positions
   @@map("story_highlight_albums")
 }
 
@@ -2336,6 +2465,7 @@ model StoryStickerResponse {
   stickerType  String
   responseData Json
   createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt // S01-#22: upsert mutation tracking
   story        Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -2352,7 +2482,7 @@ model UserInterest {
   createdAt DateTime @default(now())
 
   @@unique([userId, category])
-  @@index([userId])
+  // @@index([userId]) — redundant: @@unique leading column
   @@map("user_interests")
 }
 
@@ -2390,6 +2520,7 @@ model ProfileLink {
   url       String   @db.VarChar(500)
   position  Int      @default(0)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt // S01-#36: edit tracking
 
   @@index([userId])
   @@map("profile_links")
@@ -2448,7 +2579,7 @@ model CallSession {
 model CallParticipant {
   sessionId       String
   userId          String
-  role            String      @default("caller")
+  role            CallParticipantRole @default(caller)
   joinedAt        DateTime    @default(now())
   leftAt          DateTime?
   livekitJoinedAt DateTime?
@@ -2474,6 +2605,7 @@ model StickerPack {
   isFree        Boolean           @default(true)
   ownerId       String?
   createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt // S01-#38: mutation tracking
   stickers      Sticker[]
   users         UserStickerPack[]
 
@@ -2580,6 +2712,7 @@ model PostCollab {
   userId    String
   status    CollabStatus @default(PENDING)
   createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt // S02-#29: status change tracking
   post      Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
   user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -2596,7 +2729,7 @@ model BlockedKeyword {
   createdAt DateTime @default(now())
 
   @@unique([userId, keyword])
-  @@index([userId])
+  // @@index([userId]) — redundant: @@unique leading column
   @@map("blocked_keywords")
 }
 
@@ -2622,12 +2755,12 @@ model UserSettings {
   userId                 String   @unique
   user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   // Privacy
-  messagePermission      String   @default("everyone")
-  mentionPermission      String   @default("everyone")
+  messagePermission      PermissionLevel @default(everyone) // S01-#8, S02-#17
+  mentionPermission      PermissionLevel @default(everyone) // S01-#8, S02-#17
   activityStatus         Boolean  @default(true)
   readReceipts           Boolean  @default(true)
   typingIndicators       Boolean  @default(true)
-  lastSeenVisibility     String   @default("everyone") // "everyone" | "contacts" | "nobody"
+  lastSeenVisibility     PermissionLevel @default(everyone) // S02-#18
   // Notifications
   notifyLikes            Boolean  @default(true)
   notifyComments         Boolean  @default(true)
@@ -2645,7 +2778,7 @@ model UserSettings {
   restrictedMode         Boolean  @default(false)
   sensitiveContent       Boolean  @default(false)
   // Finding #246: Islamic knowledge level for content filtering
-  islamicKnowledgeLevel  String   @default("all") @db.VarChar(20) // beginner, intermediate, advanced, all
+  islamicKnowledgeLevel  IslamicKnowledgeLevel @default(all) // S02-#19
   // Finding #265: Grief support mode — filters celebratory content
   griefMode              Boolean  @default(false)
   // Finding #266: Ramadan food filter during fasting hours
@@ -2782,8 +2915,8 @@ model EventRSVP {
   event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  status    String   @db.VarChar(20)
-  createdAt DateTime @default(now())
+  status    RsvpStatus @default(going) // S02-#20
+  createdAt DateTime   @default(now())
 
   @@unique([eventId, userId])
   @@index([eventId])
@@ -2800,9 +2933,10 @@ model Tip {
   currency        String   @default("USD") @db.VarChar(3)
   message         String?  @db.VarChar(500)
   platformFee     Decimal  @default(0) @db.Decimal(12, 2)
-  status          String   @default("pending") @db.VarChar(20)
+  status          TipStatus @default(pending) // S01-#6: was String, now uses TipStatus enum
   stripePaymentId String?
   createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt // S02-#31: status change tracking
 
   @@unique([senderId, receiverId, createdAt])
   @@index([senderId])
@@ -2836,10 +2970,11 @@ model MembershipSubscription {
   tier      MembershipTier @relation(fields: [tierId], references: [id], onDelete: Cascade)
   userId    String
   user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  status    String         @default("active") @db.VarChar(20)
-  startDate DateTime       @default(now())
+  status    MemberSubStatus @default(active) // was String, now enum
+  startDate DateTime           @default(now())
   endDate   DateTime?
-  createdAt DateTime       @default(now())
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt // S02-#30: status transition tracking
 
   @@unique([tierId, userId])
   @@index([userId])
@@ -2852,7 +2987,7 @@ model AudioRoom {
   description       String?                @db.VarChar(2000)
   hostId            String
   host              User                   @relation(fields: [hostId], references: [id], onDelete: Cascade)
-  status            String                 @default("live") @db.VarChar(20)
+  status            AudioRoomStatus        @default(live) // S02-#6
   scheduledAt       DateTime?
   startedAt         DateTime?
   endedAt           DateTime?
@@ -2876,7 +3011,7 @@ model AudioRoomParticipant {
   room       AudioRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
   userId     String
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role       String    @default("listener") @db.VarChar(20)
+  role       AudioRoomRole @default(listener) // S02-#7
   isMuted    Boolean   @default(true)
   handRaised Boolean   @default(false)
   joinedAt   DateTime  @default(now())
@@ -2917,6 +3052,7 @@ model StoryChain {
 
   @@index([participantCount(sort: Desc)])
   @@index([createdById])
+  @@index([createdAt(sort: Desc), participantCount(sort: Desc)]) // B07-#23: trending chains
   @@map("story_chains")
 }
 
@@ -3105,7 +3241,7 @@ model CoinBalance {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([userId])
+  // @@index([userId]) — redundant: userId is @unique
   @@map("coin_balances")
 }
 
@@ -3155,10 +3291,11 @@ model PostPromotion {
   currency    String   @default("USD") @db.VarChar(3)
   targetReach Int
   actualReach Int      @default(0)
-  status      String   @default("active") @db.VarChar(20)
+  status      PromotionStatus @default(active) // S02-#21
   startsAt    DateTime @default(now())
   endsAt      DateTime
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt // S02-#43: reach/status tracking
 
   @@index([postId])
   @@index([userId])
@@ -3257,7 +3394,7 @@ model DhikrChallengeParticipant {
 
   @@id([userId, challengeId])
   @@index([challengeId])
-  @@index([userId])
+  // @@index([userId]) — redundant: @@id leading column
   @@map("dhikr_challenge_participants")
 }
 
@@ -3272,7 +3409,7 @@ model CharityDonation {
   amount          Decimal          @db.Decimal(12, 2)
   currency        String           @default("usd")
   stripePaymentId String?
-  status          String           @default("pending")
+  status          DonationStatus   @default(pending) // S02-#8
   createdAt       DateTime         @default(now())
 
   @@index([userId, createdAt(sort: Desc)])
@@ -3377,6 +3514,7 @@ model Restrict {
 
   @@id([restricterId, restrictedId])
   @@index([restrictedId])
+  // @@index([restricterId]) — redundant: @@id leading column (B01-#7 DISPUTED)
   @@map("restricts")
 }
 
@@ -3520,7 +3658,7 @@ model EndScreen {
 model PlaylistCollaborator {
   playlistId String
   userId     String
-  role       String   @default("editor")
+  role       PlaylistCollabRole @default(editor) // S02-#10
   addedById  String
   addedBy    User     @relation("playlistCollabAdder", fields: [addedById], references: [id], onDelete: Cascade)
   addedAt    DateTime @default(now())
@@ -3537,9 +3675,9 @@ model ParentalControl {
   childUserId       String    @unique
   pin               String
   restrictedMode    Boolean   @default(true)
-  maxAgeRating      String    @default("PG")
+  maxAgeRating      AgeRating      @default(PG) // S02-#24
   dailyLimitMinutes Int?
-  dmRestriction     String    @default("none")
+  dmRestriction     DmRestriction  @default(none) // S02-#25
   canGoLive         Boolean   @default(false)
   canPost           Boolean   @default(true)
   canComment        Boolean   @default(true)
@@ -3743,7 +3881,7 @@ model SeriesEpisode {
   series       Series    @relation(fields: [seriesId], references: [id], onDelete: Cascade)
 
   @@unique([seriesId, number])
-  @@index([seriesId, number])
+  // @@index([seriesId, number]) — redundant: @@unique same columns
   @@map("series_episodes")
 }
 
@@ -3945,7 +4083,7 @@ model ZakatFund {
   isVerified   Boolean         @default(false)
   verifiedById String?
   verifiedBy   User?           @relation("zakatFundVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
-  status       String          @default("active") // active | completed | closed
+  status       FundStatus      @default(active) // S02-#9
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
   recipient    User            @relation("ZakatRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
@@ -3981,7 +4119,7 @@ model CommunityTreasury {
   goalAmount    Decimal                @db.Decimal(12, 2)
   raisedAmount  Decimal                @default(0) @db.Decimal(12, 2)
   currency      String                 @default("USD")
-  status        String                 @default("active") // active | completed | closed
+  status        FundStatus             @default(active) // S02-#9
   createdById   String
   createdAt     DateTime               @default(now())
   updatedAt     DateTime               @updatedAt
@@ -4056,6 +4194,7 @@ model Mentorship {
   startedAt   DateTime?
   completedAt DateTime?
   createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt // S02-#32: status change tracking
   mentor      User      @relation("MentorOf", fields: [mentorId], references: [id], onDelete: Cascade)
   mentee      User      @relation("MenteeOf", fields: [menteeId], references: [id], onDelete: Cascade)
 
@@ -4118,6 +4257,7 @@ model VolunteerOpportunity {
   spotsFilled Int       @default(0)
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt // S02-#41: spots/active tracking
   organizer   User      @relation("VolunteerOrganizer", fields: [organizerId], references: [id], onDelete: Cascade)
 
   @@index([category, isActive])
@@ -4141,6 +4281,7 @@ model IslamicEvent {
   attendeeCount Int       @default(0)
   coverUrl      String?
   createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt // S02-#42: attendee tracking
   organizer     User      @relation("EventOrganizer", fields: [organizerId], references: [id], onDelete: Cascade)
 
   @@index([eventType, startDate])
@@ -4190,6 +4331,7 @@ model WatchParty {
   startedAt   DateTime?
   endedAt     DateTime?
   createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt // S02-#33: state change tracking
   host        User      @relation(fields: [hostId], references: [id], onDelete: Cascade)
 
   @@index([hostId])
@@ -4223,6 +4365,7 @@ model WaqfFund {
   createdById  String
   isActive     Boolean        @default(true)
   createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt // S02-#38: financial mutation tracking
   creator      User           @relation("WaqfCreator", fields: [createdById], references: [id], onDelete: Cascade)
   donations    WaqfDonation[]
 
@@ -4341,6 +4484,7 @@ model CustomEmojiPack {
   isPublic     Boolean       @default(true)
   usageCount   Int           @default(0)
   createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt // S02-#39: pack mutation tracking
   creator      User          @relation("EmojiPackCreator", fields: [creatorId], references: [id], onDelete: Cascade)
   emojis       CustomEmoji[]
 
@@ -4400,6 +4544,7 @@ model Webhook {
   isActive        Boolean   @default(true)
   lastUsedAt      DateTime?
   createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt // S02-#34: config change tracking
   creator         User      @relation("WebhookCreator", fields: [createdById], references: [id], onDelete: Cascade)
 
   @@index([circleId])
@@ -4419,6 +4564,7 @@ model StageSession {
   startedAt     DateTime?
   endedAt       DateTime?
   createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt // S02-#35: state change tracking
   host          User      @relation("StageHost", fields: [hostId], references: [id], onDelete: Cascade)
 
   @@index([circleId, status])
@@ -4533,6 +4679,7 @@ model CommunityRole {
   canSpeak          Boolean  @default(true)
   createdAt         DateTime @default(now())
 
+  @@unique([communityId, name]) // B09-#10: prevent duplicate role names
   @@index([communityId, position])
   @@map("community_roles")
 }
@@ -4551,7 +4698,7 @@ model HifzProgress {
   updatedAt      DateTime  @updatedAt
 
   @@unique([userId, surahNum])
-  @@index([userId])
+  // @@index([userId]) — redundant: @@unique leading column
   @@map("hifz_progress")
 }
 
@@ -4567,7 +4714,7 @@ model MosqueCommunity {
   country     String
   latitude    Float
   longitude   Float
-  madhab      String? // hanafi, shafi, maliki, hanbali
+  madhab      MadhhabType? // S02-#12: was String, now uses existing MadhhabType enum
   language    String?
   phone       String?
   website     String?
@@ -4577,6 +4724,7 @@ model MosqueCommunity {
   createdBy   User     @relation("mosqueCommunitiesCreated", fields: [createdById], references: [id], onDelete: Cascade)
   isVerified  Boolean  @default(false)
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt // S02-#36: member/verify tracking
 
   memberships MosqueMembership[]
   posts       MosquePost[]
@@ -4592,7 +4740,7 @@ model MosqueMembership {
   mosque    MosqueCommunity @relation(fields: [mosqueId], references: [id], onDelete: Cascade)
   userId    String
   user      User            @relation("mosqueMemberships", fields: [userId], references: [id], onDelete: Cascade)
-  role      String          @default("member") // member, admin, imam
+  role      MosqueMemberRole @default(member) // S02-#11
   createdAt DateTime        @default(now())
 
   @@unique([mosqueId, userId])
@@ -4669,7 +4817,7 @@ model DuaBookmark {
   createdAt DateTime @default(now())
 
   @@unique([userId, duaId])
-  @@index([userId])
+  // @@index([userId]) — redundant: @@unique leading column
   @@map("dua_bookmarks")
 }
 
@@ -4681,7 +4829,7 @@ model HadithBookmark {
   createdAt DateTime @default(now())
 
   @@unique([userId, hadithId])
-  @@index([userId])
+  // @@index([userId]) — redundant: @@unique leading column
   @@map("hadith_bookmarks")
 }
 
@@ -4703,6 +4851,7 @@ model CommunityNote {
 
   ratings CommunityNoteRating[]
 
+  @@unique([contentType, contentId, authorId]) // B09-#9: one note per author per content
   @@index([contentType, contentId])
   @@index([authorId])
   @@map("community_notes")
@@ -4736,6 +4885,7 @@ model CollabInvite {
   invitee   User     @relation("collabInvitesReceived", fields: [inviteeId], references: [id], onDelete: Cascade)
   status    CollabInviteStatus @default(COLLAB_PENDING)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt // S02-#40: status change tracking
 
   @@unique([postId, inviteeId])
   @@index([inviteeId, status])
@@ -4819,6 +4969,7 @@ model HalalRestaurant {
   addedBy        User?    @relation("halalRestaurantsAdded", fields: [addedById], references: [id], onDelete: SetNull)
   isVerified     Boolean  @default(false)
   createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt // S02-#37: rating/verify tracking
 
   reviews HalalRestaurantReview[]
 
@@ -4923,7 +5074,7 @@ model SavedSearch {
   createdAt DateTime @default(now())
 
   @@unique([userId, query])
-  @@index([userId])
+  // @@index([userId]) — redundant: @@unique leading column
   @@map("saved_searches")
 }
 
@@ -4957,7 +5108,7 @@ model WaitlistEntry {
   source       String?  @db.VarChar(50) // utm_source or channel
   createdAt    DateTime @default(now())
 
-  @@index([referralCode])
+  // @@index([referralCode]) — redundant: referralCode is @unique
   @@index([createdAt(sort: Desc)])
   @@map("waitlist_entries")
 }
@@ -4972,7 +5123,7 @@ model ProcessedWebhookEvent {
   eventId     String   @unique
   processedAt DateTime @default(now())
 
-  @@index([eventId])
+  // @@index([eventId]) — redundant: eventId is @unique
   @@map("processed_webhook_events")
 }
 

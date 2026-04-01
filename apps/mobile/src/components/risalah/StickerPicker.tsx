@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
   View,
@@ -9,9 +9,9 @@ import {
   Pressable,
   Dimensions,
   TextInput,
-  RefreshControl,
 } from 'react-native';
 import { BottomSheet } from '@/components/ui/BottomSheet';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { Icon } from '@/components/ui/Icon';
 import { TabSelector } from '@/components/ui/TabSelector';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -32,7 +32,7 @@ const GRID_COLUMNS = 4;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ITEM_SIZE = (SCREEN_WIDTH - spacing.xl * 2 - GRID_SPACING * (GRID_COLUMNS - 1)) / GRID_COLUMNS;
 
-export function StickerPicker({ visible, onClose, onStickerSelect }: StickerPickerProps) {
+export const StickerPicker = memo(function StickerPicker({ visible, onClose, onStickerSelect }: StickerPickerProps) {
   const tc = useThemeColors();
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'recent' | 'myPacks'>('recent');
@@ -196,8 +196,8 @@ export function StickerPicker({ visible, onClose, onStickerSelect }: StickerPick
         {/* Tab selector */}
         <TabSelector
           tabs={[
-            { key: 'recent', label: 'Recent' },
-            { key: 'myPacks', label: 'My Packs' },
+            { key: 'recent', label: t('stickers.recent') },
+            { key: 'myPacks', label: t('stickers.myPacks') },
           ]}
           activeKey={activeTab}
           onTabChange={(key) => setActiveTab(key as 'recent' | 'myPacks')}
@@ -236,10 +236,9 @@ export function StickerPicker({ visible, onClose, onStickerSelect }: StickerPick
                 keyExtractor={item => item.id}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
-                  <RefreshControl
+                  <BrandedRefreshControl
                     refreshing={refreshing}
                     onRefresh={handleRefresh}
-                    tintColor={colors.emerald}
                   />
                 }
               />
@@ -273,7 +272,7 @@ export function StickerPicker({ visible, onClose, onStickerSelect }: StickerPick
             {/* Sticker grid */}
             <View style={styles.stickerGridSection}>
               <Text style={styles.sectionTitle}>
-                {activePack?.name || 'Select a pack'}
+                {activePack?.name || t('stickers.selectPack')}
               </Text>
 
               {loading ? (
@@ -304,10 +303,9 @@ export function StickerPicker({ visible, onClose, onStickerSelect }: StickerPick
                   keyExtractor={item => item.id}
                   showsVerticalScrollIndicator={false}
                   refreshControl={
-                    <RefreshControl
+                    <BrandedRefreshControl
                       refreshing={refreshing}
                       onRefresh={handleRefresh}
-                      tintColor={colors.emerald}
                     />
                   }
                 />
@@ -318,7 +316,7 @@ export function StickerPicker({ visible, onClose, onStickerSelect }: StickerPick
       </View>
     </BottomSheet>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

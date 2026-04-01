@@ -79,13 +79,6 @@ export function useTTS() {
   // where Speech.stop()'s onStopped fires and sets ttsPlaying=false before Speech.speak starts)
   const ignoringStopRef = useRef(false);
 
-  // Stop speech when component unmounts while speaking
-  useEffect(() => {
-    return () => {
-      // Don't stop on unmount — TTS should persist across screens
-    };
-  }, []);
-
   const speak = useCallback(
     (text: string, title: string) => {
       // If Quran text, don't use TTS — should use proper recitation

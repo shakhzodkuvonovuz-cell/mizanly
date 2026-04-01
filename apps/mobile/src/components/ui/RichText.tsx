@@ -45,7 +45,13 @@ export const RichText = memo(function RichText({ text, style, numberOfLines, onP
       segments.push({ type: 'email', value: token });
     } else if (/^\d{1,3}:\d{1,3}$/.test(token)) {
       // Quran citation: surah:verse (e.g., "2:255", "3:103")
-      segments.push({ type: 'quran_ref', value: token });
+      // Filter out common time formats: surah numbers are 1-114, verse max ~286
+      const [surah, verse] = token.split(':').map(Number);
+      if (surah >= 1 && surah <= 114 && verse >= 1 && verse <= 286) {
+        segments.push({ type: 'quran_ref', value: token });
+      } else {
+        segments.push({ type: 'text', value: token });
+      }
     } else {
       segments.push({ type: 'phone', value: token });
     }

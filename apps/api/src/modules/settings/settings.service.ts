@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
-import { AutoPlaySetting } from '@prisma/client';
+import { AutoPlaySetting, Prisma } from '@prisma/client';
 import { UpdatePrivacyDto } from './dto/update-privacy.dto';
 import { UpdateNotificationsDto } from './dto/update-notifications.dto';
 import { UpdateAccessibilityDto } from './dto/update-accessibility.dto';
@@ -27,8 +27,8 @@ export class SettingsService {
     // Update UserSettings for settings fields
     const settings = await this.prisma.userSettings.upsert({
       where: { userId },
-      create: { userId, ...settingsFields },
-      update: settingsFields,
+      create: { userId, ...settingsFields } as Prisma.UserSettingsUncheckedCreateInput,
+      update: settingsFields as Prisma.UserSettingsUncheckedUpdateInput,
     });
 
     // Update User.isPrivate if provided

@@ -198,7 +198,7 @@ export default function CommunityPostsScreen() {
 
   const likeMutation = useMutation({
     mutationFn: ({ postId, liked }: { postId: string; liked: boolean }) =>
-      liked ? channelPostsApi.like(handle, postId) : channelPostsApi.unlike(handle, postId),
+      liked ? channelPostsApi.like(postId) : channelPostsApi.unlike(postId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['channel-posts', handle] });
     },
@@ -247,7 +247,7 @@ export default function CommunityPostsScreen() {
   }, [likeMutation]);
 
   const deleteMutation = useMutation({
-    mutationFn: (postId: string) => channelPostsApi.delete(handle, postId),
+    mutationFn: (postId: string) => channelPostsApi.delete(postId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['channel-posts', handle] });
       showToast({ message: t('communityPosts.postDeleted'), variant: 'success' });

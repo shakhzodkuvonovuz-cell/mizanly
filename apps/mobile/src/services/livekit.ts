@@ -44,15 +44,15 @@ export const livekitApi = {
     withRetry(() => api.post(`${LIVEKIT_BASE}/calls/token`, { roomName, sessionId }), 3, 300),
 
   deleteRoom: (roomId: string): Promise<{ success: boolean }> =>
-    api.delete(`${LIVEKIT_BASE}/calls/rooms/${roomId}`),
+    api.delete(`${LIVEKIT_BASE}/calls/rooms/${encodeURIComponent(roomId)}`),
 
   /** [F7] Leave a call without destroying it for other participants */
   leaveRoom: (roomId: string): Promise<{ success: boolean }> =>
-    api.post(`${LIVEKIT_BASE}/calls/rooms/${roomId}/leave`, {}),
+    api.post(`${LIVEKIT_BASE}/calls/rooms/${encodeURIComponent(roomId)}/leave`, {}),
 
   getParticipants: (roomId: string) =>
     api.get<{ data: Array<{ identity: string; state: number; joinedAt: number }>; success: boolean }>(
-      `${LIVEKIT_BASE}/calls/rooms/${roomId}/participants`
+      `${LIVEKIT_BASE}/calls/rooms/${encodeURIComponent(roomId)}/participants`
     ),
 
   getHistory: (cursor?: string) =>

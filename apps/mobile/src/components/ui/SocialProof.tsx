@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Avatar } from './Avatar';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useTranslation } from '@/hooks/useTranslation';
 import { formatCount } from '@/utils/formatCount';
 import { spacing, fontSize, fonts, radius } from '@/theme';
 
@@ -31,11 +32,13 @@ const AVATAR_STEP = AVATAR_SIZE - OVERLAP; // 14px per additional avatar
 export const SocialProof = memo(function SocialProof({
   users,
   count,
-  label = 'Liked by',
+  label,
   onPress,
   onUserPress,
 }: SocialProofProps) {
   const tc = useThemeColors();
+  const { t } = useTranslation();
+  const displayLabel = label || t('social.likedBy');
 
   if (count === 0 || users.length === 0) return null;
 
@@ -49,7 +52,7 @@ export const SocialProof = memo(function SocialProof({
       onPress={onPress}
       style={styles.container}
       accessibilityRole="button"
-      accessibilityLabel={`${label} ${firstUser.name} and ${formatCount(othersCount)} others`}
+      accessibilityLabel={`${displayLabel} ${firstUser.name} ${t('social.and')} ${formatCount(othersCount)} ${othersCount === 1 ? t('social.other') : t('social.others')}`}
       disabled={!onPress}
     >
       {/* Stacked avatars */}
@@ -73,7 +76,7 @@ export const SocialProof = memo(function SocialProof({
 
       {/* Text */}
       <Text style={[styles.text, { color: tc.text.secondary }]} numberOfLines={1}>
-        {label}{' '}
+        {displayLabel}{' '}
         <Text
           style={[styles.bold, { color: tc.text.primary }]}
           onPress={onUserPress ? () => onUserPress(firstUser.username) : undefined}
@@ -82,9 +85,9 @@ export const SocialProof = memo(function SocialProof({
         </Text>
         {othersCount > 0 && (
           <>
-            {' and '}
+            {` ${t('social.and')} `}
             <Text style={[styles.bold, { color: tc.text.primary }]}>
-              {formatCount(othersCount)} {othersCount === 1 ? 'other' : 'others'}
+              {formatCount(othersCount)} {othersCount === 1 ? t('social.other') : t('social.others')}
             </Text>
           </>
         )}

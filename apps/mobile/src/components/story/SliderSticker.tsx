@@ -1,10 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   PanResponder,
-  Dimensions,
   StyleProp,
   ViewStyle,
 } from 'react-native';
@@ -38,12 +37,11 @@ interface SliderStickerProps {
   style?: StyleProp<ViewStyle>;
 }
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SLIDER_WIDTH = 240;
 const SLIDER_HEIGHT = 40;
 const THUMB_SIZE = 48;
 
-export function SliderSticker({ data, onResponse, isCreator = false, style }: SliderStickerProps) {
+export const SliderSticker = memo(function SliderSticker({ data, onResponse, isCreator = false, style }: SliderStickerProps) {
   const tc = useThemeColors();
   const { t } = useTranslation();
   const haptic = useContextualHaptic();
@@ -211,7 +209,7 @@ export function SliderSticker({ data, onResponse, isCreator = false, style }: Sl
       )}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

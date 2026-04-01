@@ -3392,7 +3392,20 @@
     "styleEmoji": "Emoji",
     "styleGeometric": "Géométrique",
     "styleKawaii": "Kawaii",
-    "dailyLimitReached": "Vous avez atteint la limite quotidienne d'autocollants"
+    "dailyLimitReached": "Vous avez atteint la limite quotidienne d'autocollants",
+    "title": "Autocollants",
+    "recent": "Récents",
+    "myPacks": "Mes packs",
+    "recentlyUsed": "Utilisés récemment",
+    "selectPack": "Choisir un pack",
+    "addMore": "Ajouter plus",
+    "stickerPacks": "Packs d'autocollants",
+    "searchResults": "Résultats de recherche",
+    "allStickerPacks": "Tous les packs",
+    "featured": "En vedette",
+    "added": "Ajouté",
+    "add": "Ajouter",
+    "stickersCount": "{{count}} autocollants"
   },
   "encryption": {
     "verified": "Chiffrement vérifié",
@@ -4230,5 +4243,22 @@
     "scheduled": "Post scheduled",
     "scheduleButton": "Schedule",
     "today": "Today"
+  },
+  "call": {
+    "inProgress": "Appel en cours",
+    "tapToReturn": "Appuyer pour revenir",
+    "returnToCall": "Revenir à l'appel avec {{name}}",
+    "user": "utilisateur"
+  },
+  "social": {
+    "likedBy": "Aimé par",
+    "and": "et",
+    "other": "autre",
+    "others": "autres"
+  },
+  "emoji": {
+    "searchPlaceholder": "Rechercher des émojis...",
+    "noRecent": "Aucun émoji récent",
+    "noResults": "Aucun émoji trouvé"
   }
 }

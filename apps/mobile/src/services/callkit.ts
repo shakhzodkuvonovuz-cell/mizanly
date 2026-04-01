@@ -296,8 +296,9 @@ function handleEndCall(data: EventsPayload['endCall']): void {
     const apiCall = callInfo.role === 'caller'
       ? livekitApi.deleteRoom(callInfo.roomName)
       : livekitApi.leaveRoom(callInfo.roomName);
-    apiCall.catch(() => {
-      // Room may already be closed
+    apiCall.catch((err) => {
+      if (__DEV__) console.warn('[CallKit] End call API failed:', err);
+      // Room may already be closed — server cleanup via webhook
     });
   }
 

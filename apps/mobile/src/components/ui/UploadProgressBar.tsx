@@ -1,3 +1,4 @@
+import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -32,10 +33,12 @@ interface UploadProgressBarProps {
 export function UploadProgressBar({ progress, visible, label, onCancel }: UploadProgressBarProps) {
   const tc = useThemeColors();
   const { t } = useTranslation();
-  const fillWidth = useSharedValue(0);
+  const fillWidth = useSharedValue(progress);
 
-  // Spring-animate the fill to the current progress
-  fillWidth.value = withSpring(progress, { damping: 20, stiffness: 80, mass: 0.5 });
+  // Spring-animate the fill to the current progress (in useEffect to avoid re-triggering on every render)
+  React.useEffect(() => {
+    fillWidth.value = withSpring(progress, { damping: 20, stiffness: 80, mass: 0.5 });
+  }, [progress, fillWidth]);
 
   const fillStyle = useAnimatedStyle(() => ({
     width: `${Math.min(100, Math.max(0, fillWidth.value))}%`,

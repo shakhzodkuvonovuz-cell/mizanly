@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, memo } from 'react';
 import {
   View,
   Text,
@@ -211,7 +211,7 @@ function AnimatedPreview({ text, animationType, style }: AnimatedPreviewProps) {
 // TextEffects Component
 // ---------------------------------------------------------------------------
 
-export function TextEffects({ visible, onClose, onAdd }: TextEffectsProps) {
+export const TextEffects = memo(function TextEffects({ visible, onClose, onAdd }: TextEffectsProps) {
   const { t } = useTranslation();
   const tc = useThemeColors();
 
@@ -523,7 +523,7 @@ export function TextEffects({ visible, onClose, onAdd }: TextEffectsProps) {
       </BottomSheet>
     </Animated.View>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Styles

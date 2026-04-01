@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { View, Text, TextInput, FlatList, Pressable, StyleSheet, RefreshControl } from 'react-native';
+import { useState, useRef, useEffect, useCallback, memo } from 'react';
+import { View, Text, TextInput, FlatList, Pressable, StyleSheet } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { Audio } from 'expo-av';
 import { useQuery } from '@tanstack/react-query';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
@@ -63,7 +64,7 @@ function LoadingState() {
   );
 }
 
-export function MusicPicker({ visible, onClose, onSelect }: MusicPickerProps) {
+export const MusicPicker = memo(function MusicPicker({ visible, onClose, onSelect }: MusicPickerProps) {
   const { t } = useTranslation();
   const tc = useThemeColors();
   const [searchQuery, setSearchQuery] = useState('');
@@ -339,17 +340,16 @@ export function MusicPicker({ visible, onClose, onSelect }: MusicPickerProps) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           refreshControl={
-            <RefreshControl
+            <BrandedRefreshControl
               refreshing={isRefreshing}
               onRefresh={handleRefresh}
-              tintColor={colors.emerald}
             />
           }
         />
       </View>
     </BottomSheet>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

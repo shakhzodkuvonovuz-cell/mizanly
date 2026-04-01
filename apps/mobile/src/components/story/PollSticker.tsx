@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import {
   View,
   Text,
@@ -39,7 +39,7 @@ interface PollStickerProps {
   style?: StyleProp<ViewStyle>;
 }
 
-function PollOptionRow({
+const PollOptionRow = memo(function PollOptionRow({
   option,
   isSelected,
   showResults,
@@ -91,9 +91,9 @@ function PollOptionRow({
       </View>
     </Pressable>
   );
-}
+});
 
-export function PollSticker({ data, onResponse, isCreator = false, style }: PollStickerProps) {
+export const PollSticker = memo(function PollSticker({ data, onResponse, isCreator = false, style }: PollStickerProps) {
   const tc = useThemeColors();
   const { t } = useTranslation();
   const haptic = useContextualHaptic();
@@ -166,7 +166,7 @@ export function PollSticker({ data, onResponse, isCreator = false, style }: Poll
       </View>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

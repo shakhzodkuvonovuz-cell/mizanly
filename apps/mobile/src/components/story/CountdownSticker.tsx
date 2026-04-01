@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import {
   View,
   Text,
@@ -35,7 +35,7 @@ interface CountdownStickerProps {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export function CountdownSticker({ data, onRemindMeToggle, isCreator = false, style }: CountdownStickerProps) {
+export const CountdownSticker = memo(function CountdownSticker({ data, onRemindMeToggle, isCreator = false, style }: CountdownStickerProps) {
   const tc = useThemeColors();
   const { t } = useTranslation();
   const [timeLeft, setTimeLeft] = useState(0);
@@ -190,7 +190,7 @@ export function CountdownSticker({ data, onRemindMeToggle, isCreator = false, st
       )}
     </Animated.View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

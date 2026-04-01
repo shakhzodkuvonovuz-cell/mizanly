@@ -1,5 +1,6 @@
 import { useEffect, memo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { useTranslation } from '@/hooks/useTranslation';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -25,6 +26,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export const StoryBubble = memo(function StoryBubble({ group, onPress, isOwn }: Props) {
   const { user, hasUnread } = group;
+  const { t } = useTranslation();
   const haptic = useContextualHaptic();
   const tc = useThemeColors();
   const scale = useSharedValue(1);
@@ -85,7 +87,7 @@ export const StoryBubble = memo(function StoryBubble({ group, onPress, isOwn }: 
         </Animated.View>
       )}
       <Text style={styles.name} numberOfLines={1}>
-        {isOwn ? 'Your Story' : user.username}
+        {isOwn ? t('stories.yourStory') : user.username}
       </Text>
     </AnimatedPressable>
   );

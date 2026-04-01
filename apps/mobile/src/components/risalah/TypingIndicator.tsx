@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -27,7 +27,7 @@ interface TypingIndicatorProps {
  * - `variant="inline"` (default): opacity-pulsing dots for conversation list rows.
  * - `variant="bubble"`: vertically bouncing dots for chat message area.
  */
-export function TypingIndicator({ label, dotSize = 5, variant = 'inline' }: TypingIndicatorProps) {
+export const TypingIndicator = memo(function TypingIndicator({ label, dotSize = 5, variant = 'inline' }: TypingIndicatorProps) {
   const tc = useThemeColors();
   const dot1 = useSharedValue(variant === 'inline' ? 0.3 : 0);
   const dot2 = useSharedValue(variant === 'inline' ? 0.3 : 0);
@@ -110,7 +110,7 @@ export function TypingIndicator({ label, dotSize = 5, variant = 'inline' }: Typi
       </View>
     </Animated.View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   row: {
