@@ -2,13 +2,21 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
   pull_request:
-    branches: [main, develop]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   lint-and-typecheck:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -21,9 +29,12 @@ jobs:
         run: npx tsc --noEmit --project apps/api/tsconfig.json
       - name: Typecheck Mobile
         run: npm run typecheck --workspace=apps/mobile
+      - name: Typecheck Shared
+        run: npm run typecheck --workspace=packages/shared
 
-  build-mobile:
+  test-mobile-signal:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: lint-and-typecheck
     steps:
       - uses: actions/checkout@v4
@@ -32,12 +43,14 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci --legacy-peer-deps
-      - name: Verify mobile dependencies installed
-        run: node -e "require('expo/package.json'); require('react-native/package.json'); console.log('Mobile deps OK')"
-        working-directory: apps/mobile
+      - name: Signal Protocol tests (633 tests)
+        run: npx jest --config apps/mobile/src/services/signal/__tests__/jest.config.js
+      - name: LiveKit/CallKit tests (49 tests)
+        run: npx jest --config apps/mobile/src/hooks/__tests__/jest.config.js
 
   test-api:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: lint-and-typecheck
     services:
       postgres:
@@ -65,11 +78,12 @@ jobs:
           cache: npm
       - run: npm ci --legacy-peer-deps
       - run: npx prisma generate --schema=apps/api/prisma/schema.prisma
-      - run: npm test --workspace=apps/api -- --passWithNoTests
+      - run: npm test --workspace=apps/api
 
   test-api-integration:
     runs-on: ubuntu-latest
-    needs: test-api
+    timeout-minutes: 20
+    needs: lint-and-typecheck
     services:
       postgres:
         image: pgvector/pgvector:pg16
@@ -86,6 +100,7 @@ jobs:
       DATABASE_URL: postgresql://mizanly:mizanly_test@localhost:5432/mizanly_test
       DIRECT_DATABASE_URL: postgresql://mizanly:mizanly_test@localhost:5432/mizanly_test
       REDIS_URL: redis://localhost:6379
+      CLERK_SECRET_KEY: test_secret
       NODE_ENV: test
     steps:
       - uses: actions/checkout@v4
@@ -98,11 +113,12 @@ jobs:
       - name: Push schema to test database
         run: npx prisma db push --schema=apps/api/prisma/schema.prisma --skip-generate --accept-data-loss --force-reset
       - name: Run integration tests
-        run: npm run test:integration --workspace=apps/api -- --passWithNoTests --forceExit
+        run: npm run test:integration --workspace=apps/api -- --forceExit
 
   build-api:
     runs-on: ubuntu-latest
-    needs: test-api
+    timeout-minutes: 15
+    needs: lint-and-typecheck
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -116,6 +132,7 @@ jobs:
   # E2E Key Server (Go)
   e2e-server:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     services:
       postgres:
         image: postgres:16
@@ -146,3 +163,51 @@ jobs:
           DATABASE_URL: postgresql://test:test@localhost:5432/test?sslmode=disable
           REDIS_URL: redis://localhost:6379
           CLERK_SECRET_KEY: sk_test_placeholder
+
+  # LiveKit Call Server (Go)
+  livekit-server:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache-dependency-path: apps/livekit-server/go.sum
+      - name: Build LiveKit server
+        run: cd apps/livekit-server && go build -o /dev/null ./cmd/server/
+      - name: Run LiveKit server tests
+        run: cd apps/livekit-server && go test -v ./...
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/test?sslmode=disable
+          REDIS_URL: redis://localhost:6379
+
+  # Dependency vulnerability scanning
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - name: Audit dependencies
+        run: npm audit --audit-level=high || true
