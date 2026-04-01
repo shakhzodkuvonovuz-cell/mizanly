@@ -515,7 +515,12 @@ export const storiesApi = {
   getViewers: (id: string, cursor?: string) =>
     api.get<PaginatedResponse<User>>(`/stories/${id}/viewers${qs({ cursor })}`),
   getHighlights: (userId: string) => api.get<StoryHighlightAlbum[]>(`/stories/highlights/${userId}`),
-  getHighlightById: (albumId: string) => api.get<StoryHighlightAlbum>(`/stories/highlights/album/${albumId}`),
+  // X10-#2: Backend only has GET /stories/highlights/:userId — no album-by-ID endpoint exists
+  // @dead-endpoint: no backend route GET /stories/highlights/album/:albumId exists
+  getHighlightById: (albumId: string) => {
+    console.warn('storiesApi.getHighlightById: backend endpoint does not exist — returns 404');
+    return api.get<StoryHighlightAlbum>(`/stories/highlights/album/${albumId}`);
+  },
   createHighlight: (title: string, coverUrl?: string) =>
     api.post<StoryHighlightAlbum>('/stories/highlights', { title, coverUrl }),
   updateHighlight: (albumId: string, data: UpdateHighlightPayload) =>
@@ -528,7 +533,7 @@ export const storiesApi = {
   replyToStory: (storyId: string, content: string) =>
     api.post<Message>(`/stories/${storyId}/reply`, { content }),
   getReactionSummary: (storyId: string) =>
-    api.get<Record<string, number>>(`/stories/${storyId}/reactions/summary`),
+    api.get<Record<string, number>>(`/stories/${storyId}/reaction-summary`),
   submitStickerResponse: (storyId: string, stickerType: string, responseData: Record<string, unknown>) =>
     api.post(`/stories/${storyId}/sticker-response`, { stickerType, responseData }),
   getStickerResponses: (storyId: string, type?: string) =>
@@ -600,10 +605,11 @@ export const channelsApi = {
     api.get<PaginatedResponse<Video>>(`/channels/${handle}/videos${qs({ cursor })}`),
   getMyChannels: () =>
     api.get<Channel[]>('/channels/me/channels'),
-  getAnalytics: (channelId: string) =>
-    api.get<{ views: number; subscribers: number; videos: number; recentSubscribers: number[] }>(`/channels/${channelId}/analytics`),
-  getSubscribers: (channelId: string, cursor?: string) =>
-    api.get<PaginatedResponse<User>>(`/channels/${channelId}/subscribers${qs({ cursor })}`),
+  // X10-#11/#12: Backend expects channel handle (slug), not UUID — callers must pass handle
+  getAnalytics: (handle: string) =>
+    api.get<{ views: number; subscribers: number; videos: number; recentSubscribers: number[] }>(`/channels/${handle}/analytics`),
+  getSubscribers: (handle: string, cursor?: string) =>
+    api.get<PaginatedResponse<User>>(`/channels/${handle}/subscribers${qs({ cursor })}`),
   getRecommended: (limit?: number) =>
     api.get<Channel[]>(`/channels/recommended${qs({ limit })}`),
   setTrailer: (handle: string, videoId: string) =>
@@ -800,7 +806,7 @@ export const messagesApi = {
   setDisappearingTimer: (conversationId: string, duration: number) =>
     api.put(`/messages/conversations/${conversationId}/disappearing`, { duration }),
   archiveConversation: (conversationId: string) =>
-    api.post(`/messages/conversations/${conversationId}/archive`),
+    api.put(`/messages/conversations/${conversationId}/archive`, { archived: true }),
   unarchiveConversation: (conversationId: string) =>
     api.delete(`/messages/conversations/${conversationId}/archive`),
   getArchivedConversations: (cursor?: string) =>
@@ -1062,10 +1068,13 @@ export const subtitlesApi = {
     api.patch<SubtitleTrack>(`/videos/${videoId}/subtitles/${trackId}`, data),
 };
 
-// Stories reactions (if endpoint exists)
+// X10-#10/#16: @dead-endpoint: no POST /stories/:id/react backend route exists
+// Story reactions need a backend endpoint to be built first
 export const storiesReactionsApi = {
-  react: (storyId: string, emoji: string) =>
-    api.post(`/stories/${storyId}/react`, { emoji }),
+  react: (storyId: string, emoji: string) => {
+    console.warn('storiesReactionsApi.react: backend endpoint does not exist');
+    return api.post(`/stories/${storyId}/react`, { emoji });
+  },
 };
 
 // ── Drafts ──
@@ -1149,18 +1158,29 @@ export const liveApi = {
     api.post(`/live/${id}/promote/${userId}`),
   demoteToViewer: (id: string, userId: string) =>
     api.post(`/live/${id}/demote/${userId}`),
-  getParticipants: (id: string) =>
-    api.get<LiveParticipant[]>(`/live/${id}/participants`),
+  // X10-#5: @dead-endpoint: no GET /live/:id/participants backend route exists
+  getParticipants: (id: string) => {
+    console.warn('liveApi.getParticipants: backend endpoint does not exist');
+    return api.get<LiveParticipant[]>(`/live/${id}/participants`);
+  },
   getHostSessions: () =>
     api.get<LiveSession[]>('/live/my'),
-  lowerHand: (id: string) =>
-    api.post(`/live/${id}/lower-hand`),
-  sendChat: (id: string, message: string) =>
-    api.post(`/live/${id}/chat`, { message }),
-  inviteSpeaker: (id: string, participantId: string) =>
-    api.post(`/live/${id}/invite-speaker/${participantId}`),
-  removeParticipant: (id: string, participantId: string) =>
-    api.delete(`/live/${id}/participants/${participantId}`),
+  // X10-#6: @dead-endpoint: no POST /live/:id/lower-hand backend route exists
+  lowerHand: (id: string) => {
+    console.warn('liveApi.lowerHand: backend endpoint does not exist');
+    return api.post(`/live/${id}/lower-hand`);
+  },
+  // X10-#7: @dead-endpoint: no POST /live/:id/chat backend route exists
+  sendChat: (id: string, message: string) => {
+    console.warn('liveApi.sendChat: backend endpoint does not exist');
+    return api.post(`/live/${id}/chat`, { message });
+  },
+  // X10-#8: Fixed route — backend is POST /live/:id/guests/invite with body
+  inviteSpeaker: (id: string, guestUserId: string) =>
+    api.post(`/live/${id}/guests/invite`, { guestUserId }),
+  // X10-#9: Fixed route — backend is DELETE /live/:id/guests/:userId
+  removeParticipant: (id: string, userId: string) =>
+    api.delete(`/live/${id}/guests/${userId}`),
   rehearse: (data: { title: string; description?: string; liveType?: string }) =>
     api.post<LiveSession>('/live/rehearse', data),
   goLiveFromRehearsal: (id: string) =>
@@ -1257,10 +1277,12 @@ export const feedApi = {
     api.post(`/feed/dismiss/${contentType}/${contentId}`),
   getPersonalized: (space: 'saf' | 'bakra' | 'majlis', cursor?: string) =>
     api.get<PaginatedResponse<{ id: string; type: string; score: number; reasons: string[] }>>(`/feed/personalized${qs({ space, cursor })}`),
+  // X10-#4: Feed explore endpoint is at /search/explore, not /feed/explore
   getExplore: (cursor?: string) =>
-    api.get<PaginatedResponse<Post | Reel | Thread>>(`/feed/explore${cursor ? `?cursor=${cursor}` : ''}`),
+    api.get<PaginatedResponse<Post | Reel | Thread>>(`/search/explore${cursor ? `?cursor=${cursor}` : ''}`),
+  // X10-#20: Exact duplicate of dismiss — kept for backward compatibility, delegates to dismiss
   reportNotInterested: (contentId: string, contentType: string) =>
-    api.post(`/feed/dismiss/${contentType}/${contentId}`),
+    api.post(`/feed/dismiss/${contentType}/${contentId}`), // Same as dismiss()
   explainPost: (postId: string) =>
     api.get<{ reasons: string[]; signals?: Record<string, unknown> }>(`/feed/explain/post/${postId}`),
   explainThread: (threadId: string) =>
@@ -1532,5 +1554,9 @@ export const volunteerApi = {
     api.get(`/volunteer${qs(params || {})}`),
   createOpportunity: (dto: { title: string; description: string; category: string; location?: string; date?: string; spotsTotal?: number }) =>
     api.post('/volunteer', dto),
-  signUp: (id: string) => api.post(`/volunteer/${id}/signup`),
+  // X10-#13: @dead-endpoint: no POST /volunteer/:id/signup backend route exists
+  signUp: (id: string) => {
+    console.warn('volunteerApi.signUp: backend endpoint does not exist');
+    return api.post(`/volunteer/${id}/signup`);
+  },
 };

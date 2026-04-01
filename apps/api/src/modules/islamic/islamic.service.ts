@@ -822,7 +822,9 @@ export class IslamicService {
       throw new BadRequestException('Target must be between 1 and 100,000');
     }
     // Increment global community dhikr counter (Finding #280)
+    // J07-C1: Set 30-day rolling TTL (refreshed on every increment) so key participates in TTL tracking
     await this.redis.incrby('community:dhikr:total', dto.count);
+    await this.redis.expire('community:dhikr:total', 30 * 24 * 60 * 60);
     const todayKey = `community:dhikr:today:${new Date().toISOString().slice(0, 10)}`;
     await this.redis.incrby(todayKey, dto.count);
     // 48-hour TTL prevents stale daily keys from accumulating indefinitely
@@ -869,7 +871,7 @@ export class IslamicService {
       const dbTotal = await this.prisma.dhikrSession.aggregate({ _sum: { count: true } });
       const computed = dbTotal._sum.count ?? 0;
       if (computed > 0) {
-        await this.redis.set('community:dhikr:total', String(computed));
+        await this.redis.setex('community:dhikr:total', 30 * 24 * 60 * 60, String(computed));
         total = String(computed);
       }
     }
@@ -1201,7 +1203,7 @@ export class IslamicService {
 
       // Cache for 30 days (Quran text doesn't change)
       try {
-        await this.redis.setex(cacheKey, 2592000, JSON.stringify(result));
+        await this.redis.setex(cacheKey, 365 * 24 * 60 * 60, JSON.stringify(result));
       } catch (cacheErr) {
         this.logger.debug(`Redis cache write failed: ${cacheErr instanceof Error ? cacheErr.message : cacheErr}`);
       }
@@ -1258,7 +1260,7 @@ export class IslamicService {
       const result = { surah, verse, audioUrl: audio.url };
 
       try {
-        await this.redis.setex(cacheKey, 2592000, JSON.stringify(result));
+        await this.redis.setex(cacheKey, 365 * 24 * 60 * 60, JSON.stringify(result));
       } catch (cacheErr) {
         this.logger.debug(`Redis cache write failed: ${cacheErr instanceof Error ? cacheErr.message : cacheErr}`);
       }
@@ -1427,7 +1429,7 @@ export class IslamicService {
       const result = { juz: juzNumber, verses };
 
       try {
-        await this.redis.setex(cacheKey, 2592000, JSON.stringify(result));
+        await this.redis.setex(cacheKey, 365 * 24 * 60 * 60, JSON.stringify(result));
       } catch (cacheErr) {
         this.logger.debug(`Redis cache write failed: ${cacheErr instanceof Error ? cacheErr.message : cacheErr}`);
       }

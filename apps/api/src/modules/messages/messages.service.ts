@@ -32,7 +32,9 @@ const CONVERSATION_SELECT = {
   encryptedLastMessagePreview: true,
   createdAt: true,
   members: {
-    include: {
+    select: {
+      userId: true,
+      role: true,
       user: {
         select: {
           id: true,

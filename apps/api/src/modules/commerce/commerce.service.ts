@@ -324,7 +324,10 @@ export class CommerceService {
     const VALID_STATUSES = ['PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED'];
     if (!VALID_STATUSES.includes(status)) throw new BadRequestException('Invalid order status');
 
-    const order = await this.prisma.order.findUnique({ where: { id: orderId }, include: { product: true } });
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { product: { select: { id: true, sellerId: true } } },
+    });
     if (!order) throw new NotFoundException();
     if (order.product.sellerId !== sellerId) throw new ForbiddenException();
 

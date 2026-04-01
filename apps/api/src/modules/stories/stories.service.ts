@@ -211,13 +211,14 @@ export class StoriesService {
         take: 20,
       });
       const actorUser = await this.prisma.user.findUnique({ where: { id: userId }, select: { username: true } });
-      for (const mu of mentionedUsers) {
+      // J01-#11: Parallelize mention notifications
+      await Promise.all(mentionedUsers.map(mu =>
         this.notifications.create({
           userId: mu.id, actorId: userId, type: 'MENTION',
           title: 'Mentioned you in a story',
           body: `@${actorUser?.username ?? 'Someone'} mentioned you in their story`,
-        }).catch(() => {});
-      }
+        }).catch(() => {}),
+      ));
     }
 
     // Gamification: award XP for story creation
