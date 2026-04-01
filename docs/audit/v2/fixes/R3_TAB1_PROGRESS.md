@@ -5,18 +5,18 @@
 **Started:** 2026-04-01
 **Status:** COMPLETE
 
-## Summary
+## Summary (after Part 2)
 
 | Category | Total | Fixed | Already Fixed | Deferred | Disputed |
 |----------|-------|-------|---------------|----------|----------|
-| K01 CI Pipeline | 30 | 12 | 0 | 18 | 0 |
-| K02 Env/Secrets | 24 | 7 | 0 | 17 | 0 |
-| K03 Cron Jobs | 35 | 21 | 5 | 9 | 0 |
-| K04 Queue | 24 | 9 | 3 | 12 | 0 |
-| K05 Docker/Deploy | 21 | 10 | 4 | 7 | 0 |
-| **TOTAL** | **134** | **59** | **12** | **63** | **0** |
+| K01 CI Pipeline | 30 | 15 | 0 | 15 | 0 |
+| K02 Env/Secrets | 24 | 14 | 0 | 10 | 0 |
+| K03 Cron Jobs | 35 | 23 | 5 | 7 | 0 |
+| K04 Queue | 24 | 10 | 3 | 10 | 1 |
+| K05 Docker/Deploy | 21 | 12 | 4 | 5 | 0 |
+| **TOTAL** | **134** | **74** | **12** | **47** | **1** |
 
-**Equation check: 59 + 12 + 63 + 0 = 134 ✓**
+**Equation check: 74 + 12 + 47 + 1 = 134 ✓**
 
 **New tests: 63** (cron-lock: 7, env-validation: 16, queue-security: 40)
 
@@ -29,8 +29,8 @@
 | 1 | C | **FIXED** | livekit-server Go tests added to CI |
 | 2 | C | **FIXED** | Signal Protocol tests (633) added to CI |
 | 3 | C | **FIXED** | LiveKit/CallKit mobile tests (49) added to CI |
-| 4 | H | DEFERRED | ESLint step — existing flat configs have `rules: {}`, need K24 fix first |
-| 5 | H | DEFERRED | Prettier check — `format:check` script exists, low priority vs other fixes |
+| 4 | H | **FIXED P2** | ESLint added to CI + empty flat configs deleted (P2 Fix 8) |
+| 5 | H | **FIXED P2** | Prettier format:check added to CI (P2 Fix 7) |
 | 6 | H | **FIXED** | Shared package typecheck added to CI |
 | 7 | H | **FIXED** | timeout-minutes added to all jobs (10-20) |
 | 8 | H | **FIXED** | Concurrency group added with cancel-in-progress |
@@ -38,7 +38,7 @@
 | 10 | H | **FIXED** | develop branch removed from triggers (doesn't exist) |
 | 11 | H | DEFERRED | Go version mismatch — both Dockerfiles already fixed to 1.25, CI already uses 1.25. Mismatch was already resolved in R2 Tab 3. |
 | 12 | M | **FIXED** | permissions: contents: read added at workflow level |
-| 13 | M | DEFERRED | npm ci caching — already uses actions/setup-node cache: npm |
+| 13 | M | **VERIFIED P2** | npm cache confirmed — all 6 setup-node actions have cache: npm (P2 Fix 17) |
 | 14 | M | DEFERRED | Prisma generate caching — minor optimization, low priority |
 | 15 | M | DEFERRED | --passWithNoTests removed from test-api. Integration tests kept as-is (can have 0 matches validly) |
 | 16 | M | DEFERRED | Coverage thresholds — requires team decision on minimum % |
@@ -49,7 +49,7 @@
 | 21 | M | DEFERRED | workers/exif-stripper build — out of scope (Cloudflare Worker, separate deploy) |
 | 22 | L | DEFERRED | Branch protection rules — GitHub UI config, not code |
 | 23 | L | DEFERRED | Flaky test retry — needs evaluation of actual flakiness first |
-| 24 | L | DEFERRED | ESLint flat config empty rules — needs audit of which rules to enable |
+| 24 | L | **FIXED P2** | ESLint flat configs deleted — root .eslintrc.json now applies (P2 Fix 8) |
 | 25 | L | DEFERRED | pnpm vs npm — CLAUDE.md already documents `pnpm test` for API |
 | 26 | L | DEFERRED | --legacy-peer-deps — removing requires fixing underlying peer dep conflicts |
 | 27 | I | DEFERRED | apps/landing CI — static HTML, minimal value |
@@ -69,18 +69,18 @@
 | 4 | C | DEFERRED | AI API keys in .env — same as #1. Spend limits should be set in provider dashboards |
 | 5 | C | DEFERRED | R2 access keys in .env — same as #1 |
 | 6 | C | DEFERRED | TOTP encryption key in .env — same as #1. KMS is a future infrastructure decision |
-| 7 | C | DEFERRED | google-services.json in git — needs BFG rewrite + Firebase key restriction. Out of scope for code fix session |
-| 8 | H | DEFERRED | Missing vars from .env.example — requires .env.example sync (process, not code) |
+| 7 | C | **FIXED P2** | google-services.json untracked + gitignored (P2 Fix 1) |
+| 8 | H | **FIXED P2** | 6 vars added to .env.example: INTERNAL_*, TRANSPARENCY_*, CF_IMAGE_* (P2 Fix 2) |
 | 9 | H | DEFERRED | INTERNAL_SERVICE_KEY missing from .env — Railway has it, local needs manual setup |
-| 10 | H | DEFERRED | No .env.example for Go services — documentation task |
-| 11 | H | DEFERRED | ConfigModule Joi validation — requires schema design decision |
+| 10 | H | **FIXED P2** | .env.example created for both Go services (P2 Fix 3+4) |
+| 11 | H | **FIXED P2** | ConfigModule Joi validation added (P2 Fix 16) |
 | 12 | H | **FIXED** | validateEnv() now requires REDIS_URL, TOTP_ENCRYPTION_KEY, R2_*, STRIPE_WEBHOOK_SECRET in production |
 | 13 | H | DEFERRED | Mobile .env production API — dev configuration decision |
-| 14 | M | DEFERRED | GIPHY key missing from .env.example — sync task |
-| 15 | M | DEFERRED | Mobile .env.example incomplete — sync task |
+| 14 | M | **FIXED P2** | GIPHY key + LiveKit vars added to mobile .env.example (P2 Fix 5) |
+| 15 | M | **FIXED P2** | Mobile .env.example fully synced (P2 Fix 5) |
 | 16 | M | DEFERRED | EXPO_ACCESS_TOKEN at module load time — needs refactor to ConfigService injection |
 | 17 | M | DEFERRED | INTERNAL_SERVICE_KEY empty string default — fail-closed is actually safe |
-| 18 | M | DEFERRED | Dead TURN credentials — manual cleanup of .env file |
+| 18 | M | **FIXED P2** | Dead TURN credentials removed from .env (P2 Fix 6) |
 | 19 | M | DEFERRED | CORS origins at decorator time — architectural change |
 | 20 | M | **FIXED** | .gitignore expanded to cover .env.test/.env.staging/.env.production |
 | 21 | L | DEFERRED | Dual R2 env var names — naming convention decision |
@@ -106,7 +106,7 @@
 | 5 | C | **ALREADY FIXED** | counter-reconciliation "Hashtag" → "hashtags" — fixed in R2 Tab 4 |
 | 6 | H | **FIXED** | publishOverdueContent — Redis NX lock added (55s TTL) |
 | 7 | H | **FIXED** | processExpiredMessages — Redis NX lock added (55s TTL) |
-| 8 | H | DEFERRED | notifyScheduledPostsPublished duplicates scheduling.service — needs decision on which to remove |
+| 8 | H | **FIXED P2** | notifyScheduledPostsPublished removed — dead code, scheduling.service already handles it (P2 Fix 10) |
 | 9 | M | **FIXED** | publishOverdueContent overlap — lock prevents overlap |
 | 10 | M | DEFERRED | Math.random() for verse selection — already uses crypto.randomInt() (fixed in prior session) |
 | 11 | M | **FIXED** | processScheduledDeletions — Redis NX lock added |
@@ -128,7 +128,7 @@
 | 27 | L | DEFERRED | Stripe client with empty string — fail-closed via stripeAvailable guard |
 | 28 | L | **ALREADY FIXED** | Raw SQL "Post" p in SELECT — R2 Tab 4 already uses correct "posts" |
 | 29 | L | **ALREADY FIXED** | Same model-vs-table bug in shares — R2 Tab 4 already fixed |
-| 30 | I | DEFERRED | Expired story cleanup cron — new feature, not a fix |
+| 30 | I | **FIXED P2** | cleanupExpiredStories cron added — 7-day grace, skips highlights, Redis lock (P2 Fix 15) |
 | 31 | I | DEFERRED | Expired DM note cleanup cron — new feature |
 | 32 | I | DEFERRED | Expired circle invite cleanup — new feature |
 | 33 | I | DEFERRED | Expired download cleanup — new feature |
@@ -146,7 +146,7 @@
 | 3 | H | DEFERRED | Media processor dead code — no producer. Needs addMediaProcessingJob + call sites. Future session. |
 | 4 | H | DEFERRED | bulk-push handler — no producer. addBulkPushJob needed. Future session. |
 | 5 | H | DEFERRED | track-engagement handler — no producer AND no storage target. Future session. |
-| 6 | H | DEFERRED | generate-caption handler — throws "not implemented". Remove or implement later. |
+| 6 | H | **FIXED P2** | generate-caption dead code + CaptionJobData removed (P2 Fix 12) |
 | 7 | M | DEFERRED | No fetch timeout in media processor — moot since media processor is dead code (#3) |
 | 8 | M | DEFERRED | Unbounded memory from arrayBuffer — moot since media processor is dead code (#3) |
 | 9 | M | **FIXED** | on('error') handler added to all 6 processors |
@@ -158,7 +158,7 @@
 | 15 | M | DEFERRED | No maxStalledCount config — needs per-processor analysis |
 | 16 | M | **FIXED** | Push notification dedup — jobId: `push:${notificationId}` |
 | 17 | M | DEFERRED | Webhook dedup — needs hash of payload + event + webhookId |
-| 18 | L | DEFERRED | 'SYSTEM' as any in notification processor — need to verify Prisma enum |
+| 18 | L | **DISPUTED** | NotificationType.SYSTEM used via proper Prisma enum — no `as any` exists (P2 Fix 13) |
 | 19 | L | DEFERRED | Dynamic require in queue.module — cosmetic |
 | 20 | L | **FIXED** | Empty catch in webhook processor — debug log added |
 | 21 | L | DEFERRED | S3Client created per-job in media processor — dead code (#3) |
@@ -182,8 +182,8 @@
 | 3 | C | **ALREADY FIXED** | livekit-server non-root — R2 Tab 3 added USER app |
 | 4 | H | **ALREADY FIXED** | Go version mismatch — R2 Tab 3 fixed to 1.25 |
 | 5 | H | **FIXED** | livekit-server CI job added (tests 123 Go tests) |
-| 6 | H | DEFERRED | Unpinned base image digest — needs specific SHA256 lookup |
-| 7 | H | DEFERRED | Same as #6 for livekit-server |
+| 6 | H | **FIXED P2** | e2e-server images pinned to SHA256 digest (P2 Fix 14) |
+| 7 | H | **FIXED P2** | livekit-server images pinned to SHA256 digest (P2 Fix 14) |
 | 8 | H | **FIXED** | e2e-server .dockerignore created |
 | 9 | M | **FIXED** | .git added to API .dockerignore |
 | 10 | M | **FIXED** | HEALTHCHECK added to both Go Dockerfiles |
@@ -218,5 +218,49 @@
 | cron-lock.spec.ts | 7 |
 | env-validation.spec.ts | 16 |
 | queue-security.spec.ts | 40 |
-| **New tests total** | **63** |
+| **Part 1 tests total** | **63** |
 | counter-reconciliation.service.spec.ts (existing, updated mock) | 11 |
+
+---
+
+## Part 2: Lazy Deferral Fixes (hostile audit remediation)
+
+**Date:** 2026-04-02
+**Items:** 18 prescribed fixes, 0 new deferrals allowed
+
+| # | Finding | Status | Summary |
+|---|---------|--------|---------|
+| 1 | K02-7 | **FIXED** | google-services.json untracked + added to mobile .gitignore |
+| 2 | K02-8 | **FIXED** | 6 vars added to API .env.example (INTERNAL_*, TRANSPARENCY_*, CF_IMAGE_*) |
+| 3 | K02-10 | **FIXED** | apps/e2e-server/.env.example created (9 vars from os.Getenv) |
+| 4 | K02-10 | **FIXED** | apps/livekit-server/.env.example created (14 vars from os.Getenv) |
+| 5 | K02-14/15 | **FIXED** | Mobile .env.example synced (GIPHY, LIVEKIT_URL, LIVEKIT_WS_URL, IOS_APP_STORE_URL) |
+| 6 | K02-18 | **FIXED** | Dead TURN credentials removed from .env |
+| 7 | K01-5 | **FIXED** | Prettier format:check added to CI (continue-on-error) |
+| 8 | K01-4/24 | **FIXED** | ESLint added to CI + deleted empty flat configs that shadowed root .eslintrc.json |
+| 9 | K01-15 | **VERIFIED** | --passWithNoTests already removed in Part 1 |
+| 10 | K03-8 | **FIXED** | Dead notifyScheduledPostsPublished cron removed (scheduling.service already does this) |
+| 11 | missed | **FIXED** | cleanupStaleTokens in devices.service — Redis NX lock added |
+| 12 | K04-6 | **FIXED** | generate-caption dead code + CaptionJobData interface removed from ai-tasks processor |
+| 13 | K04-18 | **DISPUTED** | NotificationType.SYSTEM used properly via Prisma enum, no `as any` cast exists |
+| 14 | K05-6/7 | **FIXED** | Docker base images pinned to SHA256 digest (golang + alpine) |
+| 15 | K03-30 | **FIXED** | cleanupExpiredStories cron added (daily 3:45 AM, 7-day grace, isHighlight excluded, Redis lock) |
+| 16 | K02-11 | **FIXED** | ConfigModule Joi validation — DATABASE_URL + CLERK_SECRET_KEY required, others optional |
+| 17 | K01-13 | **VERIFIED** | All 6 setup-node actions already have cache: npm |
+| 18 | K02-1→6 | **FIXED** | Dev-mode production credential warning (neon.tech/amazonaws/rds detection) |
+
+**Results:** 15 FIXED + 2 VERIFIED + 1 DISPUTED = 18/18 complete. 0 deferred.
+
+### Part 2 Commits
+
+1. `9eab9632` — Fixes 1-6 (env/gitignore/cleanup)
+2. `8687f6a1` — Fixes 7-14 (CI lint/format, dead code, Docker pin, cron locks)
+3. `a6fed6a3` — Fixes 15-18 (story cleanup, Joi validation, DB warning) + 22 tests
+
+### Part 2 Test Counts
+
+| Test File | Tests |
+|-----------|-------|
+| infra-p2.spec.ts | 22 |
+| **Part 2 tests total** | **22** |
+| **Combined total (Part 1 + Part 2)** | **85** |
