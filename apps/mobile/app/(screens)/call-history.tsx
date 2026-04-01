@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
 import { useUser } from '@clerk/clerk-expo';
@@ -51,6 +52,13 @@ export default function CallHistoryScreen() {
     initialPageParam: undefined as string | undefined,
   });
 
+  // Refresh list when returning from a call
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     haptic.navigate();
@@ -66,7 +74,8 @@ export default function CallHistoryScreen() {
     const otherParticipant = item.participants?.find((p: { userId: string }) => p.userId !== myUserId);
     const otherUser = otherParticipant?.user;
 
-    if (!otherUser) return null;
+    const fallbackName = t('common.deletedUser');
+    const displayName = otherUser?.displayName || otherUser?.username || fallbackName;
 
     const isMissed = item.status === 'MISSED' && !isCaller;
     const isVideo = item.callType === 'VIDEO';
@@ -95,13 +104,14 @@ export default function CallHistoryScreen() {
         >
           <Pressable
             accessibilityRole="button"
-            style={styles.rowInner}
-            onPress={() => navigate(`/(screens)/profile/${otherUser.username}`)}
+            accessibilityLabel={displayName}
+            style={({ pressed }) => [styles.rowInner, pressed && { opacity: 0.7 }]}
+            onPress={() => otherUser?.username ? navigate(`/(screens)/profile/${otherUser.username}`) : undefined}
           >
-            <Avatar uri={otherUser.avatarUrl} name={otherUser.displayName || otherUser.username} size="md" />
+            <Avatar uri={otherUser?.avatarUrl} name={displayName} size="md" />
             <View style={styles.info}>
-              <Text style={[styles.name, isMissed && styles.missedName]} numberOfLines={1}>
-                {otherUser.displayName || otherUser.username}
+              <Text style={[styles.name, { color: tc.text.primary }, isMissed && styles.missedName]} numberOfLines={1}>
+                {displayName}
               </Text>
               <View style={styles.subInfo}>
                 <LinearGradient
@@ -110,11 +120,11 @@ export default function CallHistoryScreen() {
                 >
                   <Icon
                     name={isVideo ? 'video' : 'phone'}
-                    size={12}
+                    size="xs"
                     color={isMissed ? colors.error : colors.emerald}
                   />
                 </LinearGradient>
-                <Text style={[styles.statusText, isMissed && styles.missedText]}>{statusText}</Text>
+                <Text style={[styles.statusText, { color: tc.text.secondary }, isMissed && styles.missedText]}>{statusText}</Text>
                 <Text style={[styles.dot, { color: tc.text.tertiary }]}>•</Text>
                 <Text style={[styles.time, { color: tc.text.secondary }]} numberOfLines={1}>
                   {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
@@ -124,14 +134,15 @@ export default function CallHistoryScreen() {
           </Pressable>
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={t('calls.callBack')}
             hitSlop={8}
-            onPress={() => navigate(`/(screens)/call/${item.id}`)} // TODO: Verify call detail route exists — calls are currently UI facades
+            onPress={() => navigate(`/(screens)/call/${item.id}`)}
           >
             <LinearGradient
               colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']}
               style={styles.actionButton}
             >
-              <Icon name={isVideo ? 'video' : 'phone'} size={18} color={colors.emerald} />
+              <Icon name={isVideo ? 'video' : 'phone'} size="sm" color={colors.emerald} />
             </LinearGradient>
           </Pressable>
         </LinearGradient>
@@ -178,9 +189,10 @@ export default function CallHistoryScreen() {
   return (
     <ScreenErrorBoundary>
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
-        <GlassHeader 
-          title={t('calls.title')} 
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} 
+        <StatusBar barStyle="light-content" />
+        <GlassHeader
+          title={t('calls.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
         />
         <FlatList
           data={calls}
@@ -214,9 +226,8 @@ export default function CallHistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: colors.dark.bg 
+  container: {
+    flex: 1,
   },
   listContent: {
     paddingBottom: spacing['2xl'],
@@ -245,12 +256,11 @@ const styles = StyleSheet.create({
   info: {
     flex: 1,
     justifyContent: 'center',
-    gap: 2,
+    gap: spacing.xs,
   },
   name: {
     fontSize: fontSize.base,
     fontWeight: '600',
-    color: colors.text.primary,
   },
   missedName: {
     color: colors.error,
@@ -262,7 +272,6 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
     textTransform: 'capitalize',
   },
   missedText: {
@@ -277,11 +286,9 @@ const styles = StyleSheet.create({
   },
   dot: {
     fontSize: fontSize.sm,
-    color: colors.text.tertiary,
   },
   time: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
   },
   actionButton: {
     width: 36,

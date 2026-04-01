@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, Dimensions, Alert,
-  StatusBar, Animated as RNAnimated,
+  View, Text, StyleSheet, Pressable, Alert,
+  StatusBar, useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,25 +13,29 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useCameraPermissions } from 'expo-camera';
 import { Icon } from '@/components/ui/Icon';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { colors, spacing, radius, fonts } from '@/theme';
+import { showToast } from '@/components/ui/Toast';
+import { colors, spacing, radius, fonts, fontSize } from '@/theme';
 import { formatTime } from '@/utils/formatTime';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useThemeColors } from '@/hooks/useThemeColors';
-
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 type CameraMode = 'photo' | 'video' | 'story';
 
 export default function CameraScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const haptic = useContextualHaptic();
   const [permission, requestPermission] = useCameraPermissions();
   const [mode, setMode] = useState<CameraMode>('photo');
   const [isRecording, setIsRecording] = useState(false);
   const [flashOn, setFlashOn] = useState(false);
   const [isFrontCamera, setIsFrontCamera] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [isPickingGallery, setIsPickingGallery] = useState(false);
   const tc = useThemeColors();
 
   const captureScale = useSharedValue(1);
@@ -41,7 +45,14 @@ export default function CameraScreen() {
   // Recording timer
   const recordingInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Camera facade: CameraView is not rendered yet (blocked on EAS build).
+  // Capture button navigates to create screens. When expo-camera is wired,
+  // replace navigation with takePictureAsync/recordAsync calls.
   const handleCapturePress = useCallback(() => {
+    if (isCapturing) return; // Debounce guard
+    setIsCapturing(true);
+    haptic.tick();
+
     if (mode === 'video') {
       if (isRecording) {
         // Stop recording
@@ -51,16 +62,16 @@ export default function CameraScreen() {
         if (recordingInterval.current) {
           clearInterval(recordingInterval.current);
         }
-        // Navigate to create-reel with video
         router.push('/(screens)/create-reel');
+        setIsCapturing(false);
       } else {
         // Start recording
         setIsRecording(true);
+        setIsCapturing(false);
         recordProgress.value = withTiming(1, { duration: 60000 }); // 60s max
         recordingInterval.current = setInterval(() => {
           setRecordingTime(prev => {
             if (prev >= 60) {
-              // Auto stop at 60s
               setIsRecording(false);
               recordProgress.value = withTiming(0, { duration: 300 });
               if (recordingInterval.current) clearInterval(recordingInterval.current);
@@ -71,21 +82,20 @@ export default function CameraScreen() {
         }, 1000);
       }
     } else {
-      // Photo capture
+      // Photo capture animation
       captureScale.value = withSequence(
         withTiming(0.85, { duration: 100 }),
         withSpring(1, { damping: 12, stiffness: 400 })
       );
-      // Navigate to create-post or create-story
-      setTimeout(() => {
-        if (mode === 'story') {
-          router.push('/(screens)/create-story');
-        } else {
-          router.push('/(screens)/create-post');
-        }
-      }, 200);
+      if (mode === 'story') {
+        router.push('/(screens)/create-story');
+      } else {
+        router.push('/(screens)/create-post');
+      }
+      // Reset guard after navigation
+      setTimeout(() => setIsCapturing(false), 500);
     }
-  }, [mode, isRecording, recordProgress, captureScale, router]);
+  }, [mode, isRecording, isCapturing, recordProgress, captureScale, router, haptic]);
 
   const animatedCaptureStyle = useAnimatedStyle(() => ({
     transform: [{ scale: captureScale.value }],
@@ -107,9 +117,12 @@ export default function CameraScreen() {
     opacity: interpolate(pulseAnim.value, [1, 1.1], [0.8, 1]),
   }));
 
-  // Request camera permission on mount with rationale explanation
+  // Request camera permission on mount — only prompt once via canAskAgain guard
+  const permissionRequested = useRef(false);
   useEffect(() => {
+    if (permissionRequested.current) return;
     if (!permission?.granted && permission?.canAskAgain !== false) {
+      permissionRequested.current = true;
       Alert.alert(
         t('permissions.cameraTitle', 'Camera Access'),
         t('permissions.cameraRationale', 'Mizanly needs camera access to take photos and record videos for your posts, stories, and reels.'),
@@ -195,7 +208,7 @@ export default function CameraScreen() {
               accessibilityRole="button"
               accessibilityLabel={flashOn ? "Turn flash off" : "Turn flash on"}
               style={[styles.controlPill, flashOn && styles.controlPillActive]}
-              onPress={() => setFlashOn(!flashOn)}
+              onPress={() => { haptic.tick(); setFlashOn(!flashOn); }}
             >
               <Icon name="sun" size="sm" color="#fff" />
             </Pressable>
@@ -205,7 +218,7 @@ export default function CameraScreen() {
               accessibilityRole="button"
               accessibilityLabel={t('accessibility.flipCamera')}
               style={styles.controlPill}
-              onPress={() => setIsFrontCamera(!isFrontCamera)}
+              onPress={() => { haptic.tick(); setIsFrontCamera(!isFrontCamera); }}
             >
               <Icon name="repeat" size="sm" color="#fff" />
             </Pressable>
@@ -230,7 +243,7 @@ export default function CameraScreen() {
                 accessibilityLabel={t(`screens.camera.mode${m.charAt(0).toUpperCase() + m.slice(1)}`)}
                 key={m}
                 style={[styles.modePill, mode === m && styles.modePillActive]}
-                onPress={() => setMode(m)}
+                onPress={() => { haptic.navigate(); setMode(m); }}
               >
                 <Text style={[styles.modeText, mode === m && styles.modeTextActive]}>
                   {t(`screens.camera.mode${m.charAt(0).toUpperCase() + m.slice(1)}`)}
@@ -247,10 +260,19 @@ export default function CameraScreen() {
               accessibilityRole="button"
               accessibilityLabel={t('screens.camera.gallery')}
               onPress={async () => {
-                const ImagePicker = await import('expo-image-picker');
-                const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images', 'videos'], exif: false });
-                if (!result.canceled && result.assets[0]) {
-                  router.push({ pathname: '/(screens)/create-post', params: { mediaUri: result.assets[0].uri } });
+                if (isPickingGallery) return;
+                setIsPickingGallery(true);
+                haptic.tick();
+                try {
+                  const ImagePicker = await import('expo-image-picker');
+                  const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images', 'videos'], exif: false });
+                  if (!result.canceled && result.assets[0]) {
+                    router.push({ pathname: '/(screens)/create-post', params: { mediaUri: result.assets[0].uri } });
+                  }
+                } catch {
+                  showToast({ message: t('camera.galleryError'), variant: 'error' });
+                } finally {
+                  setIsPickingGallery(false);
                 }
               }}
             >
@@ -311,7 +333,7 @@ export default function CameraScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#000', // Intentionally always black — camera viewfinder background
   },
 
   // Camera Preview
@@ -328,12 +350,12 @@ const styles = StyleSheet.create({
   },
   cameraOverlayText: {
     color: 'rgba(255,255,255,0.8)',
-    fontSize: 20,
+    fontSize: fontSize.lg,
     fontWeight: '600',
   },
   cameraOverlaySubtext: {
     color: 'rgba(255,255,255,0.5)',
-    fontSize: 14,
+    fontSize: fontSize.sm,
     marginTop: spacing.sm,
   },
 
@@ -343,8 +365,8 @@ const styles = StyleSheet.create({
   },
   gridLineVertical: {
     position: 'absolute' as const,
-    left: screenWidth / 3,
-    width: screenWidth / 3,
+    start: '33.33%',
+    width: '33.33%',
     top: 0,
     bottom: 0,
     borderLeftWidth: 0.5,
@@ -353,8 +375,8 @@ const styles = StyleSheet.create({
   },
   gridLineHorizontal: {
     position: 'absolute' as const,
-    top: screenHeight / 3,
-    height: screenHeight / 3,
+    top: '33.33%',
+    height: '33.33%',
     start: 0,
     end: 0,
     borderTopWidth: 0.5,
@@ -410,8 +432,8 @@ const styles = StyleSheet.create({
     marginEnd: spacing.sm,
   },
   timerText: {
-    color: '#fff',
-    fontSize: 14,
+    color: '#fff', // Intentionally white — camera overlay text
+    fontSize: fontSize.sm,
     fontWeight: '600',
     fontFamily: fonts.mono,
   },
@@ -443,11 +465,11 @@ const styles = StyleSheet.create({
   },
   modeText: {
     color: 'rgba(255,255,255,0.7)',
-    fontSize: 14,
+    fontSize: fontSize.sm,
     fontWeight: '500',
   },
   modeTextActive: {
-    color: '#fff',
+    color: '#fff', // Intentionally white — active mode on dark camera overlay
     fontWeight: '600',
   },
 
@@ -530,7 +552,7 @@ const styles = StyleSheet.create({
   // Mode hint
   modeHint: {
     color: 'rgba(255,255,255,0.6)',
-    fontSize: 13,
+    fontSize: fontSize.sm,
     textAlign: 'center',
   },
 });

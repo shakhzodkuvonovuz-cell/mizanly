@@ -6,6 +6,8 @@ import {
   FlatList,
   Pressable,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
   NativeSyntheticEvent,
   TextInputSubmitEditingEventData,
 } from 'react-native';
@@ -29,6 +31,7 @@ import { broadcastApi } from '@/services/api';
 import type { BroadcastChannel as BroadcastChannelType } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { navigate } from '@/utils/navigation';
@@ -42,6 +45,7 @@ export default function BroadcastChannelsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const haptic = useContextualHaptic();
   const [activeTab, setActiveTab] = useState<TabKey>('discover');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -107,7 +111,8 @@ export default function BroadcastChannelsScreen() {
     }
   }, [myChannelsLoading]);
 
-  // Load data on mount (Finding 1 fix: screen was empty without useEffect)
+  // Load data on mount — intentionally empty deps (refresh=true resets cursor)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     loadDiscoverChannels(true);
   }, []);
@@ -143,21 +148,34 @@ export default function BroadcastChannelsScreen() {
   }, []);
 
   const handleSubscribe = useCallback(async (channel: BroadcastChannelWithSubscription) => {
+    haptic.tick();
+    const wasSubscribed = channel.isSubscribed;
+    // Optimistic update
+    if (wasSubscribed) {
+      setDiscoverChannels(prev => prev.map(c => c.id === channel.id ? { ...c, isSubscribed: false, subscribersCount: Math.max(0, c.subscribersCount - 1) } : c));
+      setMyChannels(prev => prev.filter(c => c.id !== channel.id));
+    } else {
+      setDiscoverChannels(prev => prev.map(c => c.id === channel.id ? { ...c, isSubscribed: true, subscribersCount: c.subscribersCount + 1 } : c));
+      setMyChannels(prev => [...prev, { ...channel, isSubscribed: true }]);
+    }
     try {
-      if (channel.isSubscribed) {
+      if (wasSubscribed) {
         await broadcastApi.unsubscribe(channel.id);
-        // Update local state
-        setDiscoverChannels(prev => prev.map(c => c.id === channel.id ? { ...c, isSubscribed: false, subscribersCount: Math.max(0, c.subscribersCount - 1) } : c));
-        setMyChannels(prev => prev.filter(c => c.id !== channel.id));
       } else {
         await broadcastApi.subscribe(channel.id);
+      }
+    } catch {
+      // Rollback on error
+      if (wasSubscribed) {
         setDiscoverChannels(prev => prev.map(c => c.id === channel.id ? { ...c, isSubscribed: true, subscribersCount: c.subscribersCount + 1 } : c));
         setMyChannels(prev => [...prev, { ...channel, isSubscribed: true }]);
+      } else {
+        setDiscoverChannels(prev => prev.map(c => c.id === channel.id ? { ...c, isSubscribed: false, subscribersCount: Math.max(0, c.subscribersCount - 1) } : c));
+        setMyChannels(prev => prev.filter(c => c.id !== channel.id));
       }
-    } catch (error) {
-      if (__DEV__) console.error('Failed to toggle subscription', error);
+      showToast({ message: t('broadcastChannels.subscribeError'), variant: 'error' });
     }
-  }, []);
+  }, [haptic, t]);
 
   const renderChannelItem = useCallback(({ item, index }: { item: BroadcastChannelWithSubscription; index: number }) => (
     <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
@@ -185,14 +203,12 @@ export default function BroadcastChannelsScreen() {
               </Text>
             </LinearGradient>
           </View>
-          <Pressable accessibilityRole="button" onPress={(e) => {
-            handleSubscribe(item);
-          }}>
+          <Pressable accessibilityRole="button" onPress={() => handleSubscribe(item)} hitSlop={8}>
             <LinearGradient
               colors={item.isSubscribed ? colors.gradient.cardDark : ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']}
               style={styles.subscribeBtn}
             >
-              <Text style={[styles.subscribeText, item.isSubscribed && { color: tc.text.secondary }]}>
+              <Text style={[styles.subscribeText, { color: tc.text.primary }, item.isSubscribed && { color: tc.text.secondary }]}>
                 {item.isSubscribed ? t('broadcastChannels.subscribed') : t('broadcastChannels.subscribe')}
               </Text>
             </LinearGradient>
@@ -284,11 +300,11 @@ export default function BroadcastChannelsScreen() {
           rightActions={[{ icon: 'plus', onPress: () => setShowCreateSheet(true), accessibilityLabel: t('broadcastChannels.createChannel') }]}
         />
         <View style={[styles.container, { backgroundColor: tc.bg }]}>
-          <View style={[styles.searchContainer, { marginTop: insets.top + 52 + spacing.base }]}>
+          <View style={[styles.searchContainer, { marginTop: insets.top + 52 + spacing.base, backgroundColor: tc.bgElevated, borderColor: tc.border }]}>
             <Icon name="search" size="sm" color={tc.text.secondary} style={styles.searchIcon} />
             <TextInput
               ref={searchInputRef}
-              style={styles.searchInput}
+              style={[styles.searchInput, { color: tc.text.primary }]}
               placeholder={t('broadcastChannels.searchPlaceholder')}
               placeholderTextColor={tc.text.tertiary}
               value={searchQuery}
@@ -309,7 +325,7 @@ export default function BroadcastChannelsScreen() {
               { key: 'my', label: t('broadcastChannels.tab.myChannels') },
             ]}
             activeKey={activeTab}
-            onTabChange={(key: string) => setActiveTab(key as TabKey)}
+            onTabChange={(key: string) => { haptic.navigate(); setActiveTab(key as TabKey); }}
             variant="underline"
             style={styles.tabSelector}
           />
@@ -334,32 +350,34 @@ export default function BroadcastChannelsScreen() {
           />
         </View>
         <BottomSheet visible={showCreateSheet} onClose={() => setShowCreateSheet(false)} snapPoint={0.5}>
-          <View style={{ padding: spacing.base, gap: spacing.md }}>
-            <Text style={{ fontSize: fontSize.lg, fontWeight: '600', color: tc.text.primary}}>{t('broadcastChannels.createChannel')}</Text>
-            <TextInput
-              style={{ backgroundColor: tc.surface, borderRadius: radius.md, padding: spacing.md, color: tc.text.primary, fontSize: fontSize.base }}
-              placeholder={t('broadcastChannels.channelNamePlaceholder')}
-              placeholderTextColor={tc.text.tertiary}
-              value={newChannelName}
-              onChangeText={setNewChannelName}
-              maxLength={50}
-            />
-            <TextInput
-              style={{ backgroundColor: tc.surface, borderRadius: radius.md, padding: spacing.md, color: tc.text.primary, fontSize: fontSize.base, minHeight: 80 }}
-              placeholder={t('broadcastChannels.descriptionPlaceholder')}
-              placeholderTextColor={tc.text.tertiary}
-              value={newChannelDesc}
-              onChangeText={setNewChannelDesc}
-              maxLength={200}
-              multiline
-            />
-            <GradientButton
-              label={t('broadcastChannels.createButton')}
-              onPress={() => createMutation.mutate()}
-              loading={createMutation.isPending}
-              disabled={!newChannelName.trim()}
-            />
-          </View>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+            <View style={{ padding: spacing.base, gap: spacing.md }}>
+              <Text style={{ fontSize: fontSize.lg, fontWeight: '600', color: tc.text.primary}}>{t('broadcastChannels.createChannel')}</Text>
+              <TextInput
+                style={{ backgroundColor: tc.surface, borderRadius: radius.md, padding: spacing.md, color: tc.text.primary, fontSize: fontSize.base }}
+                placeholder={t('broadcastChannels.channelNamePlaceholder')}
+                placeholderTextColor={tc.text.tertiary}
+                value={newChannelName}
+                onChangeText={setNewChannelName}
+                maxLength={50}
+              />
+              <TextInput
+                style={{ backgroundColor: tc.surface, borderRadius: radius.md, padding: spacing.md, color: tc.text.primary, fontSize: fontSize.base, minHeight: 80 }}
+                placeholder={t('broadcastChannels.descriptionPlaceholder')}
+                placeholderTextColor={tc.text.tertiary}
+                value={newChannelDesc}
+                onChangeText={setNewChannelDesc}
+                maxLength={200}
+                multiline
+              />
+              <GradientButton
+                label={t('broadcastChannels.createButton')}
+                onPress={() => { haptic.success(); createMutation.mutate(); }}
+                loading={createMutation.isPending}
+                disabled={!newChannelName.trim()}
+              />
+            </View>
+          </KeyboardAvoidingView>
         </BottomSheet>
       </>
   
@@ -370,25 +388,21 @@ export default function BroadcastChannelsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dark.bgElevated,
     marginHorizontal: spacing.base,
     marginBottom: spacing.base,
     paddingHorizontal: spacing.md,
     borderRadius: radius.full,
     borderWidth: 1,
-    borderColor: colors.dark.border,
   },
   searchIcon: {
     marginEnd: spacing.sm,
   },
   searchInput: {
     flex: 1,
-    color: colors.text.primary,
     fontSize: fontSize.base,
     paddingVertical: spacing.sm,
     paddingEnd: spacing.sm,
@@ -422,13 +436,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   channelName: {
-    color: colors.text.primary,
     fontSize: fontSize.md,
     fontWeight: '600',
     marginBottom: spacing.xs,
   },
   channelDescription: {
-    color: colors.text.secondary,
     fontSize: fontSize.sm,
     marginBottom: spacing.xs,
   },
@@ -438,7 +450,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     gap: spacing.xs,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
+    paddingVertical: spacing.xs,
     borderRadius: radius.sm,
   },
   subscribersText: {
@@ -452,7 +464,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   subscribeText: {
-    color: '#fff',
     fontSize: fontSize.sm,
     fontWeight: '600',
   },

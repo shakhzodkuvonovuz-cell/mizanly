@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, Vibration, Dimensions, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Vibration, Platform, ScrollView, StatusBar, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useUser } from '@clerk/clerk-expo';
 import { useQuery } from '@tanstack/react-query';
@@ -32,7 +32,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useStore } from '@/store';
 
-const { width: SCREEN_W } = Dimensions.get('window');
+// SCREEN_W is obtained from useWindowDimensions() inside the component
 const RING_TIMEOUT_MS = 30_000; // 30s auto-cancel
 const VIBRATION_PATTERN = [0, 500, 200, 500]; // vibrate pattern for incoming ring
 const QUALITY_COLORS: Record<string, string> = {
@@ -73,6 +73,7 @@ export default function CallScreen() {
   const { t } = useTranslation();
   const tc = useThemeColors();
   const haptic = useContextualHaptic();
+  const { width: SCREEN_W } = useWindowDimensions();
   const [raisedHand, setRaisedHand] = useState(false);
   const [remoteRaisedHands, setRemoteRaisedHands] = useState<Set<string>>(new Set());
   const [reactions, setReactions] = useState<Array<{ emoji: string; id: number }>>([]);
@@ -314,9 +315,11 @@ export default function CallScreen() {
     }
   }, [isIncoming, incomingAnswered, livekit.status]);
 
-  // Handle data channel messages
+  // Handle data channel messages — use ref for stable subscription
+  const onDataMessageRef = useRef(livekit.onDataMessage);
+  onDataMessageRef.current = livekit.onDataMessage;
   useEffect(() => {
-    const unsub = livekit.onDataMessage((msg: DataChannelMessage) => {
+    const unsub = onDataMessageRef.current((msg: DataChannelMessage) => {
       switch (msg.topic) {
         case 'raise-hand':
           setRemoteRaisedHands(prev => {
@@ -339,7 +342,9 @@ export default function CallScreen() {
       }
     });
     return unsub;
-  }, [livekit]);
+    // Subscribe once — ref keeps callback current without re-subscribing
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Show errors
   useEffect(() => {
@@ -354,13 +359,20 @@ export default function CallScreen() {
     }
   }, [livekit.status, router]);
 
-  // ── Handlers ──
-  const handleEndCall = useCallback(() => { haptic.delete(); livekit.endCall(); }, [haptic, livekit]);
-  const handleToggleMute = useCallback(() => { haptic.tick(); livekit.toggleMute(); }, [haptic, livekit]);
-  const handleToggleSpeaker = useCallback(() => { haptic.tick(); livekit.toggleSpeaker(); }, [haptic, livekit]);
-  const handleToggleCamera = useCallback(() => { haptic.tick(); livekit.toggleCamera(); }, [haptic, livekit]);
-  const handleFlipCamera = useCallback(() => { haptic.tick(); livekit.flipCamera(); }, [haptic, livekit]);
-  const handleToggleScreenShare = useCallback(() => { haptic.tick(); livekit.toggleScreenShare(); }, [haptic, livekit]);
+  // ── Handlers with debounce guard ──
+  const actionLockRef = useRef(false);
+  const debounced = useCallback((fn: () => void) => {
+    if (actionLockRef.current) return;
+    actionLockRef.current = true;
+    fn();
+    setTimeout(() => { actionLockRef.current = false; }, 300);
+  }, []);
+  const handleEndCall = useCallback(() => debounced(() => { haptic.delete(); livekit.endCall(); }), [haptic, livekit, debounced]);
+  const handleToggleMute = useCallback(() => debounced(() => { haptic.tick(); livekit.toggleMute(); }), [haptic, livekit, debounced]);
+  const handleToggleSpeaker = useCallback(() => debounced(() => { haptic.tick(); livekit.toggleSpeaker(); }), [haptic, livekit, debounced]);
+  const handleToggleCamera = useCallback(() => debounced(() => { haptic.tick(); livekit.toggleCamera(); }), [haptic, livekit, debounced]);
+  const handleFlipCamera = useCallback(() => debounced(() => { haptic.tick(); livekit.flipCamera(); }), [haptic, livekit, debounced]);
+  const handleToggleScreenShare = useCallback(() => debounced(() => { haptic.tick(); livekit.toggleScreenShare(); }), [haptic, livekit, debounced]);
   const handleRaiseHand = useCallback(() => {
     haptic.tick();
     const nr = !raisedHand;
@@ -495,7 +507,7 @@ export default function CallScreen() {
 
     return (
       <ScrollView
-        contentContainerStyle={[styles.videoGrid, { paddingTop: insets.top + 50 }]}
+        contentContainerStyle={[styles.videoGrid, { paddingTop: insets.top + 50, paddingBottom: 200 }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Spotlight: active speaker gets full-width tile */}
@@ -526,6 +538,7 @@ export default function CallScreen() {
   return (
     <ScreenErrorBoundary>
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
+        <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
         <LinearGradient colors={['rgba(10,123,79,0.15)', 'rgba(28,35,51,0.8)', tc.bg]} style={styles.gradientBg} />
 
         {/* Video grid (replaces old RTCView) */}
@@ -570,7 +583,7 @@ export default function CallScreen() {
             entering={FadeInUp.duration(500)}
             style={[
               styles.floatingReaction,
-              { right: spacing.xl + (i % 3) * 30, bottom: `${30 + (i % 4) * 5}%` },
+              { end: spacing.xl + (i % 3) * 30, bottom: `${30 + (i % 4) * 5}%` },
             ]}
           >
             {r.emoji}
@@ -579,7 +592,7 @@ export default function CallScreen() {
 
         {/* Connection quality (real metrics) */}
         {isActive && (
-          <View style={[styles.qualityIndicator, { top: insets.top + 50, right: spacing.base }]}>
+          <View style={[styles.qualityIndicator, { top: insets.top + 50, end: spacing.base }]}>
             <View style={[styles.qualityDot, { backgroundColor: qualityColor }]} />
             <Text style={[styles.qualityText, { color: qualityColor }]}>
               {livekit.connectionQuality === 'unknown' ? '' : livekit.connectionQuality}
@@ -606,6 +619,7 @@ export default function CallScreen() {
             key={statusText}
             style={[
               styles.status,
+              { color: tc.text.secondary },
               isActive && styles.statusConnected,
               (livekit.status === 'ended' || livekit.status === 'failed') && styles.statusEnded,
               livekit.status === 'reconnecting' && styles.statusReconnecting,
@@ -646,7 +660,7 @@ export default function CallScreen() {
                 <Text style={[styles.controlLabel, { color: tc.text.primary }]}>{t('calls.decline')}</Text>
               </Pressable>
               <Pressable accessibilityRole="button" style={styles.controlButton} onPress={handleAnswer}>
-                <LinearGradient colors={[colors.emerald, '#0EA767']} style={styles.endCallGradient}>
+                <LinearGradient colors={[colors.emerald, 'rgba(10,123,79,0.85)']} style={styles.endCallGradient}>
                   <Icon name="phone" size="xl" color={tc.text.primary} />
                 </LinearGradient>
                 <Text style={[styles.controlLabel, { color: tc.text.primary }]}>{t('calls.answer')}</Text>
@@ -736,7 +750,7 @@ const styles = StyleSheet.create({
   gradientBg: { ...StyleSheet.absoluteFillObject },
   fullscreenVideo: { ...StyleSheet.absoluteFillObject },
   localVideoPiP: {
-    position: 'absolute', right: spacing.base, width: 120, height: 160,
+    position: 'absolute', end: spacing.base, width: 120, height: 160,
     borderRadius: radius.md, overflow: 'hidden', zIndex: 10,
     borderWidth: 2, borderColor: 'rgba(255,255,255,0.2)',
   },
@@ -752,8 +766,8 @@ const styles = StyleSheet.create({
   videoTileSpeaking: { borderColor: colors.emerald },
   videoTileInner: { flex: 1 },
   videoTileLabel: {
-    position: 'absolute', bottom: spacing.xs, left: spacing.sm,
-    color: '#fff', fontSize: fontSize.xs, fontWeight: '600',
+    position: 'absolute', bottom: spacing.xs, start: spacing.sm,
+    color: 'rgba(255,255,255,0.95)', fontSize: fontSize.xs, fontWeight: '600',
     textShadowColor: 'rgba(0,0,0,0.7)', textShadowRadius: 4,
     textShadowOffset: { width: 0, height: 1 },
   },
@@ -762,7 +776,7 @@ const styles = StyleSheet.create({
   avatarContainer: { position: 'relative', alignItems: 'center', justifyContent: 'center' },
   pulseRing: { position: 'absolute', width: 140, height: 140, borderRadius: radius.full, backgroundColor: colors.emerald },
   name: { fontSize: fontSize.xl, fontWeight: '700', marginTop: spacing.xl },
-  status: { color: colors.text.secondary, fontSize: fontSize.base, marginTop: spacing.lg, fontWeight: '600' },
+  status: { fontSize: fontSize.base, marginTop: spacing.lg, fontWeight: '600' },
   statusConnected: { color: colors.emerald },
   statusEnded: { color: colors.error },
   statusReconnecting: { color: colors.gold },
@@ -776,22 +790,22 @@ const styles = StyleSheet.create({
   endCallGradient: { width: 72, height: 72, borderRadius: radius.full, justifyContent: 'center', alignItems: 'center', shadowColor: colors.error, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 8 },
   controlsPlaceholder: { flexDirection: 'row', gap: spacing.lg, marginTop: spacing['3xl'] },
   e2eeIndicator: {
-    position: 'absolute', left: spacing.base, flexDirection: 'row', alignItems: 'center',
+    position: 'absolute', start: spacing.base, flexDirection: 'row', alignItems: 'center',
     gap: spacing.xs, backgroundColor: 'rgba(10,123,79,0.2)', paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs, borderRadius: radius.full, zIndex: 10,
   },
   e2eeText: { color: colors.emerald, fontSize: fontSize.xs, fontWeight: '600' },
   verificationOverlay: {
-    position: 'absolute', left: spacing.base, right: spacing.base,
+    position: 'absolute', start: spacing.base, end: spacing.base,
     backgroundColor: 'rgba(28,35,51,0.95)', borderRadius: radius.lg,
     padding: spacing.xl, alignItems: 'center', zIndex: 20,
   },
   verificationTitle: { fontSize: fontSize.md, fontWeight: '700', marginBottom: spacing.md },
   emojiRow: { flexDirection: 'row', gap: spacing.md },
-  verificationEmoji: { fontSize: 28 },
+  verificationEmoji: { fontSize: fontSize.xl + 4 },
   verificationHint: { fontSize: fontSize.xs, marginTop: spacing.md, textAlign: 'center' },
   qualityIndicator: { position: 'absolute', zIndex: 10, flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  qualityDot: { width: 8, height: 8, borderRadius: 4 },
+  qualityDot: { width: 8, height: 8, borderRadius: radius.sm },
   qualityText: { fontSize: fontSize.xs, fontWeight: '600', textTransform: 'capitalize' },
   raisedHandsBanner: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
@@ -805,6 +819,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm, borderRadius: radius.full,
   },
   reactionButton: { padding: spacing.xs },
-  reactionEmoji: { fontSize: 24 },
-  floatingReaction: { position: 'absolute', fontSize: 40, zIndex: 30 },
+  reactionEmoji: { fontSize: fontSize.xl },
+  floatingReaction: { position: 'absolute', fontSize: fontSize.xl * 1.67, zIndex: 30 },
 });

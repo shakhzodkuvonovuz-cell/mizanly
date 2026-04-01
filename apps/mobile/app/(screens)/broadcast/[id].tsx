@@ -6,6 +6,9 @@ import {
   FlatList,
   Pressable,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
   NativeSyntheticEvent,
   TextInputSubmitEditingEventData,
 } from 'react-native';
@@ -20,11 +23,13 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
+import { showToast } from '@/components/ui/Toast';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { broadcastApi } from '@/services/api';
 import type { BroadcastChannel as BroadcastChannelType, BroadcastMessage } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 
@@ -49,21 +54,27 @@ export default function BroadcastChannelScreen() {
   const [messageSheetVisible, setMessageSheetVisible] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<BroadcastMessage | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [channelError, setChannelError] = useState(false);
+  const [loadingRef] = useState({ current: false });
 
+  const haptic = useContextualHaptic();
   const flatListRef = useRef<FlatList>(null);
 
   const loadChannel = useCallback(async () => {
+    setChannelError(false);
     try {
       const data = await broadcastApi.getById(id);
       setChannel(data);
       setIsAdmin(data.role === 'owner' || data.role === 'admin');
-    } catch (error) {
-      if (__DEV__) console.error('Failed to load channel', error);
+    } catch {
+      setChannelError(true);
+      showToast({ message: t('common.error.loadContent'), variant: 'error' });
     }
-  }, [id]);
+  }, [id, t]);
 
   const loadMessages = useCallback(async (refresh = false) => {
-    if (loading && !refresh) return;
+    if (loadingRef.current && !refresh) return;
+    loadingRef.current = true;
     setLoading(true);
     try {
       const currentCursor = refresh ? undefined : cursor ?? undefined;
@@ -71,13 +82,14 @@ export default function BroadcastChannelScreen() {
       setMessages(prev => refresh ? response.data : [...prev, ...response.data]);
       setCursor(response.meta.cursor);
       setHasMore(response.meta.hasMore);
-    } catch (error) {
-      if (__DEV__) console.error('Failed to load messages', error);
+    } catch {
+      showToast({ message: t('common.error.loadContent'), variant: 'error' });
     } finally {
+      loadingRef.current = false;
       setLoading(false);
       if (refresh) setRefreshing(false);
     }
-  }, [id, cursor, loading]);
+  }, [id, cursor, loadingRef, t]);
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
@@ -93,55 +105,72 @@ export default function BroadcastChannelScreen() {
 
   const handleSendMessage = useCallback(async () => {
     if (!newMessage.trim() || sending) return;
+    haptic.tick();
     setSending(true);
     try {
       const sent = await broadcastApi.sendMessage(id, { content: newMessage.trim() });
       setMessages(prev => [sent, ...prev]);
       setNewMessage('');
-    } catch (error) {
-      if (__DEV__) console.error('Failed to send message', error);
+    } catch {
+      showToast({ message: t('broadcast.sendFailed'), variant: 'error' });
     } finally {
       setSending(false);
     }
-  }, [id, newMessage, sending]);
+  }, [id, newMessage, sending, haptic, t]);
 
   const handleToggleMute = useCallback(async () => {
     if (!channel) return;
+    haptic.tick();
+    const wasMuted = channel.isMuted;
+    setChannel({ ...channel, isMuted: !wasMuted });
     try {
-      if (channel.isMuted) {
+      if (wasMuted) {
         await broadcastApi.unmute(channel.id);
-        setChannel({ ...channel, isMuted: false });
       } else {
         await broadcastApi.mute(channel.id);
-        setChannel({ ...channel, isMuted: true });
       }
-    } catch (error) {
-      if (__DEV__) console.error('Failed to toggle mute', error);
+    } catch {
+      setChannel({ ...channel, isMuted: wasMuted });
+      showToast({ message: t('broadcast.muteFailed'), variant: 'error' });
     }
-  }, [channel]);
+  }, [channel, haptic, t]);
 
   const handleSubscribe = useCallback(async () => {
     if (!channel) return;
+    haptic.tick();
+    const wasSubscribed = channel.isSubscribed;
+    // Optimistic update
+    setChannel({
+      ...channel,
+      isSubscribed: !wasSubscribed,
+      subscribersCount: wasSubscribed ? channel.subscribersCount - 1 : channel.subscribersCount + 1,
+    });
     try {
-      if (channel.isSubscribed) {
+      if (wasSubscribed) {
         await broadcastApi.unsubscribe(channel.id);
-        setChannel({ ...channel, isSubscribed: false, subscribersCount: channel.subscribersCount - 1 });
       } else {
         await broadcastApi.subscribe(channel.id);
-        setChannel({ ...channel, isSubscribed: true, subscribersCount: channel.subscribersCount + 1 });
       }
-    } catch (error) {
-      if (__DEV__) console.error('Failed to toggle subscription', error);
+    } catch {
+      // Rollback
+      setChannel({
+        ...channel,
+        isSubscribed: wasSubscribed,
+        subscribersCount: channel.subscribersCount,
+      });
+      showToast({ message: t('broadcast.subscribeFailed'), variant: 'error' });
     }
-  }, [channel]);
+  }, [channel, haptic, t]);
 
   const handleMessageLongPress = useCallback((message: BroadcastMessage) => {
+    haptic.tick();
     setSelectedMessage(message);
     setMessageSheetVisible(true);
-  }, []);
+  }, [haptic]);
 
   const handlePinMessage = useCallback(async () => {
     if (!selectedMessage || !channel) return;
+    haptic.tick();
     try {
       if (selectedMessage.isPinned) {
         await broadcastApi.unpinMessage(selectedMessage.id);
@@ -151,21 +180,36 @@ export default function BroadcastChannelScreen() {
         setMessages(prev => prev.map(m => m.id === selectedMessage.id ? { ...m, isPinned: true } : m));
       }
       setMessageSheetVisible(false);
-    } catch (error) {
-      if (__DEV__) console.error('Failed to pin/unpin message', error);
+    } catch {
+      showToast({ message: t('broadcast.pinFailed'), variant: 'error' });
     }
-  }, [selectedMessage, channel]);
+  }, [selectedMessage, channel, haptic, t]);
 
   const handleDeleteMessage = useCallback(async () => {
     if (!selectedMessage || !channel) return;
-    try {
-      await broadcastApi.deleteMessage(selectedMessage.id);
-      setMessages(prev => prev.filter(m => m.id !== selectedMessage.id));
-      setMessageSheetVisible(false);
-    } catch (error) {
-      if (__DEV__) console.error('Failed to delete message', error);
-    }
-  }, [selectedMessage, channel]);
+    // Confirmation dialog for destructive action
+    Alert.alert(
+      t('broadcast.deleteMessageTitle'),
+      t('broadcast.deleteMessageConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            haptic.delete();
+            try {
+              await broadcastApi.deleteMessage(selectedMessage.id);
+              setMessages(prev => prev.filter(m => m.id !== selectedMessage.id));
+              setMessageSheetVisible(false);
+            } catch {
+              showToast({ message: t('broadcast.deleteFailed'), variant: 'error' });
+            }
+          },
+        },
+      ],
+    );
+  }, [selectedMessage, channel, haptic, t]);
 
   useEffect(() => {
     loadChannel();
@@ -250,6 +294,26 @@ export default function BroadcastChannelScreen() {
           }}
         />
         <View style={styles.container}>
+          {/* Channel error state */}
+          {channelError && !channel && (
+            <View style={{ paddingTop: insets.top + 52 + spacing.xl }}>
+              <EmptyState
+                icon="flag"
+                title={t('common.error.loadContent')}
+                subtitle={t('common.error.checkConnection')}
+                actionLabel={t('common.retry')}
+                onAction={loadChannel}
+              />
+            </View>
+          )}
+          {/* Header skeleton placeholder while channel loads */}
+          {!channel && !channelError && (
+            <View style={[styles.channelHeader, { paddingTop: insets.top + 52 + spacing.xl, alignItems: 'center' }]}>
+              <Skeleton.Circle size={64} />
+              <Skeleton.Rect width={160} height={20} style={{ marginTop: spacing.md }} />
+              <Skeleton.Rect width={100} height={16} style={{ marginTop: spacing.sm }} />
+            </View>
+          )}
           {channel && (
             <Animated.View entering={FadeInUp.delay(0).duration(400)}>
               <LinearGradient
@@ -257,7 +321,7 @@ export default function BroadcastChannelScreen() {
                 style={[styles.channelHeader, { paddingTop: insets.top + 52 + spacing.xl }]}
               >
                 <Avatar uri={channel.avatarUrl} name={channel.name} size="xl" />
-                <Text style={styles.channelName}>{channel.name}</Text>
+                <Text style={[styles.channelName, { color: tc.text.primary }]}>{channel.name}</Text>
                 <LinearGradient
                   colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
                   style={styles.subscriberBadge}
@@ -292,7 +356,7 @@ export default function BroadcastChannelScreen() {
             contentContainerStyle={styles.listContent}
             inverted
             removeClippedSubviews={true}
-            ListEmptyComponent={loading ? null : renderEmptyState}
+            ListEmptyComponent={loading ? renderSkeleton : renderEmptyState}
             ListFooterComponent={loading && messages.length > 0 ? renderSkeleton : null}
             refreshControl={
               <BrandedRefreshControl
@@ -306,26 +370,28 @@ export default function BroadcastChannelScreen() {
           />
 
           {isAdmin && (
-            <View style={styles.composeContainer}>
-              <TextInput
-                style={styles.composeInput}
-                placeholder={t('broadcast.sendMessagePlaceholder')}
-                placeholderTextColor={tc.text.tertiary}
-                value={newMessage}
-                onChangeText={setNewMessage}
-                onSubmitEditing={handleSendMessage}
-                returnKeyType="send"
-                editable={!sending}
-              />
-              <Pressable
-                accessibilityRole="button"
-                style={[styles.sendButton, (!newMessage.trim() || sending) && styles.sendButtonDisabled]}
-                onPress={handleSendMessage}
-                disabled={!newMessage.trim() || sending}
-              >
-                <Icon name="send" size="md" color={tc.text.primary} />
-              </Pressable>
-            </View>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={0}>
+              <View style={styles.composeContainer}>
+                <TextInput
+                  style={styles.composeInput}
+                  placeholder={t('broadcast.sendMessagePlaceholder')}
+                  placeholderTextColor={tc.text.tertiary}
+                  value={newMessage}
+                  onChangeText={setNewMessage}
+                  onSubmitEditing={handleSendMessage}
+                  returnKeyType="send"
+                  editable={!sending}
+                />
+                <Pressable
+                  accessibilityRole="button"
+                  style={[styles.sendButton, (!newMessage.trim() || sending) && styles.sendButtonDisabled]}
+                  onPress={handleSendMessage}
+                  disabled={!newMessage.trim() || sending}
+                >
+                  <Icon name="send" size="md" color={tc.text.primary} />
+                </Pressable>
+              </View>
+            </KeyboardAvoidingView>
           )}
 
           <BottomSheet
@@ -370,7 +436,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.md,
   },
   channelName: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.xl,
     fontWeight: '700',
     marginTop: spacing.md,
@@ -404,7 +470,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: spacing.xs,
   },
   muteText: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.xs,
   },
   listContent: {
@@ -433,16 +499,16 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.xs,
   },
   messageSender: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.md,
     fontWeight: '600',
   },
   messageTime: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.xs,
   },
   messageText: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     lineHeight: 20,
   },
@@ -471,12 +537,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   composeInput: {
     flex: 1,
     backgroundColor: tc.bgElevated,
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.full,
-    marginRight: spacing.sm,
+    marginEnd: spacing.sm,
   },
   sendButton: {
     backgroundColor: colors.emerald,
