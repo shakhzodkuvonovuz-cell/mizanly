@@ -14,14 +14,8 @@ interface ModerationJobData {
   contentId: string;
 }
 
-interface CaptionJobData {
-  contentId: string;
-  contentType: string;
-  mediaUrl: string;
-}
-
 /**
- * AI tasks processor — handles content moderation and caption generation.
+ * AI tasks processor — handles content moderation.
  *
  * Moderation jobs are enqueued on content creation and processed asynchronously.
  * If flagged, content is marked for review without blocking the user.
@@ -52,9 +46,6 @@ export class AiTasksProcessor implements OnModuleInit, OnModuleDestroy {
         switch (job.name) {
           case 'moderate':
             await this.processModeration(job as Job<ModerationJobData>);
-            break;
-          case 'generate-caption':
-            await this.processCaptionGeneration(job as Job<CaptionJobData>);
             break;
           default:
             throw new Error(`Unknown AI task job type: ${job.name}`);
@@ -187,15 +178,5 @@ export class AiTasksProcessor implements OnModuleInit, OnModuleDestroy {
       if (flagMap[normalized]) return flagMap[normalized];
     }
     return 'OTHER';
-  }
-
-  private async processCaptionGeneration(job: Job<CaptionJobData>): Promise<void> {
-    const { contentId, contentType, mediaUrl } = job.data;
-    this.logger.debug(`Caption generation for ${contentType}/${contentId} from ${mediaUrl}`);
-    // Caption generation not yet implemented — fail honestly instead of faking success
-    throw new Error(
-      `Caption generation not implemented. contentType=${contentType}, contentId=${contentId}. `
-      + 'This job should not be enqueued until the pipeline is built.',
-    );
   }
 }

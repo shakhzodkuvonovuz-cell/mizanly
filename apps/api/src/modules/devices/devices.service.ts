@@ -1,12 +1,17 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
+import Redis from 'ioredis';
 import { PrismaService } from '../../config/prisma.service';
+import { acquireCronLock } from '../../common/utils/cron-lock';
 
 @Injectable()
 export class DevicesService {
   private readonly logger = new Logger(DevicesService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject('REDIS') private redis: Redis,
+  ) {}
 
   async register(userId: string, pushToken: string, platform: string, deviceId?: string) {
     // Check if token is already registered to another active user
@@ -124,6 +129,7 @@ export class DevicesService {
     cutoff.setDate(cutoff.getDate() - olderThanDays);
 
     try {
+      if (!await acquireCronLock(this.redis, 'cron:cleanupStaleTokens', 3500, this.logger)) return 0;
       const result = await this.prisma.device.deleteMany({
         where: {
           isActive: false,

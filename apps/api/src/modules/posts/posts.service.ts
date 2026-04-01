@@ -7,7 +7,6 @@ import {
   Logger,
   Inject,
 } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
 import * as Sentry from '@sentry/node';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
@@ -88,49 +87,6 @@ export class PostsService {
     private publishWorkflow: PublishWorkflowService,
   ) {
     this.scoredFeedCache = new ScoredFeedCache(redis);
-  }
-
-  /**
-   * Finding #360: Notify users when their scheduled posts go live.
-   * Runs every 5 minutes, finds posts with scheduledAt <= now that haven't been notified.
-   */
-  @Cron('*/5 * * * *')
-  async notifyScheduledPostsPublished() {
-    try {
-      const now = new Date();
-      const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
-
-      // Find posts that just became visible (scheduledAt between 5min ago and now)
-      const justPublished = await this.prisma.post.findMany({
-        where: {
-          scheduledAt: { gt: fiveMinutesAgo, lte: now },
-          isRemoved: false,
-        },
-        select: { id: true, userId: true, content: true },
-        take: 50,
-      });
-
-      for (const post of justPublished) {
-        // Dedup via Redis — only notify once per post
-        const dedup = await this.redis.get(`scheduled_notified:${post.id}`);
-        if (dedup) continue;
-        await this.redis.setex(`scheduled_notified:${post.id}`, 86400, '1');
-
-        if (post.userId) {
-          this.notifications.create({
-            userId: post.userId,
-            actorId: post.userId,
-            type: 'SYSTEM',
-            postId: post.id,
-            title: 'Scheduled post published!',
-            body: post.content ? post.content.slice(0, 100) : 'Your scheduled post is now live.',
-          }).catch(() => {});
-        }
-      }
-    } catch (error) {
-      this.logger.error('notifyScheduledPostsPublished cron failed', error instanceof Error ? error.message : error);
-      Sentry.captureException(error);
-    }
   }
 
   async getFeed(

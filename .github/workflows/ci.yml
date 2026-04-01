@@ -31,6 +31,12 @@ jobs:
         run: npm run typecheck --workspace=apps/mobile
       - name: Typecheck Shared
         run: npm run typecheck --workspace=packages/shared
+      - name: Format check
+        run: npm run format:check
+        continue-on-error: true
+      - name: Lint
+        run: npx eslint . --max-warnings 0
+        continue-on-error: true
 
   test-mobile-signal:
     runs-on: ubuntu-latest

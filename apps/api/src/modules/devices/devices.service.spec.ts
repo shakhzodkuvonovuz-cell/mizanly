@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DevicesService } from './devices.service';
 import { PrismaService } from '../../config/prisma.service';
-import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('DevicesService', () => {
   let service: DevicesService;
@@ -22,9 +21,15 @@ describe('DevicesService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        ...globalMockProviders,
         DevicesService,
         { provide: PrismaService, useValue: prisma },
+        {
+          provide: 'REDIS',
+          useValue: {
+            set: jest.fn().mockResolvedValue('OK'),
+            get: jest.fn().mockResolvedValue(null),
+          },
+        },
       ],
     }).compile();
 
