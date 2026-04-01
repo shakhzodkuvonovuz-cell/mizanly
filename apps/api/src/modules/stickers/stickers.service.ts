@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
@@ -364,7 +364,7 @@ export class StickersService {
     });
 
     if (!response.ok) {
-      throw new Error(`Claude API error: ${response.status}`);
+      throw new InternalServerErrorException(`Claude API error: ${response.status}`);
     }
 
     const data: { content?: Array<{ text?: string }> } = await response.json();
@@ -373,7 +373,7 @@ export class StickersService {
     // Extract SVG from response (it might be wrapped in markdown code blocks)
     const svgMatch = text.match(/<svg[\s\S]*?<\/svg>/i);
     if (!svgMatch) {
-      throw new Error('No valid SVG in response');
+      throw new InternalServerErrorException('No valid SVG in response');
     }
 
     return this.sanitizeSvg(svgMatch[0]);

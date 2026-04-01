@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  ServiceUnavailableException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
@@ -384,7 +385,7 @@ ${topPostsSummary || 'No posts in the last 30 days.'}
 
       if (!response.ok) {
         this.logger.error(`Claude API error in askAI: ${response.status}`);
-        throw new Error('AI service unavailable');
+        throw new ServiceUnavailableException('AI service unavailable');
       }
 
       const data: { content?: Array<{ text?: string }> } = await response.json();

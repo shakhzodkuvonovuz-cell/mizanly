@@ -402,7 +402,7 @@ export class AdminService {
 
         await Promise.allSettled(
           items.map(item =>
-            this.publishWorkflow.onUnpublish({ contentType: ct.type, contentId: item.id, userId }).catch(() => {}),
+            this.publishWorkflow.onUnpublish({ contentType: ct.type, contentId: item.id, userId }).catch((err) => this.logger.error('Admin audit log failed', err?.message)),
           ),
         );
         totalRemoved += items.length;

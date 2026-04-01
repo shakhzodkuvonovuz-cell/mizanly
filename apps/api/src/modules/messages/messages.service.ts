@@ -890,7 +890,7 @@ export class MessagesService {
         conversationId = convo.id;
         // Re-seed Redis cache with remaining TTL
         const ttl = Math.max(1, Math.floor((convo.inviteExpiresAt!.getTime() - Date.now()) / 1000));
-        await this.redis.setex(`group_invite:${inviteCode}`, ttl, conversationId).catch(() => {});
+        await this.redis.setex(`group_invite:${inviteCode}`, ttl, conversationId).catch((err) => this.logger.warn('Group invite DB persistence failed', err?.message));
       }
     }
     if (!conversationId) throw new NotFoundException('Invite link expired or invalid');

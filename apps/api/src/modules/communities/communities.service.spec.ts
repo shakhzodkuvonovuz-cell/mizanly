@@ -33,7 +33,7 @@ describe('CommunitiesService', () => {
       prisma.circle.findUnique.mockResolvedValue(null); // no slug conflict
       prisma.circle.create.mockResolvedValue({ id: 'c1', name: 'Test Community', slug: 'test-community' });
       const result = await service.create('u1', { name: 'Test Community' } as any);
-      expect(result.data.name).toBe('Test Community');
+      expect(result.name).toBe('Test Community');
     });
 
     it('should throw for duplicate slug', async () => {
@@ -62,7 +62,7 @@ describe('CommunitiesService', () => {
     it('should return public community', async () => {
       prisma.circle.findUnique.mockResolvedValue({ id: 'c1', privacy: 'PUBLIC', isBanned: false });
       const result = await service.getById('c1');
-      expect(result.data.id).toBe('c1');
+      expect(result.id).toBe('c1');
     });
 
     it('should throw NotFoundException for missing/banned', async () => {
@@ -82,7 +82,7 @@ describe('CommunitiesService', () => {
       prisma.circle.findUnique.mockResolvedValue({ ownerId: 'u1', isBanned: false });
       prisma.circle.update.mockResolvedValue({ id: 'c1', name: 'Updated' });
       const result = await service.update('c1', 'u1', { name: 'Updated' } as any);
-      expect(result.data.name).toBe('Updated');
+      expect(result.name).toBe('Updated');
     });
 
     it('should throw ForbiddenException for non-owner/non-admin', async () => {
@@ -97,7 +97,7 @@ describe('CommunitiesService', () => {
       prisma.circle.findUnique.mockResolvedValue({ ownerId: 'u1', isBanned: false });
       prisma.circle.delete.mockResolvedValue({});
       const result = await service.delete('c1', 'u1');
-      expect(result.success).toBe(true);
+      expect(result).toBeNull();
     });
 
     it('should throw ForbiddenException for non-owner', async () => {
@@ -111,7 +111,7 @@ describe('CommunitiesService', () => {
       prisma.circle.findUnique.mockResolvedValue({ privacy: 'PUBLIC', isBanned: false });
       prisma.circleMember.findUnique.mockResolvedValue(null);
       const result = await service.join('c1', 'u1');
-      expect(result.success).toBe(true);
+      expect(result).toBeNull();
     });
 
     it('should throw ConflictException if already member', async () => {
@@ -132,7 +132,7 @@ describe('CommunitiesService', () => {
       prisma.circle.findUnique.mockResolvedValue({ ownerId: 'other', isBanned: false });
       prisma.circleMember.findUnique.mockResolvedValue({ userId: 'u1' });
       const result = await service.leave('c1', 'u1');
-      expect(result.success).toBe(true);
+      expect(result).toBeNull();
     });
 
     it('should throw BadRequestException for owner leaving', async () => {

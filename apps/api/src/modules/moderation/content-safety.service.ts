@@ -1,4 +1,4 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
@@ -51,7 +51,7 @@ export class ContentSafetyService {
   private async validateMediaUrl(url: string): Promise<void> {
     const parsed = new URL(url);
     if (parsed.protocol !== 'https:') {
-      throw new Error('Media URL: only HTTPS is allowed');
+      throw new BadRequestException('Media URL: only HTTPS is allowed');
     }
     await assertNotPrivateUrl(url, 'Media URL');
     // X08-#31 FIX: Use URL hostname endsWith/exact match instead of substring includes()

@@ -130,7 +130,7 @@ export class CommunitiesService {
       throw err;
     }
 
-    return { data: circle, success: true, timestamp: new Date().toISOString() };
+    return circle;
   }
 
   // List communities with optional auth
@@ -176,8 +176,6 @@ export class CommunitiesService {
         cursor: data.length > 0 ? data[data.length - 1].createdAt.toISOString() : null,
         hasMore,
       },
-      success: true,
-      timestamp: new Date().toISOString(),
     };
   }
 
@@ -205,7 +203,7 @@ export class CommunitiesService {
       }
     }
 
-    return { data: circle, success: true, timestamp: new Date().toISOString() };
+    return circle;
   }
 
   // Update community
@@ -252,7 +250,7 @@ export class CommunitiesService {
       throw error;
     }
 
-    return { data: updated, success: true, timestamp: new Date().toISOString() };
+    return updated;
   }
 
   // Delete community
@@ -269,7 +267,7 @@ export class CommunitiesService {
     }
 
     await this.prisma.circle.delete({ where: { id } });
-    return { data: null, success: true, timestamp: new Date().toISOString() };
+    return null;
   }
 
   // Join community
@@ -309,7 +307,7 @@ export class CommunitiesService {
       }),
     ]);
 
-    return { data: null, success: true, timestamp: new Date().toISOString() };
+    return null;
   }
 
   // Leave community
@@ -339,7 +337,7 @@ export class CommunitiesService {
       this.prisma.$executeRaw`UPDATE "Circle" SET "membersCount" = GREATEST("membersCount" - 1, 0) WHERE id = ${id}`,
     ]);
 
-    return { data: null, success: true, timestamp: new Date().toISOString() };
+    return null;
   }
 
   // List community members
@@ -387,8 +385,6 @@ export class CommunitiesService {
         cursor: data.length > 0 ? data[data.length - 1].joinedAt.toISOString() : null,
         hasMore,
       },
-      success: true,
-      timestamp: new Date().toISOString(),
     };
   }
 

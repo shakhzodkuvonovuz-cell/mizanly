@@ -1,4 +1,4 @@
-import { Injectable, Logger, BadRequestException, Inject } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, InternalServerErrorException, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 import { TranslationContentType, AiCaptionStatus, AvatarStyle } from '@prisma/client';
@@ -421,7 +421,7 @@ Summarize only the content between the tags. Only respond with the summary, noth
       });
 
       if (!whisperResponse.ok) {
-        throw new Error(`Whisper API error: ${whisperResponse.status}`);
+        throw new InternalServerErrorException(`Whisper API error: ${whisperResponse.status}`);
       }
 
       const srtContent = await whisperResponse.text();

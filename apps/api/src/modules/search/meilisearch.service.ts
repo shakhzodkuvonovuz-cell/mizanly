@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CircuitBreakerService } from '../../common/services/circuit-breaker.service';
 
@@ -95,6 +95,7 @@ export class MeilisearchService implements OnModuleInit {
 
       this.logger.log('Meilisearch indexes configured (6/6)');
     } catch (error) {
+      this.available = false;
       this.logger.error('Meilisearch initialization failed', error);
     }
   }
@@ -132,7 +133,7 @@ export class MeilisearchService implements OnModuleInit {
           });
 
           if (!response.ok) {
-            throw new Error(`Meilisearch search failed for ${indexName}: ${response.status}`);
+            throw new InternalServerErrorException(`Meilisearch search failed for ${indexName}: ${response.status}`);
           }
           return response.json() as Promise<MeilisearchSearchResult>;
         },
@@ -158,7 +159,7 @@ export class MeilisearchService implements OnModuleInit {
           body: JSON.stringify(documents),
         });
         if (!response.ok) {
-          throw new Error(`Meilisearch addDocuments failed for ${indexName}: ${response.status} ${response.statusText}`);
+          throw new InternalServerErrorException(`Meilisearch addDocuments failed for ${indexName}: ${response.status} ${response.statusText}`);
         }
       });
     } catch (error) {

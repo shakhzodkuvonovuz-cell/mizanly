@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { CircuitBreakerService } from '../../common/services/circuit-breaker.service';
 
@@ -159,7 +159,7 @@ export class PushService {
             body: JSON.stringify(batch),
           }).then(async (r) => {
             if (!r.ok) {
-              throw new Error(`Expo push API responded with status ${r.status}: ${await r.text()}`);
+              throw new InternalServerErrorException(`Expo push API responded with status ${r.status}: ${await r.text()}`);
             }
             return r;
           }),
