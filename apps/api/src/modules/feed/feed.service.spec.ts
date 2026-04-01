@@ -8,7 +8,7 @@ describe('FeedService', () => {
   let prisma: Record<string, any>;
   let redis: Record<string, any>;
   beforeEach(async () => {
-    prisma = { feedInteraction: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn() }, feedDismissal: { upsert: jest.fn(), findMany: jest.fn(), delete: jest.fn() }, $queryRawUnsafe: jest.fn().mockResolvedValue([]) };
+    prisma = { feedInteraction: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn() }, feedDismissal: { upsert: jest.fn(), findMany: jest.fn(), delete: jest.fn() }, $queryRawUnsafe: jest.fn().mockResolvedValue([]), $queryRaw: jest.fn().mockResolvedValue([]) };
     redis = {
       get: jest.fn().mockResolvedValue(null),
       set: jest.fn().mockResolvedValue('OK'),
