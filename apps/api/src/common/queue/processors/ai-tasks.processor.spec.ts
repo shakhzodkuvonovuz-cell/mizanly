@@ -58,9 +58,11 @@ describe('AiTasksProcessor', () => {
       ai.moderateContent.mockResolvedValue({ safe: false, flags: ['hate_speech'], confidence: 0.95 });
       const job = { data: { content: 'Bad content', contentType: 'post', contentId: 'p1' }, updateProgress: jest.fn() };
       await (processor as any).processModeration(job);
+      // X08-#16: reporterId changed from 'system' to null (valid FK)
+      // X08-#15: reason now mapped from AI flags instead of hardcoded HATE_SPEECH
       expect(prisma.report.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          reporterId: 'system',
+          reporterId: null,
           reason: 'HATE_SPEECH',
           reportedPostId: 'p1',
           reportedUserId: 'author-1',

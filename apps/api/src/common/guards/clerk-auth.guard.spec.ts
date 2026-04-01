@@ -81,6 +81,7 @@ describe('ClerkAuthGuard', () => {
       expect(mockVerifyToken).toHaveBeenCalledWith('valid-jwt-token', {
         secretKey: 'test-clerk-secret-key',
       });
+      // X04-#2: scheduledDeletionAt now included in select
       expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
         where: { clerkId: 'clerk_user_abc' },
         select: {
@@ -93,6 +94,7 @@ describe('ClerkAuthGuard', () => {
           isDeleted: true,
           banExpiresAt: true,
           deactivatedAt: true,
+          scheduledDeletionAt: true,
         },
       });
       expect(request.user).toEqual(activeUser);

@@ -4,6 +4,7 @@ import { Worker, Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { AiService } from '../../../modules/ai/ai.service';
 import { PrismaService } from '../../../config/prisma.service';
+import { ReportReason } from '@prisma/client';
 import { QueueService } from '../queue.service';
 import { attachCorrelationId } from '../with-correlation';
 
@@ -126,8 +127,10 @@ export class AiTasksProcessor implements OnModuleInit, OnModuleDestroy {
 
         await this.prisma.report.create({
           data: {
-            reporterId: 'system',
-            reason: 'HATE_SPEECH',
+            // X08-#16: System-generated reports have null reporterId (no real user reporter)
+            reporterId: null,
+            // X08-#15: Map AI flags to appropriate ReportReason instead of hardcoding HATE_SPEECH
+            reason: this.mapFlagsToReason(result.flags),
             description: `AI auto-flagged (${contentType}): ${result.flags.join(', ')} (confidence: ${result.confidence})`,
             ...(contentType === 'post' ? { reportedPostId: contentId } : {}),
             ...(contentType === 'comment' ? { reportedCommentId: contentId } : {}),
@@ -140,6 +143,37 @@ export class AiTasksProcessor implements OnModuleInit, OnModuleDestroy {
     }
 
     await job.updateProgress(100);
+  }
+
+  /**
+   * X08-#15: Map AI moderation flags to the closest ReportReason enum value.
+   * Falls back to OTHER for unrecognized flags.
+   */
+  private mapFlagsToReason(flags: string[]): ReportReason {
+    const flagMap: Record<string, ReportReason> = {
+      hate_speech: 'HATE_SPEECH',
+      hate: 'HATE_SPEECH',
+      harassment: 'HARASSMENT',
+      bullying: 'HARASSMENT',
+      violence: 'VIOLENCE',
+      gore: 'VIOLENCE',
+      spam: 'SPAM',
+      misinformation: 'MISINFORMATION',
+      nudity: 'NUDITY',
+      sexual: 'NUDITY',
+      nsfw: 'NUDITY',
+      self_harm: 'SELF_HARM',
+      terrorism: 'TERRORISM',
+      extremism: 'TERRORISM',
+      doxxing: 'DOXXING',
+      copyright: 'COPYRIGHT',
+      impersonation: 'IMPERSONATION',
+    };
+    for (const flag of flags) {
+      const normalized = flag.toLowerCase().trim();
+      if (flagMap[normalized]) return flagMap[normalized];
+    }
+    return 'OTHER';
   }
 
   private async processCaptionGeneration(job: Job<CaptionJobData>): Promise<void> {

@@ -193,8 +193,8 @@ export class QueueService implements OnModuleDestroy {
       this.logger.error(`DB DLQ storage failed for job ${job.id}: ${dbError instanceof Error ? dbError.message : 'unknown'}`);
     });
 
-    // Wait for both to complete
-    await Promise.allSettled([redisDone, dbDone]);
+    // Wait for both to complete — both promises have .catch() so Promise.all won't reject
+    await Promise.all([redisDone, dbDone]);
 
     // If both failed, capture to Sentry as absolute last resort
     if (redisFailed && dbFailed) {

@@ -330,7 +330,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 
       client.join(`user:${user.id}`);
       this.logger.log(`Socket connected: userId=${userId}`);
-    } catch {
+    } catch (err: unknown) {
+      // X07-#10: Log connection failures instead of silently swallowing
+      this.logger.error(
+        `Socket connection failed for client ${client.id}: ${err instanceof Error ? err.message : String(err)}`,
+      );
       // Clean up heartbeat timer if connection setup fails partway through
       const existingTimer = this.heartbeatTimers.get(client.id);
       if (existingTimer) {

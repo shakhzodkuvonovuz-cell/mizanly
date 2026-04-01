@@ -350,7 +350,10 @@ export class PrivacyService {
     const truncatedCategories = Object.entries(exportData)
       .filter(([, val]) => {
         if (Array.isArray(val) && val.length >= EXPORT_CAP) return true;
-        if (val && typeof val === 'object' && 'data' in val && Array.isArray((val as any).data) && (val as any).data.length >= EXPORT_CAP) return true;
+        if (val && typeof val === 'object' && 'data' in val) {
+          const nested = (val as Record<string, unknown>).data;
+          if (Array.isArray(nested) && nested.length >= EXPORT_CAP) return true;
+        }
         return false;
       })
       .map(([key]) => key);
@@ -394,7 +397,7 @@ export class PrivacyService {
     this.logger.warn(`Full data deletion requested for user ${userId}`);
 
     // ── Pre-transaction: Collect media URLs and content IDs for post-tx cleanup ──
-    const [userPosts, userReels, userStories, userVideos, userThreads] = await Promise.all([
+    const [userPosts, userReels, userStories, userVideos, userThreads, userMessages, userVoicePosts] = await Promise.all([
       this.prisma.post.findMany({
         where: { userId },
         select: { id: true, mediaUrls: true },
@@ -414,6 +417,16 @@ export class PrivacyService {
       this.prisma.thread.findMany({
         where: { userId },
         select: { id: true },
+      }),
+      // X04-#4: Collect message media URLs for R2 cleanup (was missing — orphaned files on R2)
+      this.prisma.message.findMany({
+        where: { senderId: userId, mediaUrl: { not: null } },
+        select: { mediaUrl: true },
+      }),
+      // X04-#5: Collect voicePost audio URLs for R2 cleanup (was missing — orphaned audio on R2)
+      this.prisma.voicePost.findMany({
+        where: { userId },
+        select: { audioUrl: true },
       }),
     ]);
 
@@ -454,6 +467,16 @@ export class PrivacyService {
       const tk = this.extractR2Key(video.thumbnailUrl);
       if (tk) mediaKeysToDelete.push(tk);
     }
+    // X04-#4: Message media URLs
+    for (const msg of userMessages) {
+      const mk = this.extractR2Key(msg.mediaUrl);
+      if (mk) mediaKeysToDelete.push(mk);
+    }
+    // X04-#5: VoicePost audio URLs
+    for (const vp of userVoicePosts) {
+      const ak = this.extractR2Key(vp.audioUrl);
+      if (ak) mediaKeysToDelete.push(ak);
+    }
 
     // ── Atomic transaction: all DB mutations succeed or none do ──
     // Do NOT hard-delete financial records — preserve for audit trail (SetNull on FK)
@@ -478,6 +501,9 @@ export class PrivacyService {
           madhab: null,
           expoPushToken: null,
           notificationsOn: false,
+          // X04-#12: Anonymize external service identifiers
+          clerkId: `deleted_${userId}`,
+          stripeConnectAccountId: null,
         },
       });
 
@@ -553,17 +579,12 @@ export class PrivacyService {
       const followers = await tx.follow.findMany({ where: { followingId: userId }, select: { followerId: true }, take: 10000 }) || [];
       const followingIds = (following as Array<{ followingId: string }>).map(f => f.followingId);
       const followerIds = (followers as Array<{ followerId: string }>).map(f => f.followerId);
+      // X04-#18: Use $executeRaw tagged template (parameterized) instead of $executeRawUnsafe
       if (followingIds.length > 0) {
-        await tx.$executeRawUnsafe(
-          `UPDATE "users" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE id = ANY($1::text[])`,
-          followingIds,
-        );
+        await tx.$executeRaw`UPDATE "users" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE id = ANY(${followingIds}::text[])`;
       }
       if (followerIds.length > 0) {
-        await tx.$executeRawUnsafe(
-          `UPDATE "users" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE id = ANY($1::text[])`,
-          followerIds,
-        );
+        await tx.$executeRaw`UPDATE "users" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE id = ANY(${followerIds}::text[])`;
       }
       await tx.follow.deleteMany({ where: { OR: [{ followerId: userId }, { followingId: userId }] } });
       await tx.block.deleteMany({ where: { OR: [{ blockerId: userId }, { blockedId: userId }] } });

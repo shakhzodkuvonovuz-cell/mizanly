@@ -70,7 +70,7 @@ export class ModerationService {
    *
    * @see ContentSafetyService.moderateText for AI-based text moderation
    */
-  async checkText(userId: string, dto: CheckTextDto): Promise<TextCheckResult> {
+  async checkText(userId: string, dto: CheckTextDto): Promise<Omit<TextCheckResult, 'matches'>> {
     // Run word filter
     const result = checkText(dto.text);
 
@@ -93,10 +93,15 @@ export class ModerationService {
       }
     }
 
+    // X08-#28: Strip matched slur text from response — only return categories + severity to client.
+    // The matches are used internally for flagContent() above but must NOT be sent to the client,
+    // as that would leak the exact prohibited terms that triggered the filter.
+    const { matches: _matches, ...safeResult } = result;
+
     // Finding #207: Surface crisis resources when self-harm content detected
-    if (result.categories.includes('self_harm')) {
+    if (safeResult.categories.includes('self_harm')) {
       return {
-        ...result,
+        ...safeResult,
         crisisResources: {
           message: 'If you or someone you know is struggling, please reach out for help.',
           helplines: [
@@ -108,7 +113,7 @@ export class ModerationService {
       };
     }
 
-    return result;
+    return safeResult;
   }
 
   /**

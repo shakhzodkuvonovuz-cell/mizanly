@@ -320,13 +320,12 @@ export class AuthService {
     return suggestions;
   }
 
-  // TODO: [ARCH/F19] Missing Clerk webhook events:
-  // - user.updated → sync profile changes (email, phone, avatar)
-  // - session.created → track login events, enforce 2FA
-  // - session.revoked → clean up active sessions
-  // - organization.* → community/circle sync
-  // Currently only user.created and user.deleted are handled.
-  // Requires CLERK_WEBHOOK_SECRET to be set (currently empty).
+  // Clerk webhook events handled by WebhookController (auth.controller.ts):
+  // - user.created → syncClerkUser (create user record)
+  // - user.updated → syncClerkUser (sync profile: email, phone, avatar, username)
+  // - user.deleted → deactivateByClerkId (mark for data purge)
+  // - session.created → trackLogin (update lastSeenAt)
+  // - session.revoked → Redis pub/sub session invalidation
 
   // Called by webhook handler
   async syncClerkUser(clerkId: string, data: {
