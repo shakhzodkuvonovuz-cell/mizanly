@@ -159,6 +159,8 @@ interface AppState {
   setMajlisScrollOffset: (offset: number) => void;
   bakraScrollOffset: number;
   setBakraScrollOffset: (offset: number) => void;
+  minbarScrollOffset: number;
+  setMinbarScrollOffset: (offset: number) => void;
 
   // Toast (transient UI state — not persisted)
   toasts: Array<{ id: string; message: string; variant: 'success' | 'error' | 'warning' | 'info'; duration?: number; action?: { label: string; onPress: () => void } }>;
@@ -360,6 +362,8 @@ export const useStore = create<AppState>()(
       setMajlisScrollOffset: (majlisScrollOffset) => set({ majlisScrollOffset }),
       bakraScrollOffset: 0,
       setBakraScrollOffset: (bakraScrollOffset) => set({ bakraScrollOffset }),
+      minbarScrollOffset: 0,
+      setMinbarScrollOffset: (minbarScrollOffset) => set({ minbarScrollOffset }),
 
       // Toast (not persisted — transient UI state)
       toasts: [],
@@ -424,6 +428,7 @@ export const useStore = create<AppState>()(
         safScrollOffset: 0,
         majlisScrollOffset: 0,
         bakraScrollOffset: 0,
+        minbarScrollOffset: 0,
         toasts: [],
         discoveredFeatures: [],
         userRole: 'viewer' as const,

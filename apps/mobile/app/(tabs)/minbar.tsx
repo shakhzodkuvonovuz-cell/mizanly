@@ -31,6 +31,8 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { rtlFlexRow, rtlTextAlign, rtlAbsoluteEnd } from '@/utils/rtl';
+import { showToast } from '@/components/ui/Toast';
+import { useFocusEffect } from '@react-navigation/native';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const THUMBNAIL_HEIGHT = Math.round(SCREEN_WIDTH * 9 / 16);
@@ -62,6 +64,7 @@ const CategoryChip = memo(function CategoryChip({ cat, isActive, onPress }: Cate
       <Text
         style={[
           styles.categoryLabel,
+          { color: tc.text.secondary },
           isActive && styles.categoryLabelActive,
         ]}
       >
@@ -86,7 +89,7 @@ interface VideoWithProgress extends Video {
 }
 
 const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMorePress }: VideoCardProps) {
-  const { t } = useTranslation();
+  const { t, isRTL: isRTLProp } = useTranslation();
   const tc = useThemeColors();
   const video = item as VideoWithProgress;
   const totalSeconds = Math.floor(video.duration);
@@ -132,7 +135,7 @@ const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMor
       </View>
 
       {/* Info row */}
-      <View style={styles.infoRow}>
+      <View style={[styles.infoRow, { flexDirection: rtlFlexRow(isRTLProp) }]}>
         <Pressable
           style={styles.channelAvatar}
           onPress={() => onChannelPress(video.channel.handle)}
@@ -146,16 +149,16 @@ const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMor
           />
         </Pressable>
         <View style={styles.videoDetails}>
-          <Text style={styles.videoTitle} numberOfLines={2}>
+          <Text style={[styles.videoTitle, { color: tc.text.primary }]} numberOfLines={2}>
             {video.title}
           </Text>
-          <View style={styles.channelNameRow}>
+          <View style={[styles.channelNameRow, { flexDirection: rtlFlexRow(isRTLProp) }]}>
             <Icon name="globe" size={10} color={tc.text.secondary} />
-            <Text style={styles.channelName} numberOfLines={1}>
+            <Text style={[styles.channelName, { color: tc.text.secondary }]} numberOfLines={1}>
               {video.channel.name}
             </Text>
           </View>
-          <Text style={styles.videoStats} numberOfLines={1}>
+          <Text style={[styles.videoStats, { color: tc.text.tertiary }]} numberOfLines={1}>
             {formatCount(video.viewsCount)} {t('minbar.viewCount')} • {formatDistanceToNowStrict(new Date(video.publishedAt || video.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
           </Text>
         </View>
@@ -193,8 +196,29 @@ export default function MinbarScreen() {
   const feedRef = useRef<FlashListRef<Video>>(null);
   useScrollToTop(feedRef);
 
-  // useScrollToTop handles scroll-to-top on tab press — no need for a separate focus listener
-  // which would reset scroll position when returning from sub-screens
+  // D41-#49: Scroll position persistence across tab switches
+  const lastSavedOffset = useRef(0);
+  const handleScrollOffsetSave = useCallback((y: number) => {
+    if (Math.abs(y - lastSavedOffset.current) > 50) {
+      lastSavedOffset.current = y;
+      useStore.getState().setMinbarScrollOffset(y);
+    }
+  }, []);
+  const combinedOnScroll = useCallback((event: { nativeEvent: { contentOffset: { y: number } } }) => {
+    onScroll(event);
+    handleScrollOffsetSave(event.nativeEvent.contentOffset.y);
+  }, [onScroll, handleScrollOffsetSave]);
+  useFocusEffect(
+    useCallback(() => {
+      const offset = useStore.getState().minbarScrollOffset;
+      if (offset > 0) {
+        const timer = setTimeout(() => {
+          feedRef.current?.scrollToOffset({ offset, animated: false });
+        }, 100);
+        return () => clearTimeout(timer);
+      }
+    }, [])
+  );
 
   const continueWatchingQuery = useQuery({
     queryKey: ['watch-history'],
@@ -254,8 +278,9 @@ export default function MinbarScreen() {
     setSelectedVideoId(null);
     try {
       await usersApi.addWatchLater(videoId);
+      showToast({ message: t('minbar.savedToWatchLater', 'Saved to Watch Later'), variant: 'success' });
     } catch {
-      // silently fail — user can retry
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
     }
   };
 
@@ -462,7 +487,7 @@ export default function MinbarScreen() {
         estimatedItemSize={350}
         windowSize={7}
         maxToRenderPerBatch={5}
-        onScroll={onScroll}
+        onScroll={combinedOnScroll}
         scrollEventThrottle={16}
         contentContainerStyle={{ paddingBottom: tabBar.height + spacing.base }}
         refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -515,7 +540,6 @@ const styles = StyleSheet.create({
   logo: {
     color: colors.emerald,
     fontSize: fontSize.xl,
-    fontWeight: '700',
     fontFamily: fonts.headingBold,
     letterSpacing: -0.5,
   },
