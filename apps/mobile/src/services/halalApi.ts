@@ -1,4 +1,5 @@
 import { api, qs } from './api';
+import type { PaginatedResponse } from '@/types';
 
 type HalalRestaurant = {
   id: string;
@@ -29,8 +30,6 @@ type HalalReview = {
   createdAt: string;
   user?: { id: string; displayName: string; avatarUrl?: string };
 };
-
-type PaginatedResponse<T> = { data: T[]; meta: { cursor?: string; hasMore: boolean } };
 
 export const halalApi = {
   findNearby: (lat: number, lng: number, opts?: {

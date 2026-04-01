@@ -55,6 +55,6 @@ export const StoryRow = memo(function StoryRow({ groups, onPressGroup, onPressOw
 });
 
 const styles = StyleSheet.create({
-  row: { borderBottomWidth: 0.5, borderBottomColor: colors.dark.border },
+  row: { borderBottomWidth: 0.5 },
   content: { paddingHorizontal: spacing.base, paddingVertical: spacing.md, gap: spacing.base },
 });

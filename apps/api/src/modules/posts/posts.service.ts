@@ -543,8 +543,9 @@ export class PostsService {
               inviterId: userId,
               inviteeId: invitee.id,
             },
-          }).catch(() => {
-            // Unique constraint — invite already exists, ignore
+          }).catch((err) => {
+            if (err?.code === 'P2002') return; // Duplicate invite, expected
+            this.logger.warn('Collab invite creation failed', err?.message);
           });
         }
       }

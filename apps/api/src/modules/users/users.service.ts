@@ -837,7 +837,7 @@ export class UsersService {
             type: 'SYSTEM',
             title: 'Weekly Screen Time Summary',
             body: `Your daily limit is ${s.dailyTimeLimit} minutes. Check your wellbeing settings for this week's usage.`,
-          }).catch(() => {});
+          }).catch((err) => this.logger.warn('Screen time digest notification failed', err instanceof Error ? err.message : err));
           created++;
         }
       } else {
@@ -863,7 +863,7 @@ export class UsersService {
             take: BATCH_SIZE,
           });
           for (const n of recentNotifs) {
-            this.queueService.addPushNotificationJob({ notificationId: n.id }).catch(() => {});
+            this.queueService.addPushNotificationJob({ notificationId: n.id }).catch((err) => this.logger.warn('Push notification job queue failed', err instanceof Error ? err.message : err));
           }
         }
       }

@@ -22,10 +22,14 @@ import type { IconName } from '@/components/ui/Icon';
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface HeaderAction {
-  icon: string | React.ReactNode;
+  icon: IconName | React.ReactNode;
   onPress: () => void;
   accessibilityLabel?: string;
   badge?: number;
+}
+
+function isIconName(value: unknown): value is IconName {
+  return typeof value === 'string';
 }
 
 export interface GlassHeaderProps {
@@ -64,8 +68,8 @@ function HeaderButton({ icon, onPress, accessibilityLabel, badge }: HeaderAction
       accessibilityLabel={accessibilityLabel ?? (typeof icon === 'string' ? icon : undefined)}
       hitSlop={8}
     >
-      {typeof icon === 'string' ? (
-        <Icon name={icon as IconName} size={22} color={colors.text.primary} />
+      {isIconName(icon) ? (
+        <Icon name={icon} size={22} color={colors.text.primary} />
       ) : (
         icon
       )}

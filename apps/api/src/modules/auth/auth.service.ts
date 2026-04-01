@@ -404,7 +404,7 @@ export class AuthService {
     });
 
     // Ensure UserSettings record exists for new webhook-created users
-    await this.prisma.userSettings.create({ data: { userId: user.id } }).catch(() => {});
+    await this.prisma.userSettings.create({ data: { userId: user.id } }).catch((err) => this.logger.warn('User settings creation failed', err?.message));
 
     // Index new user in search
     this.queueService.addSearchIndexJob({

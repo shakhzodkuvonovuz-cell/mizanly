@@ -2,12 +2,15 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { sanitizeText } from '../../common/utils/sanitize';
 
 @Injectable()
 export class StoryChainsService {
+  private readonly logger = new Logger(StoryChainsService.name);
+
   constructor(private prisma: PrismaService) {}
 
   async createChain(userId: string, data: { prompt: string; coverUrl?: string }) {
@@ -68,7 +71,7 @@ export class StoryChainsService {
     this.prisma.storyChain.update({
       where: { id: chainId },
       data: { viewsCount: { increment: 1 } },
-    }).catch(() => {}); // Fire-and-forget, don't block response
+    }).catch((e) => this.logger.debug('Story chain notification failed', e?.message));
 
     const entries = await this.prisma.storyChainEntry.findMany({
       where: {

@@ -270,7 +270,7 @@ export class ReelsService {
             userId, actorId: null, type: 'SYSTEM', reelId: reel.id,
             title: 'Reel ready!',
             body: 'Your reel has finished processing and is now live.',
-          }).catch(() => {});
+          }).catch((err) => this.logger.warn('Reel ready notification failed', err instanceof Error ? err.message : err));
         }
       })
       .catch((err) => {
@@ -286,7 +286,7 @@ export class ReelsService {
               userId, actorId: null, type: 'SYSTEM', reelId: reel.id,
               title: 'Reel ready!',
               body: 'Your reel has finished processing and is now live.',
-            }).catch(() => {});
+            }).catch((err) => this.logger.warn('Reel ready notification failed (fallback path)', err instanceof Error ? err.message : err));
           }
         }).catch((e) => this.logger.error('Failed to update reel status', e));
       });
@@ -1286,7 +1286,7 @@ export class ReelsService {
           userId, actorId: userId, type: 'SYSTEM', reelId,
           title: 'Content removed',
           body: 'Your reel was removed because it violates community guidelines.',
-        }).catch(() => {});
+        }).catch((err) => this.logger.warn('Reel content removal notification failed', err instanceof Error ? err.message : err));
       } else if (result.classification === 'WARNING') {
         await this.prisma.reel.update({
           where: { id: reelId },

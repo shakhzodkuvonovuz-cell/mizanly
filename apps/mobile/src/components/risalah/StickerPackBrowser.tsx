@@ -37,7 +37,7 @@ function mapApiPackToLocal(pack: ApiStickerPack, isFeatured: boolean, isOwned: b
     id: pack.id,
     name: pack.name,
     description: pack.description,
-    iconUrl: pack.coverUrl || 'https://placehold.co/400x400/0A7B4F/FFFFFF?text=📦',
+    iconUrl: pack.coverUrl || '',
     previewUrls: pack.stickers.slice(0, 3).map(s => s.imageUrl),
     stickerCount: pack.stickers.length,
     isFeatured,
@@ -390,7 +390,7 @@ export const StickerPackBrowser = memo(function StickerPackBrowser({ onClose }: 
           {selectedPack && (
             <View style={styles.sheetContent}>
               <View style={styles.sheetHeader}>
-                <Image source={{ uri: selectedPack.coverUrl || 'https://placehold.co/400x400/0A7B4F/FFFFFF?text=📦' }} style={styles.sheetIcon} />
+                <Image source={{ uri: selectedPack.coverUrl || '' }} style={styles.sheetIcon} />
                 <View style={styles.sheetInfo}>
                   <Text style={styles.sheetName}>{selectedPack.name}</Text>
                   <Text style={styles.sheetDescription}>{selectedPack.description}</Text>

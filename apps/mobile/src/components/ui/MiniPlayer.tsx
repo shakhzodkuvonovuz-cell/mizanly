@@ -26,6 +26,7 @@ import { useRouter } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useStore } from '@/store';
+import { useShallow } from 'zustand/react/shallow';
 import { colors, spacing, fontSize, radius, animation, tabBar, glass } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { navigate } from '@/utils/navigation';
@@ -43,13 +44,22 @@ export const MiniPlayer = memo(function MiniPlayer() {
   const tc = useThemeColors();
   const videoRef = useRef<Video>(null);
 
-  // Store selectors
-  const miniPlayerVideo = useStore((s) => s.miniPlayerVideo);
-  const miniPlayerProgress = useStore((s) => s.miniPlayerProgress);
-  const miniPlayerPlaying = useStore((s) => s.miniPlayerPlaying);
-  const setMiniPlayerProgress = useStore((s) => s.setMiniPlayerProgress);
-  const setMiniPlayerPlaying = useStore((s) => s.setMiniPlayerPlaying);
-  const closeMiniPlayer = useStore((s) => s.closeMiniPlayer);
+  // Store selectors — single subscription via useShallow to avoid 6x re-renders
+  const {
+    miniPlayerVideo,
+    miniPlayerProgress,
+    miniPlayerPlaying,
+    setMiniPlayerProgress,
+    setMiniPlayerPlaying,
+    closeMiniPlayer,
+  } = useStore(useShallow((s) => ({
+    miniPlayerVideo: s.miniPlayerVideo,
+    miniPlayerProgress: s.miniPlayerProgress,
+    miniPlayerPlaying: s.miniPlayerPlaying,
+    setMiniPlayerProgress: s.setMiniPlayerProgress,
+    setMiniPlayerPlaying: s.setMiniPlayerPlaying,
+    closeMiniPlayer: s.closeMiniPlayer,
+  })));
 
   // Animated values for gestures
   const translateX = useSharedValue(0);

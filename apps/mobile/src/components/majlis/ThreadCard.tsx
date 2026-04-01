@@ -236,7 +236,6 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn, is
   if (dismissed) return null;
 
   return (
-    <Animated.View>
     <Pressable
       style={[styles.card, { borderBottomColor: tc.border }]}
       onPress={() => router.push(`/(screens)/thread/${thread.id}`)}
@@ -477,7 +476,6 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn, is
         )}
       </BottomSheet>
     </Pressable>
-    </Animated.View>
   );
 });
 
@@ -591,7 +589,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden' as const,
     marginBottom: spacing.sm,
   },
-  imageGrid4Item: { width: '49%' as unknown as number },
+  imageGrid4Item: { width: '49%' },
   moreOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.5)',

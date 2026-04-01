@@ -206,7 +206,7 @@ export class VideosService {
     this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' }).catch(err => this.logger.warn('Failed to queue gamification streak for video', err instanceof Error ? err.message : err));
 
     // Invalidate video feed cache so new video appears immediately
-    this.invalidateVideoFeedCache().catch(() => {});
+    this.invalidateVideoFeedCache().catch((err) => this.logger.debug('Video feed cache invalidation failed', err instanceof Error ? err.message : err));
 
     return {
       ...video[0],
@@ -500,7 +500,7 @@ export class VideosService {
     }).catch(err => this.logger.warn('Unpublish workflow failed for video', err instanceof Error ? err.message : err));
 
     // Invalidate video feed cache so deleted video disappears immediately
-    this.invalidateVideoFeedCache().catch(() => {});
+    this.invalidateVideoFeedCache().catch((err) => this.logger.debug('Video feed cache invalidation failed', err instanceof Error ? err.message : err));
 
     return { deleted: true };
   }

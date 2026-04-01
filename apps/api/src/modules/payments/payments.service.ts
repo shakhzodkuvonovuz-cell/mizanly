@@ -125,7 +125,7 @@ export class PaymentsService {
     }).catch(() => null);
     if (mapping) {
       // Re-seed Redis cache
-      await this.redis.setex(`subscription:${stripeSubscriptionId}`, 60 * 60 * 24 * 365, mapping.internalId).catch(() => {});
+      await this.redis.setex(`subscription:${stripeSubscriptionId}`, 60 * 60 * 24 * 365, mapping.internalId).catch((e) => this.logger.debug('Redis subscription cache failed', e?.message));
     }
     return mapping?.internalId ?? null;
   }
@@ -143,7 +143,7 @@ export class PaymentsService {
       select: { stripeId: true },
     }).catch(() => null);
     if (mapping) {
-      await this.redis.setex(`subscription:internal:${internalSubscriptionId}`, 60 * 60 * 24 * 365, mapping.stripeId).catch(() => {});
+      await this.redis.setex(`subscription:internal:${internalSubscriptionId}`, 60 * 60 * 24 * 365, mapping.stripeId).catch((e) => this.logger.debug('Redis subscription cache failed', e?.message));
     }
     return mapping?.stripeId ?? null;
   }

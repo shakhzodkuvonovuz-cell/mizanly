@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, memo } from 'react';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -109,7 +109,7 @@ const CREATE_OPTIONS: CreateOption[] = [
 ];
 
 // ── Animated grid card with Reanimated spring press ──
-function GridCard({ opt, index, onSelect, tc, t }: {
+const GridCard = memo(function GridCard({ opt, index, onSelect, tc, t }: {
   opt: CreateOption;
   index: number;
   onSelect: (route: string) => void;
@@ -164,7 +164,7 @@ function GridCard({ opt, index, onSelect, tc, t }: {
       </AnimatedPressable>
     </Animated.View>
   );
-}
+});
 
 // ── Animated secondary row with spring press ──
 function SecondaryRow({ opt, index, onSelect, tc, t }: {

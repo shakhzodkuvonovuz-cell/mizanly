@@ -184,7 +184,7 @@ export class BroadcastService {
       this.redis.publish('content:update', JSON.stringify({
         event: 'broadcast_message',
         data: { channelId, messageId: msg.id },
-      })).catch(() => {});
+      })).catch((err) => this.logger.warn('Broadcast redis publish failed', err?.message));
     }).catch(err => this.logger.warn(`Broadcast notification failed: ${err?.message}`));
 
     return msg;

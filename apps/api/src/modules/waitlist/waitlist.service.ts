@@ -54,7 +54,7 @@ export class WaitlistService {
     });
 
     // Invalidate cached count
-    await this.redis.del('waitlist:count').catch(() => {});
+    await this.redis.del('waitlist:count').catch((e) => this.logger.debug('Waitlist cache op failed', e?.message));
 
     const position = await this.getPositionByEmail(normalizedEmail);
     const totalCount = await this.getCachedCount();
@@ -114,7 +114,7 @@ export class WaitlistService {
     if (cached) return parseInt(cached, 10);
 
     const count = await this.prisma.waitlistEntry.count();
-    await this.redis.set('waitlist:count', count.toString(), 'EX', 60).catch(() => {});
+    await this.redis.set('waitlist:count', count.toString(), 'EX', 60).catch((e) => this.logger.debug('Waitlist cache op failed', e?.message));
     return count;
   }
 

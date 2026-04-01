@@ -244,7 +244,7 @@ export class StoriesService {
           userId: mu.id, actorId: userId, type: 'MENTION',
           title: 'Mentioned you in a story',
           body: `@${actorUser?.username ?? 'Someone'} mentioned you in their story`,
-        }).catch(() => {}),
+        }).catch((err) => this.logger.warn('Story mention notification failed', err instanceof Error ? err.message : err)),
       ));
     }
 
@@ -519,7 +519,7 @@ export class StoriesService {
       conversationId: conversation.id,
       title: 'Story reply',
       body: 'Replied to your story',
-    }).catch(() => {});
+    }).catch((err) => this.logger.warn('Story reply notification failed', err instanceof Error ? err.message : err));
 
     return message;
   }

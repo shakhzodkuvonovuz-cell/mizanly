@@ -139,10 +139,10 @@ export class FollowsService {
       this.analytics.increment('follows:daily');
 
       // Invalidate Redis user cache for both users so follow counts are fresh
-      this.redis.del(`user:${target.username}`).catch(() => {});
+      this.redis.del(`user:${target.username}`).catch((err) => this.logger.debug('Cache invalidation failed for target user', err?.message));
       this.prisma.user.findUnique({ where: { id: currentUserId }, select: { username: true } })
-        .then(u => { if (u) this.redis.del(`user:${u.username}`).catch(() => {}); })
-        .catch(() => {});
+        .then(u => { if (u) this.redis.del(`user:${u.username}`).catch((err) => this.logger.debug('Cache invalidation failed for current user', err?.message)); })
+        .catch((err) => this.logger.debug('User lookup for cache invalidation failed', err?.message));
 
       // Finding #357: First follower celebration — check if this is the target's first follower
       this.prisma.user.findUnique({ where: { id: targetUserId }, select: { followersCount: true } })
@@ -153,10 +153,10 @@ export class FollowsService {
               type: 'SYSTEM',
               title: '🎉 Your first follower!',
               body: 'Congratulations! Someone is interested in your content. Keep posting!',
-            }).catch(() => {});
+            }).catch((err) => this.logger.warn('First follower notification failed', err?.message));
           }
         })
-        .catch(() => {});
+        .catch((err) => this.logger.debug('First follower check failed', err?.message));
 
       return { type: 'follow', follow };
     } catch (err) {
@@ -206,8 +206,8 @@ export class FollowsService {
       this.prisma.user.findUnique({ where: { id: currentUserId }, select: { username: true } }),
       this.prisma.user.findUnique({ where: { id: targetUserId }, select: { username: true } }),
     ]);
-    if (currentUser) this.redis.del(`user:${currentUser.username}`).catch(() => {});
-    if (targetUser) this.redis.del(`user:${targetUser.username}`).catch(() => {});
+    if (currentUser) this.redis.del(`user:${currentUser.username}`).catch((err) => this.logger.debug('Cache invalidation failed for current user on unfollow', err?.message));
+    if (targetUser) this.redis.del(`user:${targetUser.username}`).catch((err) => this.logger.debug('Cache invalidation failed for target user on unfollow', err?.message));
 
     return { message: 'Unfollowed' };
   }

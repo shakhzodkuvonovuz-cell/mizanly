@@ -259,10 +259,18 @@ export function hasActiveCall(): boolean {
 export function generateCallUUID(): string {
   // UUID v4 via CSPRNG — no Math.random() fallback per standing rules
   const bytes = new Uint8Array(16);
-  if (typeof crypto === 'undefined' || !crypto.getRandomValues) {
-    throw new Error('crypto.getRandomValues not available — cannot generate secure UUID');
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    crypto.getRandomValues(bytes);
+  } else {
+    // Fallback: react-native-quick-crypto (installed, JSI-backed)
+    try {
+      const { generateRandomBytes } = require('react-native-quick-crypto');
+      const rnd = generateRandomBytes(16);
+      bytes.set(rnd);
+    } catch {
+      throw new Error('No CSPRNG available — cannot generate secure UUID');
+    }
   }
-  crypto.getRandomValues(bytes);
   // Set version 4 and variant bits
   bytes[6] = (bytes[6] & 0x0f) | 0x40;
   bytes[8] = (bytes[8] & 0x3f) | 0x80;

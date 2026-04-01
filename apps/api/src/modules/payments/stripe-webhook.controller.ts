@@ -84,7 +84,7 @@ export class StripeWebhookController {
     });
     if (dbEvent) {
       // Re-populate Redis from DB so future retries are fast
-      await this.redis.setex(dedupeKey, 604800, '1').catch(() => {});
+      await this.redis.setex(dedupeKey, 604800, '1').catch((e) => this.logger.debug('Webhook dedup cache failed', e?.message));
       this.logger.debug(`Stripe webhook ${event.id} already processed (DB) — skipping`);
       return { received: true, deduplicated: true };
     }
@@ -148,7 +148,7 @@ export class StripeWebhookController {
         // Mark as processed to prevent future retries
         await this.prisma.processedWebhookEvent.create({
           data: { eventId: event.id },
-        }).catch(() => {});
+        }).catch((e) => this.logger.debug('Webhook dedup cache failed', e?.message));
         return { received: true, error: 'deterministic_failure' };
       }
 

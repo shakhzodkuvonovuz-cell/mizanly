@@ -238,7 +238,8 @@ export class PushService {
       return await this.prisma.notification.count({
         where: { userId, isRead: false },
       });
-    } catch {
+    } catch (err) {
+      this.logger.warn('Unread count query failed', err instanceof Error ? err.message : String(err));
       return 0;
     }
   }

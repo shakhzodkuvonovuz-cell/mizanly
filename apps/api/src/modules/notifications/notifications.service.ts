@@ -169,7 +169,7 @@ export class NotificationsService {
     // If the deleted notification was unread, invalidate the cached unread count
     // so the next getUnreadCount call returns the correct value
     if (!notification.isRead) {
-      this.redis.del(`notif_unread:${userId}`).catch(() => {});
+      this.redis.del(`notif_unread:${userId}`).catch((err) => this.logger.debug('Redis unread count cache invalidation failed', err?.message));
     }
 
     return { deleted: true };
@@ -332,7 +332,7 @@ export class NotificationsService {
         });
 
         if (wasRead) {
-          this.redis.del(`notif_unread:${params.userId}`).catch(() => {});
+          this.redis.del(`notif_unread:${params.userId}`).catch((err) => this.logger.debug('Redis unread count cache invalidation failed', err?.message));
         }
 
         return existing;

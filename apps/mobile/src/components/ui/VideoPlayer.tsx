@@ -42,6 +42,15 @@ interface VideoPlayerProps {
   onPiPEnter?: () => void;
 }
 
+/** Format milliseconds as `M:SS` for display. Pure function, no component deps. */
+function formatTime(milliseconds: number): string {
+  if (!milliseconds) return '0:00';
+  const totalSeconds = Math.floor(milliseconds / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
 export const VideoPlayer = memo(function VideoPlayer({
   uri,
   hlsUrl,
@@ -261,14 +270,6 @@ export const VideoPlayer = memo(function VideoPlayer({
     }
     resetControlsTimeout();
   }, [haptic, resetControlsTimeout]);
-
-  const formatTime = (milliseconds: number) => {
-    if (!milliseconds) return '0:00';
-    const totalSeconds = Math.floor(milliseconds / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
 
   const position = status?.isLoaded ? status.positionMillis : 0;
   const durationMillis = status?.isLoaded ? (status.durationMillis ?? 0) : (duration ? duration * 1000 : 0);

@@ -83,6 +83,7 @@ function Heart({
         }
       }),
     );
+  // eslint-disable-next-line react-hooks/exhaustive-deps — all values are stable Reanimated SharedValues captured at mount
   }, []);
 
   const animatedStyle = useAnimatedStyle(() => ({

@@ -130,7 +130,7 @@ export class ScoredFeedCache {
       return this.readPage(cacheKey, page, pageSize);
     } finally {
       // Release lock (best-effort — TTL is the safety net)
-      await this.redis.del(lockKey).catch(() => {});
+      await this.redis.del(lockKey).catch((e) => this.logger.debug('Feed cache lock release failed', e?.message));
     }
   }
 

@@ -217,7 +217,7 @@ export const CommentsSheet = memo(function CommentsSheet({ reel, visible, onClos
         <View style={[styles.header, { borderBottomColor: tc.border }]}>
           <Text style={styles.headerTitle}>{t('saf.commentsWithCount', { count: reel.commentsCount })}</Text>
           <Pressable onPress={onClose} hitSlop={8}>
-            <Icon name="x" size="sm" color={colors.text.primary} />
+            <Icon name="x" size="sm" color={tc.text.primary} />
           </Pressable>
         </View>
 

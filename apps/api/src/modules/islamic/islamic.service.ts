@@ -2057,7 +2057,7 @@ export class IslamicService {
           take: BATCH_SIZE,
         });
         for (const n of recentNotifs) {
-          this.queueService.addPushNotificationJob({ notificationId: n.id }).catch(() => {});
+          this.queueService.addPushNotificationJob({ notificationId: n.id }).catch((err) => this.logger.debug('Push notification job queue failed', err?.message));
         }
       }
 
@@ -2132,7 +2132,7 @@ export class IslamicService {
         take: BATCH_SIZE,
       });
       for (const n of recentNotifs) {
-        this.queueService.addPushNotificationJob({ notificationId: n.id }).catch(() => {});
+        this.queueService.addPushNotificationJob({ notificationId: n.id }).catch((err) => this.logger.debug('Push notification job queue failed', err?.message));
       }
     }
 

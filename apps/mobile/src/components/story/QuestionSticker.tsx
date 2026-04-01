@@ -64,7 +64,7 @@ export const QuestionSticker = memo(function QuestionSticker({ data, onResponse,
     if (inputText.trim().length === 0) return;
 
     const newQuestion: SubmittedQuestion = {
-      id: Date.now().toString(),
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       text: inputText.trim(),
       submittedAt: new Date(),
       userId: 'current-user',

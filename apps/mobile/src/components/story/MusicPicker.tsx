@@ -338,6 +338,7 @@ export const MusicPicker = memo(function MusicPicker({ visible, onClose, onSelec
           ListEmptyComponent={ListEmpty}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          removeClippedSubviews={true}
           keyboardShouldPersistTaps="handled"
           refreshControl={
             <BrandedRefreshControl

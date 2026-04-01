@@ -78,7 +78,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         `CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_displayname_trgm ON users USING GIN ("displayName" gin_trgm_ops)`,
       ];
       for (const sql of trigramIndexes) {
-        await this.$executeRawUnsafe(sql).catch(() => {}); // CONCURRENTLY may fail inside transaction
+        await this.$executeRawUnsafe(sql).catch((e) => this.logger.debug('Index creation skipped (CONCURRENTLY inside txn)', e?.message));
       }
       this.logger.log('pg_trgm GIN indexes applied (4 search indexes)');
     } catch {
@@ -90,7 +90,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     try {
       await this.$executeRawUnsafe(
         `CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_messages_e2e_version ON messages ("e2eVersion") WHERE "e2eVersion" IS NOT NULL`,
-      ).catch(() => {});
+      ).catch((e) => this.logger.debug('Index creation skipped (CONCURRENTLY inside txn)', e?.message));
       this.logger.log('E2E partial index applied on messages.e2eVersion');
     } catch {
       this.logger.warn('E2E partial index creation failed');

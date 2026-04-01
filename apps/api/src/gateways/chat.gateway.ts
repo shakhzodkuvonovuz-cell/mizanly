@@ -132,7 +132,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
                     s.emit('force_disconnect', { reason });
                     s.disconnect(true);
                   }
-                }).catch(() => {}); // Socket may not be on this instance
+                }).catch((e) => this.logger.debug('Socket disconnect failed (may be on different instance)', e?.message));
               }
             }
           }
@@ -296,7 +296,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
           }
           await pipeline.exec();
           this.redis.publish('socket:evict', JSON.stringify({ socketIds: staleIds, reason: 'connection_limit' }))
-            .catch(() => {});
+            .catch((e) => this.logger.debug('Redis eviction publish failed', e?.message));
         }
       }
 

@@ -142,19 +142,27 @@ export function useTTS() {
     stopTTS();
   }, [stopTTS]);
 
+  // Refs for stale-closure prevention in cycleSpeed
+  const ttsPlayingRef = useRef(ttsPlaying);
+  ttsPlayingRef.current = ttsPlaying;
+  const ttsTextRef = useRef(ttsText);
+  ttsTextRef.current = ttsText;
+  const ttsSpeedRef = useRef(ttsSpeed);
+  ttsSpeedRef.current = ttsSpeed;
+
   const cycleSpeed = useCallback(() => {
-    const currentIndex = SPEED_OPTIONS.indexOf(ttsSpeed as TTSSpeed);
+    const currentIndex = SPEED_OPTIONS.indexOf(ttsSpeedRef.current as TTSSpeed);
     const nextIndex = (currentIndex + 1) % SPEED_OPTIONS.length;
     const newSpeed = SPEED_OPTIONS[nextIndex];
     setTTSSpeed(newSpeed);
 
     // If currently playing, restart with new speed
-    if (ttsPlaying && ttsText) {
+    if (ttsPlayingRef.current && ttsTextRef.current) {
       // Set flag so the onStopped from Speech.stop() doesn't reset ttsPlaying
       ignoringStopRef.current = true;
       Speech.stop();
-      const language = detectLanguage(ttsText);
-      Speech.speak(ttsText, {
+      const language = detectLanguage(ttsTextRef.current);
+      Speech.speak(ttsTextRef.current, {
         language,
         rate: newSpeed,
         onDone: () => setTTSPlaying(false),
@@ -168,7 +176,7 @@ export function useTTS() {
         onError: () => setTTSPlaying(false),
       });
     }
-  }, [ttsSpeed, ttsPlaying, ttsText, setTTSSpeed, setTTSPlaying]);
+  }, [setTTSSpeed, setTTSPlaying]);
 
   return {
     speak,

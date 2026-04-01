@@ -137,7 +137,7 @@ export const StickerPicker = memo(function StickerPicker({ visible, onClose, onS
     >
       <View style={styles.packIconWrapper}>
         <Image
-          source={{ uri: item.coverUrl || 'https://placehold.co/28x28/1C2333/8B949E?text=' + item.name.charAt(0) }}
+          source={item.coverUrl ? { uri: item.coverUrl } : undefined}
           style={styles.packIcon}
           resizeMode="contain"
         />

@@ -260,6 +260,12 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
     return [];
   }, [post.recentLikers, post.user]);
 
+  const firstUrl = useMemo(() => {
+    if (!post.content || post.mediaUrls.length > 0) return null;
+    const match = post.content.match(/https?:\/\/[^\s]+/);
+    return match ? match[0] : null;
+  }, [post.content, post.mediaUrls.length]);
+
   const handleLongPress = useCallback(() => {
     if (onLongPress) {
       haptic.longPress();
@@ -363,7 +369,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
                   const result = await aiApi.translate(post.content ?? '', 'en', post.id, 'post');
                   setTranslatedText(typeof result === 'string' ? result : ((result as { translatedText?: string })?.translatedText ?? (post.content ?? null)));
                 } catch {
-                  // Translation failed silently
+                  showToast({ message: tr('common.actionFailed'), variant: 'error' });
                 } finally {
                   setIsTranslating(false);
                 }
@@ -399,10 +405,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
       )}
 
       {/* Link preview — show when post has a URL but no media */}
-      {post.content && post.mediaUrls.length === 0 && (() => {
-        const urlMatch = post.content.match(/https?:\/\/[^\s]+/);
-        return urlMatch ? <LinkPreview url={urlMatch[0]} /> : null;
-      })()}
+      {firstUrl && <LinkPreview url={firstUrl} />}
 
       {/* Media with double-tap to like */}
       {post.mediaUrls.length > 0 && (

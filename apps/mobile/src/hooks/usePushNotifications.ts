@@ -87,7 +87,7 @@ export function usePushNotifications(isSignedIn: boolean) {
         tokenSubscription.current = Notifications.addPushTokenListener(async () => {
           try {
             const refreshedToken = await Notifications.getExpoPushTokenAsync({
-              projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
+              projectId,
             });
             const newPlatform = Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'web';
             await devicesApi.register(refreshedToken.data, newPlatform);

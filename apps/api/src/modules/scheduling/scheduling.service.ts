@@ -256,7 +256,7 @@ export class SchedulingService {
         // Hashtag counts — batch update instead of N+1
         const postHashtags = extractHashtags(post.content ?? '');
         if (postHashtags.length > 0) {
-          this.prisma.$executeRaw`UPDATE "hashtags" SET "postsCount" = "postsCount" + 1 WHERE name = ANY(${postHashtags}::text[])`.catch(() => {});
+          this.prisma.$executeRaw`UPDATE "hashtags" SET "postsCount" = "postsCount" + 1 WHERE name = ANY(${postHashtags}::text[])`.catch((err) => this.logger.debug('Hashtag postsCount update failed', err?.message));
         }
 
         // Gamification
@@ -283,7 +283,7 @@ export class SchedulingService {
 
         const threadHashtags = extractHashtags(thread.content ?? '');
         if (threadHashtags.length > 0) {
-          this.prisma.$executeRaw`UPDATE "hashtags" SET "threadsCount" = "threadsCount" + 1 WHERE name = ANY(${threadHashtags}::text[])`.catch(() => {});
+          this.prisma.$executeRaw`UPDATE "hashtags" SET "threadsCount" = "threadsCount" + 1 WHERE name = ANY(${threadHashtags}::text[])`.catch((err) => this.logger.debug('Hashtag threadsCount update failed', err?.message));
         }
 
         this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'thread_created' }).catch(err => this.logger.warn('Queue job failed:', err?.message));
@@ -310,7 +310,7 @@ export class SchedulingService {
 
         const reelHashtags = extractHashtags(reel.caption ?? '');
         if (reelHashtags.length > 0) {
-          this.prisma.$executeRaw`UPDATE "hashtags" SET "reelsCount" = "reelsCount" + 1 WHERE name = ANY(${reelHashtags}::text[])`.catch(() => {});
+          this.prisma.$executeRaw`UPDATE "hashtags" SET "reelsCount" = "reelsCount" + 1 WHERE name = ANY(${reelHashtags}::text[])`.catch((err) => this.logger.debug('Hashtag reelsCount update failed', err?.message));
         }
 
         this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'reel_created' }).catch(err => this.logger.warn('Queue job failed:', err?.message));
@@ -492,7 +492,7 @@ export class SchedulingService {
       // Hashtag count increment — batched
       const postHashtags2 = extractHashtags(post.content ?? '');
       if (postHashtags2.length > 0) {
-        this.prisma.$executeRaw`UPDATE "hashtags" SET "postsCount" = "postsCount" + 1 WHERE name = ANY(${postHashtags2}::text[])`.catch(() => {});
+        this.prisma.$executeRaw`UPDATE "hashtags" SET "postsCount" = "postsCount" + 1 WHERE name = ANY(${postHashtags2}::text[])`.catch((err) => this.logger.debug('Hashtag postsCount update failed for scheduled post', err?.message));
       }
 
       // Deferred: Gamification XP
@@ -533,7 +533,7 @@ export class SchedulingService {
       // Deferred: Hashtag count increment
       const threadHashtags2 = extractHashtags(thread.content ?? '');
       if (threadHashtags2.length > 0) {
-        this.prisma.$executeRaw`UPDATE "hashtags" SET "threadsCount" = "threadsCount" + 1 WHERE name = ANY(${threadHashtags2}::text[])`.catch(() => {});
+        this.prisma.$executeRaw`UPDATE "hashtags" SET "threadsCount" = "threadsCount" + 1 WHERE name = ANY(${threadHashtags2}::text[])`.catch((err) => this.logger.debug('Hashtag threadsCount update failed for scheduled thread', err?.message));
       }
 
       // Deferred: Gamification XP
@@ -571,7 +571,7 @@ export class SchedulingService {
       // Hashtag count increment — batched
       const reelHashtags2 = extractHashtags(reel.caption ?? '');
       if (reelHashtags2.length > 0) {
-        this.prisma.$executeRaw`UPDATE "hashtags" SET "reelsCount" = "reelsCount" + 1 WHERE name = ANY(${reelHashtags2}::text[])`.catch(() => {});
+        this.prisma.$executeRaw`UPDATE "hashtags" SET "reelsCount" = "reelsCount" + 1 WHERE name = ANY(${reelHashtags2}::text[])`.catch((err) => this.logger.debug('Hashtag reelsCount update failed for scheduled reel', err?.message));
       }
 
       // Deferred: Gamification XP

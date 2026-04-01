@@ -211,8 +211,8 @@ const styles = StyleSheet.create({
   overlay: {
     position: 'absolute',
     top: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     fontSize: fontSize.base,
     fontFamily: fonts.body,
     // Must match TextInput padding exactly
@@ -230,8 +230,8 @@ const styles = StyleSheet.create({
   focusLine: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     height: 2,
     backgroundColor: colors.emerald,
     borderRadius: 1,
