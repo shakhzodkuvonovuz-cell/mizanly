@@ -10,6 +10,7 @@ import { PrismaService } from '../../config/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import Stripe from 'stripe';
 import Redis from 'ioredis';
+import { DIAMOND_TO_USD, PLATFORM_FEE_RATE } from '../../common/constants/financial';
 
 @Injectable()
 export class PaymentsService {
@@ -248,7 +249,7 @@ export class PaymentsService {
         amount,
         currency,
         message: JSON.stringify({ stripePaymentIntentId: paymentIntent.id, status: 'pending' }),
-        platformFee: amount * 0.10, // 10% platform fee
+        platformFee: amount * PLATFORM_FEE_RATE,
         status: 'pending',
       },
     });
@@ -719,10 +720,9 @@ export class PaymentsService {
       });
 
       // Credit receiver's diamond balance (amount minus platform fee, converted to diamonds)
-      // 1 diamond = $0.007 → diamonds = netAmount / 0.007
       if (tip.receiverId) {
         const netAmount = Number(tip.amount) - Number(tip.platformFee);
-        const diamondsEarned = Math.floor(netAmount / 0.007);
+        const diamondsEarned = Math.floor(netAmount / DIAMOND_TO_USD);
 
         if (diamondsEarned > 0) {
           await tx.coinBalance.upsert({
@@ -1012,7 +1012,7 @@ export class PaymentsService {
       // Reverse the diamond credit that was given to the receiver
       if (tip.receiverId) {
         const netAmount = Number(tip.amount) - Number(tip.platformFee);
-        const diamondsToDeduct = Math.floor(netAmount / 0.007);
+        const diamondsToDeduct = Math.floor(netAmount / DIAMOND_TO_USD);
 
         if (diamondsToDeduct > 0) {
           // Conditional decrement: don't go below 0
