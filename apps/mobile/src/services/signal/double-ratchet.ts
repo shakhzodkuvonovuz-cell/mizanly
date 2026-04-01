@@ -78,10 +78,10 @@ function kdfRK(
   dhOutput: Uint8Array,
 ): { rootKey: Uint8Array; chainKey: Uint8Array } {
   const derived = hkdfDeriveSecrets(dhOutput, rootKey, RATCHET_INFO, 64);
-  return {
-    rootKey: derived.slice(0, 32),
-    chainKey: derived.slice(32, 64),
-  };
+  const newRootKey = derived.slice(0, 32);
+  const newChainKey = derived.slice(32, 64);
+  zeroOut(derived); // F05-#1: zero contiguous 64-byte HKDF output after slicing
+  return { rootKey: newRootKey, chainKey: newChainKey };
 }
 
 /**
@@ -189,41 +189,44 @@ export function ratchetEncrypt(
   // Pad plaintext to hide message length (Finding 8)
   const paddedPlaintext = padMessage(plaintext);
 
-  // Advance the symmetric ratchet (sending chain)
-  const { messageKey, nextChainKey } = kdfCK(state.sendingChain.chainKey);
+  try {
+    // Advance the symmetric ratchet (sending chain)
+    const { messageKey, nextChainKey } = kdfCK(state.sendingChain.chainKey);
 
-  // Update chain state
-  const oldChainKey = state.sendingChain.chainKey;
-  state.sendingChain.chainKey = nextChainKey;
-  const counter = state.sendingChain.counter;
-  state.sendingChain.counter += 1;
+    // Update chain state
+    const oldChainKey = state.sendingChain.chainKey;
+    state.sendingChain.chainKey = nextChainKey;
+    const counter = state.sendingChain.counter;
+    state.sendingChain.counter += 1;
 
-  // Clean up old chain key
-  zeroOut(oldChainKey);
+    // Clean up old chain key
+    zeroOut(oldChainKey);
 
-  // Build header — previousCounter is the count of messages sent in the PREVIOUS
-  // sending chain, NOT the receiving chain counter (Signal spec: PN field)
-  const header: MessageHeader = {
-    senderRatchetKey: state.senderRatchetKeyPair.publicKey,
-    counter,
-    previousCounter: state.previousSendingCounter,
-  };
+    // Build header — previousCounter is the count of messages sent in the PREVIOUS
+    // sending chain, NOT the receiving chain counter (Signal spec: PN field)
+    const header: MessageHeader = {
+      senderRatchetKey: state.senderRatchetKeyPair.publicKey,
+      counter,
+      previousCounter: state.previousSendingCounter,
+    };
 
-  // Derive encryption key + nonce from message key
-  const { encKey, nonce } = deriveMessageEncKeys(messageKey);
+    // Derive encryption key + nonce from message key
+    const { encKey, nonce } = deriveMessageEncKeys(messageKey);
 
-  // Encrypt with XChaCha20-Poly1305 AEAD
-  // Header is AAD — authenticated but not encrypted
-  const headerBytes = serializeHeader(header);
-  const ciphertext = aeadEncrypt(encKey, nonce, paddedPlaintext, headerBytes);
+    // Encrypt with XChaCha20-Poly1305 AEAD
+    // Header is AAD — authenticated but not encrypted
+    const headerBytes = serializeHeader(header);
+    const ciphertext = aeadEncrypt(encKey, nonce, paddedPlaintext, headerBytes);
 
-  // Clean up message key and plaintext (forward secrecy)
-  zeroOut(messageKey);
-  zeroOut(encKey);
-  zeroOut(nonce);
-  zeroOut(paddedPlaintext); // F05-#2: zero padded plaintext after encryption
+    // Clean up message key (forward secrecy)
+    zeroOut(messageKey);
+    zeroOut(encKey);
+    zeroOut(nonce);
 
-  return { header, ciphertext };
+    return { header, ciphertext };
+  } finally {
+    zeroOut(paddedPlaintext); // F05-#2: try/finally ensures zeroing on exception
+  }
 }
 
 // ============================================================
@@ -313,9 +316,13 @@ export function ratchetDecrypt(
     );
   }
 
-  // Remove padding (Finding 8)
-  const plaintext = unpadMessage(paddedPlaintext);
-  zeroOut(paddedPlaintext); // F05-#3: zero padded plaintext after unpadding
+  // Remove padding + zero in try/finally (F05-#3: ensures zeroing on unpad failure)
+  let plaintext: Uint8Array;
+  try {
+    plaintext = unpadMessage(paddedPlaintext);
+  } finally {
+    zeroOut(paddedPlaintext);
+  }
 
   // Clean up (forward secrecy)
   zeroOut(messageKey);
@@ -463,6 +470,7 @@ function trySkippedKeys(
 
   // Remove padding (Finding 8)
   const plaintext = unpadMessage(paddedPlaintext);
+  zeroOut(paddedPlaintext); // F05-#3: zero padded plaintext in skipped-key path
 
   zeroOut(skipped.messageKey);
   zeroOut(encKey);

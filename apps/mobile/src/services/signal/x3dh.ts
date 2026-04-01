@@ -186,95 +186,87 @@ export async function initiateX3DH(
 
   // DH1: our identity (converted) × their signed pre-key
   const dh1 = x25519DH(ourIdentityX25519Private, bundle.signedPreKey.publicKey);
-  assertNonZeroDH(dh1, 'DH1');
-
   // DH2: our ephemeral × their identity (converted)
   const dh2 = x25519DH(ephemeralKeyPair.privateKey, theirIdentityX25519Public);
-  assertNonZeroDH(dh2, 'DH2');
-
   // DH3: our ephemeral × their signed pre-key
   const dh3 = x25519DH(ephemeralKeyPair.privateKey, bundle.signedPreKey.publicKey);
-  assertNonZeroDH(dh3, 'DH3');
 
-  // DH4: our ephemeral × their one-time pre-key (optional — 3-DH fallback if no OTP)
+  // try/finally ensures DH outputs and converted keys are zeroed even on exception
+  // (e.g., assertNonZeroDH throws, PQ encapsulation throws)
   let dhConcat: Uint8Array;
-  if (bundle.oneTimePreKey) {
-    const dh4 = x25519DH(ephemeralKeyPair.privateKey, bundle.oneTimePreKey.publicKey);
-    assertNonZeroDH(dh4, 'DH4');
-    dhConcat = concat(PADDING, dh1, dh2, dh3, dh4);
-    zeroOut(dh4);
-  } else {
-    dhConcat = concat(PADDING, dh1, dh2, dh3);
-  }
-
-  // --- Step 5: Derive shared secret via HKDF ---
-  // V8-F11 FIX: Single-pass HKDF per Signal PQXDH spec.
-  // Previously: HKDF(HKDF(F||DH) || PQ) — two nested KDFs.
-  // Signal spec requires: HKDF(F || DH1 || DH2 || DH3 || [DH4] || [PQ_shared_secret])
-  // All input key material is concatenated BEFORE the single HKDF call.
-  // This preserves the formal security proof from Signal's PQXDH specification.
-
+  let sharedSecret: Uint8Array;
   let pqCiphertext: Uint8Array | undefined;
-  // V7-F5: Access pqPreKey with proper type narrowing instead of 4 separate `as any` casts.
-  const bundlePqPreKey = (bundle as unknown as Record<string, unknown>).pqPreKey;
-  if (isPQXDHAvailable() && bundlePqPreKey !== undefined && bundlePqPreKey !== null) {
-    let pqPubKey: Uint8Array;
-    if (typeof bundlePqPreKey === 'string') {
-      pqPubKey = new Uint8Array(Buffer.from(bundlePqPreKey, 'base64'));
-    } else if (bundlePqPreKey instanceof Uint8Array) {
-      pqPubKey = bundlePqPreKey;
+
+  try {
+    assertNonZeroDH(dh1, 'DH1');
+    assertNonZeroDH(dh2, 'DH2');
+    assertNonZeroDH(dh3, 'DH3');
+
+    // DH4: our ephemeral × their one-time pre-key (optional — 3-DH fallback if no OTP)
+    if (bundle.oneTimePreKey) {
+      const dh4 = x25519DH(ephemeralKeyPair.privateKey, bundle.oneTimePreKey.publicKey);
+      assertNonZeroDH(dh4, 'DH4');
+      dhConcat = concat(PADDING, dh1, dh2, dh3, dh4);
+      zeroOut(dh4);
     } else {
-      throw new Error(`Invalid pqPreKey type: ${typeof bundlePqPreKey}`);
+      dhConcat = concat(PADDING, dh1, dh2, dh3);
     }
-    if (pqPubKey.length !== 1184) {
-      throw new Error(`Invalid ML-KEM-768 public key length: ${pqPubKey.length} (expected 1184)`);
-    }
-    try {
-      const pqResult = pqEncapsulate(pqPubKey);
-      if (pqResult) {
-        // V8-F11: Append PQ shared secret to dhConcat BEFORE HKDF (single-pass)
-        const oldDhConcat = dhConcat;
-        dhConcat = concat(dhConcat, pqResult.sharedSecret);
-        zeroOut(oldDhConcat); // Zero classical-only dhConcat
-        pqCiphertext = pqResult.ciphertext;
-        zeroOut(pqResult.sharedSecret);
+
+    // --- Step 5: Derive shared secret via HKDF ---
+    // V8-F11 FIX: Single-pass HKDF per Signal PQXDH spec.
+    // Signal spec requires: HKDF(F || DH1 || DH2 || DH3 || [DH4] || [PQ_shared_secret])
+
+    // V7-F5: Access pqPreKey with proper type narrowing instead of 4 separate `as any` casts.
+    const bundlePqPreKey = (bundle as unknown as Record<string, unknown>).pqPreKey;
+    if (isPQXDHAvailable() && bundlePqPreKey !== undefined && bundlePqPreKey !== null) {
+      let pqPubKey: Uint8Array;
+      if (typeof bundlePqPreKey === 'string') {
+        pqPubKey = new Uint8Array(Buffer.from(bundlePqPreKey, 'base64'));
+      } else if (bundlePqPreKey instanceof Uint8Array) {
+        pqPubKey = bundlePqPreKey;
+      } else {
+        throw new Error(`Invalid pqPreKey type: ${typeof bundlePqPreKey}`);
       }
-    } catch (encapError) {
-      // F04-#3 FIX: When both parties advertise v2 AND a PQ prekey is present AND
-      // encapsulation fails, ABORT session establishment entirely. Do not fall back
-      // to classical. A malformed PQ public key could be an attacker-controlled
-      // downgrade attempt.
-      if (bundle.supportedVersions?.includes(2)) {
-        import('./telemetry').then(({ recordE2EEvent }) =>
-          recordE2EEvent({ event: 'session_establishment_failed', metadata: { reason: 'pqxdh_encapsulation_failed' } }),
-        ).catch(() => {});
-        throw new Error('PQXDH encapsulation failed — both parties advertise v2 but PQ key is invalid. Aborting to prevent downgrade.');
+      if (pqPubKey.length !== 1184) {
+        throw new Error(`Invalid ML-KEM-768 public key length: ${pqPubKey.length} (expected 1184)`);
       }
-      // If remote only supports v1, PQ failure is non-critical — continue classical
+      try {
+        const pqResult = pqEncapsulate(pqPubKey);
+        if (pqResult) {
+          // V8-F11: Append PQ shared secret to dhConcat BEFORE HKDF (single-pass)
+          const oldDhConcat = dhConcat;
+          dhConcat = concat(dhConcat, pqResult.sharedSecret);
+          zeroOut(oldDhConcat);
+          pqCiphertext = pqResult.ciphertext;
+          zeroOut(pqResult.sharedSecret);
+        }
+      } catch (encapError) {
+        // F04-#3: Both v2 + PQ key present + failure → abort (no silent downgrade)
+        if (bundle.supportedVersions?.includes(2)) {
+          import('./telemetry').then(({ recordE2EEvent }) =>
+            recordE2EEvent({ event: 'session_establishment_failed', metadata: { reason: 'pqxdh_encapsulation_failed' } }),
+          ).catch(() => {});
+          throw new Error('PQXDH encapsulation failed — both parties advertise v2 but PQ key is invalid. Aborting to prevent downgrade.');
+        }
+      }
+    } else if (isPQXDHAvailable() && bundle.supportedVersions?.includes(2) && !bundlePqPreKey) {
+      identityTrust = 'changed';
+      import('./telemetry').then(({ recordE2EEvent }) =>
+        recordE2EEvent({ event: 'session_establishment_failed', metadata: { reason: 'pqxdh_downgrade_missing_prekey' } }),
+      ).catch(() => {});
     }
-  } else if (isPQXDHAvailable() && bundle.supportedVersions?.includes(2) && !bundlePqPreKey) {
-    // V5-F5: Both sides support PQ but bundle has no pqPreKey — possible strip attack.
-    // V6-F3 FIX: Set identityTrust='changed' so the UI shows a safety number change
-    // warning. Previously only emitted telemetry — the user was never informed of the
-    // potential downgrade attack. Now triggers "[Security code changed]" in the UI,
-    // prompting the user to verify the safety number out-of-band.
-    identityTrust = 'changed';
-    import('./telemetry').then(({ recordE2EEvent }) =>
-      recordE2EEvent({ event: 'session_establishment_failed', metadata: { reason: 'pqxdh_downgrade_missing_prekey' } }),
-    ).catch(() => {});
+
+    // V8-F11: Single-pass HKDF AFTER all key material (DH + PQ) is concatenated.
+    sharedSecret = hkdfDeriveSecrets(dhConcat, ZERO_SALT, X3DH_INFO, 32);
+  } finally {
+    // Zero all DH outputs and converted keys regardless of success/failure
+    zeroOut(dh1);
+    zeroOut(dh2);
+    zeroOut(dh3);
+    if (dhConcat!) zeroOut(dhConcat!);
+    zeroOut(ourIdentityX25519Private);
+    zeroOut(theirIdentityX25519Public);
   }
-
-  // V8-F11: Single-pass HKDF AFTER all key material (DH + PQ) is concatenated.
-  // dhConcat now contains: F || DH1 || DH2 || DH3 || [DH4] || [PQ_shared_secret]
-  const sharedSecret = hkdfDeriveSecrets(dhConcat, ZERO_SALT, X3DH_INFO, 32);
-
-  // Clean up intermediate DH outputs
-  zeroOut(dh1);
-  zeroOut(dh2);
-  zeroOut(dh3);
-  zeroOut(dhConcat);
-  zeroOut(ourIdentityX25519Private);
-  zeroOut(theirIdentityX25519Public); // F03-#1: zero converted X25519 form
 
   return {
     sharedSecret,
@@ -360,70 +352,64 @@ export async function respondX3DH(
 
   // DH1: our signed pre-key × their identity (converted)
   const dh1 = x25519DH(spkPrivate, theirIdentityX25519Public);
-  assertNonZeroDH(dh1, 'responder-DH1');
-
   // DH2: our identity (converted) × their ephemeral
   const dh2 = x25519DH(ourIdentityX25519Private, senderEphemeralKey);
-  assertNonZeroDH(dh2, 'responder-DH2');
-
   // DH3: our signed pre-key × their ephemeral
   const dh3 = x25519DH(spkPrivate, senderEphemeralKey);
-  assertNonZeroDH(dh3, 'responder-DH3');
 
-  // DH4: our one-time pre-key × their ephemeral (if OTP was used)
+  // try/finally ensures all DH outputs and converted keys are zeroed on any exception
   let dhConcat: Uint8Array;
-  if (oneTimePreKeyId !== undefined) {
-    const otpPrivate = await loadOneTimePreKeyPrivate(oneTimePreKeyId);
-    if (!otpPrivate) {
-      throw new Error(
-        `One-time pre-key ${oneTimePreKeyId} not found. ` +
-        'Session establishment may have been interrupted.',
-      );
-    }
-    const dh4 = x25519DH(otpPrivate, senderEphemeralKey);
-    assertNonZeroDH(dh4, 'responder-DH4');
-    dhConcat = concat(PADDING, dh1, dh2, dh3, dh4);
-    zeroOut(dh4);
-    zeroOut(otpPrivate); // F03-#6: zero loaded OTP private key (storage copy unaffected)
-    // NOTE: Do NOT delete OTP private key FROM STORAGE here.
-    // It's deleted only after sessionEstablished = true (in session.ts).
-    // This survives crashes between X3DH and session persist.
-  } else {
-    dhConcat = concat(PADDING, dh1, dh2, dh3);
-  }
+  let sharedSecret: Uint8Array;
 
-  // V8-F11 FIX: PQXDH responder — single-pass HKDF (matches initiator).
-  // Append PQ shared secret to dhConcat BEFORE HKDF, not after in a nested call.
-  if (pqCiphertext && pqSecretKey) {
-    const pqSharedSecret = pqDecapsulate(pqCiphertext, pqSecretKey);
-    if (pqSharedSecret) {
-      const oldDhConcat = dhConcat;
-      dhConcat = concat(dhConcat, pqSharedSecret);
-      // Zero the old classical-only dhConcat — it contains DH key material
-      zeroOut(oldDhConcat);
-      zeroOut(pqSharedSecret);
+  try {
+    assertNonZeroDH(dh1, 'responder-DH1');
+    assertNonZeroDH(dh2, 'responder-DH2');
+    assertNonZeroDH(dh3, 'responder-DH3');
+
+    // DH4: our one-time pre-key × their ephemeral (if OTP was used)
+    if (oneTimePreKeyId !== undefined) {
+      const otpPrivate = await loadOneTimePreKeyPrivate(oneTimePreKeyId);
+      if (!otpPrivate) {
+        throw new Error(
+          `One-time pre-key ${oneTimePreKeyId} not found. ` +
+          'Session establishment may have been interrupted.',
+        );
+      }
+      const dh4 = x25519DH(otpPrivate, senderEphemeralKey);
+      assertNonZeroDH(dh4, 'responder-DH4');
+      dhConcat = concat(PADDING, dh1, dh2, dh3, dh4);
+      zeroOut(dh4);
+      zeroOut(otpPrivate); // F03-#6: zero loaded OTP private key
     } else {
-      // F04-#4: PQ ciphertext is present but decapsulation failed (provider unavailable).
-      // The initiator included PQ in their derivation — our shared secret will NOT match.
-      // Abort with a clear error instead of silently computing a mismatched secret.
-      throw new Error('PQXDH decapsulation failed: ML-KEM provider unavailable but PQ ciphertext present in message');
+      dhConcat = concat(PADDING, dh1, dh2, dh3);
     }
-  } else if (pqCiphertext && !pqSecretKey) {
-    // F04-#4: PQ ciphertext present but we don't have the PQ secret key.
-    // Our shared secret will not match the initiator's. Abort.
-    throw new Error('PQXDH decapsulation failed: PQ secret key not found but PQ ciphertext present in message');
+
+    // V8-F11 FIX: PQXDH responder — single-pass HKDF (matches initiator).
+    if (pqCiphertext && pqSecretKey) {
+      const pqSharedSecret = pqDecapsulate(pqCiphertext, pqSecretKey);
+      if (pqSharedSecret) {
+        const oldDhConcat = dhConcat;
+        dhConcat = concat(dhConcat, pqSharedSecret);
+        zeroOut(oldDhConcat);
+        zeroOut(pqSharedSecret);
+      } else {
+        throw new Error('PQXDH decapsulation failed: ML-KEM provider unavailable but PQ ciphertext present in message');
+      }
+    } else if (pqCiphertext && !pqSecretKey) {
+      throw new Error('PQXDH decapsulation failed: PQ secret key not found but PQ ciphertext present in message');
+    }
+
+    // Single-pass HKDF over all key material
+    sharedSecret = hkdfDeriveSecrets(dhConcat, ZERO_SALT, X3DH_INFO, 32);
+  } finally {
+    // Zero all DH outputs and converted keys regardless of success/failure
+    zeroOut(dh1);
+    zeroOut(dh2);
+    zeroOut(dh3);
+    if (dhConcat!) zeroOut(dhConcat!);
+    zeroOut(ourIdentityX25519Private);
+    zeroOut(theirIdentityX25519Public);
   }
-
-  // Single-pass HKDF over all key material: F || DH1..DH4 || [PQ_shared_secret]
-  const sharedSecret = hkdfDeriveSecrets(dhConcat, ZERO_SALT, X3DH_INFO, 32);
-
-  // Clean up
-  zeroOut(dh1);
-  zeroOut(dh2);
-  zeroOut(dh3);
-  zeroOut(dhConcat);
-  zeroOut(ourIdentityX25519Private);
-  zeroOut(theirIdentityX25519Public); // F03-#1: zero converted X25519 form
 
   return {
     sharedSecret,
