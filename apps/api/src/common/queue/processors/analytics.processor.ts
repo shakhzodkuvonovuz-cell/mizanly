@@ -77,7 +77,7 @@ export class AnalyticsProcessor implements OnModuleInit, OnModuleDestroy {
       const maxAttempts = job?.opts?.attempts ?? 2;
       if (job && job.attemptsMade >= maxAttempts) {
         Sentry.captureException(err, { tags: { queue: 'analytics', jobId: job?.id } });
-        this.queueService.moveToDlq(job, err, 'analytics').catch(() => {});
+        this.queueService.moveToDlq(job, err, 'analytics').catch((e) => this.logger.error('DLQ routing failed for analytics', e?.message));
       }
       this.logger.error(`Analytics job ${job?.id} failed (attempt ${job?.attemptsMade ?? '?'}/${maxAttempts}): ${err.message}`);
     });

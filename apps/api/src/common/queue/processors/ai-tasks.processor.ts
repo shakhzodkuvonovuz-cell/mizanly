@@ -71,7 +71,7 @@ export class AiTasksProcessor implements OnModuleInit, OnModuleDestroy {
       const maxAttempts = job?.opts?.attempts ?? 2;
       if (job && job.attemptsMade >= maxAttempts) {
         Sentry.captureException(err, { tags: { queue: 'ai-tasks', jobId: job?.id } });
-        this.queueService.moveToDlq(job, err, 'ai-tasks').catch(() => {});
+        this.queueService.moveToDlq(job, err, 'ai-tasks').catch((e) => this.logger.error('DLQ routing failed for ai-tasks', e?.message));
       }
       this.logger.error(`AI task ${job?.id} failed (attempt ${job?.attemptsMade ?? '?'}/${maxAttempts}): ${err.message}`);
     });

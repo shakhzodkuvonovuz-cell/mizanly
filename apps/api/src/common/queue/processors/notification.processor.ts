@@ -75,7 +75,7 @@ export class NotificationProcessor implements OnModuleInit, OnModuleDestroy {
       const maxAttempts = job?.opts?.attempts ?? 3;
       if (job && job.attemptsMade >= maxAttempts) {
         Sentry.captureException(err, { tags: { queue: 'notifications', jobId: job?.id } });
-        this.queueService.moveToDlq(job, err, 'notifications').catch(() => {});
+        this.queueService.moveToDlq(job, err, 'notifications').catch((e) => this.logger.error('DLQ routing failed for notifications', e?.message));
       }
       this.logger.error(`Notification job ${job?.id} failed (attempt ${job?.attemptsMade ?? '?'}/${maxAttempts}): ${err.message}`);
     });

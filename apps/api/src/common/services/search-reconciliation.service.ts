@@ -54,7 +54,7 @@ export class SearchReconciliationService {
         indexName: 'posts',
         documentId: post.id,
         document: { id: post.id, content: post.content, hashtags: post.hashtags, userId: post.userId, type: 'post' },
-      }).catch(() => {});
+      }).catch((e) => this.logger.debug('Search reconciliation index job failed', e?.message));
       indexed++;
     }
 
@@ -70,7 +70,7 @@ export class SearchReconciliationService {
         action: 'delete',
         indexName: 'posts',
         documentId: post.id,
-      }).catch(() => {});
+      }).catch((e) => this.logger.debug('Search reconciliation delete job failed', e?.message));
       deleted++;
     }
 
@@ -92,7 +92,7 @@ export class SearchReconciliationService {
         indexName: 'threads',
         documentId: thread.id,
         document: { id: thread.id, content: thread.content, hashtags: thread.hashtags, userId: thread.userId, type: 'thread' },
-      }).catch(() => {});
+      }).catch((e) => this.logger.debug('Search reconciliation index job failed', e?.message));
       indexed++;
     }
 
@@ -114,7 +114,7 @@ export class SearchReconciliationService {
         indexName: 'reels',
         documentId: reel.id,
         document: { id: reel.id, caption: reel.caption, hashtags: reel.hashtags, userId: reel.userId, type: 'reel' },
-      }).catch(() => {});
+      }).catch((e) => this.logger.debug('Search reconciliation index job failed', e?.message));
       indexed++;
     }
 
@@ -130,7 +130,7 @@ export class SearchReconciliationService {
         action: 'delete',
         indexName: 'threads',
         documentId: thread.id,
-      }).catch(() => {});
+      }).catch((e) => this.logger.debug('Search reconciliation delete job failed', e?.message));
       deleted++;
     }
 
@@ -146,7 +146,7 @@ export class SearchReconciliationService {
         action: 'delete',
         indexName: 'reels',
         documentId: reel.id,
-      }).catch(() => {});
+      }).catch((e) => this.logger.debug('Search reconciliation delete job failed', e?.message));
       deleted++;
     }
 
@@ -168,7 +168,7 @@ export class SearchReconciliationService {
         indexName: 'videos',
         documentId: video.id,
         document: { id: video.id, title: video.title, description: video.description, tags: video.tags, userId: video.userId, channelId: video.channelId, category: video.category, type: 'video' },
-      }).catch(() => {});
+      }).catch((e) => this.logger.debug('Search reconciliation index job failed', e?.message));
       indexed++;
     }
 
@@ -184,7 +184,7 @@ export class SearchReconciliationService {
         action: 'delete',
         indexName: 'videos',
         documentId: video.id,
-      }).catch(() => {});
+      }).catch((e) => this.logger.debug('Search reconciliation delete job failed', e?.message));
       deleted++;
     }
 
@@ -201,7 +201,7 @@ export class SearchReconciliationService {
         indexName: 'users',
         documentId: user.id,
         document: { id: user.id, username: user.username, displayName: user.displayName, bio: user.bio, type: 'user' },
-      }).catch(() => {});
+      }).catch((e) => this.logger.debug('Search reconciliation index job failed', e?.message));
       indexed++;
     }
 
@@ -217,7 +217,7 @@ export class SearchReconciliationService {
         action: 'delete',
         indexName: 'users',
         documentId: user.id,
-      }).catch(() => {});
+      }).catch((e) => this.logger.debug('Search reconciliation delete job failed', e?.message));
       deleted++;
     }
 
@@ -234,7 +234,7 @@ export class SearchReconciliationService {
         indexName: 'hashtags',
         documentId: hashtag.id,
         document: { id: hashtag.id, name: hashtag.name, type: 'hashtag' },
-      }).catch(() => {});
+      }).catch((e) => this.logger.debug('Search reconciliation index job failed', e?.message));
       indexed++;
     }
 

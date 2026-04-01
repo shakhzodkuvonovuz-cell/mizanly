@@ -95,7 +95,7 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
       const maxAttempts = job?.opts?.attempts ?? 1;
       if (job && job.attemptsMade >= maxAttempts) {
         Sentry.captureException(err, { tags: { queue: 'media-processing', jobId: job?.id } });
-        this.queueService.moveToDlq(job, err, 'media-processing').catch(() => {});
+        this.queueService.moveToDlq(job, err, 'media-processing').catch((e) => this.logger.error('DLQ routing failed for media-processing', e?.message));
       }
       this.logger.error(`Media job ${job?.id} failed (attempt ${job?.attemptsMade ?? '?'}/${maxAttempts}): ${err.message}`);
     });
@@ -228,13 +228,13 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
       if (contentId && contentType) {
         const updateData = { blurhash };
         if (contentType === 'reel') {
-          await this.prisma.reel.update({ where: { id: contentId }, data: updateData }).catch(() => {});
+          await this.prisma.reel.update({ where: { id: contentId }, data: updateData }).catch((e) => this.logger.debug('Blurhash/status update failed', e?.message));
         } else if (contentType === 'post') {
-          await this.prisma.post.update({ where: { id: contentId }, data: updateData }).catch(() => {});
+          await this.prisma.post.update({ where: { id: contentId }, data: updateData }).catch((e) => this.logger.debug('Blurhash/status update failed', e?.message));
         } else if (contentType === 'story') {
-          await this.prisma.story.update({ where: { id: contentId }, data: updateData }).catch(() => {});
+          await this.prisma.story.update({ where: { id: contentId }, data: updateData }).catch((e) => this.logger.debug('Blurhash/status update failed', e?.message));
         } else if (contentType === 'video') {
-          await this.prisma.video.update({ where: { id: contentId }, data: { blurhash } }).catch(() => {});
+          await this.prisma.video.update({ where: { id: contentId }, data: { blurhash } }).catch((e) => this.logger.debug('Blurhash/status update failed', e?.message));
         }
       }
 

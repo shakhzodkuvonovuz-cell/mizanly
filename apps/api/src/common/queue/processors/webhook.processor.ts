@@ -72,7 +72,7 @@ export class WebhookProcessor implements OnModuleInit, OnModuleDestroy {
       const maxAttempts = job?.opts?.attempts ?? 5;
       if (job && job.attemptsMade >= maxAttempts) {
         Sentry.captureException(err, { tags: { queue: 'webhooks', jobId: job?.id } });
-        this.queueService.moveToDlq(job, err, 'webhooks').catch(() => {});
+        this.queueService.moveToDlq(job, err, 'webhooks').catch((e) => this.logger.error('DLQ routing failed for webhooks', e?.message));
       }
       this.logger.error(`Webhook job ${job?.id} failed (attempt ${job?.attemptsMade ?? '?'}/${maxAttempts}): ${err.message}`);
     });
