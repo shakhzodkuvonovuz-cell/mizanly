@@ -425,4 +425,44 @@ describe('ReportsService', () => {
       expect(actualDiff).toBeLessThan(expectedMs + 60000);
     });
   });
+
+  describe('R2-Tab2 audit fixes — deindex loop includes video', () => {
+    it('should include video in the deindex content types for PERMANENT_BAN action', async () => {
+      const report = {
+        id: 'r-ban-deindex',
+        status: 'PENDING',
+        reason: 'SPAM',
+        reportedPostId: null,
+        reportedCommentId: null,
+        reportedMessageId: null,
+        reportedUserId: 'banned-user',
+        reportedThreadId: null,
+        reportedReelId: null,
+        reportedVideoId: null,
+      };
+      // verifyAdminOrModerator calls user.findUnique first, then banned user lookup
+      prisma.user.findUnique
+        .mockResolvedValueOnce({ role: 'ADMIN' })         // admin check
+        .mockResolvedValueOnce({ clerkId: null });         // banned user Clerk lookup (no Clerk ID)
+      prisma.report.findUnique.mockResolvedValue(report);
+      prisma.$transaction.mockImplementation((ops: unknown[]) => Promise.all(ops));
+      prisma.report.update.mockResolvedValue({ ...report, status: 'RESOLVED' });
+      prisma.moderationLog.create.mockResolvedValue({ id: 'log-deindex' });
+      prisma.user.update.mockResolvedValue({ id: 'banned-user', isBanned: true });
+      // All content model findMany return empty to stop the deindex loop
+      prisma.post.findMany.mockResolvedValue([]);
+      prisma.reel.findMany.mockResolvedValue([]);
+      prisma.thread.findMany.mockResolvedValue([]);
+      prisma.video.findMany.mockResolvedValue([]);
+
+      await service.resolve('r-ban-deindex', 'admin1', 'PERMANENT_BAN' as ModerationAction);
+
+      // The deindex loop should query post, reel, thread, AND video
+      expect(prisma.video.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId: 'banned-user' },
+        }),
+      );
+    });
+  });
 });

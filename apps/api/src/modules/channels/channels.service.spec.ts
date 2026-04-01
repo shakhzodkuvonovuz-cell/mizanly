@@ -523,4 +523,30 @@ describe('ChannelsService', () => {
       expect(result.trailerVideoId).toBeNull();
     });
   });
+
+  describe('R2-Tab2 audit fixes', () => {
+    it('should use $executeRaw with channels table in subscribe', async () => {
+      const channel = { id: 'channel-sub', userId: 'owner-456' };
+      prisma.channel.findUnique.mockResolvedValue(channel as any);
+      prisma.subscription.findUnique.mockResolvedValue(null);
+      prisma.$transaction.mockResolvedValue(undefined);
+      notifications.create.mockResolvedValue(undefined);
+
+      await service.subscribe('tech', 'user-123');
+
+      // $executeRaw should have been called with the channels table update
+      expect(prisma.$executeRaw).toHaveBeenCalled();
+    });
+
+    it('should use $executeRaw with channels table in unsubscribe', async () => {
+      const channel = { id: 'channel-unsub', userId: 'owner-456' };
+      prisma.channel.findUnique.mockResolvedValue(channel as any);
+      prisma.subscription.findUnique.mockResolvedValue({} as any);
+      prisma.$transaction.mockResolvedValue(undefined);
+
+      await service.unsubscribe('tech', 'user-123');
+
+      expect(prisma.$executeRaw).toHaveBeenCalled();
+    });
+  });
 });

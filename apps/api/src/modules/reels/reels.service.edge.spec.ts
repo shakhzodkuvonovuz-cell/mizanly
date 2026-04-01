@@ -83,7 +83,8 @@ describe('ReelsService — edge cases', () => {
             },
             block: { findMany: jest.fn().mockResolvedValue([]) },
             mute: { findMany: jest.fn().mockResolvedValue([]) },
-            hashtag: { upsert: jest.fn() },
+            restrict: { findMany: jest.fn().mockResolvedValue([]) },
+            hashtag: { upsert: jest.fn(), createMany: jest.fn().mockResolvedValue({ count: 0 }) },
             report: { create: jest.fn() },
             $transaction: jest.fn(),
             $executeRaw: jest.fn(),
@@ -203,8 +204,8 @@ describe('ReelsService — edge cases', () => {
       } as any);
 
       expect(result).toBeDefined();
-      // extractHashtags should have found the 3 hashtags
-      expect(prisma.hashtag.upsert).toHaveBeenCalled();
+      // extractHashtags should have found the 3 hashtags — batch createMany pattern
+      expect(prisma.hashtag.createMany).toHaveBeenCalled();
     });
   });
 
@@ -299,6 +300,25 @@ describe('ReelsService — edge cases', () => {
 
       await expect(service.like('nonexistent-reel', userId))
         .rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('R2-Tab2 audit fixes', () => {
+    it('should use getExcludedUserIds in getFeed (not inline 10K query)', async () => {
+      prisma.block.findMany.mockResolvedValue([
+        { blockerId: userId, blockedId: 'blocked-reel-user' },
+      ]);
+      prisma.mute.findMany.mockResolvedValue([]);
+      prisma.reel.findMany.mockResolvedValue([]);
+
+      await service.getFeed(userId);
+
+      // getExcludedUserIds should have been called via the utility function
+      expect(prisma.block.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
+        }),
+      );
     });
   });
 });

@@ -631,6 +631,82 @@ describe('PersonalizedFeedService', () => {
     });
   });
 
+  // ── R2-Tab2 audit fixes — content safety filters ──────────────
+
+  describe('R2-Tab2 audit fixes — content safety filters', () => {
+    it('should filter isRemoved posts in getContentMetadata', async () => {
+      const ids = ['p1', 'p2'];
+      prisma.post.findMany.mockResolvedValue([
+        { id: 'p1', userId: 'u1', likesCount: 5, commentsCount: 2, sharesCount: 1, savesCount: 0, viewsCount: 100, hashtags: [], createdAt: new Date(), user: { isVerified: false, isScholarVerified: false, postsCount: 10 } },
+      ]);
+
+      const result = await (service as any).getContentMetadata(ids, 'POST');
+
+      expect(prisma.post.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            isRemoved: false,
+          }),
+        }),
+      );
+      // Only p1 should be in the map (p2 didn't exist or was filtered)
+      expect(result.size).toBe(1);
+      expect(result.has('p1')).toBe(true);
+    });
+
+    it('should filter non-PUBLIC visibility in getContentMetadata for posts', async () => {
+      prisma.post.findMany.mockResolvedValue([]);
+
+      await (service as any).getContentMetadata(['p1'], 'POST');
+
+      expect(prisma.post.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            visibility: 'PUBLIC',
+          }),
+        }),
+      );
+    });
+
+    it('should filter banned users in hydrateItems', async () => {
+      const items = [{ id: 'p1', type: 'post', score: 1 }, { id: 'p2', type: 'post', score: 0.5 }];
+      prisma.post.findMany.mockResolvedValue([
+        { id: 'p1', content: 'Good', mediaUrls: [], mediaTypes: [], postType: 'TEXT', likesCount: 5, commentsCount: 2, createdAt: new Date(), user: { id: 'u1', username: 'good', displayName: 'Good', avatarUrl: null, isVerified: false } },
+        // p2 is missing — it was filtered by the user: hSafeUser filter (isBanned: false)
+      ]);
+
+      const result = await (service as any).hydrateItems(items, 'POST');
+
+      expect(prisma.post.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            user: { isBanned: false, isDeactivated: false, isDeleted: false },
+          }),
+        }),
+      );
+      // Only p1 should survive hydration (p2 was filtered out)
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('p1');
+    });
+
+    it('should filter future scheduledAt in hydrateItems', async () => {
+      const items = [{ id: 'p1', type: 'post', score: 1 }];
+      prisma.post.findMany.mockResolvedValue([
+        { id: 'p1', content: 'Post', mediaUrls: [], mediaTypes: [], postType: 'TEXT', likesCount: 5, commentsCount: 2, createdAt: new Date(), user: { id: 'u1', username: 'user', displayName: 'User', avatarUrl: null, isVerified: false } },
+      ]);
+
+      await (service as any).hydrateItems(items, 'POST');
+
+      expect(prisma.post.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: [{ scheduledAt: null }, { scheduledAt: { lte: expect.any(Date) } }],
+          }),
+        }),
+      );
+    });
+  });
+
   // ── Trending window is 24 hours ────────────────────────────────
 
   describe('getTrendingFeed — 24h window', () => {

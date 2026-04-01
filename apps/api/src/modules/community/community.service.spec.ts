@@ -356,4 +356,36 @@ describe('CommunityService', () => {
       await expect(service.requestMentorship('mentee-1', { mentorId: 'nonexistent', topic: 'quran' })).rejects.toThrow(NotFoundException);
     });
   });
+
+  describe('R2-Tab2 audit fixes — moderation', () => {
+    it('should run content moderation when creating a board', async () => {
+      const cs = (service as any).contentSafety;
+      cs.moderateText.mockResolvedValue({ safe: true, flags: [] });
+      prisma.localBoard.create.mockResolvedValue({ id: 'lb-new', name: 'Test Board', city: 'London' });
+
+      await service.createBoard('user-1', { name: 'Test Board', city: 'London', country: 'UK' });
+
+      expect(cs.moderateText).toHaveBeenCalled();
+    });
+
+    it('should reject board with flagged content', async () => {
+      const cs = (service as any).contentSafety;
+      cs.moderateText.mockResolvedValue({ safe: false, flags: ['profanity'] });
+
+      await expect(
+        service.createBoard('user-1', { name: 'Bad Name', city: 'London', country: 'UK' }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should use ContentSafetyService in checkKindness', async () => {
+      const cs = (service as any).contentSafety;
+      cs.moderateText.mockResolvedValue({ safe: false, flags: ['toxicity'], suggestion: 'Be kind' });
+
+      const result = await service.checkKindness('This is awful!');
+
+      expect(cs.moderateText).toHaveBeenCalledWith('This is awful!');
+      expect(result.needsRephrase).toBe(true);
+      expect(result.suggestion).toBeTruthy();
+    });
+  });
 });

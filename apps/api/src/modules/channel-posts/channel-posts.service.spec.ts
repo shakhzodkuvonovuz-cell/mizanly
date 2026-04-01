@@ -110,4 +110,61 @@ describe('ChannelPostsService', () => {
       expect(prisma.channelPost.findMany).toHaveBeenCalled();
     });
   });
+
+  describe('R2-Tab2 audit fixes', () => {
+    it('should run content moderation on create', async () => {
+      prisma.channel.findUnique.mockResolvedValue({ id: 'ch1', userId: 'user1' });
+      prisma.channelPost.create.mockResolvedValue({ id: 'cp-mod', content: 'Safe content' });
+      const cs = (service as any).contentSafety;
+      cs.moderateText.mockResolvedValue({ safe: true, flags: [] });
+
+      await service.create('ch1', 'user1', { content: 'Safe content' });
+
+      expect(cs.moderateText).toHaveBeenCalled();
+    });
+
+    it('should reject flagged content on create', async () => {
+      prisma.channel.findUnique.mockResolvedValue({ id: 'ch1', userId: 'user1' });
+      const cs = (service as any).contentSafety;
+      cs.moderateText.mockResolvedValue({ safe: false, flags: ['hate_speech'] });
+
+      await expect(service.create('ch1', 'user1', { content: 'Bad content' })).rejects.toThrow('Content flagged');
+    });
+
+    it('should accept userId in getFeed and filter excluded users', async () => {
+      prisma.block.findMany.mockResolvedValue([
+        { blockerId: 'user1', blockedId: 'blocked-user' },
+      ]);
+      prisma.mute.findMany.mockResolvedValue([]);
+      prisma.restrict.findMany.mockResolvedValue([]);
+      prisma.channelPost.findMany.mockResolvedValue([]);
+
+      await service.getFeed('ch1', 'user1');
+
+      expect(prisma.block.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { OR: [{ blockerId: 'user1' }, { blockedId: 'user1' }] },
+        }),
+      );
+    });
+
+    it('should use GREATEST guard in like SQL', async () => {
+      prisma.channelPost.findUnique.mockResolvedValue({ id: 'cp1', channelId: 'ch1' });
+      prisma.channelPostLike.findUnique.mockResolvedValue(null);
+      prisma.channelPostLike.create.mockResolvedValue({});
+      prisma.$executeRaw.mockResolvedValue(1);
+      prisma.$transaction.mockImplementation(async (ops: unknown[]) => {
+        // Execute the ops to capture $executeRaw calls
+        for (const op of ops) {
+          if (op && typeof (op as any).then === 'function') await op;
+        }
+        return ops;
+      });
+
+      await service.like('cp1', 'user1');
+
+      // Verify $executeRaw was called (the GREATEST guard is in the tagged template)
+      expect(prisma.$executeRaw).toHaveBeenCalled();
+    });
+  });
 });

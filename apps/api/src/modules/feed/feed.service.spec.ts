@@ -516,4 +516,106 @@ describe('FeedService', () => {
       expect((prisma as any).post.findMany).toHaveBeenCalled();
     });
   });
+
+  describe('R2-Tab2 audit fixes', () => {
+    describe('getNearbyContent — visibility + block filters', () => {
+      beforeEach(() => {
+        (prisma as any).post = { findMany: jest.fn().mockResolvedValue([]) };
+        (prisma as any).block = { findMany: jest.fn().mockResolvedValue([]) };
+        (prisma as any).mute = { findMany: jest.fn().mockResolvedValue([]) };
+        (prisma as any).restrict = { findMany: jest.fn().mockResolvedValue([]) };
+        prisma.feedDismissal = { ...prisma.feedDismissal, findMany: jest.fn().mockResolvedValue([]) };
+      });
+
+      it('should return only PUBLIC posts', async () => {
+        (prisma as any).post.findMany.mockResolvedValue([
+          { id: 'p1', content: 'Public', locationName: 'Mosque', createdAt: new Date(), user: { id: 'u1' } },
+        ]);
+
+        const result = await service.getNearbyContent(40.7, -74.0, 25);
+        expect((prisma as any).post.findMany).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: expect.objectContaining({
+              visibility: 'PUBLIC',
+              isRemoved: false,
+            }),
+          }),
+        );
+        expect(result.data).toHaveLength(1);
+      });
+
+      it('should exclude blocked users when userId provided', async () => {
+        (prisma as any).block.findMany.mockResolvedValue([
+          { blockerId: 'u1', blockedId: 'blocked-user' },
+        ]);
+        (prisma as any).post.findMany.mockResolvedValue([]);
+
+        await service.getNearbyContent(40.7, -74.0, 25, undefined, 'u1');
+
+        expect((prisma as any).block.findMany).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: { OR: [{ blockerId: 'u1' }, { blockedId: 'u1' }] },
+          }),
+        );
+      });
+    });
+
+    describe('getDismissedIds — Redis cache', () => {
+      it('should use Redis cache on hit and skip DB', async () => {
+        redis.get.mockResolvedValue(JSON.stringify(['p1', 'p2']));
+
+        const ids = await service.getDismissedIds('u1', 'post');
+        expect(ids).toEqual(['p1', 'p2']);
+        expect(prisma.feedDismissal.findMany).not.toHaveBeenCalled();
+      });
+
+      it('should query DB on cache miss and set cache', async () => {
+        redis.get.mockResolvedValue(null);
+        prisma.feedDismissal.findMany.mockResolvedValue([{ contentId: 'p3' }]);
+
+        const ids = await service.getDismissedIds('u1', 'post');
+        expect(ids).toEqual(['p3']);
+        expect(prisma.feedDismissal.findMany).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: { userId: 'u1', contentType: 'post' },
+          }),
+        );
+        expect(redis.set).toHaveBeenCalledWith(
+          'dismissed:u1:post',
+          JSON.stringify(['p3']),
+          'EX',
+          120,
+        );
+      });
+    });
+
+    describe('getCommunityTrending — dismissed content filter', () => {
+      beforeEach(() => {
+        (prisma as any).hashtagFollow = { findMany: jest.fn().mockResolvedValue([{ hashtagId: 'ht1' }]) };
+        (prisma as any).hashtag = { findMany: jest.fn().mockResolvedValue([{ name: 'islam' }]) };
+        (prisma as any).block = { findMany: jest.fn().mockResolvedValue([]) };
+        (prisma as any).mute = { findMany: jest.fn().mockResolvedValue([]) };
+        (prisma as any).restrict = { findMany: jest.fn().mockResolvedValue([]) };
+        (prisma as any).post = { findMany: jest.fn().mockResolvedValue([]) };
+        prisma.feedDismissal = { ...prisma.feedDismissal, findMany: jest.fn().mockResolvedValue([{ contentId: 'dismissed-1' }]) };
+      });
+
+      it('should exclude dismissed content from community trending', async () => {
+        (prisma as any).post.findMany.mockResolvedValue([]);
+
+        const result = await service.getCommunityTrending('u1');
+
+        // getDismissedIds should have been called (via Redis or DB)
+        // The post query should include notIn filter for dismissed IDs
+        expect((prisma as any).post.findMany).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: expect.objectContaining({
+              id: { notIn: ['dismissed-1'] },
+            }),
+          }),
+        );
+        expect(result).toEqual([]);
+      });
+    });
+  });
 });

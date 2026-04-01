@@ -1449,4 +1449,46 @@ describe('PostsService', () => {
     });
   });
 
+  describe('R2-Tab2 audit fixes — block + mute', () => {
+    it('should reject react from blocked users', async () => {
+      const postId = 'post-blk';
+      const userId = 'blocker-user';
+      prisma.post.findUnique.mockResolvedValue({ id: postId, userId: 'owner-1', isRemoved: false, scheduledAt: null });
+      prisma.block.findFirst.mockResolvedValue({ blockerId: userId, blockedId: 'owner-1' });
+      prisma.mute.findFirst.mockResolvedValue(null);
+
+      await expect(service.react(postId, userId, 'LIKE')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should reject react from muted users', async () => {
+      const postId = 'post-mute';
+      const userId = 'muted-user';
+      prisma.post.findUnique.mockResolvedValue({ id: postId, userId: 'owner-1', isRemoved: false, scheduledAt: null });
+      prisma.block.findFirst.mockResolvedValue(null);
+      prisma.mute.findFirst.mockResolvedValue({ userId: 'owner-1', mutedId: userId });
+
+      await expect(service.react(postId, userId, 'LIKE')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should reject addComment from blocked users', async () => {
+      const postId = 'post-blk-cmt';
+      const userId = 'blocker-user';
+      prisma.post.findUnique.mockResolvedValue({ id: postId, userId: 'owner-1', isRemoved: false, scheduledAt: null, commentPermission: 'EVERYONE' });
+      prisma.block.findFirst.mockResolvedValue({ blockerId: userId, blockedId: 'owner-1' });
+      prisma.mute.findFirst.mockResolvedValue(null);
+
+      await expect(service.addComment(postId, userId, { content: 'Hello' })).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should reject addComment from muted users', async () => {
+      const postId = 'post-mute-cmt';
+      const userId = 'muted-user';
+      prisma.post.findUnique.mockResolvedValue({ id: postId, userId: 'owner-1', isRemoved: false, scheduledAt: null, commentPermission: 'EVERYONE' });
+      prisma.block.findFirst.mockResolvedValue(null);
+      prisma.mute.findFirst.mockResolvedValue({ userId: 'owner-1', mutedId: userId });
+
+      await expect(service.addComment(postId, userId, { content: 'Hello' })).rejects.toThrow(ForbiddenException);
+    });
+  });
+
 });

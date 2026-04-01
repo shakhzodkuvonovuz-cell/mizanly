@@ -304,4 +304,22 @@ describe('PollsService', () => {
       });
     });
   });
+
+  describe('R2-Tab2 audit fixes', () => {
+    it('should use poll_options table name in retractVote SQL', async () => {
+      const pollId = 'poll-retract';
+      const userId = 'user-retract';
+      prisma.poll.findUnique.mockResolvedValue({ id: pollId, expiresAt: null });
+      prisma.pollVote.findMany.mockResolvedValue([{ optionId: 'opt1' }]);
+      prisma.$transaction.mockResolvedValue([{}, {}, {}]);
+
+      await service.retractVote(pollId, userId);
+
+      // $transaction should include $executeRaw calls for poll_options and polls tables
+      expect(prisma.$transaction).toHaveBeenCalled();
+      const txArg = prisma.$transaction.mock.calls[0][0];
+      // The transaction array should have 3 items: delete + executeRaw(poll_options) + executeRaw(polls)
+      expect(txArg).toHaveLength(3);
+    });
+  });
 });

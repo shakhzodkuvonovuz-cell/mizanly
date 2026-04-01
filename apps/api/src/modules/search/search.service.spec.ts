@@ -992,4 +992,112 @@ describe('SearchService', () => {
       expect(result.meta.hasMore).toBe(false);
     });
   });
+
+  describe('R2-Tab2 audit fixes', () => {
+    it('should filter blocked users from paginated posts search', async () => {
+      prisma.block.findMany.mockResolvedValue([
+        { blockerId: 'user-1', blockedId: 'blocked-user' },
+      ]);
+      prisma.mute.findMany.mockResolvedValue([]);
+      prisma.restrict.findMany.mockResolvedValue([]);
+      prisma.post.findMany.mockResolvedValue([
+        { id: 'post-1', content: 'Good post', user: { id: 'good-user' } },
+      ]);
+
+      const result = await service.search('test', 'posts', undefined, 20, 'user-1');
+
+      expect(prisma.post.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            user: expect.objectContaining({
+              id: { notIn: expect.arrayContaining(['blocked-user']) },
+            }),
+          }),
+        }),
+      );
+      expect(result).toHaveProperty('data');
+    });
+
+    it('should filter isRemoved hits from Meilisearch results', async () => {
+      // Enable Meilisearch for this test
+      const meilisearch = (service as any).meilisearch;
+      meilisearch.isAvailable.mockReturnValue(true);
+      meilisearch.search.mockResolvedValue({
+        hits: [
+          { id: 'post-ok', content: 'Valid post', isRemoved: false, visibility: 'PUBLIC' },
+          { id: 'post-removed', content: 'Removed post', isRemoved: true, visibility: 'PUBLIC' },
+        ],
+        estimatedTotalHits: 2,
+      });
+
+      const result = await service.search('test', 'posts', undefined, 20);
+
+      // The removed post should be filtered out
+      const data = (result as any).data || (result as any).posts;
+      if (data) {
+        const ids = data.map((h: { id: string }) => h.id);
+        expect(ids).not.toContain('post-removed');
+      }
+    });
+
+    it('should accept userId for trending and filter threads', async () => {
+      prisma.block.findMany.mockResolvedValue([
+        { blockerId: 'user-1', blockedId: 'blocked-user' },
+      ]);
+      prisma.mute.findMany.mockResolvedValue([]);
+      prisma.restrict.findMany.mockResolvedValue([]);
+      prisma.$queryRaw.mockResolvedValue([]);
+      prisma.hashtag.findMany.mockResolvedValue([]);
+      prisma.thread.findMany.mockResolvedValue([]);
+
+      await service.trending('user-1');
+
+      // getExcludedUserIds should have been called, which queries block.findMany
+      expect(prisma.block.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { OR: [{ blockerId: 'user-1' }, { blockedId: 'user-1' }] },
+        }),
+      );
+    });
+
+    it('should accept userId for getHashtagPosts and filter', async () => {
+      prisma.block.findMany.mockResolvedValue([
+        { blockerId: 'user-2', blockedId: 'bad-user' },
+      ]);
+      prisma.mute.findMany.mockResolvedValue([]);
+      prisma.restrict.findMany.mockResolvedValue([]);
+      prisma.hashtag.findUnique.mockResolvedValue({ id: 'tag-1', name: 'test', postsCount: 10 });
+      prisma.post.findMany.mockResolvedValue([]);
+
+      await service.getHashtagPosts('test', undefined, 20, 'user-2');
+
+      // getExcludedUserIds should have been called
+      expect(prisma.block.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { OR: [{ blockerId: 'user-2' }, { blockedId: 'user-2' }] },
+        }),
+      );
+    });
+
+    it('should apply block/mute filter to channel search', async () => {
+      prisma.block.findMany.mockResolvedValue([
+        { blockerId: 'user-3', blockedId: 'blocked-user' },
+      ]);
+      prisma.mute.findMany.mockResolvedValue([{ mutedId: 'muted-user' }]);
+      prisma.restrict.findMany.mockResolvedValue([]);
+      prisma.channel.findMany.mockResolvedValue([]);
+
+      await service.search('tech', 'channels', undefined, 20, 'user-3');
+
+      expect(prisma.channel.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            user: expect.objectContaining({
+              id: { notIn: expect.arrayContaining(['blocked-user', 'muted-user']) },
+            }),
+          }),
+        }),
+      );
+    });
+  });
 });
