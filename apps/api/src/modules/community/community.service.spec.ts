@@ -36,6 +36,7 @@ describe('CommunityService', () => {
             reel: { aggregate: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             story: { findMany: jest.fn().mockResolvedValue([]) },
             follow: { count: jest.fn() },
+            $transaction: jest.fn(),
           },
         },
       ],
@@ -43,6 +44,7 @@ describe('CommunityService', () => {
 
     service = module.get<CommunityService>(CommunityService);
     prisma = module.get(PrismaService) as any;
+    prisma.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
   });
 
   describe('requestMentorship', () => {
@@ -99,6 +101,8 @@ describe('CommunityService', () => {
 
   describe('checkKindness', () => {
     it('should flag negative language', async () => {
+      const cs = (service as any).contentSafety;
+      cs.moderateText.mockResolvedValueOnce({ safe: false, flags: ['hate_speech'], suggestion: 'Please rephrase kindly' });
       const result = await service.checkKindness('You are so stupid and I hate this');
       expect(result.needsRephrase).toBe(true);
       expect(result.suggestion).toBeTruthy();
@@ -178,7 +182,7 @@ describe('CommunityService', () => {
   describe('createStudyCircle', () => {
     it('should create study circle', async () => {
       prisma.studyCircle.create.mockResolvedValue({ id: 'sc-1', topic: 'Fiqh', maxParticipants: 10 });
-      const result = await service.createStudyCircle('user-1', { topic: 'Fiqh', maxParticipants: 10 });
+      const result = await service.createStudyCircle('user-1', { title: 'Fiqh Study Group', topic: 'Fiqh', maxMembers: 10 });
       expect(result.topic).toBe('Fiqh');
     });
   });
@@ -202,7 +206,7 @@ describe('CommunityService', () => {
   describe('createOpportunity', () => {
     it('should create volunteer opportunity', async () => {
       prisma.volunteerOpportunity.create.mockResolvedValue({ id: 'vo-1', title: 'Food Drive', location: 'NYC' });
-      const result = await service.createOpportunity('user-1', { title: 'Food Drive', location: 'NYC' });
+      const result = await service.createOpportunity('user-1', { title: 'Food Drive', description: 'Help distribute food', category: 'FOOD', location: 'NYC' });
       expect(result.title).toBe('Food Drive');
     });
   });
@@ -218,7 +222,7 @@ describe('CommunityService', () => {
   describe('createWaqf', () => {
     it('should create waqf fund', async () => {
       prisma.waqfFund.create.mockResolvedValue({ id: 'wf-1', title: 'Masjid Fund', goalAmount: 50000 });
-      const result = await service.createWaqf('user-1', { title: 'Masjid Fund', goalAmount: 50000 });
+      const result = await service.createWaqf('user-1', { title: 'Masjid Fund', description: 'Community masjid fund', goalAmount: 50000 });
       expect(result.title).toBe('Masjid Fund');
     });
   });

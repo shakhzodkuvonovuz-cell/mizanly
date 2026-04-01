@@ -20,6 +20,10 @@ export class EventsService {
   ) {}
 
   async createEvent(userId: string, dto: CreateEventDto) {
+    if (dto.endDate && dto.startDate && new Date(dto.endDate) <= new Date(dto.startDate)) {
+      throw new BadRequestException('End date must be after start date');
+    }
+
     const data: Prisma.EventCreateInput = {
       title: dto.title,
       description: dto.description,
@@ -180,15 +184,16 @@ export class EventsService {
       throw new ForbiddenException('You do not have permission to view this event');
     }
 
-    const goingCount = await this.prisma.eventRSVP.count({
-      where: { eventId: event.id, status: 'going' },
+    // Single groupBy instead of 3 separate COUNTs
+    const rsvpCounts = await this.prisma.eventRSVP.groupBy({
+      by: ['status'],
+      where: { eventId: event.id },
+      _count: true,
     });
-    const maybeCount = await this.prisma.eventRSVP.count({
-      where: { eventId: event.id, status: 'maybe' },
-    });
-    const notGoingCount = await this.prisma.eventRSVP.count({
-      where: { eventId: event.id, status: 'not_going' },
-    });
+    const countMap = new Map(rsvpCounts.map((r: { status: string; _count: number }) => [r.status, r._count]));
+    const goingCount = countMap.get('going') ?? 0;
+    const maybeCount = countMap.get('maybe') ?? 0;
+    const notGoingCount = countMap.get('not_going') ?? 0;
 
     // Get user's RSVP status if logged in
     let userRsvp = null;
@@ -297,7 +302,7 @@ export class EventsService {
   async rsvpToEvent(userId: string, eventId: string, status: 'going' | 'maybe' | 'not_going') {
     const event = await this.prisma.event.findUnique({
       where: { id: eventId },
-      select: { id: true, privacy: true, userId: true, startDate: true, endDate: true },
+      select: { id: true, privacy: true, userId: true, startDate: true, endDate: true, communityId: true },
     });
     if (!event) {
       throw new NotFoundException('Event not found');
@@ -310,9 +315,18 @@ export class EventsService {
       throw new BadRequestException('Cannot RSVP to a past event');
     }
 
-    // If private event, only owner and possibly invited users can RSVP
+    // Private events: allow organizer + community members
     if (event.privacy === 'EVENT_PRIVATE' && event.userId !== userId) {
-      throw new ForbiddenException('You are not invited to this private event');
+      let isCommunityMember = false;
+      if (event.communityId) {
+        const membership = await this.prisma.circleMember.findUnique({
+          where: { circleId_userId: { circleId: event.communityId, userId } },
+        });
+        isCommunityMember = !!membership;
+      }
+      if (!isCommunityMember) {
+        throw new ForbiddenException('You are not invited to this private event');
+      }
     }
 
     // Upsert handles idempotency — no race condition between find and create

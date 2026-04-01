@@ -3,6 +3,8 @@ import { PrismaService } from '../../config/prisma.service';
 import { FatwaTopicType, IslamicEventType, ReputationTier, ScholarTopicType, MadhhabType, VolunteerCategory, MentorshipStatus, FatwaStatus, ScholarVerificationStatus } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
+import { ContentSafetyService } from '../moderation/content-safety.service';
+import { sanitizeText } from '@/common/utils/sanitize';
 
 const USER_SELECT = { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true };
 
@@ -12,12 +14,26 @@ export class CommunityService {
   constructor(
     private prisma: PrismaService,
     private readonly notificationsService: NotificationsService,
+    private readonly contentSafety: ContentSafetyService,
   ) {}
+
+  /** Sanitize + moderate text before persisting community content */
+  private async moderateContent(...texts: (string | undefined)[]) {
+    const filtered = texts.filter(Boolean) as string[];
+    if (filtered.length === 0) return;
+    const combined = filtered.join('\n');
+    const sanitized = sanitizeText(combined);
+    const result = await this.contentSafety.moderateText(sanitized);
+    if (!result.safe) {
+      throw new BadRequestException(`Content flagged: ${result.flags.join(', ')}`);
+    }
+  }
 
   // ── Local Boards ────────────────────────────────────────
 
   async createBoard(userId: string, dto: { name: string; description?: string; city: string; country: string; lat?: number; lng?: number }) {
-    return this.prisma.localBoard.create({ data: { createdById: userId, ...dto } });
+    await this.moderateContent(dto.name, dto.description);
+    return this.prisma.localBoard.create({ data: { createdById: userId, name: sanitizeText(dto.name), description: dto.description ? sanitizeText(dto.description) : dto.description, city: dto.city, country: dto.country, lat: dto.lat, lng: dto.lng } });
   }
 
   async getBoards(city?: string, country?: string, cursor?: string, limit = 20) {
@@ -92,7 +108,8 @@ export class CommunityService {
   // ── Study Circles ───────────────────────────────────────
 
   async createStudyCircle(userId: string, dto: { title: string; description?: string; topic: string; schedule?: string; isOnline?: boolean; maxMembers?: number }) {
-    return this.prisma.studyCircle.create({ data: { leaderId: userId, ...dto, topic: dto.topic as ScholarTopicType } });
+    await this.moderateContent(dto.title, dto.description);
+    return this.prisma.studyCircle.create({ data: { leaderId: userId, ...dto, title: sanitizeText(dto.title), description: dto.description ? sanitizeText(dto.description) : dto.description, topic: dto.topic as ScholarTopicType } });
   }
 
   async getStudyCircles(topic?: string, cursor?: string, limit = 20) {
@@ -112,8 +129,9 @@ export class CommunityService {
   // ── Fatwa Q&A ───────────────────────────────────────────
 
   async askFatwa(userId: string, dto: { question: string; madhab?: string; language?: string }) {
+    await this.moderateContent(dto.question);
     return this.prisma.fatwaQuestion.create({
-      data: { askerId: userId, ...dto, madhab: dto.madhab as MadhhabType | undefined },
+      data: { askerId: userId, question: sanitizeText(dto.question), madhab: dto.madhab as MadhhabType | undefined, language: dto.language },
     });
   }
 
@@ -177,8 +195,9 @@ export class CommunityService {
     title: string; description: string; category: string;
     location?: string; lat?: number; lng?: number; date?: string; spotsTotal?: number;
   }) {
+    await this.moderateContent(dto.title, dto.description);
     return this.prisma.volunteerOpportunity.create({
-      data: { organizerId: userId, ...dto, category: dto.category as VolunteerCategory, date: dto.date ? new Date(dto.date) : undefined },
+      data: { organizerId: userId, title: sanitizeText(dto.title), description: sanitizeText(dto.description), category: dto.category as VolunteerCategory, location: dto.location, lat: dto.lat, lng: dto.lng, date: dto.date ? new Date(dto.date) : undefined, spotsTotal: dto.spotsTotal },
     });
   }
 
@@ -203,8 +222,9 @@ export class CommunityService {
     location?: string; lat?: number; lng?: number; startDate: string;
     endDate?: string; isOnline?: boolean; streamUrl?: string; coverUrl?: string;
   }) {
+    await this.moderateContent(dto.title, dto.description);
     return this.prisma.islamicEvent.create({
-      data: { organizerId: userId, ...dto, eventType: dto.eventType as IslamicEventType, startDate: new Date(dto.startDate), endDate: dto.endDate ? new Date(dto.endDate) : undefined },
+      data: { organizerId: userId, title: sanitizeText(dto.title), description: dto.description ? sanitizeText(dto.description) : dto.description, eventType: dto.eventType as IslamicEventType, location: dto.location, lat: dto.lat, lng: dto.lng, startDate: new Date(dto.startDate), endDate: dto.endDate ? new Date(dto.endDate) : undefined, isOnline: dto.isOnline, streamUrl: dto.streamUrl, coverUrl: dto.coverUrl },
     });
   }
 
@@ -230,37 +250,29 @@ export class CommunityService {
     return rep;
   }
 
-  async updateReputation(userId: string, delta: number, reason: string) {
-    const rep = await this.prisma.userReputation.upsert({
-      where: { userId },
-      create: { userId, score: Math.max(0, delta) },
-      update: { score: { increment: delta } },
-    });
-
-    // Ensure score doesn't go negative
-    if (rep.score < 0) {
-      await this.prisma.userReputation.update({
+  async updateReputation(userId: string, delta: number, _reason: string) {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const rep = await tx.userReputation.upsert({
         where: { userId },
-        data: { score: 0 },
+        create: { userId, score: Math.max(0, delta) },
+        update: { score: { increment: delta } },
       });
-      rep.score = 0;
-    }
-
-    // Update tier
-    let tier = 'NEWCOMER';
-    if (rep.score >= 1000) tier = 'ELDER';
-    else if (rep.score >= 500) tier = 'GUARDIAN';
-    else if (rep.score >= 200) tier = 'TRUSTED';
-    else if (rep.score >= 50) tier = 'MEMBER';
-
-    return this.prisma.userReputation.update({ where: { userId }, data: { tier: tier as ReputationTier } });
+      const score = Math.max(0, rep.score);
+      let tier: ReputationTier = 'NEWCOMER' as ReputationTier;
+      if (score >= 1000) tier = 'ELDER' as ReputationTier;
+      else if (score >= 500) tier = 'GUARDIAN' as ReputationTier;
+      else if (score >= 200) tier = 'TRUSTED' as ReputationTier;
+      else if (score >= 50) tier = 'MEMBER' as ReputationTier;
+      return tx.userReputation.update({ where: { userId }, data: { score, tier } });
+    });
   }
 
   // ── Voice Posts ─────────────────────────────────────────
 
   async createVoicePost(userId: string, dto: { audioUrl: string; duration: number; transcript?: string }) {
+    if (dto.transcript) await this.moderateContent(dto.transcript);
     return this.prisma.voicePost.create({
-      data: { userId, ...dto },
+      data: { userId, audioUrl: dto.audioUrl, duration: dto.duration, transcript: dto.transcript ? sanitizeText(dto.transcript) : dto.transcript },
       include: { user: { select: USER_SELECT } },
     });
   }
@@ -281,13 +293,13 @@ export class CommunityService {
   // ── Watch Parties ───────────────────────────────────────
 
   async createWatchParty(userId: string, dto: { videoId: string; title: string }) {
-    // Verify video exists
+    await this.moderateContent(dto.title);
     const video = await this.prisma.video.findUnique({ where: { id: dto.videoId }, select: { id: true, status: true } });
     if (!video) throw new NotFoundException('Video not found');
     if (video.status !== 'PUBLISHED') throw new BadRequestException('Video is not available');
 
     return this.prisma.watchParty.create({
-      data: { hostId: userId, ...dto, isActive: true },
+      data: { hostId: userId, videoId: dto.videoId, title: sanitizeText(dto.title), isActive: true },
     });
   }
 
@@ -303,8 +315,9 @@ export class CommunityService {
   // ── Shared Collections ──────────────────────────────────
 
   async createCollection(userId: string, dto: { name: string; description?: string; isPublic?: boolean }) {
+    await this.moderateContent(dto.name, dto.description);
     return this.prisma.sharedCollection.create({
-      data: { createdById: userId, ...dto },
+      data: { createdById: userId, name: sanitizeText(dto.name), description: dto.description ? sanitizeText(dto.description) : dto.description, isPublic: dto.isPublic },
     });
   }
 
@@ -319,8 +332,9 @@ export class CommunityService {
   // ── Waqf ────────────────────────────────────────────────
 
   async createWaqf(userId: string, dto: { title: string; description: string; goalAmount: number }) {
+    await this.moderateContent(dto.title, dto.description);
     return this.prisma.waqfFund.create({
-      data: { createdById: userId, ...dto },
+      data: { createdById: userId, title: sanitizeText(dto.title), description: sanitizeText(dto.description), goalAmount: dto.goalAmount },
     });
   }
 
@@ -340,10 +354,9 @@ export class CommunityService {
   // ── Content Safety ──────────────────────────────────────
 
   async checkKindness(text: string): Promise<{ needsRephrase: boolean; suggestion?: string }> {
-    // Simple anger/negativity detection
-    const negativePatterns = /\b(hate|stupid|idiot|shut up|kill|die|worst|trash|garbage|loser)\b/i;
-    if (negativePatterns.test(text)) {
-      return { needsRephrase: true, suggestion: 'Would you like to rephrase this in a kinder way?' };
+    const result = await this.contentSafety.moderateText(text);
+    if (!result.safe) {
+      return { needsRephrase: true, suggestion: result.suggestion || 'Would you like to rephrase this in a kinder way?' };
     }
     return { needsRephrase: false };
   }

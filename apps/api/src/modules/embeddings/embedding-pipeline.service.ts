@@ -58,10 +58,9 @@ export class EmbeddingPipelineService {
 
   private async backfillPosts(): Promise<number> {
     let count = 0;
-    let cursor: string | undefined;
+    let consecutiveFailBatches = 0;
 
     while (true) {
-      // Use NOT IN subquery instead of pre-loading all embedded IDs into memory
       const posts = await this.prisma.$queryRawUnsafe<Array<{ id: string }>>(
         `SELECT p.id FROM "posts" p
          WHERE p."isRemoved" = false AND p."visibility" = 'PUBLIC' AND p."content" IS NOT NULL
@@ -73,11 +72,16 @@ export class EmbeddingPipelineService {
 
       if (posts.length === 0) break;
 
+      let batchSuccesses = 0;
       for (const post of posts) {
         const ok = await this.embeddings.embedPost(post.id);
-        if (ok) count++;
+        if (ok) { count++; batchSuccesses++; }
         await this.sleep(100);
       }
+
+      if (batchSuccesses === 0) {
+        if (++consecutiveFailBatches >= 3) { this.logger.warn(`Posts backfill: 3 failed batches, aborting. Embedded ${count}.`); break; }
+      } else { consecutiveFailBatches = 0; }
 
       this.logger.debug(`Posts backfill progress: ${count} embedded`);
     }
@@ -87,6 +91,7 @@ export class EmbeddingPipelineService {
 
   private async backfillReels(): Promise<number> {
     let count = 0;
+    let consecutiveFailBatches = 0;
 
     while (true) {
       const reels = await this.prisma.$queryRawUnsafe<Array<{ id: string }>>(
@@ -99,11 +104,16 @@ export class EmbeddingPipelineService {
 
       if (reels.length === 0) break;
 
+      let batchSuccesses = 0;
       for (const reel of reels) {
         const ok = await this.embeddings.embedReel(reel.id);
-        if (ok) count++;
+        if (ok) { count++; batchSuccesses++; }
         await this.sleep(100);
       }
+
+      if (batchSuccesses === 0) {
+        if (++consecutiveFailBatches >= 3) { this.logger.warn(`Reels backfill: 3 failed batches, aborting.`); break; }
+      } else { consecutiveFailBatches = 0; }
 
       this.logger.debug(`Reels backfill progress: ${count} embedded`);
     }
@@ -113,6 +123,7 @@ export class EmbeddingPipelineService {
 
   private async backfillThreads(): Promise<number> {
     let count = 0;
+    let consecutiveFailBatches = 0;
 
     while (true) {
       const threads = await this.prisma.$queryRawUnsafe<Array<{ id: string }>>(
@@ -125,11 +136,16 @@ export class EmbeddingPipelineService {
 
       if (threads.length === 0) break;
 
+      let batchSuccesses = 0;
       for (const thread of threads) {
         const ok = await this.embeddings.embedThread(thread.id);
-        if (ok) count++;
+        if (ok) { count++; batchSuccesses++; }
         await this.sleep(100);
       }
+
+      if (batchSuccesses === 0) {
+        if (++consecutiveFailBatches >= 3) { this.logger.warn(`Threads backfill: 3 failed batches, aborting.`); break; }
+      } else { consecutiveFailBatches = 0; }
 
       this.logger.debug(`Threads backfill progress: ${count} embedded`);
     }
@@ -139,6 +155,7 @@ export class EmbeddingPipelineService {
 
   private async backfillVideos(): Promise<number> {
     let count = 0;
+    let consecutiveFailBatches = 0;
 
     while (true) {
       const videos = await this.prisma.$queryRawUnsafe<Array<{ id: string }>>(
@@ -151,11 +168,16 @@ export class EmbeddingPipelineService {
 
       if (videos.length === 0) break;
 
+      let batchSuccesses = 0;
       for (const video of videos) {
         const ok = await this.embeddings.embedVideo(video.id);
-        if (ok) count++;
+        if (ok) { count++; batchSuccesses++; }
         await this.sleep(100);
       }
+
+      if (batchSuccesses === 0) {
+        if (++consecutiveFailBatches >= 3) { this.logger.warn(`Videos backfill: 3 failed batches, aborting.`); break; }
+      } else { consecutiveFailBatches = 0; }
 
       this.logger.debug(`Videos backfill progress: ${count} embedded`);
     }

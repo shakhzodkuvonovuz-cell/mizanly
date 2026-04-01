@@ -54,10 +54,10 @@ export class EmbeddingsService {
 
     try {
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${this.MODEL}:embedContent?key=${this.apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${this.MODEL}:embedContent`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': this.apiKey },
           body: JSON.stringify({
             model: `models/${this.MODEL}`,
             content: { parts: [{ text: truncated }] },
