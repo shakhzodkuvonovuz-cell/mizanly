@@ -73,7 +73,7 @@ export class UsersService {
     private prisma: PrismaService,
     private privacyService: PrivacyService,
     @Inject('REDIS') private redis: Redis,
-    @Optional() private notificationsService: NotificationsService,
+    private notificationsService: NotificationsService,
     private publishWorkflow: PublishWorkflowService,
     private queueService: QueueService,
     private contentSafety: ContentSafetyService,

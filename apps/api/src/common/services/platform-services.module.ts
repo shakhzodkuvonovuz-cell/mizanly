@@ -6,11 +6,11 @@ import { MeilisearchSyncService } from './meilisearch-sync.service';
 import { ABTestingService } from './ab-testing.service';
 import { PaymentReconciliationService } from './payment-reconciliation.service';
 import { CircuitBreakerService } from './circuit-breaker.service';
-import { MeilisearchService } from '../../modules/search/meilisearch.service';
 
 /**
  * Platform-level services module.
  * Registers cross-cutting services that any module can use.
+ * Note: MeilisearchService removed — belongs in SearchModule only (L02 #16 dual registration fix).
  */
 @Global()
 @Module({
@@ -19,7 +19,6 @@ import { MeilisearchService } from '../../modules/search/meilisearch.service';
     CounterReconciliationService,
     SearchReconciliationService,
     MeilisearchSyncService,
-    MeilisearchService,
     ABTestingService,
     PaymentReconciliationService,
     CircuitBreakerService,
@@ -29,7 +28,6 @@ import { MeilisearchService } from '../../modules/search/meilisearch.service';
     CounterReconciliationService,
     SearchReconciliationService,
     MeilisearchSyncService,
-    MeilisearchService,
     ABTestingService,
     PaymentReconciliationService,
     CircuitBreakerService,
