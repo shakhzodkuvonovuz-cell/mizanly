@@ -1,5 +1,3 @@
-import { I18nManager, StyleProp, ViewStyle, TextStyle } from 'react-native';
-
 /**
  * Returns flexDirection style for a row based on RTL setting.
  * @param isRTL Whether the layout is RTL (e.g., language is Arabic).
@@ -33,89 +31,6 @@ export function rtlMargin(
   return isRTL
     ? { marginLeft: end, marginRight: start }
     : { marginLeft: start, marginRight: end };
-}
-
-/**
- * Returns padding style swapping left/right based on RTL.
- * @param isRTL Whether the layout is RTL.
- * @param start Padding value for start (left in LTR, right in RTL).
- * @param end Padding value for end (right in LTR, left in RTL).
- * @returns Object with paddingLeft/paddingRight properties.
- */
-export function rtlPadding(
-  isRTL: boolean,
-  start: number,
-  end: number,
-): { paddingLeft: number; paddingRight: number } {
-  return isRTL
-    ? { paddingLeft: end, paddingRight: start }
-    : { paddingLeft: start, paddingRight: end };
-}
-
-/**
- * Returns transform style for flipping directional icons horizontally.
- * @param isRTL Whether the layout is RTL.
- * @returns `transform: [{ scaleX: -1 }]` for RTL, empty object for LTR.
- */
-export function rtlIcon(isRTL: boolean): { transform: { scaleX: number }[] } | {} {
-  return isRTL ? { transform: [{ scaleX: -1 }] } : {};
-}
-
-/**
- * Returns writing direction based on RTL.
- * @param isRTL Whether the layout is RTL.
- * @returns `rtl` or `ltr`.
- */
-export function rtlWritingDirection(isRTL: boolean): 'rtl' | 'ltr' {
-  return isRTL ? 'rtl' : 'ltr';
-}
-
-/**
- * Forces RTL layout if needed (for Android/iOS system RTL support).
- * Call this early in app initialization if you want to enable RTL system-wide.
- */
-export function forceRTLLayout(enableRTL: boolean) {
-  I18nManager.forceRTL(enableRTL);
-  I18nManager.allowRTL(enableRTL);
-}
-
-/**
- * Returns dynamic style that swaps left/right properties based on RTL.
- * Useful for complex styling where you need to swap start/end.
- * @param isRTL Whether the layout is RTL.
- * @param style Style object with optional `start` and `end` keys (or left/right).
- * @returns Style object with left/right resolved.
- */
-export function rtlStyle<T extends ViewStyle | TextStyle>(
-  isRTL: boolean,
-  style: T & { start?: number; end?: number },
-): T {
-  const { start, end, ...rest } = style;
-  const resolved: Record<string, unknown> = { ...rest };
-  if (start !== undefined) {
-    if (isRTL) {
-      resolved.right = start;
-    } else {
-      resolved.left = start;
-    }
-  }
-  if (end !== undefined) {
-    if (isRTL) {
-      resolved.left = end;
-    } else {
-      resolved.right = end;
-    }
-  }
-  return resolved as T;
-}
-
-/**
- * Returns alignSelf for start-aligned items, flipping for RTL.
- * @param isRTL Whether the layout is RTL.
- * @returns `flex-start` for LTR, `flex-end` for RTL.
- */
-export function rtlAlignSelf(isRTL: boolean): 'flex-start' | 'flex-end' {
-  return isRTL ? 'flex-end' : 'flex-start';
 }
 
 /**

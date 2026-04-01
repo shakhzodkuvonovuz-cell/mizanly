@@ -3,7 +3,6 @@ import { PublishWorkflowService } from './publish-workflow.service';
 import { CounterReconciliationService } from './counter-reconciliation.service';
 import { SearchReconciliationService } from './search-reconciliation.service';
 import { MeilisearchSyncService } from './meilisearch-sync.service';
-import { ABTestingService } from './ab-testing.service';
 import { PaymentReconciliationService } from './payment-reconciliation.service';
 import { CircuitBreakerService } from './circuit-breaker.service';
 
@@ -19,7 +18,7 @@ import { CircuitBreakerService } from './circuit-breaker.service';
     CounterReconciliationService,
     SearchReconciliationService,
     MeilisearchSyncService,
-    ABTestingService,
+
     PaymentReconciliationService,
     CircuitBreakerService,
   ],
@@ -28,7 +27,7 @@ import { CircuitBreakerService } from './circuit-breaker.service';
     CounterReconciliationService,
     SearchReconciliationService,
     MeilisearchSyncService,
-    ABTestingService,
+
     PaymentReconciliationService,
     CircuitBreakerService,
   ],

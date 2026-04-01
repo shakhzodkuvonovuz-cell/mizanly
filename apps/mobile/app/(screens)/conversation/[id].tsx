@@ -70,10 +70,7 @@ import { navigate } from '@/utils/navigation';
 import { TypingIndicator } from '@/components/risalah/TypingIndicator';
 
 // #region Types & Constants
-interface TenorGifResult {
-  id: string;
-  media_formats: { gif: { url: string } };
-}
+import { TenorGifResult, searchTenorGifs, getTenorFeatured } from '@/services/tenorService';
 
 // Extended message type for Signal Protocol E2E encryption fields (server passthrough)
 interface EncryptedMessage extends Message {
@@ -303,27 +300,22 @@ function GifPicker({ visible, onClose, onSelect }: {
   const { t } = useTranslation();
   const tc = useThemeColors();
 
-  const apiKey = process.env.EXPO_PUBLIC_TENOR_API_KEY;
-
   const fetchGifs = useCallback(async (query: string) => {
-    if (!apiKey) {
-      showToast({ message: t('errors.gifServiceNotConfigured'), variant: 'error' });
-      return;
-    }
     setLoading(true);
     try {
-      const url = query.trim()
-        ? `https://tenor.googleapis.com/v2/search?key=${apiKey}&q=${encodeURIComponent(query)}&limit=30`
-        : `https://tenor.googleapis.com/v2/featured?key=${apiKey}&limit=30`;
-      const resp = await fetch(url);
-      const data = await resp.json();
-      setResults(data.results || []);
+      const data = query.trim()
+        ? await searchTenorGifs(query)
+        : await getTenorFeatured();
+      setResults(data);
+      if (data.length === 0 && !process.env.EXPO_PUBLIC_TENOR_API_KEY) {
+        showToast({ message: t('errors.gifServiceNotConfigured'), variant: 'error' });
+      }
     } catch (err) {
       showToast({ message: t('errors.gifLoadFailed'), variant: 'error' });
     } finally {
       setLoading(false);
     }
-  }, [apiKey]);
+  }, []);
 
   useEffect(() => {
     if (visible) {

@@ -7,7 +7,6 @@ import {
   ScrollView,
   StyleSheet,
   Dimensions,
-  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown, FadeInRight } from 'react-native-reanimated';
@@ -17,6 +16,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Icon } from '@/components/ui/Icon';
 import type { IconName } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { TabSelector } from '@/components/ui/TabSelector';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -291,9 +291,10 @@ function CreatorDashboardContent() {
                     accessibilityLabel={`${t('creatorDashboard.postInsights', 'Post insights')}: ${formatNumber(post.views)} ${t('creatorDashboard.views', 'views')}`}
                   >
                     {post.thumbnailUrl ? (
-                      <Image
+                      <ProgressiveImage
                         source={{ uri: post.thumbnailUrl }}
                         style={styles.postThumbnail}
+                        contentFit="cover"
                       />
                     ) : (
                       <View style={[styles.postThumbnail, styles.postPlaceholder]}>
