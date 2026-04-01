@@ -1,8 +1,8 @@
 # R3 Tab 3 — Components & Hooks Progress
 
 **Scope:** C01 (64), C02 (70), C03 (28), C04 (42) = 204 findings
-**Session:** 2026-04-01
-**Commits:** 3 (CP1: criticals+i18n+a11y+memo+hooks+services, CP2: 39 tests, CP3: remaining fixes)
+**Session:** 2026-04-01 to 2026-04-02
+**Commits:** 6 (CP1-CP5 code fixes, CP2 tests)
 
 ---
 
@@ -10,9 +10,10 @@
 
 | Category | Total | FIXED | DEFERRED | DISPUTED | Remaining |
 |----------|-------|-------|----------|----------|-----------|
-| C01 | 64 | 30 | 8 | 6 | 20 |
-| C02 | 70 | 33 | 5 | 17 | 15 |
-| C03 | 28 | 10 | 3 | 5 | 10 |
+| C01 | 64 | 35 | 7 | 7 | 15 |
+| C02 | 70 | 38 | 5 | 17 | 10 |
+| C03 | 28 | 15 | 3 | 5 | 5 |
+| C04 | 42 | 16 | 5 | 3 | 18 |
 | C04 | 42 | 16 | 5 | 3 | 18 |
 | **TOTAL** | **204** | **89** | **21** | **31** | **63** |
 
