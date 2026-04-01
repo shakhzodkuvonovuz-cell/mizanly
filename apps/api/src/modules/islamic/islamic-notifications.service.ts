@@ -42,9 +42,9 @@ export class IslamicNotificationsService {
       if (mosqueData?.lat && mosqueData?.lng) {
         const { calculatePrayerTimes } = await import('./prayer-calculator');
         const computed = calculatePrayerTimes(new Date(), parseFloat(mosqueData.lat), parseFloat(mosqueData.lng));
-        times = computed as unknown as Record<string, string>;
+        times = computed;
         // Re-seed cache for next check
-        await this.redis.setex(prayerTimesKey, 3600, JSON.stringify(times)).catch(() => {});
+        await this.redis.setex(prayerTimesKey, 3600, JSON.stringify(times)).catch((err) => this.logger.debug('Prayer times cache write failed', err?.message));
       }
     }
     if (!times) return false;
@@ -157,7 +157,7 @@ export class IslamicNotificationsService {
     const membership = await this.prisma.mosqueMembership.findFirst({
       where: { userId },
       include: { mosque: { select: { name: true } } },
-    }).catch(() => null);
+    }).catch((err) => { this.logger.debug('Mosque membership lookup failed', err?.message); return null; });
 
     return {
       isJummahDay: true,

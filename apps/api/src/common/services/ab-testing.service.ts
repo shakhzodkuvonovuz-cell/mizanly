@@ -1,6 +1,7 @@
 import { Injectable, Inject, Logger, OnModuleInit } from '@nestjs/common';
 import Redis from 'ioredis';
 import { PrismaService } from '../../config/prisma.service';
+import { Prisma } from '@prisma/client';
 import { atomicIncr } from '../utils/redis-atomic';
 
 /**
@@ -90,7 +91,7 @@ export class ABTestingService implements OnModuleInit {
       where: { id: experiment.id },
       update: {
         name: experiment.name,
-        variants: experiment.variants as any,
+        variants: experiment.variants as Prisma.InputJsonValue,
         enabled: experiment.enabled,
         startDate: experiment.startDate ? new Date(experiment.startDate) : null,
         endDate: experiment.endDate ? new Date(experiment.endDate) : null,
@@ -98,7 +99,7 @@ export class ABTestingService implements OnModuleInit {
       create: {
         id: experiment.id,
         name: experiment.name,
-        variants: experiment.variants as any,
+        variants: experiment.variants as Prisma.InputJsonValue,
         enabled: experiment.enabled,
         startDate: experiment.startDate ? new Date(experiment.startDate) : null,
         endDate: experiment.endDate ? new Date(experiment.endDate) : null,
@@ -263,7 +264,7 @@ export class ABTestingService implements OnModuleInit {
 
     // Remove from DB
     this.prisma.experiment.delete({ where: { id: experimentId } })
-      .catch(() => {}); // May not exist in DB — that's fine
+      .catch((e) => this.logger.debug('Experiment stats cleanup failed', e?.message));
   }
 
   /** Simple deterministic hash for variant assignment */

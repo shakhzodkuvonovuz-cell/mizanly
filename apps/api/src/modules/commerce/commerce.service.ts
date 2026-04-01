@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException, ConflictException, NotImplementedException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, ConflictException, NotImplementedException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -231,7 +231,7 @@ export class CommerceService {
         const cancelMsg = cancelErr instanceof Error ? cancelErr.message : String(cancelErr);
         this.logger.warn(`Failed to cancel orphaned PaymentIntent ${paymentIntent.id}: ${cancelMsg}`);
       }
-      throw error;
+      throw new InternalServerErrorException('Order creation failed');
     }
 
     // Update PaymentIntent metadata with the real orderId so webhook can find it
@@ -489,10 +489,10 @@ export class CommerceService {
     }
 
     const fund = await this.prisma.zakatFund.findUnique({ where: { id: fundId } });
-    if (!fund || fund!.status !== 'active') throw new NotFoundException('Fund not found or closed');
+    if (!fund || fund.status !== 'active') throw new NotFoundException('Fund not found or closed');
 
     // Prevent self-donation (fund creator donating to own fund)
-    if (fund!.recipientId === userId) {
+    if (fund.recipientId === userId) {
       throw new BadRequestException('Cannot donate to your own zakat fund');
     }
 
@@ -547,18 +547,18 @@ export class CommerceService {
       where: { id: treasuryId },
       select: { id: true, status: true, circleId: true, goalAmount: true, raisedAmount: true },
     });
-    if (!treasury || treasury!.status !== 'active') throw new NotFoundException();
+    if (!treasury || treasury.status !== 'active') throw new NotFoundException();
 
     // Verify user is a member of the circle
     const membership = await this.prisma.circleMember.findUnique({
-      where: { circleId_userId: { circleId: treasury!.circleId, userId } },
+      where: { circleId_userId: { circleId: treasury.circleId, userId } },
     });
     if (!membership) {
       throw new ForbiddenException('You must be a member of the circle to contribute');
     }
 
     // Check if fund goal has already been reached
-    if (Number(treasury!.raisedAmount) >= Number(treasury!.goalAmount)) {
+    if (Number(treasury.raisedAmount) >= Number(treasury.goalAmount)) {
       throw new BadRequestException('Treasury goal has already been reached');
     }
 
@@ -621,10 +621,10 @@ export class CommerceService {
     }
 
     const fund = await this.prisma.waqfFund.findUnique({ where: { id: fundId } });
-    if (!fund || !fund!.isActive) throw new NotFoundException('Waqf fund not found or closed');
+    if (!fund || !fund.isActive) throw new NotFoundException('Waqf fund not found or closed');
 
     // Prevent self-contribution
-    if (fund!.createdById === userId) {
+    if (fund.createdById === userId) {
       throw new BadRequestException('Cannot contribute to your own waqf fund');
     }
 

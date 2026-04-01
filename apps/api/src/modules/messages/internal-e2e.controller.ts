@@ -3,6 +3,7 @@ import type { Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { PrismaService } from '../../config/prisma.service';
+import { MessageType } from '@prisma/client';
 
 /**
  * Internal webhook endpoint for the Go E2E Key Server.
@@ -96,7 +97,7 @@ export class InternalE2EController {
     const messages = await this.prisma.message.createMany({
       data: conversationIds.map((convId) => ({
         conversationId: convId,
-        messageType: 'SYSTEM' as any,
+        messageType: MessageType.SYSTEM,
         content: 'SYSTEM:IDENTITY_CHANGED', // Clients render this in user's language
         isEncrypted: false,
       })),

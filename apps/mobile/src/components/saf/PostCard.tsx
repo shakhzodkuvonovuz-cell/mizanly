@@ -246,7 +246,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
 
   // Show "Edited" label — prefer editedAt field (set by update endpoint), fall back to updatedAt heuristic
   const isEdited = useMemo(() => {
-    if ((post as unknown as Record<string, unknown>).editedAt) return true;
+    if ((post as { editedAt?: string }).editedAt) return true;
     if (!post.updatedAt || !post.createdAt) return false;
     return new Date(post.updatedAt).getTime() - new Date(post.createdAt).getTime() > 60_000;
   }, [post.updatedAt, post.createdAt]);
@@ -379,9 +379,9 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
       ) : null}
 
       {/* Finding #405: Topic badges */}
-      {(post as unknown as Record<string, unknown>).topics && ((post as unknown as Record<string, unknown>).topics as string[]).length > 0 && (
+      {post.topics && post.topics.length > 0 && (
         <View style={styles.topicBadgeContainer}>
-          {((post as unknown as Record<string, unknown>).topics as string[]).slice(0, 3).map(topic => (
+          {post.topics.slice(0, 3).map(topic => (
             <Text key={topic} style={styles.topicBadge}>
               {topic}
             </Text>
@@ -390,7 +390,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
       )}
 
       {/* Finding #396: Islamic content disclaimer for fiqh/fatwa topics */}
-      {(post as unknown as Record<string, unknown>).topics && ((post as unknown as Record<string, unknown>).topics as string[]).some(t =>
+      {post.topics && post.topics.some(t =>
         ['fiqh', 'fatwa', 'sharia', 'halal', 'haram'].includes(t.toLowerCase())
       ) && (
         <Text style={styles.islamicDisclaimer}>
