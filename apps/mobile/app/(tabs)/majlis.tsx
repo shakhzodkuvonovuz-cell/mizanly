@@ -62,8 +62,7 @@ const AnimatedThreadCard = memo(function AnimatedThreadCard({ thread, viewerId, 
       opacity.value = withTiming(1, { duration: 250 });
     }, delay);
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [index, translateY, opacity]);
 
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
@@ -93,12 +92,12 @@ export default function MajlisScreen() {
 
   // Load last read timestamp on mount, update when tab gains focus
   useEffect(() => {
-    AsyncStorage.getItem('majlis_last_read').then(setLastReadAt);
+    AsyncStorage.getItem('majlis_last_read').then(setLastReadAt).catch(() => {});
   }, []);
   useFocusEffect(useCallback(() => {
     // Mark all current threads as read when user views the tab
     const now = new Date().toISOString();
-    AsyncStorage.setItem('majlis_last_read', now);
+    AsyncStorage.setItem('majlis_last_read', now).catch(() => {});
     setLastReadAt(now);
   }, []));
 
