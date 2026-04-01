@@ -93,16 +93,26 @@ export class FeedService {
   async dismiss(userId: string, contentId: string, contentType: string) {
     // Dismissal is persisted in DB (feedDismissal table). The feed algorithm reads
     // dismissed content IDs via getDismissedIds() to exclude from future pages.
-    return this.prisma.feedDismissal.upsert({
+    const result = this.prisma.feedDismissal.upsert({
       where: { userId_contentId_contentType: { userId, contentId, contentType } },
       update: {},
       create: { userId, contentId, contentType },
     });
+    // Invalidate dismissed IDs cache
+    await this.redis.del(`dismissed:${userId}:${contentType}`);
+    return result;
   }
 
   async getDismissedIds(userId: string, contentType: string): Promise<string[]> {
-    const d = await this.prisma.feedDismissal.findMany({ where: { userId, contentType }, select: { contentId: true }, take: 10000 });
-    return d.map(x => x.contentId);
+    const cacheKey = `dismissed:${userId}:${contentType}`;
+    const cached = await this.redis.get(cacheKey);
+    if (cached) {
+      try { return JSON.parse(cached); } catch { /* fall through */ }
+    }
+    const d = await this.prisma.feedDismissal.findMany({ where: { userId, contentType }, select: { contentId: true }, take: 1000 });
+    const ids = d.map(x => x.contentId);
+    await this.redis.set(cacheKey, JSON.stringify(ids), 'EX', 120);
+    return ids;
   }
 
   /**
@@ -138,11 +148,14 @@ export class FeedService {
    * Finding #402: Trending in your community — posts from followed hashtags trending in last 24h.
    */
   async getCommunityTrending(userId: string, limit = 10) {
-    const followedTags = await this.prisma.hashtagFollow.findMany({
-      where: { userId },
-      select: { hashtagId: true },
-      take: 50,
-    });
+    const [followedTags, excludedIds] = await Promise.all([
+      this.prisma.hashtagFollow.findMany({
+        where: { userId },
+        select: { hashtagId: true },
+        take: 50,
+      }),
+      this.getExcludedUserIds(userId),
+    ]);
     const hashtagIds = followedTags.map(h => h.hashtagId);
     const hashtags = hashtagIds.length > 0
       ? await this.prisma.hashtag.findMany({ where: { id: { in: hashtagIds } }, select: { name: true } })
@@ -158,7 +171,10 @@ export class FeedService {
         isRemoved: false,
         visibility: 'PUBLIC',
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-        user: { isDeactivated: false, isBanned: false, isDeleted: false },
+        user: {
+          isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false,
+          ...(excludedIds.length > 0 ? { id: { notIn: excludedIds } } : {}),
+        },
       },
       select: { id: true, content: true, mediaUrls: true, likesCount: true, commentsCount: true, sharesCount: true, createdAt: true, user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
       take: CANDIDATE_POOL_SIZE.COMMUNITY,
@@ -236,6 +252,8 @@ export class FeedService {
       }
       throw error;
     }
+    // Invalidate dismissed IDs cache
+    await this.redis.del(`dismissed:${userId}:${contentType}`);
     return { undismissed: true };
   }
 
@@ -297,15 +315,21 @@ export class FeedService {
       }
     }
 
-    // Build block/mute filter + content filter when authenticated
+    // Build block/mute filter + content filter + dismissed IDs when authenticated
     let userFilter = {};
     let contentFilter = {};
+    let dismissedIds: string[] = [];
     if (userId) {
-      const excludedIds = await this.getExcludedUserIds(userId);
+      const [excludedIds, dismissed, cf] = await Promise.all([
+        this.getExcludedUserIds(userId),
+        this.getDismissedIds(userId, 'POST'),
+        this.buildContentFilterWhere(userId),
+      ]);
       if (excludedIds.length > 0) {
         userFilter = { id: { notIn: excludedIds } };
       }
-      contentFilter = await this.buildContentFilterWhere(userId) as Record<string, unknown>;
+      dismissedIds = dismissed;
+      contentFilter = cf as Record<string, unknown>;
     }
 
     // Parse cursor: "score:id:ts" keyset for score-sorted pagination.
@@ -337,6 +361,7 @@ export class FeedService {
       visibility: PostVisibility.PUBLIC,
       OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
       user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false, ...userFilter },
+      ...(dismissedIds.length > 0 ? { id: { notIn: dismissedIds } } : {}),
       ...contentFilter,
     };
 
@@ -346,7 +371,7 @@ export class FeedService {
       TIME_WINDOWS.FALLBACK_HOURS,    // 7d — last resort
     ];
 
-    let posts: any[] = [];
+    let posts: Prisma.PostGetPayload<{ select: typeof FEED_POST_SELECT }>[] = [];
     for (const windowHours of tiers) {
       const cutoff = new Date(Date.now() - windowHours * 3600000);
       posts = await this.prisma.post.findMany({
@@ -424,11 +449,16 @@ export class FeedService {
    */
   async getFeaturedFeed(cursor?: string, limit = 20, userId?: string) {
     let userFilter = {};
+    let dismissedIds: string[] = [];
     if (userId) {
-      const excludedIds = await this.getExcludedUserIds(userId);
+      const [excludedIds, dismissed] = await Promise.all([
+        this.getExcludedUserIds(userId),
+        this.getDismissedIds(userId, 'POST'),
+      ]);
       if (excludedIds.length > 0) {
         userFilter = { id: { notIn: excludedIds } };
       }
+      dismissedIds = dismissed;
     }
 
     // Cursor is a featuredAt ISO timestamp (not ID) since we sort by featuredAt desc
@@ -439,6 +469,7 @@ export class FeedService {
         visibility: PostVisibility.PUBLIC,
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false, ...userFilter },
+        ...(dismissedIds.length > 0 ? { id: { notIn: dismissedIds } } : {}),
         ...(cursor ? { featuredAt: { lt: new Date(cursor) } } : {}),
       },
       select: { ...FEED_POST_SELECT, featuredAt: true },
@@ -462,15 +493,13 @@ export class FeedService {
   /**
    * Feature or unfeature a post (admin only).
    */
-  async featurePost(postId: string, featured: boolean, userId?: string) {
-    if (userId) {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-        select: { role: true },
-      });
-      if (!user || user.role !== 'ADMIN') {
-        throw new ForbiddenException('Admin access required');
-      }
+  async featurePost(postId: string, featured: boolean, userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
+    if (!user || user.role !== 'ADMIN') {
+      throw new ForbiddenException('Admin access required');
     }
     return this.prisma.post.update({
       where: { id: postId },
@@ -545,22 +574,23 @@ export class FeedService {
     const limit = 20;
     // STUB: Currently returns all geo-tagged posts without actual distance filtering.
     // The Post model lacks lat/lng fields, so true proximity search is not possible.
-    //
-    // To implement real nearby content:
-    // 1. Add `latitude Float?` and `longitude Float?` fields to the Post model
-    // 2. Install PostGIS extension: `CREATE EXTENSION IF NOT EXISTS postgis;`
-    // 3. Add a geography column: `ALTER TABLE "Post" ADD COLUMN geog geography(Point, 4326);`
-    // 4. Create spatial index: `CREATE INDEX posts_geog_idx ON "Post" USING GIST(geog);`
-    // 5. Query with ST_DWithin: `WHERE ST_DWithin(geog, ST_MakePoint($lng, $lat)::geography, $radiusKm * 1000)`
-    //
-    // Alternatively, use the Haversine formula (as mosques.service does) with lat/lng columns
-    // and a bounding box pre-filter for index usage.
+
+    // Build block/mute exclusion when authenticated
+    let userFilter: Record<string, unknown> = {};
+    if (userId) {
+      const excludedIds = await this.getExcludedUserIds(userId);
+      if (excludedIds.length > 0) {
+        userFilter = { id: { notIn: excludedIds } };
+      }
+    }
+
     const posts = await this.prisma.post.findMany({
       where: {
         locationName: { not: null },
         isRemoved: false,
+        visibility: PostVisibility.PUBLIC,
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-        user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false },
+        user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false, ...userFilter },
         ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}),
       },
       select: {

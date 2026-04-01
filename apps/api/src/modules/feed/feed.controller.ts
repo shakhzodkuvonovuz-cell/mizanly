@@ -169,7 +169,7 @@ export class FeedController {
     @CurrentUser('id') userId: string,
     @Body() body: TrackSessionSignalDto,
   ) {
-    this.personalizedFeed.trackSessionSignal(userId, body);
+    await this.personalizedFeed.trackSessionSignal(userId, body);
     return { success: true };
   }
 
@@ -226,6 +226,7 @@ export class FeedController {
 
   @UseGuards(ClerkAuthGuard)
   @Put('admin/posts/:id/feature')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @ApiOperation({ summary: 'Feature or unfeature a post (admin only)' })
   async featurePost(
     @CurrentUser('id') userId: string,

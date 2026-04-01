@@ -161,18 +161,26 @@ describe('FeedService', () => {
   describe('featurePost', () => {
     beforeEach(() => {
       (prisma as any).post = { findMany: jest.fn(), update: jest.fn() };
+      (prisma as any).user = { findUnique: jest.fn(), findMany: jest.fn() };
     });
 
-    it('should feature a post', async () => {
+    it('should feature a post when admin', async () => {
+      (prisma as any).user.findUnique.mockResolvedValue({ role: 'ADMIN' });
       (prisma as any).post.update.mockResolvedValue({ id: 'p1', isFeatured: true, featuredAt: new Date() });
-      const result = await service.featurePost('p1', true);
+      const result = await service.featurePost('p1', true, 'admin-1');
       expect(result.isFeatured).toBe(true);
     });
 
-    it('should unfeature a post', async () => {
+    it('should unfeature a post when admin', async () => {
+      (prisma as any).user.findUnique.mockResolvedValue({ role: 'ADMIN' });
       (prisma as any).post.update.mockResolvedValue({ id: 'p1', isFeatured: false, featuredAt: null });
-      const result = await service.featurePost('p1', false);
+      const result = await service.featurePost('p1', false, 'admin-1');
       expect(result.isFeatured).toBe(false);
+    });
+
+    it('should reject non-admin', async () => {
+      (prisma as any).user.findUnique.mockResolvedValue({ role: 'USER' });
+      await expect(service.featurePost('p1', true, 'user-1')).rejects.toThrow('Admin access required');
     });
   });
 
@@ -195,6 +203,7 @@ describe('FeedService', () => {
       (prisma as any).mute = { findMany: jest.fn().mockResolvedValue([]) };
       (prisma as any).restrict = { findMany: jest.fn().mockResolvedValue([]) };
       (prisma as any).contentFilterSetting = { findUnique: jest.fn().mockResolvedValue(null) };
+      prisma.feedDismissal = { ...prisma.feedDismissal, findMany: jest.fn().mockResolvedValue([]) };
     });
 
     it('should filter blocked/muted/restricted users when authenticated', async () => {
@@ -239,6 +248,7 @@ describe('FeedService', () => {
       (prisma as any).block = { findMany: jest.fn().mockResolvedValue([]) };
       (prisma as any).mute = { findMany: jest.fn().mockResolvedValue([]) };
       (prisma as any).restrict = { findMany: jest.fn().mockResolvedValue([]) };
+      prisma.feedDismissal = { ...prisma.feedDismissal, findMany: jest.fn().mockResolvedValue([]) };
     });
 
     it('should include scheduledAt OR filter and filter blocked users when authenticated', async () => {
@@ -342,7 +352,7 @@ describe('FeedService', () => {
   });
 
   describe('getTrendingFeed — cursor-based pagination', () => {
-    const makePost = (id: string, likes: number, comments: number, shares: number, saves: number, minutesAgo: number) => ({
+    const makePost = (id: string, likes: number, comments: number, shares: number, saves: number, minutesAgo: number): Record<string, unknown> => ({
       id,
       postType: 'IMAGE',
       content: `Post ${id}`,
@@ -378,6 +388,7 @@ describe('FeedService', () => {
       (prisma as any).mute = { findMany: jest.fn().mockResolvedValue([]) };
       (prisma as any).restrict = { findMany: jest.fn().mockResolvedValue([]) };
       (prisma as any).contentFilterSetting = { findUnique: jest.fn().mockResolvedValue(null) };
+      prisma.feedDismissal = { ...prisma.feedDismissal, findMany: jest.fn().mockResolvedValue([]) };
     });
 
     it('should return keyset cursor (score:id:ts) instead of offset', async () => {
@@ -439,6 +450,7 @@ describe('FeedService', () => {
       (prisma as any).mute = { findMany: jest.fn().mockResolvedValue([]) };
       (prisma as any).restrict = { findMany: jest.fn().mockResolvedValue([]) };
       (prisma as any).contentFilterSetting = { findUnique: jest.fn().mockResolvedValue(null) };
+      prisma.feedDismissal = { ...prisma.feedDismissal, findMany: jest.fn().mockResolvedValue([]) };
     });
 
     it('should return cached result for unauthenticated requests', async () => {

@@ -186,8 +186,8 @@ export class PollsService {
           },
         },
       }),
-      this.prisma.$executeRaw`UPDATE "PollOption" SET "votesCount" = GREATEST("votesCount" - 1, 0) WHERE id = ${vote.optionId}`,
-      this.prisma.$executeRaw`UPDATE "Poll" SET "totalVotes" = GREATEST("totalVotes" - 1, 0) WHERE id = ${pollId}`,
+      this.prisma.$executeRaw`UPDATE "poll_options" SET "votesCount" = GREATEST("votesCount" - 1, 0) WHERE id = ${vote.optionId}`,
+      this.prisma.$executeRaw`UPDATE "polls" SET "totalVotes" = GREATEST("totalVotes" - 1, 0) WHERE id = ${pollId}`,
     ]);
 
     return { success: true };

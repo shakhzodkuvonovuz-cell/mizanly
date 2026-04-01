@@ -135,16 +135,28 @@ export class CommunityService {
   async answerFatwa(scholarId: string, questionId: string, answer: string) {
     // Verify the user is an approved scholar
     const verification = await this.prisma.scholarVerification.findFirst({
-      where: { userId: scholarId, status: 'VERIFICATION_APPROVED' },
+      where: { userId: scholarId, status: ScholarVerificationStatus.VERIFICATION_APPROVED },
     });
     if (!verification) throw new ForbiddenException('Only verified scholars can answer fatwa questions');
 
     const q = await this.prisma.fatwaQuestion.findUnique({ where: { id: questionId } });
     if (!q) throw new NotFoundException('Fatwa question not found');
-    if (q.status === 'FATWA_ANSWERED') throw new ConflictException('Question already answered');
+    if (q.status === FatwaStatus.FATWA_ANSWERED) throw new ConflictException('Question already answered');
+
+    // Create an answer entry using self-referential design:
+    // answerId is a FK to another FatwaQuestion, not a text field.
+    // Store the answer text in a child FatwaQuestion record.
+    const answerEntry = await this.prisma.fatwaQuestion.create({
+      data: {
+        askerId: scholarId,
+        question: answer,
+        status: FatwaStatus.FATWA_ANSWERED,
+      },
+    });
+
     const updated = await this.prisma.fatwaQuestion.update({
       where: { id: questionId },
-      data: { status: 'FATWA_ANSWERED', answerId: answer, answeredBy: scholarId, answeredAt: new Date() },
+      data: { status: FatwaStatus.FATWA_ANSWERED, answerId: answerEntry.id, answeredBy: scholarId, answeredAt: new Date() },
     });
 
     // Notify the asker that their question was answered
@@ -338,11 +350,17 @@ export class CommunityService {
 
   async getDataExport(userId: string) {
     // GDPR Article 15/20 — users have the right to ALL their data.
-    // CODEX #45: raised from 10K to 100K to cover large accounts.
-    // True streaming export should be a background job for accounts exceeding this.
-    const EXPORT_LIMIT = 100000;
+    // Capped at 10K per table. privacy.service.ts has the full GDPR export with streaming.
+    const EXPORT_LIMIT = 10000;
     const [user, posts, threads, messages, reels, stories] = await Promise.all([
-      this.prisma.user.findUnique({ where: { id: userId } }),
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true, username: true, displayName: true, email: true, phone: true,
+          bio: true, avatarUrl: true, coverUrl: true, location: true, website: true,
+          isVerified: true, isPrivate: true, language: true, createdAt: true, updatedAt: true,
+        },
+      }),
       this.prisma.post.findMany({ where: { userId }, select: { id: true, content: true, mediaUrls: true, createdAt: true },
       orderBy: { createdAt: 'desc' }, take: EXPORT_LIMIT }),
       this.prisma.thread.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true },

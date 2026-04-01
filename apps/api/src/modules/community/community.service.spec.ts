@@ -263,9 +263,17 @@ describe('CommunityService', () => {
     it('should answer a pending fatwa question for verified scholar', async () => {
       prisma.scholarVerification.findFirst.mockResolvedValue({ userId: 'scholar-1', status: 'VERIFICATION_APPROVED' });
       prisma.fatwaQuestion.findUnique.mockResolvedValue({ id: 'fq-1', status: 'MENTORSHIP_PENDING' });
-      prisma.fatwaQuestion.update.mockResolvedValue({ id: 'fq-1', status: 'FATWA_ANSWERED' });
+      prisma.fatwaQuestion.create.mockResolvedValue({ id: 'answer-1', question: 'It is permissible.', status: 'FATWA_ANSWERED' });
+      prisma.fatwaQuestion.update.mockResolvedValue({ id: 'fq-1', status: 'FATWA_ANSWERED', answerId: 'answer-1' });
       const result = await service.answerFatwa('scholar-1', 'fq-1', 'It is permissible.');
       expect(result.status).toBe('FATWA_ANSWERED');
+      expect(prisma.fatwaQuestion.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ question: 'It is permissible.', askerId: 'scholar-1' }),
+      });
+      expect(prisma.fatwaQuestion.update).toHaveBeenCalledWith({
+        where: { id: 'fq-1' },
+        data: expect.objectContaining({ answerId: 'answer-1', answeredBy: 'scholar-1' }),
+      });
     });
 
     it('should throw ForbiddenException for non-verified scholar', async () => {

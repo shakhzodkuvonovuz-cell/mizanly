@@ -202,7 +202,7 @@ export class ChannelsService {
         data: { userId, channelId: channel.id },
       }),
       this.prisma.$executeRaw`
-        UPDATE "Channel"
+        UPDATE "channels"
         SET "subscribersCount" = GREATEST(0, "subscribersCount" + 1)
         WHERE id = ${channel.id}
       `,
@@ -236,7 +236,7 @@ export class ChannelsService {
         where: { userId_channelId: { userId, channelId: channel.id } },
       }),
       this.prisma.$executeRaw`
-        UPDATE "Channel"
+        UPDATE "channels"
         SET "subscribersCount" = GREATEST(0, "subscribersCount" - 1)
         WHERE id = ${channel.id}
       `,
@@ -460,11 +460,18 @@ export class ChannelsService {
   private async fetchRecommendedChannels(userId: string, limit: number) {
     const channelIds = await this.prisma.$queryRaw<Array<{ id: string }>>`
       SELECT c.id
-      FROM "Channel" c
+      FROM "channels" c
+      LEFT JOIN "users" u ON u.id = c."userId"
       WHERE c."userId" != ${userId}
+        AND (u."isBanned" = false AND u."isDeactivated" = false AND u."isDeleted" = false)
         AND NOT EXISTS (
-          SELECT 1 FROM "Subscription" s
+          SELECT 1 FROM "subscriptions" s
           WHERE s."channelId" = c.id AND s."userId" = ${userId}
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM "blocks" b
+          WHERE (b."blockerId" = ${userId} AND b."blockedId" = c."userId")
+             OR (b."blockerId" = c."userId" AND b."blockedId" = ${userId})
         )
       ORDER BY c."subscribersCount" DESC, c."totalViews" DESC
       LIMIT ${limit}
