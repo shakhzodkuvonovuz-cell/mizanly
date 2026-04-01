@@ -1,4 +1,4 @@
-import { Tabs, useRouter } from 'expo-router';
+import { Tabs } from 'expo-router';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { useTranslation } from '@/hooks/useTranslation';
 import Animated, {
@@ -17,7 +17,6 @@ import { useResponsive } from '@/hooks/useResponsive';
 import { useWebKeyboardShortcuts } from '@/hooks/useWebKeyboardShortcuts';
 import { colors, tabBar, spacing, fontSize, animation, radius, fontSizeExt } from '@/theme';
 import { useStore } from '@/store';
-import { navigate as navTo } from '@/utils/navigation';
 // useState removed — create state now in CreateSheet
 import { useThemeColors } from '@/hooks/useThemeColors';
 
@@ -83,7 +82,7 @@ export default function TabLayout() {
         screenOptions={{
           headerShown: false,
           tabBarShowLabel: false,
-          tabBarStyle: isWebWide ? styles.tabBarHidden : styles.tabBar,
+          tabBarStyle: isWebWide ? styles.tabBarHidden : [styles.tabBar, { borderTopColor: tc.isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }],
           tabBarActiveTintColor: colors.emerald,
           tabBarInactiveTintColor: tc.text.secondary,
           tabBarLabelStyle: styles.tabLabel,
@@ -92,11 +91,11 @@ export default function TabLayout() {
               Platform.OS === 'ios' ? (
                 <BlurView
                   intensity={80}
-                  tint="dark"
+                  tint={tc.isDark ? 'dark' : 'light'}
                   style={[StyleSheet.absoluteFill, styles.tabBarBg]}
                 />
               ) : (
-                <View style={[StyleSheet.absoluteFill, styles.tabBarBgAndroid]} />
+                <View style={[StyleSheet.absoluteFill, { backgroundColor: tc.isDark ? 'rgba(13, 17, 23, 0.92)' : 'rgba(255, 255, 255, 0.92)' }]} />
               )
             ),
         }}
@@ -162,7 +161,7 @@ const styles = StyleSheet.create({
   tabBar: {
     position: 'absolute',
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255,255,255,0.08)',
+    borderTopColor: 'transparent', // Set dynamically via screenOptions
     height: tabBar.height,
     paddingTop: 8,
     backgroundColor: 'transparent',
@@ -176,8 +175,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 0, // Handled by tabBar
   },
   tabBarBgAndroid: {
-    backgroundColor: 'rgba(13, 17, 23, 0.92)',
-    borderTopWidth: 0, // Handled by tabBar
+    borderTopWidth: 0, // Handled by tabBar; backgroundColor set dynamically
   },
   tabLabel: { fontSize: fontSizeExt.tiny, fontWeight: '600', marginTop: -2 },
   iconWrap: {
