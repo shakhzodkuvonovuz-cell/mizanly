@@ -36,7 +36,7 @@ import { showToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useStore } from '@/store';
-import { colors, spacing, fontSize, radius, animation, fontSizeExt } from '@/theme';
+import { colors, spacing, fontSize, radius, animation, fontSizeExt, fonts } from '@/theme';
 import { messagesApi, uploadApi, aiApi } from '@/services/api';
 import {
   encryptMessage as signalEncrypt,
@@ -219,6 +219,7 @@ function DateSeparator({ label }: { label: string }) {
 const SPEED_OPTIONS = [1, 1.5, 2] as const;
 
 function VoicePlayer({ mediaUrl, isOwn }: { mediaUrl: string; isOwn: boolean }) {
+  const tc = useThemeColors();
   const [playing, setPlaying] = useState(false);
   const [speedIndex, setSpeedIndex] = useState(0);
   const soundRef = useRef<Audio.Sound | null>(null);
@@ -258,7 +259,7 @@ function VoicePlayer({ mediaUrl, isOwn }: { mediaUrl: string; isOwn: boolean }) 
 
   return (
     <Pressable style={styles.voicePlayer} onPress={toggle} accessibilityRole="button" accessibilityLabel={playing ? 'Pause voice message' : 'Play voice message'}>
-      <Icon name={playing ? 'volume-x' : 'play'} size={18} color={isOwn ? '#fff' : colors.emerald} />
+      <Icon name={playing ? 'volume-x' : 'play'} size={18} color={isOwn ? tc.text.onColor : colors.emerald} />
       <View style={styles.voiceWaveform}>
         {waveformHeights.map((height, i) => (
           <View
@@ -282,7 +283,7 @@ function VoicePlayer({ mediaUrl, isOwn }: { mediaUrl: string; isOwn: boolean }) 
         style={{ paddingHorizontal: 4 }}
         accessibilityLabel={`Playback speed ${SPEED_OPTIONS[speedIndex]}x`}
       >
-        <Text style={{ color: isOwn ? '#fff' : colors.emerald, fontSize: 11, fontFamily: 'DMSans_700Bold' }}>
+        <Text style={{ color: isOwn ? tc.text.onColor : colors.emerald, fontSize: 11, fontFamily: fonts.bodyBold }}>
           {SPEED_OPTIONS[speedIndex]}x
         </Text>
       </Pressable>
@@ -508,7 +509,7 @@ const MessageBubble = memo(function MessageBubble({
         onPress={() => searchQuery.trim() && onSearchResultPress?.(message.id)}
         style={[
           styles.bubble,
-          isOwn ? [styles.bubbleOwn, ownRadius, { overflow: 'hidden' as const }] : [styles.bubbleOther, otherRadius],
+          isOwn ? [styles.bubbleOwn, ownRadius, { overflow: 'hidden' as const }] : [styles.bubbleOther, otherRadius, { backgroundColor: tc.surface, borderColor: tc.borderLight }],
         ]}
         delayLongPress={300}
         accessibilityRole="button"
@@ -545,8 +546,8 @@ const MessageBubble = memo(function MessageBubble({
         {/* View Once badge */}
         {message.isViewOnce && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: spacing.sm, paddingTop: spacing.xs }}>
-            <Icon name="clock" size={12} color={isOwn ? 'rgba(255,255,255,0.7)' : colors.gold} />
-            <Text style={{ fontSize: fontSize.xs, color: isOwn ? 'rgba(255,255,255,0.7)' : colors.gold, fontWeight: '600' }}>
+            <Icon name="clock" size={12} color={isOwn ? tc.text.onColor : colors.gold} />
+            <Text style={{ fontSize: fontSize.xs, color: isOwn ? tc.text.onColor : colors.gold, fontWeight: '600' }}>
               {message.viewedAt ? t('risalah.viewOnceOpened') : t('risalah.viewOnce')}
             </Text>
           </View>
@@ -595,10 +596,10 @@ const MessageBubble = memo(function MessageBubble({
           >
             <Icon name="user" size="sm" color={colors.emerald} />
             <View>
-              <Text style={{ color: isOwn ? '#fff' : colors.text.primary, fontFamily: 'DMSans_500Medium', fontSize: 14 }}>
+              <Text style={{ color: isOwn ? tc.text.onColor : tc.text.primary, fontFamily: fonts.bodyMedium, fontSize: 14 }}>
                 {(() => { try { return JSON.parse(message.content || '{}').displayName || 'Contact'; } catch { return 'Contact'; } })()}
               </Text>
-              <Text style={{ color: isOwn ? 'rgba(255,255,255,0.7)' : colors.text.secondary, fontSize: 12 }}>
+              <Text style={{ color: isOwn ? tc.text.onColor : tc.text.secondary, fontSize: 12 }}>
                 {t('messages.tapToViewProfile', 'Tap to view profile')}
               </Text>
             </View>
@@ -697,7 +698,7 @@ const MessageBubble = memo(function MessageBubble({
           {message.expiresAt && (
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
               <Icon name="clock" size={10} color={tc.text.tertiary} />
-              <Text style={{ color: tc.text.tertiary, fontSize: fontSizeExt.tiny, marginLeft: 2 }}>
+              <Text style={{ color: tc.text.tertiary, fontSize: fontSizeExt.tiny, marginStart: 2 }}>
                 {formatDistanceToNowStrict(new Date(message.expiresAt), { addSuffix: false, locale: getDateFnsLocale() })}
               </Text>
             </View>
@@ -781,6 +782,7 @@ export default function ConversationScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const flatListRef = useRef<FlatList>(null);
+  const initialScrollDoneRef = useRef(false); // #27: Only scroll to end on initial load
   const { socket, isConnected: socketConnected } = useSocket();
   const socketRef = useRef(socket);
   useEffect(() => { socketRef.current = socket; }, [socket]);
@@ -1057,28 +1059,37 @@ export default function ConversationScreen() {
 
   const messages = (messagesQuery.data?.pages.flatMap((p) => p.data) ?? []) as EncryptedMessage[];
 
-  // Pre-decrypt E2E encrypted messages and store in decrypted content map
+  // Pre-decrypt E2E encrypted messages with concurrency limit to avoid ANR (#2)
   useEffect(() => {
-    for (const msg of messages) {
-      if (msg.encryptedContent && msg.e2eVersion) {
-        // Skip already-decrypted messages
+    const DECRYPT_BATCH_SIZE = 5;
+    const toDecrypt = messages.filter(
+      msg => msg.encryptedContent && msg.e2eVersion && !decryptedContents.has(msg.id),
+    );
+    if (toDecrypt.length === 0) return;
+
+    let cancelled = false;
+    (async () => {
+      for (let i = 0; i < toDecrypt.length; i += DECRYPT_BATCH_SIZE) {
+        if (cancelled) break;
+        const batch = toDecrypt.slice(i, i + DECRYPT_BATCH_SIZE);
+        const results = await Promise.allSettled(
+          batch.map(msg => getDecryptedContent(msg).then(d => ({ id: msg.id, content: d }))),
+        );
+        if (cancelled) break;
         setDecryptedContents(prev => {
-          if (!prev.has(msg.id)) {
-            getDecryptedContent(msg).then(decrypted => {
-              if (decrypted) {
-                setDecryptedContents(p => {
-                  if (p.has(msg.id)) return p;
-                  const next = new Map(p);
-                  next.set(msg.id, decrypted);
-                  return next;
-                });
-              }
-            });
+          const next = new Map(prev);
+          let changed = false;
+          for (const r of results) {
+            if (r.status === 'fulfilled' && r.value.content && !next.has(r.value.id)) {
+              next.set(r.value.id, r.value.content);
+              changed = true;
+            }
           }
-          return prev;
+          return changed ? next : prev;
         });
       }
-    }
+    })();
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length]);
 
@@ -1235,13 +1246,17 @@ export default function ConversationScreen() {
     };
   }, [socket, id, user?.id, queryClient]);
 
+  const markedReadRef = useRef<string | null>(null);
   useEffect(() => {
+    if (markedReadRef.current === id) return;
+    markedReadRef.current = id;
     messagesApi.markRead(id)
       .then(() => queryClient.invalidateQueries({ queryKey: ['conversations'] }))
       .catch(() => {});
   }, [id, queryClient]);
 
   const [isSending, setIsSending] = useState(false);
+  const isSendingRef = useRef(false); // #15: Ref-based guard to prevent double-tap (setState is async)
   const tc = useThemeColors();
   // Undo-via-delete: message is sent IMMEDIATELY to server (Telegram-fast),
   // but user has 5 seconds to undo. Undo = server-side delete before recipient reads.
@@ -1362,7 +1377,8 @@ export default function ConversationScreen() {
 
   const lastSentRef = useRef<number>(0);
   const handleSend = useCallback(async () => {
-    if (!text.trim() || isSending) return;
+    if (!text.trim() || isSending || isSendingRef.current) return;
+    isSendingRef.current = true;
 
     // Finding #366: Slow mode enforcement — check client-side cooldown
     const slowMode = (convo as Record<string, unknown> | undefined)?.slowModeSeconds as number | undefined;
@@ -1377,13 +1393,15 @@ export default function ConversationScreen() {
 
     // Edit mode
     if (editingMsg) {
+      setIsSending(true);
       messagesApi.editMessage(id, editingMsg.id, text.trim())
         .then(() => {
           queryClient.invalidateQueries({ queryKey: ['messages', id] });
           setEditingMsg(null);
           setText('');
         })
-        .catch(() => showToast({ message: t('errors.editMessageFailed'), variant: 'error' }));
+        .catch(() => showToast({ message: t('errors.editMessageFailed'), variant: 'error' }))
+        .finally(() => setIsSending(false));
       return;
     }
     haptic.send();
@@ -1474,6 +1492,7 @@ export default function ConversationScreen() {
       } catch {
         showToast({ message: t('errors.encryptionFailed'), variant: 'error' });
         setIsSending(false);
+        isSendingRef.current = false;
         return;
       }
     } else if (recipientId) {
@@ -1552,6 +1571,7 @@ export default function ConversationScreen() {
         // CRITICAL: never send plaintext on encryption failure
         showToast({ message: t('errors.encryptionFailed'), variant: 'error' });
         setIsSending(false);
+        isSendingRef.current = false;
         return;
       }
     }
@@ -1573,6 +1593,7 @@ export default function ConversationScreen() {
     setText('');
     setReplyTo(null);
     setIsSending(false);
+    isSendingRef.current = false;
 
     // Cancel any existing undo timer (previous undo window ends)
     if (undoPending?.timer) {
@@ -2117,7 +2138,7 @@ export default function ConversationScreen() {
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {messagesQuery.isLoading ? (
           <View style={styles.loaderWrap}>
@@ -2143,7 +2164,7 @@ export default function ConversationScreen() {
                 accessibilityLabel={t('risalah.pinnedMessage')}
               >
                 <Icon name="map-pin" size="xs" color={colors.emerald} />
-                <View style={{ flex: 1, marginLeft: spacing.sm }}>
+                <View style={{ flex: 1, marginStart: spacing.sm }}>
                   <Text style={{ color: tc.text.secondary, fontSize: fontSize.xs }}>
                     {t('risalah.pinnedMessage')}
                   </Text>
@@ -2189,7 +2210,7 @@ export default function ConversationScreen() {
             )}
             contentContainerStyle={styles.messageList}
             onScrollToIndexFailed={({ index }) => flatListRef.current?.scrollToOffset({ offset: index * 100 })}
-            onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
+            onLayout={initialScrollDoneRef.current ? undefined : () => { initialScrollDoneRef.current = true; flatListRef.current?.scrollToEnd({ animated: false }); }}
           />
           {showScrollToBottom && (
             <Pressable
@@ -2199,7 +2220,7 @@ export default function ConversationScreen() {
                 flatListRef.current?.scrollToEnd({ animated: true });
                 setShowScrollToBottom(false);
               }}
-              style={styles.scrollToBottomFab}
+              style={[styles.scrollToBottomFab, { backgroundColor: tc.bgElevated }]}
             >
               <Icon name="chevron-down" size="sm" color={tc.text.primary} />
             </Pressable>
@@ -2278,7 +2299,7 @@ export default function ConversationScreen() {
           )}
           <View style={styles.inputRow}>
             <Pressable
-              style={styles.attachBtn}
+              style={[styles.attachBtn, uploadingMedia && { opacity: 0.4 }]}
               hitSlop={8}
               onPress={pickAndSendMedia}
               disabled={uploadingMedia}
@@ -2533,7 +2554,10 @@ export default function ConversationScreen() {
                 onPress={() => {
                   messagesApi.deleteMessage(id, contextMenuMsg.id).then(() => {
                     queryClient.invalidateQueries({ queryKey: ['messages', id] });
-                  }).catch(() => showToast({ message: t('errors.deleteMessageFailed'), variant: 'error' }));
+                  }).catch(() => {
+                    showToast({ message: t('errors.deleteMessageFailed'), variant: 'error' });
+                    queryClient.invalidateQueries({ queryKey: ['messages', id] }); // Refetch to restore message on failure
+                  });
                   setContextMenuMsg(null);
                 }}
               />
@@ -2545,7 +2569,10 @@ export default function ConversationScreen() {
                 onPress={() => {
                   messagesApi.deleteMessage(id, contextMenuMsg.id).then(() => {
                     queryClient.invalidateQueries({ queryKey: ['messages', id] });
-                  }).catch(() => showToast({ message: t('errors.deleteMessageFailed'), variant: 'error' }));
+                  }).catch(() => {
+                    showToast({ message: t('errors.deleteMessageFailed'), variant: 'error' });
+                    queryClient.invalidateQueries({ queryKey: ['messages', id] }); // Refetch to restore message on failure
+                  });
                   setContextMenuMsg(null);
                 }}
               />
@@ -2777,12 +2804,12 @@ const styles = StyleSheet.create({
   messageList: { paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, flexGrow: 1 },
   scrollToBottomFab: {
     position: 'absolute',
-    right: spacing.base,
+    end: spacing.base,
     bottom: 80,
     width: 40,
     height: 40,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.bgSheet,
+    backgroundColor: colors.dark.bgSheet, // Overridden inline with tc.bgElevated
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -2839,8 +2866,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   replyPreview: {
-    borderLeftWidth: 3, borderLeftColor: 'rgba(255,255,255,0.4)',
-    paddingLeft: spacing.xs, marginBottom: spacing.xs,
+    borderStartWidth: 3, borderStartColor: 'rgba(255,255,255,0.4)',
+    paddingStart: spacing.xs, marginBottom: spacing.xs,
     backgroundColor: colors.dark.bgElevated,
     borderRadius: radius.sm,
     padding: spacing.xs,
@@ -2880,7 +2907,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.dark.surface,
     borderRadius: radius.full,
-    paddingHorizontal: spacing.xs + 2, // 4 + 2 = 6
+    paddingHorizontal: spacing.sm, // 8 — use token instead of arithmetic
     paddingVertical: 2,
     marginRight: spacing.xs,
     marginTop: spacing.xs,
@@ -2894,7 +2921,7 @@ const styles = StyleSheet.create({
   reactionCount: {
     fontSize: 11,
     color: colors.text.secondary,
-    marginLeft: 2,
+    marginStart: 2,
   },
 
   emptyWrap: { alignItems: 'center', justifyContent: 'center', flex: 1, paddingTop: 80, gap: spacing.md },
@@ -2910,7 +2937,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: spacing.base, paddingVertical: spacing.xs,
     backgroundColor: colors.dark.bgElevated,
-    borderLeftWidth: 3, borderLeftColor: colors.emerald,
+    borderStartWidth: 3, borderStartColor: colors.emerald,
   },
   replyBannerContent: { flex: 1 },
   replyBannerUser: { color: colors.emerald, fontSize: fontSize.xs, fontWeight: '700' },
@@ -3022,7 +3049,7 @@ const styles = StyleSheet.create({
   },
   slideCancelIndicator: {
     position: 'absolute',
-    left: 50,
+    start: 50,
     backgroundColor: colors.dark.bgElevated,
     borderRadius: radius.full,
     padding: spacing.xs,
@@ -3077,20 +3104,20 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     fontSize: fontSize.base,
     flex: 1,
-    marginRight: spacing.sm,
+    marginEnd: spacing.sm,
   },
   readReceipts: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: spacing.xs,
+    marginStart: spacing.xs,
   },
   readReceiptAvatar: {
-    marginLeft: -6,
+    marginStart: -6,
     borderWidth: 1,
     borderColor: colors.dark.bg,
   },
   readReceiptMore: {
-    marginLeft: 2,
+    marginStart: 2,
     color: colors.text.tertiary,
     fontSize: fontSize.xs,
     fontWeight: '600',
@@ -3103,7 +3130,7 @@ const styles = StyleSheet.create({
   readTime: {
     color: colors.text.tertiary,
     fontSize: fontSize.xs,
-    marginLeft: spacing.xs,
+    marginStart: spacing.xs,
   },
   quickReactions: {
     flexDirection: 'row',

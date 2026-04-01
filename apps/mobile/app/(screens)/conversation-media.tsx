@@ -20,6 +20,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { showToast } from '@/components/ui/Toast';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { messagesApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -64,12 +65,13 @@ function ScaleMediaItem({ item, onImagePress, onVideoPress }: {
 }) {
   const { onPressIn, onPressOut, animatedStyle } = useAnimatedPress({ scaleTo: 0.96 });
   const tc = useThemeColors();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
 
   return (
     <AnimatedPressable
       style={[styles.mediaItem, { backgroundColor: tc.bgCard }, animatedStyle]}
-      onPress={item.type === 'image' ? onImagePress : onVideoPress}
+      onPress={() => { haptic.tick(); item.type === 'image' ? onImagePress() : onVideoPress(); }}
       onPressIn={onPressIn}
       onPressOut={onPressOut}
       accessibilityLabel={item.type === 'image' ? t('conversationMedia.accessibility.viewImage') : t('conversationMedia.accessibility.playVideo')}
@@ -132,7 +134,7 @@ export default function ConversationMediaScreen() {
     refetch,
     isRefetching,
   } = useInfiniteQuery({
-    queryKey: ['conversation-messages', conversationId],
+    queryKey: ['messages', conversationId],
     queryFn: ({ pageParam }) => messagesApi.getMessages(conversationId!, pageParam),
     getNextPageParam: (lastPage) => lastPage.meta.cursor ?? undefined,
     initialPageParam: undefined as string | undefined,
@@ -165,7 +167,7 @@ export default function ConversationMediaScreen() {
             id: `${msg.id}-media`,
             url: msg.mediaUrl,
             type: 'video',
-            thumbnailUrl: (msg as unknown as Record<string, string>).thumbnailUrl, // Use dedicated thumbnail if available
+            thumbnailUrl: 'thumbnailUrl' in msg ? String((msg as Record<string, unknown>).thumbnailUrl ?? '') : undefined,
             messageId: msg.id,
             createdAt: msg.createdAt,
           });
@@ -213,8 +215,10 @@ export default function ConversationMediaScreen() {
   }, []);
 
   const handleOpenLink = useCallback((url: string) => {
-    Linking.openURL(url).catch(err => { if (__DEV__) console.error('Failed to open link:', err); });
-  }, []);
+    Linking.openURL(url).catch(() => {
+      showToast({ message: t('conversationMedia.error.openLinkFailed'), variant: 'error' });
+    });
+  }, [t]);
 
   const handleLoadMore = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
@@ -229,7 +233,7 @@ export default function ConversationMediaScreen() {
   ] as const;
 
   const renderMediaItem = ({ item, index }: { item: MediaItem; index: number }) => (
-    <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index * 50, 500)).duration(400)}>
       <ScaleMediaItem
         item={item}
         onImagePress={() => {
@@ -243,7 +247,7 @@ export default function ConversationMediaScreen() {
   );
 
   const renderLinkItem = ({ item, index }: { item: LinkItem; index: number }) => (
-    <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index * 80, 500)).duration(400)}>
       <Pressable
         style={[styles.linkItem, { backgroundColor: tc.bgCard }]}
         onPress={() => handleOpenLink(item.url)}
@@ -271,7 +275,7 @@ export default function ConversationMediaScreen() {
   );
 
   const renderDocItem = ({ item, index }: { item: DocItem; index: number }) => (
-    <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index * 80, 500)).duration(400)}>
       <Pressable
         style={[styles.docItem, { backgroundColor: tc.bgCard }]}
         onPress={() => handleOpenLink(item.url)}
@@ -327,7 +331,11 @@ export default function ConversationMediaScreen() {
   if (isLoading && !messagesPages) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
-        <Skeleton.ProfileHeader />
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, padding: spacing.sm }}>
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <Skeleton.Rect key={i} width="31%" height={120} borderRadius={radius.md} />
+          ))}
+        </View>
       </SafeAreaView>
     );
   }

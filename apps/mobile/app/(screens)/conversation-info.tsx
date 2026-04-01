@@ -7,7 +7,7 @@ import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { navigate } from '@/utils/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import * as ImagePicker from 'expo-image-picker';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -51,6 +51,7 @@ export default function ConversationInfoScreen() {
   const { user } = useUser();
   const queryClient = useQueryClient();
   const haptic = useContextualHaptic();
+  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
 
   // Admin state
@@ -92,6 +93,9 @@ export default function ConversationInfoScreen() {
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
       router.replace('/(tabs)/risalah');
     },
+    onError: () => {
+      showToast({ message: t('conversation.leaveGroupFailed'), variant: 'error' });
+    },
   });
 
   const updateGroupMutation = useMutation({
@@ -100,12 +104,18 @@ export default function ConversationInfoScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['conversation', id] });
     },
+    onError: () => {
+      showToast({ message: t('conversation.updateGroupFailed'), variant: 'error' });
+    },
   });
 
   const addMembersMutation = useMutation({
     mutationFn: (memberIds: string[]) => messagesApi.addMembers(id, memberIds),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['conversation', id] });
+    },
+    onError: () => {
+      showToast({ message: t('conversation.addMembersFailed'), variant: 'error' });
     },
   });
 
@@ -125,6 +135,9 @@ export default function ConversationInfoScreen() {
       queryClient.invalidateQueries({ queryKey: ['conversation', id] });
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
     },
+    onError: () => {
+      showToast({ message: t('conversation.muteFailed'), variant: 'error' });
+    },
   });
 
   const handleToggleMute = () => {
@@ -134,6 +147,7 @@ export default function ConversationInfoScreen() {
   };
 
   const pickAvatar = async () => {
+    haptic.tick();
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
@@ -248,7 +262,7 @@ export default function ConversationInfoScreen() {
           leftAction={{ icon: <Icon name="arrow-left" size="md" color={tc.text.primary} />, onPress: () => router.back() }}
         />
 
-        <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>
+        <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}>
           {/* Avatar + name — Glassmorphism Card */}
           <Animated.View entering={FadeInUp.delay(0).duration(400)}>
             <LinearGradient
@@ -282,7 +296,7 @@ export default function ConversationInfoScreen() {
               )}
               {isGroup && isCreator && (
                 <View style={styles.adminActions}>
-                  <Pressable style={styles.adminAction} onPress={() => setAddMembersSheetOpen(true)}>
+                  <Pressable style={[styles.adminAction, addMembersMutation.isPending && { opacity: 0.5 }]} onPress={() => setAddMembersSheetOpen(true)} disabled={addMembersMutation.isPending}>
                     <LinearGradient
                       colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
                       style={styles.adminActionIconBg}
@@ -558,8 +572,14 @@ export default function ConversationInfoScreen() {
               {isGroup && !isCreator && (
                 <Pressable style={[styles.actionRow, { borderBottomColor: tc.border }]} onPress={handleLeave}>
                   {leaveGroupMutation.isPending
-                    ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                        <Skeleton.Rect width={24} height={24} borderRadius={radius.full} />
+                    ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, opacity: 0.5 }}>
+                        <LinearGradient
+                          colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
+                          style={styles.actionIconBg}
+                        >
+                          <Icon name="log-out" size="xs" color={colors.error} />
+                        </LinearGradient>
+                        <Text style={styles.actionDestructive}>{t('common.loading')}</Text>
                       </View>
                     : <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                         <LinearGradient
@@ -584,6 +604,7 @@ export default function ConversationInfoScreen() {
                       { text: t('common.cancel'), style: 'cancel' },
                       {
                         text: t('common.block'), style: 'destructive', onPress: () => {
+                          haptic.delete();
                           blocksApi.block(other.user.id)
                             .then(() => router.replace('/(tabs)/risalah'))
                             .catch(() => showToast({ message: t('errors.blockUserFailed'), variant: 'error' }));
@@ -876,7 +897,7 @@ const styles = StyleSheet.create({
   memberRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
     paddingVertical: spacing.md,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+    borderBottomWidth: 0.5,
   },
   memberInfo: { flex: 1 },
   memberNameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },

@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo, memo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, FlatList, TextInput,
-  useWindowDimensions, Alert,
+  useWindowDimensions, Alert, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -58,11 +58,11 @@ const SlideThumb = memo(function SlideThumb({ slide, index, isSelected, onSelect
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   return (
-    <Animated.View entering={FadeInDown.delay(index * 40).duration(250).springify()}>
+    <Animated.View entering={FadeInDown.delay(Math.min(index * 40, 400)).duration(250).springify()}>
       <AnimatedPressable
         onPress={onSelect}
         onLongPress={() => {
-          if (total > 2) {
+          if (total > 1) {
             Alert.alert(
               t('carousel.removeSlideTitle'),
               t('carousel.removeSlideMessage'),
@@ -85,7 +85,7 @@ const SlideThumb = memo(function SlideThumb({ slide, index, isSelected, onSelect
         </View>
         {slide.text.length > 0 && (
           <View style={styles.thumbTextIndicator}>
-            <Icon name="pencil" size="xs" color="#fff" />
+            <Icon name="pencil" size="xs" color={colors.text.onColor} />
           </View>
         )}
       </AnimatedPressable>
@@ -257,6 +257,7 @@ function CreateCarouselScreen() {
     onError: (err: Error) => {
       haptic.error();
       setUploading(false);
+      setUploadProgress(0);
       showToast({ message: err.message || t('carousel.publishFailed'), variant: 'error' });
     },
   });
@@ -279,7 +280,7 @@ function CreateCarouselScreen() {
         <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
           <GlassHeader
             title={t('carousel.title')}
-            leftAction={{ icon: 'x', onPress: () => router.back(), accessibilityLabel: 'Close' }}
+            leftAction={{ icon: 'x', onPress: () => router.back(), accessibilityLabel: t('common.close') }}
           />
           <View style={styles.emptyContainer}>
             <Animated.View entering={FadeIn.duration(400)} style={styles.emptyContent}>
@@ -313,7 +314,7 @@ function CreateCarouselScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top', 'bottom']}>
         <GlassHeader
           title={t('carousel.title')}
           leftIcon="x"
@@ -338,6 +339,7 @@ function CreateCarouselScreen() {
           }}
         />
 
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
@@ -364,7 +366,7 @@ function CreateCarouselScreen() {
                   hitSlop={12}
                   accessibilityLabel={t('carousel.movePrev')}
                 >
-                  <Icon name="chevron-left" size="md" color="#fff" />
+                  <Icon name="chevron-left" size="md" color={tc.text.onColor} />
                 </Pressable>
                 <Pressable
                   onPress={() => moveSlide(selectedIndex, selectedIndex + 1)}
@@ -373,7 +375,7 @@ function CreateCarouselScreen() {
                   hitSlop={12}
                   accessibilityLabel={t('carousel.moveNext')}
                 >
-                  <Icon name="chevron-right" size="md" color="#fff" />
+                  <Icon name="chevron-right" size="md" color={tc.text.onColor} />
                 </Pressable>
               </View>
             )}
@@ -601,7 +603,7 @@ function CreateCarouselScreen() {
                     }}
                     style={[
                       styles.topicChip,
-                      { borderColor: isSelected ? colors.emerald : 'rgba(255,255,255,0.15)' },
+                      { borderColor: isSelected ? colors.emerald : tc.borderLight },
                       isSelected && { backgroundColor: `${colors.emerald}20` },
                     ]}
                     accessibilityRole="checkbox"
@@ -628,7 +630,7 @@ function CreateCarouselScreen() {
                   onPress={() => { setSlideDuration(sec); haptic.tick(); }}
                   style={[
                     styles.timingChip,
-                    { borderColor: slideDuration === sec ? colors.emerald : 'rgba(255,255,255,0.15)' },
+                    { borderColor: slideDuration === sec ? colors.emerald : tc.borderLight },
                     slideDuration === sec && { backgroundColor: `${colors.emerald}20` },
                   ]}
                   accessibilityRole="radio"
@@ -714,6 +716,7 @@ function CreateCarouselScreen() {
 
           <View style={{ height: spacing.xl * 2 }} />
         </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
 
       <MusicPicker
@@ -743,7 +746,7 @@ const styles = StyleSheet.create({
     width: 100, height: 100, borderRadius: radius.full,
     alignItems: 'center', justifyContent: 'center', marginBottom: spacing.xl,
   },
-  emptyTitle: { fontSize: fontSize.xl, fontFamily: fonts.bodyBold, fontWeight: '700', marginBottom: spacing.sm, textAlign: 'center' },
+  emptyTitle: { fontSize: fontSize.xl, fontFamily: fonts.bodyBold, marginBottom: spacing.sm, textAlign: 'center' },
   emptySubtitle: { fontSize: fontSize.base, fontFamily: fonts.body, textAlign: 'center', lineHeight: 22 },
 
   // Preview
@@ -771,7 +774,7 @@ const styles = StyleSheet.create({
     width: 20, height: 20, borderRadius: radius.full,
     backgroundColor: colors.emerald, alignItems: 'center', justifyContent: 'center',
   },
-  thumbBadgeText: { color: '#fff', fontSize: 10, fontFamily: fonts.bodyBold, fontWeight: '700' },
+  thumbBadgeText: { color: colors.text.onColor, fontSize: 10, fontFamily: fonts.bodyBold, fontWeight: '700' },
   thumbTextIndicator: {
     position: 'absolute', bottom: 4, end: 4,
     width: 18, height: 18, borderRadius: radius.full,
@@ -845,7 +848,8 @@ const styles = StyleSheet.create({
   radioRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm },
   radioOuter: {
     width: 22, height: 22, borderRadius: 11, borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.3)', alignItems: 'center', justifyContent: 'center',
+    borderColor: colors.dark.borderLight, // Overridden with tc.borderLight where needed
+    alignItems: 'center', justifyContent: 'center',
   },
   radioSelected: { borderColor: colors.emerald },
   radioInner: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.emerald },

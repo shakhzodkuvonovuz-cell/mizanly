@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
-  ScrollView, Platform,
+  ScrollView, Platform, KeyboardAvoidingView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
@@ -17,6 +17,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { showToast } from '@/components/ui/Toast';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { broadcastApi, uploadApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -51,8 +52,11 @@ export default function CreateBroadcastScreen() {
     }
   }, [name]);
 
+  const haptic = useContextualHaptic();
+
   // Avatar picker
   const pickAvatar = async () => {
+    haptic.tick();
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
@@ -68,7 +72,12 @@ export default function CreateBroadcastScreen() {
     const ext = uri.split('.').pop()?.toLowerCase() ?? 'jpg';
     const contentType = `image/${ext}`;
     const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl(contentType, 'broadcast');
-    const fileRes = await fetch(uri);
+    let fileRes: Response;
+    try {
+      fileRes = await fetch(uri);
+    } catch {
+      throw new Error(t('createBroadcast.imageAccessError'));
+    }
     const blob = await fileRes.blob();
     const res = await fetch(uploadUrl, { method: 'PUT', body: blob, headers: { 'Content-Type': contentType } });
     if (!res.ok) throw new Error('Image upload failed');
@@ -113,13 +122,14 @@ export default function CreateBroadcastScreen() {
           title={t('createBroadcast.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
           style={styles.body}
           contentContainerStyle={{ paddingTop: insets.top + 52 }}
           keyboardShouldPersistTaps="handled"
         >
           {/* Avatar picker — Glassmorphism Card */}
-          <Animated.View entering={FadeInUp.delay(0).duration(400)}>
+          <Animated.View entering={FadeInUp.duration(400)}>
             <LinearGradient
               colors={colors.gradient.cardDark}
               style={styles.avatarSection}
@@ -189,7 +199,7 @@ export default function CreateBroadcastScreen() {
               <View style={[styles.slugContainer, { borderBottomColor: tc.border }]}>
                 <Text style={[styles.slugPrefix, { color: tc.text.secondary }]}>mizanly.app/c/</Text>
                 <TextInput
-                  style={[styles.input, styles.slugInput]}
+                  style={[styles.input, styles.slugInput, { color: tc.text.primary }]}
                   value={slug}
                   onChangeText={(text) => setSlug(slugify(text))}
                   placeholder={t('createBroadcast.placeholder.url')}
@@ -221,7 +231,7 @@ export default function CreateBroadcastScreen() {
                 <CharCountRing current={descCount} max={200} size={24} />
               </View>
               <TextInput
-                style={[styles.input, styles.multiline]}
+                style={[styles.input, styles.multiline, { color: tc.text.primary, borderBottomColor: tc.border }]}
                 value={description}
                 onChangeText={setDescription}
                 placeholder={t('createBroadcast.placeholder.description')}
@@ -257,11 +267,12 @@ export default function CreateBroadcastScreen() {
             label={createMutation.isPending || uploading ? t('createBroadcast.creating') : t('createBroadcast.create')}
             onPress={() => isValid && createMutation.mutate()}
             disabled={!isValid}
-            style={{ marginBottom: spacing.xl }}
+            style={{ marginBottom: insets.bottom + spacing.xl }}
           />
         </ScrollView>
+        </KeyboardAvoidingView>
       </View>
-  
+
     </ScreenErrorBoundary>
   );
 }
@@ -302,12 +313,12 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
   },
   avatarPlaceholderText: {
-    color: colors.emerald,
+    color: colors.emerald, // Brand color
     fontSize: fontSize.sm,
     fontWeight: '500',
   },
   avatarHint: {
-    color: colors.text.tertiary,
+    color: colors.text.tertiary, // Overridden inline
     fontSize: fontSize.sm,
     marginTop: spacing.sm,
     textAlign: 'center',
@@ -336,11 +347,11 @@ const styles = StyleSheet.create({
     color: colors.text.secondary, fontSize: fontSize.sm,
   },
   input: {
-    color: colors.text.primary,
+    color: colors.text.primary, // Overridden inline where needed
     fontSize: fontSize.base,
     paddingVertical: Platform.OS === 'ios' ? spacing.xs : 0,
     borderBottomWidth: 0.5,
-    borderBottomColor: colors.dark.border,
+    borderBottomColor: colors.dark.border, // Overridden inline
   },
   multiline: {
     minHeight: 100,
