@@ -161,8 +161,10 @@ export interface SenderKeyState {
   chainKey: Uint8Array; // 32 bytes — symmetric ratchet
   counter: number;
   signingKeyPair: Ed25519KeyPair; // For message authentication
-  /** Skipped message keys for out-of-order delivery (max 200 per sender) */
-  skippedKeys?: Array<{ counter: number; messageKey: Uint8Array }>;
+  /** Skipped message keys for out-of-order delivery (max 200 per sender).
+   * F01-#12: Required (not optional) — consistent with SessionState.skippedKeys.
+   * Initialize with [] at construction time. */
+  skippedKeys: Array<{ counter: number; messageKey: Uint8Array }>;
 }
 
 /** Encrypted group message using Sender Keys */
@@ -192,7 +194,7 @@ export interface EncryptedMediaInfo {
   /** F18: Base64-encoded media key. The raw Uint8Array is zeroed at source. */
   mediaKeyB64: string;
   /** @deprecated Use mediaKeyB64. Kept for backward compat — zeroed after encode. */
-  mediaKey: Uint8Array;
+  mediaKey?: Uint8Array;
   mediaSha256: Uint8Array; // 32 bytes: SHA-256 of entire encrypted file
   totalChunks: number;
   fileSize: number; // Original file size in bytes

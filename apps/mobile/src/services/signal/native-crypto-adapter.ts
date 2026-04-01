@@ -2,7 +2,7 @@
  * Native Crypto Adapter (C13): Constant-time operations via C++ JSI.
  *
  * This adapter provides a seamless fallback:
- * - If react-native-quick-crypto is installed → uses C++ OpenSSL (constant-time)
+ * - If react-native-quick-crypto is installed → uses C++ OpenSSL
  * - If not installed → falls back to @noble/* (pure JS, best-effort)
  *
  * The rest of the signal/ code uses crypto.ts, which delegates to this adapter
@@ -16,40 +16,75 @@
  * - GC copies of key material that zeroOut can't reach
  *
  * react-native-quick-crypto uses OpenSSL via JSI (C++ bridge):
- * - CRYPTO_memcmp: constant-time comparison (hardware-guaranteed)
- * - OPENSSL_cleanse: secure memory wipe (defeats dead-store elimination)
- * - AES-NI / NEON: hardware-accelerated crypto ops
+ * - CRYPTO_memcmp via timingSafeEqual: constant-time comparison
+ * - randomFillSync + fill(0): best-effort secure wipe (NOT OPENSSL_cleanse)
+ * - OpenSSL EVP_*: hardware-accelerated crypto primitives
  *
  * To activate: `npx expo install react-native-quick-crypto`
  * The adapter auto-detects on import. Zero config needed.
  */
 
 // ============================================================
+// NATIVE MODULE INTERFACE (F02-#4: strict typing, no `any`)
+// ============================================================
+
+/** Subset of react-native-quick-crypto API surface actually used by the adapter */
+interface QuickCryptoModule {
+  timingSafeEqual?: (a: Buffer, b: Buffer) => boolean;
+  randomFillSync?: (arr: Uint8Array) => Uint8Array;
+  randomBytes?: (length: number) => Buffer;
+  createCipheriv?: (algorithm: string, key: Buffer, iv: Buffer, options?: { authTagLength: number }) => CipherHandle;
+  createDecipheriv?: (algorithm: string, key: Buffer, iv: Buffer, options?: { authTagLength: number }) => DecipherHandle;
+  createHash?: (algorithm: string) => HashHandle;
+  createHmac?: (algorithm: string, key: Buffer) => HmacHandle;
+  hkdfSync?: (hash: string, ikm: Buffer, salt: Buffer, info: string, length: number) => ArrayBuffer;
+}
+
+interface CipherHandle {
+  setAAD(aad: Buffer): void;
+  update(data: Buffer): Buffer;
+  final(): Buffer;
+  getAuthTag(): Buffer;
+}
+
+interface DecipherHandle {
+  setAuthTag(tag: Buffer): void;
+  setAAD(aad: Buffer): void;
+  update(data: Buffer): Buffer;
+  final(): Buffer;
+}
+
+interface HashHandle {
+  update(data: Buffer): HashHandle;
+  digest(): Buffer;
+}
+
+interface HmacHandle {
+  update(data: Buffer): HmacHandle;
+  digest(): Buffer;
+}
+
+// ============================================================
 // AUTO-DETECTION (synchronous — guarantees native from first call)
 // ============================================================
 
-let nativeAvailable = false;
-let nativeCrypto: any = null;
+let nativeModuleLoaded = false;
+let nativeCrypto: QuickCryptoModule | null = null;
 
 // V6-F9 FIX: Synchronous require() instead of async import().
-// Previously: async detectNativeCrypto() was fire-and-forget at module load.
-// The first crypto operations after app launch could race the Promise and
-// fall back to JS (@noble), which is not constant-time (JIT can optimize
-// branches based on secret data). Now: require() is synchronous — the native
-// C++ JSI path is guaranteed active from the very first aeadEncrypt call.
 try {
   const quickCrypto = require('react-native-quick-crypto');
   if (quickCrypto?.default?.randomBytes || quickCrypto?.randomBytes) {
-    nativeCrypto = quickCrypto.default ?? quickCrypto;
-    nativeAvailable = true;
+    nativeCrypto = (quickCrypto.default ?? quickCrypto) as QuickCryptoModule;
+    nativeModuleLoaded = true;
   }
 } catch {
-  nativeAvailable = false;
+  nativeModuleLoaded = false;
 }
 
-/** Check if native crypto is available */
+/** Check if native crypto module is loaded (F02-#11: renamed for clarity) */
 export function isNativeCryptoAvailable(): boolean {
-  return nativeAvailable;
+  return nativeModuleLoaded;
 }
 
 // ============================================================
@@ -59,29 +94,45 @@ export function isNativeCryptoAvailable(): boolean {
 /**
  * Compare two byte arrays in constant time.
  *
- * - Native: Uses CRYPTO_memcmp (hardware-guaranteed constant-time)
- * - Fallback: XOR accumulator (best-effort, JIT may optimize)
+ * - Native: Uses CRYPTO_memcmp via timingSafeEqual (hardware-guaranteed)
+ * - Fallback: Pre-padded XOR accumulator (F02-#3: matches crypto.ts V7-F13 fix)
  */
 export function constantTimeCompare(a: Uint8Array, b: Uint8Array): boolean {
-  if (nativeAvailable && nativeCrypto?.timingSafeEqual) {
+  if (nativeModuleLoaded && nativeCrypto?.timingSafeEqual) {
     try {
-      // Node-compatible API: timingSafeEqual(Buffer, Buffer)
-      return nativeCrypto.timingSafeEqual(
-        Buffer.from(a),
-        Buffer.from(b),
-      );
+      // timingSafeEqual requires equal-length buffers — pre-pad
+      const len = Math.max(a.length, b.length);
+      const padA = Buffer.alloc(len);
+      const padB = Buffer.alloc(len);
+      padA.set(a);
+      padB.set(b);
+      const result = nativeCrypto.timingSafeEqual(padA, padB) && a.length === b.length;
+      // F02-#5: zero the Buffer copies containing comparison operands
+      padA.fill(0);
+      padB.fill(0);
+      return result;
     } catch {
       // Length mismatch throws in timingSafeEqual
       return false;
     }
   }
 
-  // Fallback: XOR accumulator (crypto.ts constantTimeEqual)
+  // Fallback: Pre-padded XOR accumulator (F02-#3 fix — matches crypto.ts V7-F13)
+  // Previously used `(a[i] ?? 0) ^ (b[i] ?? 0)` which has timing side-channel:
+  // the nullish coalescing operator causes a JIT branch difference for in-bounds
+  // vs out-of-bounds access, leaking individual array lengths via timing.
   const len = Math.max(a.length, b.length);
   let diff = a.length ^ b.length;
+  const padA = new Uint8Array(len);
+  const padB = new Uint8Array(len);
+  padA.set(a);
+  padB.set(b);
   for (let i = 0; i < len; i++) {
-    diff |= (a[i] ?? 0) ^ (b[i] ?? 0);
+    diff |= padA[i] ^ padB[i];
   }
+  // Zero the padded copies
+  padA.fill(0);
+  padB.fill(0);
   return diff === 0;
 }
 
@@ -92,30 +143,47 @@ export function constantTimeCompare(a: Uint8Array, b: Uint8Array): boolean {
 /**
  * Securely zero a byte array.
  *
- * - Native: Uses OPENSSL_cleanse (defeats dead-store elimination, GC-proof)
- * - Fallback: Random overwrite + zero fill (best-effort)
+ * - Native: randomFillSync overwrite + fill(0). This is best-effort, NOT
+ *   OPENSSL_cleanse. The fill(0) may be subject to JIT dead-store elimination,
+ *   but the randomFillSync provides a first overwrite pass that is not optimized
+ *   away (it has observable side effects). True OPENSSL_cleanse would require a
+ *   dedicated JSI binding. (F02-#2: honest docstring)
+ * - Fallback: expo-crypto random overwrite + zero fill (best-effort)
+ *
+ * To defeat dead-store elimination, we read back after fill(0) to ensure the
+ * compiler cannot prove the zero-fill is a dead store. (F02-#2 mitigation)
  */
 export function secureZero(arr: Uint8Array): void {
-  if (nativeAvailable && nativeCrypto?.randomFillSync) {
+  if (nativeModuleLoaded && nativeCrypto?.randomFillSync) {
     try {
       // Overwrite with random bytes via native CSPRNG, then zero
       nativeCrypto.randomFillSync(arr);
       arr.fill(0);
+      // Read-back to defeat dead-store elimination (JIT cannot prove fill is dead)
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+      arr[0];
       return;
     } catch {
       // Fall through to JS fallback
     }
   }
 
-  // Fallback: random overwrite then zero (crypto.ts zeroOut)
+  // Fallback: random overwrite then zero
   try {
     const { getRandomBytes } = require('expo-crypto');
     const random = getRandomBytes(arr.length);
     arr.set(random);
+    // F02-#12: the random array itself doesn't contain key material, no zeroing needed
   } catch {
-    // Last resort
+    // F01-#8: CSPRNG failure — log a non-sensitive warning instead of swallowing
+    if (__DEV__) {
+      console.warn('secureZero: CSPRNG fallback unavailable, using fill(0) only');
+    }
   }
   arr.fill(0);
+  // Read-back to defeat dead-store elimination
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+  arr[0];
 }
 
 // ============================================================
@@ -129,10 +197,15 @@ export function secureZero(arr: Uint8Array): void {
  * - Fallback: expo-crypto getRandomBytes (platform CSPRNG)
  */
 export function secureRandomBytes(length: number): Uint8Array {
-  if (nativeAvailable && nativeCrypto?.randomBytes) {
+  if (nativeModuleLoaded && nativeCrypto?.randomBytes) {
     try {
       const buf = nativeCrypto.randomBytes(length);
-      return new Uint8Array(buf);
+      const result = new Uint8Array(buf);
+      // F02-#13: zero the Buffer if it's a separate object from result
+      if (buf instanceof Buffer) {
+        (buf as Buffer).fill(0);
+      }
+      return result;
     } catch {
       // Fall through
     }
@@ -148,27 +221,65 @@ export function secureRandomBytes(length: number): Uint8Array {
 // ============================================================
 
 /**
- * XChaCha20-Poly1305 = HChaCha20 key schedule + ChaCha20-Poly1305.
- * quick-crypto provides ChaCha20-Poly1305 natively (12-byte nonce).
- * We handle the XChaCha20 extension (24-byte nonce → subkey + 12-byte nonce).
- *
- * HChaCha20: takes 32-byte key + 16-byte nonce prefix → 32-byte subkey.
- * Then ChaCha20-Poly1305 uses the subkey + [0x00,0x00,0x00,0x00, nonce[16:24]].
- *
- * This gives us hardware-accelerated AEAD with the 24-byte nonce convenience
- * of XChaCha20 (no nonce reuse risk with random nonces).
+ * ChaCha20 sigma constant: "expand 32-byte k" in LE Uint32.
+ * Used by HChaCha20 key schedule.
  */
+const CHACHA_SIGMA = new Uint32Array([0x61707865, 0x3320646e, 0x79622d32, 0x6b206574]);
 
-/** HChaCha20 key schedule — derives subkey from key + 16-byte nonce prefix. */
+/**
+ * Convert Uint8Array to Uint32Array interpreting bytes as little-endian 32-bit words.
+ * Creates a new Uint32Array (copy, not view) to avoid alignment issues.
+ */
+function u8to32LE(u8: Uint8Array): Uint32Array {
+  const u32 = new Uint32Array(u8.length >>> 2);
+  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  for (let i = 0; i < u32.length; i++) {
+    u32[i] = dv.getUint32(i * 4, true);
+  }
+  return u32;
+}
+
+/**
+ * Convert Uint32Array to Uint8Array interpreting words as little-endian bytes.
+ */
+function u32to8LE(u32: Uint32Array): Uint8Array {
+  const u8 = new Uint8Array(u32.length * 4);
+  const dv = new DataView(u8.buffer);
+  for (let i = 0; i < u32.length; i++) {
+    dv.setUint32(i * 4, u32[i], true);
+  }
+  return u8;
+}
+
+/**
+ * HChaCha20 key schedule — derives 32-byte subkey from key + 16-byte nonce prefix.
+ *
+ * F02-#1 FIX: Previously called `@noble/ciphers/chacha`'s `hchacha(key, nonce16)` with
+ * wrong argument types (Uint8Array instead of Uint32Array, 2 args instead of 4).
+ * The TypeError was silently caught, making the entire native AEAD path dead code.
+ * Now correctly converts to Uint32Array and passes all 4 required arguments:
+ * sigma (constant), key (8 words), nonce (4 words), output (8 words).
+ */
 function hchacha20(key: Uint8Array, nonce16: Uint8Array): Uint8Array {
-  // HChaCha20 from @noble/ciphers — pure JS, fast (~0.01ms)
   const { hchacha } = require('@noble/ciphers/chacha');
-  return hchacha(key, nonce16);
+  const keyU32 = u8to32LE(key);
+  const nonceU32 = u8to32LE(nonce16);
+  const outU32 = new Uint32Array(8);
+  hchacha(CHACHA_SIGMA, keyU32, nonceU32, outU32);
+  const result = u32to8LE(outU32);
+  // Zero intermediate Uint32Array copies of key material
+  keyU32.fill(0);
+  outU32.fill(0);
+  return result;
 }
 
 /**
  * XChaCha20-Poly1305 encrypt using native ChaCha20-Poly1305.
  * Returns ciphertext + 16-byte tag (same format as @noble).
+ *
+ * F02-#7: Errors are now distinguished — auth failures throw (not silently fallback),
+ * only "feature not available" returns null.
+ * F02-#8: Key/nonce length validation added.
  */
 export function nativeAeadEncrypt(
   key: Uint8Array,
@@ -176,23 +287,33 @@ export function nativeAeadEncrypt(
   plaintext: Uint8Array,
   aad?: Uint8Array,
 ): Uint8Array | null {
-  if (!nativeAvailable || !nativeCrypto?.createCipheriv) return null;
-  try {
-    // XChaCha20 extension: derive subkey + short nonce
-    const subkey = hchacha20(key, nonce.slice(0, 16));
-    // ChaCha20-Poly1305 uses 12-byte nonce: [0,0,0,0] + nonce[16:24]
-    const shortNonce = new Uint8Array(12);
-    shortNonce.set(nonce.slice(16, 24), 4);
+  if (!nativeModuleLoaded || !nativeCrypto?.createCipheriv) return null;
+  // F02-#8: validate input lengths
+  if (key.length !== 32) return null;
+  if (nonce.length !== 24) return null;
 
+  // XChaCha20 extension: derive subkey + short nonce
+  const subkey = hchacha20(key, nonce.slice(0, 16));
+  // ChaCha20-Poly1305 uses 12-byte nonce: [0,0,0,0] + nonce[16:24]
+  const shortNonce = new Uint8Array(12);
+  shortNonce.set(nonce.slice(16, 24), 4);
+
+  // F02-#5: Create Buffers for native calls, zero them after use
+  const keyBuf = Buffer.from(subkey);
+  const nonceBuf = Buffer.from(shortNonce);
+  const plaintextBuf = Buffer.from(plaintext);
+  const aadBuf = aad ? Buffer.from(aad) : null;
+
+  try {
     const cipher = nativeCrypto.createCipheriv(
       'chacha20-poly1305',
-      Buffer.from(subkey),
-      Buffer.from(shortNonce),
+      keyBuf,
+      nonceBuf,
       { authTagLength: 16 },
     );
-    if (aad) cipher.setAAD(Buffer.from(aad));
+    if (aadBuf) cipher.setAAD(aadBuf);
 
-    const encrypted = cipher.update(Buffer.from(plaintext));
+    const encrypted = cipher.update(plaintextBuf);
     cipher.final();
     const tag = cipher.getAuthTag();
 
@@ -201,14 +322,32 @@ export function nativeAeadEncrypt(
     result.set(new Uint8Array(encrypted));
     result.set(new Uint8Array(tag), encrypted.length);
     return result;
-  } catch {
+  } catch (e: unknown) {
+    // F02-#7: Log error type (NOT message, which could contain key material)
+    const errName = e instanceof Error ? e.constructor.name : 'UnknownError';
+    if (__DEV__) {
+      console.warn(`nativeAeadEncrypt failed: ${errName}`);
+    }
     return null; // Fall back to @noble
+  } finally {
+    // F02-#5/#6: Zero all Buffer copies and the subkey
+    secureZero(subkey);
+    secureZero(shortNonce);
+    keyBuf.fill(0);
+    nonceBuf.fill(0);
+    plaintextBuf.fill(0);
+    if (aadBuf) aadBuf.fill(0);
   }
 }
 
 /**
  * XChaCha20-Poly1305 decrypt using native ChaCha20-Poly1305.
  * Input: ciphertext + 16-byte tag (same format as @noble).
+ *
+ * F02-#7: Auth tag failure is now distinguished from "feature not available".
+ * Returns null for "feature not available", throws for auth failure.
+ * This prevents the timing oracle where the caller retries with @noble after
+ * a native auth failure (two decrypt attempts = measurably different latency).
  */
 export function nativeAeadDecrypt(
   key: Uint8Array,
@@ -216,30 +355,63 @@ export function nativeAeadDecrypt(
   ciphertextWithTag: Uint8Array,
   aad?: Uint8Array,
 ): Uint8Array | null {
-  if (!nativeAvailable || !nativeCrypto?.createDecipheriv) return null;
+  if (!nativeModuleLoaded || !nativeCrypto?.createDecipheriv) return null;
+  // F02-#8: validate input lengths
+  if (key.length !== 32) return null;
+  if (nonce.length !== 24) return null;
   if (ciphertextWithTag.length < 16) return null;
+
+  const subkey = hchacha20(key, nonce.slice(0, 16));
+  const shortNonce = new Uint8Array(12);
+  shortNonce.set(nonce.slice(16, 24), 4);
+
+  const ciphertext = ciphertextWithTag.slice(0, -16);
+  const tag = ciphertextWithTag.slice(-16);
+
+  // F02-#5: Create Buffers for native calls, zero them after use
+  const keyBuf = Buffer.from(subkey);
+  const nonceBuf = Buffer.from(shortNonce);
+  const ciphertextBuf = Buffer.from(ciphertext);
+  const tagBuf = Buffer.from(tag);
+  const aadBuf = aad ? Buffer.from(aad) : null;
+
   try {
-    const subkey = hchacha20(key, nonce.slice(0, 16));
-    const shortNonce = new Uint8Array(12);
-    shortNonce.set(nonce.slice(16, 24), 4);
-
-    const ciphertext = ciphertextWithTag.slice(0, -16);
-    const tag = ciphertextWithTag.slice(-16);
-
     const decipher = nativeCrypto.createDecipheriv(
       'chacha20-poly1305',
-      Buffer.from(subkey),
-      Buffer.from(shortNonce),
+      keyBuf,
+      nonceBuf,
       { authTagLength: 16 },
     );
-    decipher.setAuthTag(Buffer.from(tag));
-    if (aad) decipher.setAAD(Buffer.from(aad));
+    decipher.setAuthTag(tagBuf);
+    if (aadBuf) decipher.setAAD(aadBuf);
 
-    const decrypted = decipher.update(Buffer.from(ciphertext));
+    const decrypted = decipher.update(ciphertextBuf);
     decipher.final(); // Throws if auth tag doesn't verify
     return new Uint8Array(decrypted);
-  } catch {
-    return null; // Fall back to @noble (or throw — caller decides)
+  } catch (e: unknown) {
+    // F02-#7: Distinguish auth failure from "feature not available"
+    // Auth failure (decipher.final() throws) must propagate as an error,
+    // not return null which would cause crypto.ts to retry with @noble
+    // (creating a timing oracle: two attempts vs one)
+    const errName = e instanceof Error ? e.constructor.name : 'UnknownError';
+    if (errName === 'TypeError' || errName === 'ReferenceError') {
+      // Native module issue — fall back to @noble
+      if (__DEV__) {
+        console.warn(`nativeAeadDecrypt native unavailable: ${errName}`);
+      }
+      return null;
+    }
+    // Auth tag verification failure or other crypto error — propagate
+    throw new Error('AEAD authentication failed');
+  } finally {
+    // F02-#5/#6: Zero all Buffer copies and the subkey
+    secureZero(subkey);
+    secureZero(shortNonce);
+    keyBuf.fill(0);
+    nonceBuf.fill(0);
+    ciphertextBuf.fill(0);
+    tagBuf.fill(0);
+    if (aadBuf) aadBuf.fill(0);
   }
 }
 
@@ -257,18 +429,30 @@ export function nativeHkdf(
   info: string,
   length: number,
 ): Uint8Array | null {
-  if (!nativeAvailable || !nativeCrypto?.hkdfSync) return null;
+  if (!nativeModuleLoaded || !nativeCrypto?.hkdfSync) return null;
+
+  // F02-#5: Create Buffers, zero after use
+  const ikmBuf = Buffer.from(ikm);
+  const saltBuf = Buffer.from(salt);
+
   try {
     const result = nativeCrypto.hkdfSync(
       'sha256',
-      Buffer.from(ikm),
-      Buffer.from(salt),
+      ikmBuf,
+      saltBuf,
       info,
       length,
     );
     return new Uint8Array(result);
-  } catch {
+  } catch (e: unknown) {
+    if (__DEV__) {
+      const errName = e instanceof Error ? e.constructor.name : 'UnknownError';
+      console.warn(`nativeHkdf failed: ${errName}`);
+    }
     return null;
+  } finally {
+    ikmBuf.fill(0);
+    saltBuf.fill(0);
   }
 }
 
@@ -279,17 +463,20 @@ export function nativeHkdf(
 /**
  * SHA-256 hash.
  *
- * - Native: Uses OpenSSL SHA256 (AES-NI accelerated on x86, NEON on ARM)
+ * - Native: Uses OpenSSL SHA256 (hardware-accelerated on supported platforms)
  * - Fallback: @noble/hashes sha256
  */
 export function sha256(data: Uint8Array): Uint8Array {
-  if (nativeAvailable && nativeCrypto?.createHash) {
+  if (nativeModuleLoaded && nativeCrypto?.createHash) {
+    const dataBuf = Buffer.from(data);
     try {
       const hash = nativeCrypto.createHash('sha256');
-      hash.update(Buffer.from(data));
+      hash.update(dataBuf);
       return new Uint8Array(hash.digest());
     } catch {
       // Fall through
+    } finally {
+      dataBuf.fill(0);
     }
   }
 
@@ -305,13 +492,19 @@ export function sha256(data: Uint8Array): Uint8Array {
  * - Fallback: @noble/hashes hmac
  */
 export function hmacSha256(key: Uint8Array, data: Uint8Array): Uint8Array {
-  if (nativeAvailable && nativeCrypto?.createHmac) {
+  if (nativeModuleLoaded && nativeCrypto?.createHmac) {
+    // F02-#5: Zero Buffer copies after use
+    const keyBuf = Buffer.from(key);
+    const dataBuf = Buffer.from(data);
     try {
-      const h = nativeCrypto.createHmac('sha256', Buffer.from(key));
-      h.update(Buffer.from(data));
+      const h = nativeCrypto.createHmac('sha256', keyBuf);
+      h.update(dataBuf);
       return new Uint8Array(h.digest());
     } catch {
       // Fall through
+    } finally {
+      keyBuf.fill(0);
+      dataBuf.fill(0);
     }
   }
 

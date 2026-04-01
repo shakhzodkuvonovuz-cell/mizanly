@@ -49,18 +49,34 @@ try {
 // KEY GENERATION
 // ============================================================
 
-/** Generate an X25519 key pair for Diffie-Hellman key exchange. */
+/**
+ * Generate an X25519 key pair for Diffie-Hellman key exchange.
+ * F01-#5: Private key zeroed on public key derivation failure.
+ */
 export function generateX25519KeyPair(): X25519KeyPair {
   const privateKey = x25519.utils.randomPrivateKey();
-  const publicKey = x25519.getPublicKey(privateKey);
-  return { publicKey, privateKey };
+  try {
+    const publicKey = x25519.getPublicKey(privateKey);
+    return { publicKey, privateKey };
+  } catch (e) {
+    zeroOut(privateKey);
+    throw e;
+  }
 }
 
-/** Generate an Ed25519 key pair for signing and identity. */
+/**
+ * Generate an Ed25519 key pair for signing and identity.
+ * F01-#5: Private key zeroed on public key derivation failure.
+ */
 export function generateEd25519KeyPair(): Ed25519KeyPair {
   const privateKey = ed25519.utils.randomPrivateKey();
-  const publicKey = ed25519.getPublicKey(privateKey);
-  return { publicKey, privateKey };
+  try {
+    const publicKey = ed25519.getPublicKey(privateKey);
+    return { publicKey, privateKey };
+  } catch (e) {
+    zeroOut(privateKey);
+    throw e;
+  }
 }
 
 // ============================================================
@@ -70,6 +86,10 @@ export function generateEd25519KeyPair(): Ed25519KeyPair {
 /**
  * X25519 Diffie-Hellman shared secret computation.
  * Returns 32-byte shared secret.
+ *
+ * IMPORTANT: Caller MUST zero the returned shared secret after use via zeroOut().
+ * The shared secret is 32 bytes of key material equivalent in sensitivity to
+ * an encryption key. Always wrap usage in try/finally { zeroOut(secret); }.
  */
 export function x25519DH(
   ourPrivateKey: Uint8Array,
@@ -262,6 +282,12 @@ export function aeadEncrypt(
  *
  * Throws if auth tag verification fails (tampered ciphertext or aad).
  */
+/**
+ * F01-#2 FIX: Native AEAD decrypt now throws on auth failure instead of returning
+ * null. This prevents the timing oracle where a tampered ciphertext causes two
+ * decrypt attempts (native fail + @noble retry) vs one attempt (native unavailable).
+ * Only "feature not available" (null return) triggers @noble fallback.
+ */
 export function aeadDecrypt(
   key: Uint8Array,
   nonce: Uint8Array,
@@ -274,6 +300,8 @@ export function aeadDecrypt(
   if (nativeCryptoAdapter) {
     const native = nativeCryptoAdapter.nativeAeadDecrypt;
     if (native) {
+      // nativeAeadDecrypt returns null = "feature not available" (fall through)
+      // nativeAeadDecrypt throws = auth failure (propagate — do NOT retry with @noble)
       const result = native(key, nonce, ciphertext, aad);
       if (result) return result;
     }
@@ -365,8 +393,15 @@ export function concat(...arrays: Uint8Array[]): Uint8Array {
   return result;
 }
 
-/** Encode a 32-bit unsigned integer as 4 big-endian bytes. */
+/**
+ * Encode a 32-bit unsigned integer as 4 big-endian bytes.
+ * F01-#11: Validates input to prevent NaN/Infinity/negative from producing
+ * silent zero output (NaN >>> 24 = 0), which could cause nonce reuse.
+ */
 export function uint32BE(value: number): Uint8Array {
+  if (!Number.isInteger(value) || value < 0 || value > 0xFFFFFFFF) {
+    throw new Error(`uint32BE: value must be integer 0..2^32-1, got ${value}`);
+  }
   const buf = new Uint8Array(4);
   buf[0] = (value >>> 24) & 0xff;
   buf[1] = (value >>> 16) & 0xff;
@@ -393,7 +428,11 @@ export function uint32BE(value: number): Uint8Array {
  */
 export function toBase64(bytes: Uint8Array): string {
   if (typeof Buffer !== 'undefined') {
-    return Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength).toString('base64');
+    // F01-#10 FIX: Create an independent copy instead of a view into the source ArrayBuffer.
+    // Previously used Buffer.from(bytes.buffer, ...) which shares the underlying ArrayBuffer.
+    // If caller zeros `bytes` while toString hasn't completed, the Buffer view would read zeroed data.
+    // Consistent with fromBase64 V7-F12 fix which also copies to isolated memory.
+    return Buffer.from(new Uint8Array(bytes)).toString('base64');
   }
   // Fallback for environments without Buffer
   let binary = '';
@@ -489,6 +528,14 @@ export function zeroOut(arr: Uint8Array): void {
   try {
     const random = getRandomBytes(arr.length);
     arr.set(random);
-  } catch {}
+  } catch {
+    // F01-#8: Log non-sensitive warning instead of silently swallowing
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      console.warn('zeroOut: CSPRNG unavailable, using fill(0) only');
+    }
+  }
   arr.fill(0);
+  // Read-back to defeat JIT dead-store elimination
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+  arr[0];
 }

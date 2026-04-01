@@ -109,6 +109,7 @@ export async function generateSenderKey(
       publicKey: signingKeyPair.publicKey,
       privateKey: new Uint8Array(32).fill(0xde), // Sentinel — real key in SecureStore. 0xDE bytes produce invalid Ed25519 signatures if accidentally used.
     },
+    skippedKeys: [],
   };
 
   await storeSenderKeyState(groupId, 'self', state);
@@ -661,5 +662,6 @@ export function deserializeSenderKeyFromDistribution(bytes: Uint8Array): SenderK
     // Private key is all 0xDE bytes (not zeros) — if accidentally used for signing,
     // it produces a WRONG signature that fails verification (not a valid-looking one).
     signingKeyPair: { publicKey, privateKey: new Uint8Array(32).fill(0xde) },
+    skippedKeys: [],
   };
 }
