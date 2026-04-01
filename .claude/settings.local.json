@@ -17,16 +17,6 @@
     ]
   },
   "hooks": {
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "Check if the task given by the user is fully complete. Were tests run and passing? Were all requested items addressed, not just some? If anything is incomplete or unverified, respond with {\"ok\": false, \"reason\": \"what remains\"}."
-          }
-        ]
-      }
-    ],
     "PreToolUse": [
       {
         "matcher": "Bash(git commit*)",

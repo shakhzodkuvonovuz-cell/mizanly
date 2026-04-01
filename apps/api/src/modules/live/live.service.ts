@@ -364,22 +364,25 @@ export class LiveService {
   }
 
   async acceptGuestInvite(liveId: string, userId: string) {
-    const guest = await this.prisma.liveGuest.findUnique({
-      where: { liveId_userId: { liveId, userId } },
-    });
-    if (!guest || guest.status !== 'INVITED') throw new NotFoundException('No pending invitation');
+    // A16-#14 FIX: Use $transaction with serializable isolation to prevent TOCTOU race
+    // allowing >4 guests when concurrent accepts arrive simultaneously
+    return this.prisma.$transaction(async (tx) => {
+      const guest = await tx.liveGuest.findUnique({
+        where: { liveId_userId: { liveId, userId } },
+      });
+      if (!guest || guest.status !== 'INVITED') throw new NotFoundException('No pending invitation');
 
-    // Recheck guest count before accepting — prevents race condition allowing >4 guests
-    const acceptedCount = await this.prisma.liveGuest.count({
-      where: { liveId, status: 'ACCEPTED' },
-    });
-    if (acceptedCount >= 4) throw new BadRequestException('Maximum 4 guests already accepted');
+      const acceptedCount = await tx.liveGuest.count({
+        where: { liveId, status: 'ACCEPTED' },
+      });
+      if (acceptedCount >= 4) throw new BadRequestException('Maximum 4 guests already accepted');
 
-    return this.prisma.liveGuest.update({
-      where: { liveId_userId: { liveId, userId } },
-      data: { status: 'ACCEPTED', joinedAt: new Date() },
-      include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
-    });
+      return tx.liveGuest.update({
+        where: { liveId_userId: { liveId, userId } },
+        data: { status: 'ACCEPTED', joinedAt: new Date() },
+        include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
+      });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   }
 
   async removeGuest(liveId: string, guestUserId: string, hostId: string) {

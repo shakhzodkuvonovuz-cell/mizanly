@@ -285,25 +285,27 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       const userId = client.data.userId;
       const presenceKey = `presence:${userId}`;
 
-      // Cap connections at 3 per user — check BEFORE adding new socket
+      // J07-H3 FIX: Pipeline sequential Redis commands to reduce round-trips (was 5-7 sequential)
       const MAX_SOCKETS_PER_USER = 3;
       const existingBefore = await this.redis.smembers(presenceKey);
       if (existingBefore.length >= MAX_SOCKETS_PER_USER) {
-        // Evict oldest sockets via Redis pub/sub (works across instances)
         const staleIds = existingBefore.slice(0, existingBefore.length - MAX_SOCKETS_PER_USER + 1);
-        for (const staleId of staleIds) {
-          await this.redis.srem(presenceKey, staleId);
-        }
-        // Publish eviction event — all server instances listen and disconnect matching sockets
         if (staleIds.length > 0) {
+          const pipeline = this.redis.pipeline();
+          for (const staleId of staleIds) {
+            pipeline.srem(presenceKey, staleId);
+          }
+          await pipeline.exec();
           this.redis.publish('socket:evict', JSON.stringify({ socketIds: staleIds, reason: 'connection_limit' }))
             .catch(() => {});
         }
       }
 
-      // NOW add the new socket
-      await this.redis.sadd(presenceKey, client.id);
-      await this.redis.expire(presenceKey, this.PRESENCE_TTL);
+      // Pipeline: add socket + set TTL + fetch settings in one round-trip
+      const pipeline = this.redis.pipeline();
+      pipeline.sadd(presenceKey, client.id);
+      pipeline.expire(presenceKey, this.PRESENCE_TTL);
+      await pipeline.exec();
 
       // Start heartbeat to keep presence alive while connected
       const timer = setInterval(async () => {
@@ -315,7 +317,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       }, this.HEARTBEAT_INTERVAL);
       this.heartbeatTimers.set(client.id, timer);
 
-      // Check activityStatus setting — skip broadcast if user has disabled activity visibility
+      // Check activityStatus setting
       const settings = await this.prisma.userSettings.findUnique({
         where: { userId: user.id },
         select: { activityStatus: true },

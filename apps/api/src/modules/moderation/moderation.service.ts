@@ -87,9 +87,10 @@ export class ModerationService {
         autoFlagged: true,
       });
 
-      // Auto-action on high severity: hide content immediately (simulate)
+      // X08-#12 FIX: Auto-block on high severity — reject content instead of just logging
       if (result.severity === 'high') {
-        this.logger.warn(`High severity content flagged from user ${userId}, auto-action recommended`);
+        this.logger.warn(`High severity content auto-blocked from user ${userId}: ${result.categories.join(', ')}`);
+        throw new BadRequestException('Content violates community guidelines');
       }
     }
 

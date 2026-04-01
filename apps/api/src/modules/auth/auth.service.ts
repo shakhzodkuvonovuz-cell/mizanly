@@ -182,10 +182,10 @@ export class AuthService {
     }
 
     // Increment device account counter after successful registration
-    // TTL of 365 days prevents indefinite Redis key accumulation while maintaining abuse prevention
+    // J07-M5 FIX: TTL reduced from 365d to 90d — device IDs rotate, 365d accumulates stale keys
     if (dto.deviceId) {
       const deviceKey = `device_accounts:${dto.deviceId}`;
-      await atomicIncr(this.redis, deviceKey, 365 * 24 * 60 * 60);
+      await atomicIncr(this.redis, deviceKey, 90 * 24 * 60 * 60);
     }
 
     // Clear attempt counter on successful registration

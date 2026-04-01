@@ -613,7 +613,7 @@ describe('AudioRoomsService', () => {
       expect(mockPrismaService.audioRoomParticipant.findMany).toHaveBeenCalledWith({
         where: { roomId, role: AudioRoomRole.LISTENER },
         select: expect.any(Object),
-        take: 50,
+        take: 51, // A16-#15: limit+1 for accurate hasMore detection
         orderBy: { joinedAt: 'desc' },
       });
     });

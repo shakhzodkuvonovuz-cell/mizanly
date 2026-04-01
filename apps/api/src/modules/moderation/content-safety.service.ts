@@ -54,9 +54,13 @@ export class ContentSafetyService {
       throw new Error('Media URL: only HTTPS is allowed');
     }
     await assertNotPrivateUrl(url, 'Media URL');
-    // Allow R2 public domain and Cloudflare Stream domain — warn on others
-    const allowedDomains = ['media.mizanly.app', 'customer-', '.r2.cloudflarestorage.com', 'videodelivery.net'];
-    const isAllowed = allowedDomains.some(d => parsed.hostname.includes(d));
+    // X08-#31 FIX: Use URL hostname endsWith/exact match instead of substring includes()
+    // Substring match was bypassable: attacker could register "media.mizanly.app.evil.com"
+    const allowedDomains = ['media.mizanly.app', 'videodelivery.net'];
+    const allowedSuffixes = ['.r2.cloudflarestorage.com', '.cloudflarestream.com'];
+    const isAllowed = allowedDomains.includes(parsed.hostname)
+      || allowedSuffixes.some(s => parsed.hostname.endsWith(s))
+      || parsed.hostname.startsWith('customer-');
     if (!isAllowed) {
       this.logger.warn(`Media URL from non-R2 domain: ${parsed.hostname}`);
     }

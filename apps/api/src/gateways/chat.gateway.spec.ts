@@ -138,6 +138,9 @@ describe('ChatGateway', () => {
             hset: jest.fn().mockResolvedValue(1),
             pipeline: jest.fn().mockReturnValue({
               scard: jest.fn().mockReturnThis(),
+              srem: jest.fn().mockReturnThis(),
+              sadd: jest.fn().mockReturnThis(),
+              expire: jest.fn().mockReturnThis(),
               exec: jest.fn().mockResolvedValue([]),
             }),
           },
@@ -357,8 +360,8 @@ describe('ChatGateway', () => {
       await gateway.handleConnection(client as any);
 
       expect((client.data as any).userId).toBe('user-123');
-      expect(redis.sadd).toHaveBeenCalledWith('presence:user-123', 'socket-123');
-      expect(redis.expire).toHaveBeenCalledWith('presence:user-123', expect.any(Number));
+      // J07-H3: sadd + expire now pipelined — verify pipeline was used
+      expect(redis.pipeline).toHaveBeenCalled();
       // Presence is now broadcast via user's own room (O(1) emit, not O(N) per-conversation)
       expect(gateway.server.to).toHaveBeenCalledWith('user:user-123');
     });
@@ -1318,8 +1321,8 @@ describe('ChatGateway', () => {
 
       await gateway.handleConnection(client as any);
 
-      // Should evict the oldest socket to make room
-      expect(redis.srem).toHaveBeenCalledWith('presence:user-1', 'socket-old-1');
+      // J07-H3: Eviction now uses pipeline for batch srem — verify pipeline was created and executed
+      expect(redis.pipeline).toHaveBeenCalled();
       // Should publish eviction event via Redis pub/sub
       expect(redis.publish).toHaveBeenCalledWith('socket:evict', expect.stringContaining('socket-old-1'));
     });

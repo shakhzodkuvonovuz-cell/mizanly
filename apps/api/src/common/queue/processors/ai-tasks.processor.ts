@@ -10,7 +10,7 @@ import { attachCorrelationId } from '../with-correlation';
 
 interface ModerationJobData {
   content: string;
-  contentType: 'post' | 'thread' | 'comment' | 'message' | 'reel';
+  contentType: 'post' | 'thread' | 'comment' | 'message' | 'reel' | 'video';
   contentId: string;
 }
 
@@ -120,17 +120,20 @@ export class AiTasksProcessor implements OnModuleInit, OnModuleDestroy {
         } else if (contentType === 'comment') {
           const comment = await this.prisma.comment.findUnique({ where: { id: contentId }, select: { userId: true } });
           reportedUserId = comment?.userId ?? undefined;
+        // X08-#24 FIX: Add video content type to AI moderation pipeline
+        } else if (contentType === 'video') {
+          const video = await this.prisma.video.findUnique({ where: { id: contentId }, select: { userId: true } });
+          reportedUserId = video?.userId ?? undefined;
         }
 
         await this.prisma.report.create({
           data: {
-            // X08-#16: System-generated reports have null reporterId (no real user reporter)
             reporterId: null,
-            // X08-#15: Map AI flags to appropriate ReportReason instead of hardcoding HATE_SPEECH
             reason: this.mapFlagsToReason(result.flags),
             description: `AI auto-flagged (${contentType}): ${result.flags.join(', ')} (confidence: ${result.confidence})`,
             ...(contentType === 'post' ? { reportedPostId: contentId } : {}),
             ...(contentType === 'comment' ? { reportedCommentId: contentId } : {}),
+            ...(contentType === 'video' ? { reportedVideoId: contentId } : {}),
             ...(reportedUserId ? { reportedUserId } : {}),
           },
         });

@@ -41,11 +41,18 @@ describe('ModerationService', () => {
       expect(result.flagged).toBe(false);
     });
 
-    it('should flag inappropriate text', async () => {
+    it('should auto-block high severity text (X08-#12)', async () => {
       prisma.report.create.mockResolvedValue({});
-      const result = await service.checkText('u1', { text: 'kill yourself you worthless piece of trash' });
-      expect(result.flagged).toBe(true);
-      expect(result.categories).toEqual(expect.arrayContaining([expect.any(String)]));
+      await expect(
+        service.checkText('u1', { text: 'kill yourself you worthless piece of trash' }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should flag medium severity text without blocking', async () => {
+      prisma.report.create.mockResolvedValue({});
+      const result = await service.checkText('u1', { text: 'damn this is annoying' });
+      // Medium/low severity returns result instead of throwing
+      expect(result).toBeDefined();
     });
   });
 

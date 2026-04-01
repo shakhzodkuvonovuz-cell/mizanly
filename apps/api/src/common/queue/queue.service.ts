@@ -157,11 +157,19 @@ export class QueueService implements OnModuleDestroy {
     const maxAttempts = job.opts?.attempts ?? 1;
     if (job.attemptsMade < maxAttempts) return;
 
+    // X07-#17 FIX: Strip sensitive fields from DLQ entries (webhook secrets, tokens)
+    const sanitizedData = { ...job.data };
+    delete sanitizedData.secret;
+    delete sanitizedData.token;
+    delete sanitizedData.signingSecret;
+    delete sanitizedData.apiKey;
+    delete sanitizedData.webhookSecret;
+
     const entry = {
       jobId: job.id,
       queue: queueName,
       name: job.name,
-      data: job.data,
+      data: sanitizedData,
       error: error.message,
       failedAt: new Date().toISOString(),
       attempts: job.attemptsMade,

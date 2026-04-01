@@ -419,7 +419,8 @@ export class AudioRoomsService {
     cursor?: string,
     limit = 50,
   ) {
-    const room = await this.prisma.audioRoom.findUnique({ where: { id } });
+    // J08-#26 FIX: Lightweight select — only need existence check for listParticipants
+    const room = await this.prisma.audioRoom.findUnique({ where: { id }, select: { id: true } });
     if (!room) {
       throw new NotFoundException('Audio room not found');
     }
@@ -432,14 +433,16 @@ export class AudioRoomsService {
       where.joinedAt = { lt: new Date(cursor) };
     }
 
+    // A16-#15 FIX: Fetch limit+1 to detect hasMore accurately (was === limit, causing extra pagination request)
     const participants = await this.prisma.audioRoomParticipant.findMany({
       where,
       select: PARTICIPANT_SELECT,
-      take: limit,
+      take: limit + 1,
       orderBy: { joinedAt: 'desc' },
     });
 
-    const hasMore = participants.length === limit;
+    const hasMore = participants.length > limit;
+    if (hasMore) participants.pop();
     const nextCursor = hasMore ? participants[participants.length - 1].joinedAt.toISOString() : null;
 
     return {
@@ -451,7 +454,8 @@ export class AudioRoomsService {
   // ── Recording ──────────────────────────────────────
 
   async startRecording(roomId: string, userId: string) {
-    const room = await this.prisma.audioRoom.findUnique({ where: { id: roomId } });
+    // J08-#26 FIX: Lightweight select for permission check (was fetching full row with transcript)
+    const room = await this.prisma.audioRoom.findUnique({ where: { id: roomId }, select: { id: true, hostId: true, status: true } });
     if (!room) throw new NotFoundException('Room not found');
     if (room.hostId !== userId) throw new ForbiddenException('Only the host can record');
     if (room.status !== 'live') throw new BadRequestException('Room must be live');
@@ -463,7 +467,8 @@ export class AudioRoomsService {
   }
 
   async stopRecording(roomId: string, userId: string, recordingUrl?: string) {
-    const room = await this.prisma.audioRoom.findUnique({ where: { id: roomId } });
+    // J08-#26 FIX: Lightweight select for permission check
+    const room = await this.prisma.audioRoom.findUnique({ where: { id: roomId }, select: { id: true, hostId: true, startedAt: true } });
     if (!room) throw new NotFoundException('Room not found');
     if (room.hostId !== userId) throw new ForbiddenException('Only the host can stop recording');
 
@@ -527,17 +532,5 @@ export class AudioRoomsService {
     return { data: rooms, meta: { cursor: rooms[rooms.length - 1]?.id ?? null, hasMore } };
   }
 
-  // ── Persistent voice channels ─────────────────────
-
-  async createPersistentRoom(communityId: string, name: string, userId: string) {
-    return this.prisma.audioRoom.create({
-      data: {
-        title: name,
-        hostId: userId,
-        status: 'live',
-        isPersistent: true,
-        startedAt: new Date(),
-      },
-    });
-  }
+  // A16-#11: createPersistentRoom removed — dead code, no controller endpoint, unused communityId param
 }

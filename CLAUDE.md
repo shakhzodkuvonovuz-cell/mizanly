@@ -163,32 +163,86 @@ Mobile (useLiveKitCall hook)  ←WebRTC→  LiveKit Cloud (SFU)  ←webhooks→ 
 | State machine extraction | Medium | Extract `useLiveKitCall` logic into pure `callStateMachine.ts` for Jest testing |
 | True E2EE via ECDH | Large | See "Call Encryption" section in Technical Debt below |
 
-## Scale Rewrite Roadmap
+## Scale Rewrite Roadmap — Complete (0 → 100M users)
 
-### Today (0-50K users): Ship what exists
-NestJS monolith + Go E2E server. It works. No rewrites until users hit limits.
+Every component listed in the order it breaks. Don't rewrite ahead of schedule — fix what's about to break, not what might break in 2 years.
 
-### 50-100K users: WebSocket Gateway → Elixir/Phoenix
-**First thing that breaks.** Node.js WebSocket connections cost ~10KB each. 100K concurrent = 1GB connection state. Single-threaded event loop can't handle fan-out (1 message in 500-person group = 500 socket writes blocking the loop). Elixir BEAM VM: 2KB per process. WhatsApp handled 2M connections/server on Erlang.
-- **Moves to Elixir:** `chat.gateway.ts`, socket auth, typing indicators, presence, read receipts
-- **Stays in NestJS:** REST API, CRUD, Prisma queries, Clerk auth middleware
-- **LiveKit** (replacing custom WebRTC) is independent — separate service, separate signaling. Can migrate anytime.
+### Tier 0: Ship What Exists (0-50K users)
+NestJS monolith + Go E2E server + Go LiveKit server. Current stack handles this. No rewrites.
 
-### 100-200K users: Feed Scoring + Workers → Go
-Feed ranking is CPU-bound (score calc, engagement decay, content boosting). Node does it on one core, Go does it on all cores with goroutines. Also: push notification fan-out, media moderation queue, scheduled post publishing, analytics aggregation, thumbnail generation, video transcoding prep, EXIF stripping at volume.
+### Tier 1: First Things That Break (50-100K concurrent users)
 
-### 500K+ users (maybe never): Signal Protocol → Rust core
-JS strings immutable, GC unpredictable, key material leaks to heap. Rust core (like Signal's libsignal) solves permanently. But: $100K+ project, only matters for forensics attacker model, react-native-quick-crypto already handles 90% in C++. Don't rewrite until professional audit demands it.
+| # | Component | Current | Rewrite to | Why it breaks | Effort |
+|---|-----------|---------|------------|---------------|--------|
+| 1 | **WebSocket Gateway** | NestJS Socket.io (TS) | Elixir/Phoenix Channels | Node.js: 10KB/connection, single-threaded fan-out. 100K concurrent = 1GB + event loop blocked. BEAM VM: 2KB/process, preemptive scheduling. WhatsApp ran 2M/server on Erlang. | 1-2 sessions |
+| 2 | **Presence System** | Redis Hash (per-user) | Elixir Presence (CRDT) | Redis presence: write on connect, poll for changes. Elixir Presence: built-in CRDT, zero Redis round-trips, auto-tracks joins/leaves across cluster. Bundled with #1. | Bundled with #1 |
+| 3 | **API Gateway/Proxy** | NestJS handles everything | Nginx/Caddy reverse proxy in front of NestJS | TLS termination, request routing, static files, DDoS mitigation should be at proxy layer, not in Node.js. | Config only |
 
-### Never rewrite
-| Component | Why |
-|-----------|-----|
-| REST API CRUD | DB is the bottleneck, not the framework |
-| Prisma ORM | Fine until 500K. Raw SQL migration is a week when needed |
-| Auth (Clerk) | Third-party service |
-| Payments (Stripe) | Third-party service |
-| Search (Meilisearch) | Already Rust under the hood |
-| Mobile UI (React Native) | Only option unless native Swift/Kotlin rewrite |
+**Moves to Elixir:** `chat.gateway.ts`, socket auth, typing indicators, presence, read receipts (~1,000 lines TS → ~500 lines Elixir)
+**Stays in NestJS:** ALL REST API endpoints, Prisma queries, business logic, auth, payments, notifications
+
+### Tier 2: Media + CDN (100-500K users)
+
+| # | Component | Current | Rewrite to | Why it breaks | Effort |
+|---|-----------|---------|------------|---------------|--------|
+| 4 | **Media CDN** | Cloudflare R2 direct URLs | R2 + Cloudflare Workers + Image Resizing + edge cache | Raw R2 URLs: no resizing, no edge caching. Every image served at full resolution from origin. Workers: on-the-fly resize, edge-cached globally. | 1 session |
+| 5 | **Counter System** | Prisma increment/decrement (non-atomic) | Redis atomic counters + periodic PostgreSQL sync | Every like/view/share = PostgreSQL UPDATE on hot row. At scale: thousands of conflicting UPDATEs/second. Redis INCR: atomic, millions/second. Sync to PG every minute. | 1 session |
+| 6 | **Database Read Replicas** | Single Neon instance | Neon with read replicas | One PG handles reads AND writes. Feed queries (reads) overwhelm write capacity. Split: writes → primary, reads → replica. | Config only |
+
+### Tier 3: CPU-Bound Workers (100K-500K users)
+
+| # | Component | Current | Rewrite to | Why it breaks | Effort |
+|---|-----------|---------|------------|---------------|--------|
+| 7 | **Feed Scoring** | NestJS (TS, single-core) | Go service | Feed ranking: score calc, engagement decay, content boosting. Node does it on 1 core. Go uses all cores with goroutines. | 1-2 sessions |
+| 8 | **Push Notification Fan-out** | NestJS synchronous | Go worker | 1 message in 500-person group = 500 push deliveries. Node blocks event loop. Go handles concurrent I/O natively. | 1 session |
+| 9 | **Media Processing** | NestJS queue (currently dead code) | Go worker | EXIF stripping, BlurHash generation, thumbnail creation, resize variants. CPU-bound, needs parallelism. | 1 session |
+| 10 | **Content Moderation Pipeline** | Synchronous in request path | Go worker + ML model serving | moderateText() in API request adds 200-500ms. Move to async: create immediately, moderate in background, remove if flagged. | 1-2 sessions |
+| 11 | **Video Transcoding** | ffmpeg-kit on client (mobile) | Server-side Go/Rust worker | Client-side: drains battery, inconsistent quality. Server-side: upload raw, transcode to 360p/720p/1080p, adaptive bitrate streaming. | 1-2 sessions |
+
+### Tier 4: Architecture (1-5M users)
+
+| # | Component | Current | Rewrite to | Why it breaks | Effort |
+|---|-----------|---------|------------|---------------|--------|
+| 12 | **Notification Service** | NestJS synchronous (21 services inject it) | Event bus (NATS/Kafka) + Go consumer | God-dependency: 21 services call NotificationsService synchronously. One slow notification blocks the request. Event-driven: emit events, consume async. | 2 sessions |
+| 13 | **Analytics Pipeline** | Redis list (no consumer, no TTL) | ClickHouse + Go ingest worker | Analytics events pile up in Redis with no consumer (audit finding). Need proper time-series DB. ClickHouse handles billions of events. | 1-2 sessions |
+| 14 | **Search** | Meilisearch (single instance) | Meilisearch cluster OR Elasticsearch/Typesense | Single instance can't handle 10M+ documents with 100K concurrent searches. Need sharding or distributed engine. | 1 session (config) |
+| 15 | **Queue System** | BullMQ (Redis-backed) | RabbitMQ or NATS JetStream | BullMQ fine for small scale. Millions of jobs/day: need persistent queues, dead-letter routing, backpressure. | 1 session |
+| 16 | **Auth** | Clerk (third-party) | Self-hosted (Ory Kratos or custom) | Clerk costs ~$2K/month at 500K users, ~$10K/month at 5M. Self-hosted eliminates cost + removes third-party from privacy-critical path. | 2-3 sessions |
+| 17 | **Email** | Resend | AWS SES or Postmark | Resend pricing at millions of emails/month. SES: $0.10/1000 emails, 10x cheaper. | Config only |
+
+### Tier 5: Security Hardening (500K-5M users)
+
+| # | Component | Current | Rewrite to | Why it breaks | Effort |
+|---|-----------|---------|------------|---------------|--------|
+| 18 | **Signal Protocol Core** | TypeScript (@noble/*) | Rust (libsignal FFI) | JS strings immutable, GC unpredictable, key material leaks to heap. Rust: zero-copy, deterministic memory, no GC. What Signal themselves use. react-native-quick-crypto handles 90% of perf already — Rust is for forensics-grade key hygiene. | 2-3 sessions |
+| 19 | **Rate Limiting** | Redis Lua scripts (Upstash) | Go service with local state + Redis sync | Every API request hits Redis for rate check. At 100K RPS = 100K Redis round-trips/second just for rate limiting. Local in-memory limiting with periodic Redis sync cuts Redis load 90%. | 1 session |
+
+### Tier 6: Database Scale (10-50M users)
+
+| # | Component | Current | Rewrite to | Why it breaks | Effort |
+|---|-----------|---------|------------|---------------|--------|
+| 20 | **Database Sharding** | Single PostgreSQL | Citus (distributed PG) or app-level sharding | Single PG maxes at ~10TB / 100K queries/second. Messages table alone: billions of rows. Horizontal sharding by conversation_id or user_id. | 2-3 sessions |
+
+### Never Rewrite
+| Component | Why | Holds until |
+|-----------|-----|-------------|
+| NestJS REST API (CRUD) | DB is the bottleneck, not the framework. Rewriting Express to Go saves 2ms on a 50ms DB query. | 100M+ |
+| Prisma ORM | Fine for 90% of queries. Raw SQL only for sharded/complex queries. | 100M+ |
+| Payments (Stripe) | Third-party, works, no rewrite possible. | Forever |
+| Cloudflare (CDN/DNS/WAF) | Already best-in-class. | Forever |
+| Mobile UI (React Native) | Only alternative is native Swift + Kotlin = 2x codebase. Not worth it. | Forever |
+| Expo | SDK 52 is mature. EAS builds handle everything. | Forever |
+
+### Rewrite Effort Summary
+| Tier | When | Sessions | Languages |
+|------|------|----------|-----------|
+| Tier 1 | 50-100K concurrent | 2-3 | Elixir, config |
+| Tier 2 | 100-500K users | 2-3 | Config, Go |
+| Tier 3 | 100K-500K users | 5-8 | Go, Rust |
+| Tier 4 | 1-5M users | 8-10 | Go, ClickHouse, config |
+| Tier 5 | 500K-5M users | 3-4 | Rust, Go |
+| Tier 6 | 10-50M users | 2-3 | PostgreSQL/Citus |
+| **Total** | **0 → 100M** | **~22-31 sessions over 2-3 years** | Elixir, Go, Rust, config |
 
 ## Known Limitations
 

@@ -83,6 +83,9 @@ export class SearchIndexingProcessor implements OnModuleInit, OnModuleDestroy {
         if (document) {
           await this.meilisearch.addDocuments(indexName, [{ id: documentId, type: indexName, ...document }]);
           this.logger.debug(`Indexed document ${documentId} in ${indexName}`);
+        } else {
+          // X07-#13 FIX: Warn when document is falsy instead of silently skipping
+          this.logger.warn(`Search index job ${action} skipped — document is empty for ${indexName}/${documentId}`);
         }
         break;
       case 'delete':

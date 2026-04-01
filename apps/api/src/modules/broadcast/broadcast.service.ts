@@ -54,7 +54,7 @@ export class BroadcastService {
 
     // Audit 06 F58: Prevent slug changes after creation — slugs are permanent identifiers
     if (data.slug !== undefined) {
-      const existing = await this.prisma.broadcastChannel.findUnique({ where: { id: channelId } });
+      const existing = await this.prisma.broadcastChannel.findUnique({ where: { id: channelId }, select: { slug: true } });
       if (existing && data.slug !== existing.slug) {
         throw new BadRequestException('Cannot change broadcast channel slug after creation');
       }
@@ -207,21 +207,22 @@ export class BroadcastService {
   }
 
   async pinMessage(messageId: string, userId: string) {
-    const msg = await this.prisma.broadcastMessage.findUnique({ where: { id: messageId } });
+    // J08-#27 FIX: Lightweight select for permission checks (was fetching full row with content)
+    const msg = await this.prisma.broadcastMessage.findUnique({ where: { id: messageId }, select: { id: true, channelId: true } });
     if (!msg) throw new NotFoundException('Message not found');
     await this.requireRole(msg.channelId, userId, [ChannelRole.OWNER, ChannelRole.ADMIN]);
     return this.prisma.broadcastMessage.update({ where: { id: messageId }, data: { isPinned: true } });
   }
 
   async unpinMessage(messageId: string, userId: string) {
-    const msg = await this.prisma.broadcastMessage.findUnique({ where: { id: messageId } });
+    const msg = await this.prisma.broadcastMessage.findUnique({ where: { id: messageId }, select: { id: true, channelId: true } });
     if (!msg) throw new NotFoundException('Message not found');
     await this.requireRole(msg.channelId, userId, [ChannelRole.OWNER, ChannelRole.ADMIN]);
     return this.prisma.broadcastMessage.update({ where: { id: messageId }, data: { isPinned: false } });
   }
 
   async deleteMessage(messageId: string, userId: string) {
-    const msg = await this.prisma.broadcastMessage.findUnique({ where: { id: messageId } });
+    const msg = await this.prisma.broadcastMessage.findUnique({ where: { id: messageId }, select: { id: true, channelId: true } });
     if (!msg) throw new NotFoundException('Message not found');
     await this.requireRole(msg.channelId, userId, [ChannelRole.OWNER, ChannelRole.ADMIN]);
     await this.prisma.broadcastMessage.delete({ where: { id: messageId } });

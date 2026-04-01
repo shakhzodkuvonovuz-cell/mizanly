@@ -516,7 +516,7 @@ describe('AuthService', () => {
       // Should increment device counter atomically after successful registration
       expect(redis.eval).toHaveBeenCalledWith(
         expect.stringContaining('INCR'),
-        1, 'device_accounts:device-456', 365 * 24 * 60 * 60,
+        1, 'device_accounts:device-456', 90 * 24 * 60 * 60,
       );
     });
 
