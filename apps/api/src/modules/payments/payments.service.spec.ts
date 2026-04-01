@@ -19,6 +19,7 @@ const mockStripeInstance = {
   },
   products: {
     create: jest.fn().mockResolvedValue({ id: 'prod_test' }),
+    search: jest.fn().mockResolvedValue({ data: [] }),
   },
   subscriptions: {
     create: jest.fn().mockResolvedValue({
@@ -49,10 +50,11 @@ describe('PaymentsService', () => {
           provide: PrismaService,
           useValue: {
             user: { findUnique: jest.fn().mockResolvedValue({ id: 'u1', email: 'test@test.com', username: 'test', displayName: 'Test' }) },
-            tip: { create: jest.fn().mockResolvedValue({ id: 'tip-1' }), update: jest.fn(), findFirst: jest.fn().mockResolvedValue(null) },
+            tip: { create: jest.fn().mockResolvedValue({ id: 'tip-1' }), update: jest.fn(), findFirst: jest.fn().mockResolvedValue(null), findUnique: jest.fn().mockResolvedValue(null) },
             membershipTier: { findUnique: jest.fn() },
             membershipSubscription: { findUnique: jest.fn(), findFirst: jest.fn(), create: jest.fn(), update: jest.fn() },
             coinTransaction: { findFirst: jest.fn().mockResolvedValue(null) },
+            premiumSubscription: { findUnique: jest.fn().mockResolvedValue(null), upsert: jest.fn().mockResolvedValue({}) },
             paymentMapping: { upsert: jest.fn().mockResolvedValue({}), findUnique: jest.fn().mockResolvedValue(null), findFirst: jest.fn().mockResolvedValue(null) },
           },
         },
@@ -177,6 +179,7 @@ describe('PaymentsService', () => {
 
     it('should route premium_subscription to handlePremiumPaymentSucceeded', async () => {
       prisma.premiumSubscription = {
+        findUnique: jest.fn().mockResolvedValue(null),
         upsert: jest.fn().mockResolvedValue({ id: 'prem-1', status: 'ACTIVE' }),
       };
       await service.handlePaymentIntentSucceeded({
@@ -314,7 +317,7 @@ describe('PaymentsService', () => {
   describe('handlePaymentIntentSucceeded — DB fallback (tip)', () => {
     it('should fall back to DB when Redis mapping missing for tip', async () => {
       redis.get.mockResolvedValue(null);
-      prisma.tip = { ...prisma.tip, findFirst: jest.fn().mockResolvedValue({ id: 'tip-fallback' }) };
+      prisma.tip = { ...prisma.tip, findFirst: jest.fn().mockResolvedValue({ id: 'tip-fallback' }), findUnique: jest.fn().mockResolvedValue({ status: 'pending' }) };
       const mockTipUpdate = jest.fn().mockResolvedValue({ receiverId: 'u2', senderId: 'u1', amount: 5, platformFee: 0.5 });
       prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<unknown>) =>
         fn({

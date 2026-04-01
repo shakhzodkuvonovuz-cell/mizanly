@@ -483,7 +483,10 @@ export class MonetizationService {
     const balance = await this.prisma.coinBalance.findUnique({
       where: { userId },
     });
-    if (!balance || balance.diamonds < diamonds) {
+    if (!balance) {
+      throw new BadRequestException('No balance found');
+    }
+    if (balance.diamonds < diamonds) {
       throw new BadRequestException('Insufficient diamonds');
     }
 

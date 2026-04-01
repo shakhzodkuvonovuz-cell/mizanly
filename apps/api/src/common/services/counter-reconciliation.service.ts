@@ -111,7 +111,7 @@ export class CounterReconciliationService {
           FROM (VALUES ${Prisma.join(
             driftedLikes.map(r => Prisma.sql`(${r.id}, ${Number(r.actual)})`),
           )}) AS v(id, actual)
-          WHERE "Post".id = v.id
+          WHERE "posts".id = v.id
         `;
       }
 
@@ -132,7 +132,7 @@ export class CounterReconciliationService {
           FROM (VALUES ${Prisma.join(
             driftedComments.map(r => Prisma.sql`(${r.id}, ${Number(r.actual)})`),
           )}) AS v(id, actual)
-          WHERE "Post".id = v.id
+          WHERE "posts".id = v.id
         `;
       }
 
@@ -157,7 +157,7 @@ export class CounterReconciliationService {
       const drifted = await this.prisma.$queryRaw<Array<{ id: string; actual: bigint }>>`
         SELECT u.id, COUNT(p.id)::bigint as actual
         FROM "users" u
-        LEFT JOIN "Post" p ON p."userId" = u.id AND p."isRemoved" = false
+        LEFT JOIN "posts" p ON p."userId" = u.id AND p."isRemoved" = false
         WHERE u."isDeleted" = false
         GROUP BY u.id
         HAVING COUNT(p.id) != u."postsCount"
@@ -204,7 +204,7 @@ export class CounterReconciliationService {
           FROM (VALUES ${Prisma.join(
             drifted.map(r => Prisma.sql`(${r.id}, ${Number(r.actual)})`),
           )}) AS v(id, actual)
-          WHERE "Post".id = v.id
+          WHERE "posts".id = v.id
         `;
         this.logger.warn(`Reconciled savesCount for ${drifted.length} post(s)`);
       }
@@ -225,7 +225,7 @@ export class CounterReconciliationService {
       const drifted = await this.prisma.$queryRaw<Array<{ id: string; actual: bigint }>>`
         SELECT p.id, COUNT(s.id)::bigint as actual
         FROM "posts" p
-        LEFT JOIN "Post" s ON s."sharedPostId" = p.id
+        LEFT JOIN "posts" s ON s."sharedPostId" = p.id
         WHERE p."isRemoved" = false
         GROUP BY p.id
         HAVING COUNT(s.id) != p."sharesCount"
@@ -238,7 +238,7 @@ export class CounterReconciliationService {
           FROM (VALUES ${Prisma.join(
             drifted.map(r => Prisma.sql`(${r.id}, ${Number(r.actual)})`),
           )}) AS v(id, actual)
-          WHERE "Post".id = v.id
+          WHERE "posts".id = v.id
         `;
         this.logger.warn(`Reconciled sharesCount for ${drifted.length} post(s)`);
       }
@@ -369,7 +369,7 @@ export class CounterReconciliationService {
       const driftedReels = await this.prisma.$queryRaw<Array<{ id: string; actual: bigint }>>`
         SELECT u.id, COUNT(r.id)::bigint as actual
         FROM "users" u
-        LEFT JOIN "Reel" r ON r."userId" = u.id AND r."isRemoved" = false
+        LEFT JOIN "reels" r ON r."userId" = u.id AND r."isRemoved" = false
         WHERE u."isDeleted" = false
         GROUP BY u.id
         HAVING COUNT(r.id) != u."reelsCount"
@@ -412,7 +412,7 @@ export class CounterReconciliationService {
         await this.prisma.$executeRaw`
           UPDATE "reels" SET "likesCount" = v.actual::int
           FROM (VALUES ${Prisma.join(driftedLikes.map(r => Prisma.sql`(${r.id}, ${Number(r.actual)})`))} ) AS v(id, actual)
-          WHERE "Reel".id = v.id
+          WHERE "reels".id = v.id
         `;
       }
 
@@ -429,7 +429,7 @@ export class CounterReconciliationService {
         await this.prisma.$executeRaw`
           UPDATE "reels" SET "commentsCount" = v.actual::int
           FROM (VALUES ${Prisma.join(driftedComments.map(r => Prisma.sql`(${r.id}, ${Number(r.actual)})`))} ) AS v(id, actual)
-          WHERE "Reel".id = v.id
+          WHERE "reels".id = v.id
         `;
       }
 
@@ -512,7 +512,7 @@ export class CounterReconciliationService {
         await this.prisma.$executeRaw`
           UPDATE "videos" SET "likesCount" = v.actual::int
           FROM (VALUES ${Prisma.join(driftedLikes.map(r => Prisma.sql`(${r.id}, ${Number(r.actual)})`))} ) AS v(id, actual)
-          WHERE "Video".id = v.id
+          WHERE "videos".id = v.id
         `;
       }
 
@@ -529,7 +529,7 @@ export class CounterReconciliationService {
         await this.prisma.$executeRaw`
           UPDATE "videos" SET "commentsCount" = v.actual::int
           FROM (VALUES ${Prisma.join(driftedComments.map(r => Prisma.sql`(${r.id}, ${Number(r.actual)})`))} ) AS v(id, actual)
-          WHERE "Video".id = v.id
+          WHERE "videos".id = v.id
         `;
       }
 
@@ -553,7 +553,7 @@ export class CounterReconciliationService {
       const drifted = await this.prisma.$queryRaw<Array<{ id: string; name: string; actual: bigint }>>`
         SELECT h.id, h.name, COUNT(p.id)::bigint as actual
         FROM "hashtags" h
-        LEFT JOIN "Post" p ON p."hashtags" @> ARRAY[h."name"] AND p."isRemoved" = false
+        LEFT JOIN "posts" p ON p."hashtags" @> ARRAY[h."name"] AND p."isRemoved" = false
         GROUP BY h.id, h.name
         HAVING COUNT(p.id) != h."postsCount"
         LIMIT 500
@@ -562,7 +562,7 @@ export class CounterReconciliationService {
         await this.prisma.$executeRaw`
           UPDATE "hashtags" SET "postsCount" = v.actual::int
           FROM (VALUES ${Prisma.join(drifted.map(r => Prisma.sql`(${r.id}, ${Number(r.actual)})`))} ) AS v(id, actual)
-          WHERE "Hashtag".id = v.id
+          WHERE "hashtags".id = v.id
         `;
         this.logger.warn(`Reconciled postsCount for ${drifted.length} hashtag(s)`);
       }

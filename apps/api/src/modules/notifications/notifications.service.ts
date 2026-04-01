@@ -249,9 +249,12 @@ export class NotificationsService {
         LIKE: 'notifyLikes', REEL_LIKE: 'notifyLikes', VIDEO_LIKE: 'notifyLikes',
         COMMENT: 'notifyComments', REEL_COMMENT: 'notifyComments', VIDEO_COMMENT: 'notifyComments', REPLY: 'notifyComments', THREAD_REPLY: 'notifyComments',
         FOLLOW: 'notifyFollows', FOLLOW_REQUEST: 'notifyFollows', FOLLOW_REQUEST_ACCEPTED: 'notifyFollows',
-        MENTION: 'notifyMentions',
+        MENTION: 'notifyMentions', TAG: 'notifyMentions',
         MESSAGE: 'notifyMessages', STORY_REPLY: 'notifyMessages',
         LIVE_STARTED: 'notifyLiveStreams',
+        REPOST: 'notifyLikes', QUOTE_POST: 'notifyComments',
+        CHANNEL_POST: 'notifyFollows', VIDEO_PUBLISHED: 'notifyFollows',
+        POLL_VOTE: 'notifyComments', COLLAB_INVITE: 'notifyMentions',
       };
       const settingKey = typeToSetting[params.type];
       if (settingKey && settings[settingKey] === false) return null;
@@ -264,8 +267,10 @@ export class NotificationsService {
     if (blockExists || muteExists) return null;
 
     // Redis-based deduplication: suppress identical notifications within 5 minutes
+    // Use content target ID for content notifications, or actorId+title hash for system notifications
     const targetId = params.postId || params.threadId || params.reelId || params.videoId
-      || params.commentId || params.conversationId || params.followRequestId || params.actorId;
+      || params.commentId || params.conversationId || params.followRequestId
+      || (params.actorId ? `actor:${params.actorId}:${(params.title || '').slice(0, 20)}` : 'none');
     const dedupeKey = `notif_dedup:${params.userId}:${params.type}:${targetId}`;
     try {
       const exists = await this.redis.get(dedupeKey);

@@ -535,7 +535,10 @@ describe('MessagesService', () => {
 
       const result = await service.updateGroup(conversationId, userId, data);
 
-      expect(prisma.conversation.findUnique).toHaveBeenCalledWith({ where: { id: conversationId } });
+      expect(prisma.conversation.findUnique).toHaveBeenCalledWith({
+        where: { id: conversationId },
+        select: { id: true, isGroup: true, createdById: true },
+      });
       expect(prisma.conversation.update).toHaveBeenCalledWith({
         where: { id: conversationId },
         data,
@@ -583,7 +586,10 @@ describe('MessagesService', () => {
 
       const result = await service.addGroupMembers(conversationId, userId, memberIds);
 
-      expect(prisma.conversation.findUnique).toHaveBeenCalledWith({ where: { id: conversationId } });
+      expect(prisma.conversation.findUnique).toHaveBeenCalledWith({
+        where: { id: conversationId },
+        select: { id: true, isGroup: true, createdById: true },
+      });
       expect(prisma.conversationMember.createMany).toHaveBeenCalledWith({
         data: memberIds.map((id) => ({ conversationId, userId: id })),
         skipDuplicates: true,
@@ -620,7 +626,10 @@ describe('MessagesService', () => {
 
       const result = await service.removeGroupMember(conversationId, userId, targetUserId);
 
-      expect(prisma.conversation.findUnique).toHaveBeenCalledWith({ where: { id: conversationId } });
+      expect(prisma.conversation.findUnique).toHaveBeenCalledWith({
+        where: { id: conversationId },
+        select: { id: true, isGroup: true, createdById: true },
+      });
       expect(prisma.conversationMember.delete).toHaveBeenCalledWith({
         where: { conversationId_userId: { conversationId, userId: targetUserId } },
       });

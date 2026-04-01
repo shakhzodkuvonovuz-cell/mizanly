@@ -341,15 +341,19 @@ export class CommerceService {
       throw new BadRequestException(`Cannot transition from ${order.status} to ${status}`);
     }
 
-    // Restore stock and decrement salesCount on cancellation/refund
+    // Restore stock + update order status atomically to prevent partial state
+    let updated;
     if ((status === 'CANCELLED' || status === 'REFUNDED') && order.status !== OrderStatus.CANCELLED && order.status !== OrderStatus.REFUNDED) {
-      await this.prisma.product.updateMany({
-        where: { id: order.productId, salesCount: { gt: 0 } },
-        data: { stock: { increment: order.quantity }, salesCount: { decrement: order.quantity } },
+      updated = await this.prisma.$transaction(async (tx) => {
+        await tx.product.updateMany({
+          where: { id: order.productId, salesCount: { gt: 0 } },
+          data: { stock: { increment: order.quantity }, salesCount: { decrement: order.quantity } },
+        });
+        return tx.order.update({ where: { id: orderId }, data: { status: status as OrderStatus } });
       });
+    } else {
+      updated = await this.prisma.order.update({ where: { id: orderId }, data: { status: status as OrderStatus } });
     }
-
-    const updated = await this.prisma.order.update({ where: { id: orderId }, data: { status: status as OrderStatus } });
 
     // Notify the buyer about order status change (skip if buyer was deleted)
     if (order.buyerId) {

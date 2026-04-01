@@ -247,6 +247,7 @@ export class MessagesService {
             ...(data.e2eSenderRatchetKey ? { e2eSenderRatchetKey: new Uint8Array(data.e2eSenderRatchetKey) } : {}),
             ...(data.e2eCounter !== undefined ? { e2eCounter: data.e2eCounter } : {}),
             ...(data.e2ePreviousCounter !== undefined ? { e2ePreviousCounter: data.e2ePreviousCounter } : {}),
+            ...(data.e2eSenderKeyId !== undefined ? { e2eSenderKeyId: data.e2eSenderKeyId } : {}),
             ...(data.clientMessageId ? { clientMessageId: data.clientMessageId } : {}),
             ...(convo?.disappearingDuration ? { expiresAt: new Date(Date.now() + convo.disappearingDuration * 1000) } : {}),
           },
@@ -325,17 +326,24 @@ export class MessagesService {
     }
 
     // DM restriction: prevent non-followers from messaging private accounts (1:1 only)
+    // Parallelize independent queries (J01-#12): follow check + privacy settings + isPrivate in one round-trip
     if (convo && !convo.isGroup) {
       const otherMemberId = otherUserIds.length === 1 ? otherUserIds[0] : undefined;
       if (otherMemberId) {
-        const isFollowing = await this.prisma.follow.findUnique({
-          where: { followerId_followingId: { followerId: senderId, followingId: otherMemberId } },
-        });
-        // Check messagePermission from privacy settings
-        const recipientPrivacy = await this.prisma.userSettings.findUnique({
-          where: { userId: otherMemberId },
-          select: { messagePermission: true },
-        });
+        const [isFollowing, recipientPrivacy, recipientUser] = await Promise.all([
+          this.prisma.follow.findUnique({
+            where: { followerId_followingId: { followerId: senderId, followingId: otherMemberId } },
+            select: { id: true },
+          }),
+          this.prisma.userSettings.findUnique({
+            where: { userId: otherMemberId },
+            select: { messagePermission: true },
+          }),
+          this.prisma.user.findUnique({
+            where: { id: otherMemberId },
+            select: { isPrivate: true },
+          }),
+        ]);
         const msgPerm = recipientPrivacy?.messagePermission || 'everyone';
         if (msgPerm === 'nobody') {
           throw new ForbiddenException('This user has disabled direct messages');
@@ -343,15 +351,8 @@ export class MessagesService {
         if (msgPerm === 'followers' && !isFollowing) {
           throw new ForbiddenException('This user only accepts messages from followers');
         }
-        // Fallback: also check isPrivate for users without explicit messagePermission
-        if (!isFollowing) {
-          const recipientUser = await this.prisma.user.findUnique({
-            where: { id: otherMemberId },
-            select: { isPrivate: true },
-          });
-          if (recipientUser?.isPrivate) {
-            throw new ForbiddenException('This user only accepts messages from followers');
-          }
+        if (!isFollowing && recipientUser?.isPrivate) {
+          throw new ForbiddenException('This user only accepts messages from followers');
         }
       }
     }
@@ -722,7 +723,10 @@ export class MessagesService {
     userId: string,
     data: { groupName?: string; groupAvatarUrl?: string; groupDescription?: string },
   ) {
-    const convo = await this.prisma.conversation.findUnique({ where: { id: conversationId } });
+    const convo = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      select: { id: true, isGroup: true, createdById: true },
+    });
     if (!convo) throw new NotFoundException('Conversation not found');
     if (!convo.isGroup) throw new BadRequestException('Not a group');
 
@@ -739,7 +743,10 @@ export class MessagesService {
   }
 
   async addGroupMembers(conversationId: string, userId: string, memberIds: string[]) {
-    const convo = await this.prisma.conversation.findUnique({ where: { id: conversationId } });
+    const convo = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      select: { id: true, isGroup: true, createdById: true },
+    });
     if (!convo || !convo.isGroup) throw new NotFoundException('Group not found');
     if (convo.createdById !== userId) throw new ForbiddenException('Only group creator can add members');
 
@@ -781,7 +788,10 @@ export class MessagesService {
   }
 
   async removeGroupMember(conversationId: string, userId: string, targetUserId: string) {
-    const convo = await this.prisma.conversation.findUnique({ where: { id: conversationId } });
+    const convo = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      select: { id: true, isGroup: true, createdById: true },
+    });
     if (!convo || !convo.isGroup) throw new NotFoundException('Group not found');
     if (convo.createdById !== userId) throw new ForbiddenException('Only group creator can remove members');
     await this.prisma.conversationMember.delete({
@@ -800,7 +810,10 @@ export class MessagesService {
     if (!allowedRoles.includes(role)) {
       throw new BadRequestException('Role must be "admin" or "member"');
     }
-    const convo = await this.prisma.conversation.findUnique({ where: { id: conversationId } });
+    const convo = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      select: { id: true, isGroup: true, createdById: true },
+    });
     if (!convo || !convo.isGroup) throw new NotFoundException('Group not found');
     if (convo.createdById !== userId) throw new ForbiddenException('Only group creator can change roles');
     if (targetUserId === userId) throw new BadRequestException('Cannot change your own role');
@@ -1261,6 +1274,18 @@ export class MessagesService {
     if (scheduledAt <= new Date()) {
       throw new BadRequestException('Scheduled time must be in the future');
     }
+
+    // E2E enforcement: reject plaintext scheduled messages in E2E conversations.
+    // Scheduled messages are stored as plaintext in the DB and published by a cron job.
+    // An E2E conversation must NEVER have plaintext messages injected via the schedule path.
+    const convo = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      select: { isE2E: true },
+    });
+    if (convo?.isE2E) {
+      throw new BadRequestException('Cannot schedule plaintext messages in E2E encrypted conversations');
+    }
+
     // Create message with isScheduled flag (field must exist in schema)
     const message = await this.prisma.message.create({
       data: {
@@ -1330,7 +1355,10 @@ export class MessagesService {
   async pinMessage(conversationId: string, messageId: string, userId: string) {
     await this.requireMembership(conversationId, userId);
 
-    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+      select: { id: true, conversationId: true },
+    });
     if (!message) throw new NotFoundException('Message not found');
     if (message.conversationId !== conversationId) {
       throw new BadRequestException('Message does not belong to this conversation');
@@ -1353,7 +1381,10 @@ export class MessagesService {
   async unpinMessage(conversationId: string, messageId: string, userId: string) {
     await this.requireMembership(conversationId, userId);
 
-    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+      select: { id: true, conversationId: true },
+    });
     if (!message) throw new NotFoundException('Message not found');
     if (message.conversationId !== conversationId) {
       throw new BadRequestException('Message does not belong to this conversation');
@@ -1654,9 +1685,13 @@ export class MessagesService {
       const published = overdue.length;
 
       // Notify conversation members (non-blocking)
+      // Use generic body for E2E conversations — never leak plaintext in push
       for (const msg of overdue) {
         if (msg.senderId) {
-          this.notifyConversationMembers(msg.conversationId, msg.senderId, msg.content?.slice(0, 100) ?? 'Sent a message').catch((err) => {
+          const body = msg.e2eVersion || msg.isEncrypted
+            ? 'New message'
+            : (msg.content?.slice(0, 100) ?? 'Sent a message');
+          this.notifyConversationMembers(msg.conversationId, msg.senderId, body).catch((err) => {
             this.logger.warn(`Scheduled message notification failed for msg ${msg.id}: ${err?.message}`);
           });
         }

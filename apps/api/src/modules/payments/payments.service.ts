@@ -293,19 +293,39 @@ export class PaymentsService {
       throw new BadRequestException('Failed to set up payment method');
     }
 
-    // Create Stripe product for this tier, then create subscription
+    // Get or create Stripe product for this tier (reuse product across subscriptions to the same tier)
     let subscription: Stripe.Subscription;
     try {
-      const product = await this.stripe.products.create({
-        name: tier.name,
-        metadata: { tierId, mizanlyTierId: tierId },
-      });
+      let stripeProductId: string | null = null;
+      // Check Redis cache for tier's Stripe product ID
+      const cachedProductId = await this.redis.get(`tier:stripe_product:${tierId}`);
+      if (cachedProductId) {
+        stripeProductId = cachedProductId;
+      } else {
+        // Search Stripe for existing product with this tier ID in metadata
+        const existingProducts = await this.stripe.products.search({
+          query: `metadata['mizanlyTierId']:'${tierId}'`,
+          limit: 1,
+        });
+        if (existingProducts.data.length > 0) {
+          stripeProductId = existingProducts.data[0].id;
+        } else {
+          // Create new Stripe product for this tier
+          const product = await this.stripe.products.create({
+            name: tier.name,
+            metadata: { tierId, mizanlyTierId: tierId },
+          });
+          stripeProductId = product.id;
+        }
+        // Cache for 30 days
+        await this.redis.setex(`tier:stripe_product:${tierId}`, 60 * 60 * 24 * 30, stripeProductId);
+      }
 
       subscription = await this.stripe.subscriptions.create({
         customer: customerId,
         items: [{ price_data: {
             currency: tier.currency.toLowerCase(),
-            product: product.id,
+            product: stripeProductId,
             unit_amount: Math.round(Number(tier.price) * 100),
             recurring: { interval: 'month' },
           } }],
@@ -477,9 +497,16 @@ export class PaymentsService {
       case 'premium_subscription':
         await this.handlePremiumPaymentSucceeded(paymentIntent);
         return;
-      default:
-        // Fallback: assume tip (legacy behavior before metadata.type was added)
+      case 'tip':
         await this.handleTipPaymentSucceeded(paymentIntent);
+        return;
+      default:
+        // Unknown payment type — log and skip. Don't silently route to tip handler.
+        this.logger.warn(`Unknown payment type in metadata: ${paymentType} for PI ${paymentIntent.id}`);
+        // Legacy tip payments without metadata.type: check if we have a mapping
+        if (!paymentType) {
+          await this.handleTipPaymentSucceeded(paymentIntent);
+        }
         return;
     }
   }
@@ -602,8 +629,17 @@ export class PaymentsService {
       return;
     }
 
-    const endDate = new Date();
-    endDate.setMonth(endDate.getMonth() + (plan === 'YEARLY' ? 12 : 1));
+    // Extend from current endDate if still in the future (don't lose remaining days on early renewal)
+    const existing = await this.prisma.premiumSubscription.findUnique({
+      where: { userId },
+      select: { endDate: true },
+    });
+    const baseDate = existing?.endDate && new Date(existing.endDate) > new Date()
+      ? new Date(existing.endDate)
+      : new Date();
+    const months = plan === 'YEARLY' ? 12 : 1;
+    const endDate = new Date(baseDate);
+    endDate.setMonth(endDate.getMonth() + months);
 
     await this.prisma.premiumSubscription.upsert({
       where: { userId },
@@ -633,21 +669,25 @@ export class PaymentsService {
         tipId = tipByPI.id;
       }
 
-      // Fallback: try matching by senderId + amount from metadata
+      // Fallback: try matching by senderId + receiverId + amount from metadata (all required to avoid ambiguous match)
       if (!tipId) {
         const senderId = paymentIntent.metadata?.senderId;
+        const receiverId = paymentIntent.metadata?.receiverId;
         const metaAmount = paymentIntent.metadata?.amount ? parseFloat(paymentIntent.metadata.amount) : undefined;
-        if (senderId) {
+        if (senderId && receiverId && metaAmount !== undefined) {
           const tip = await this.prisma.tip.findFirst({
             where: {
               senderId,
+              receiverId,
+              amount: metaAmount,
               status: 'pending',
-              ...(metaAmount !== undefined ? { amount: metaAmount } : {}),
             },
             orderBy: { createdAt: 'desc' },
             select: { id: true },
           });
           tipId = tip?.id ?? null;
+        } else {
+          this.logger.warn(`Tip fallback skipped: missing metadata fields (senderId=${senderId}, receiverId=${receiverId}, amount=${metaAmount})`);
         }
       }
 
@@ -655,6 +695,16 @@ export class PaymentsService {
         this.logger.warn(`No tip found for payment intent ${paymentIntent.id} (Redis + DB fallback failed)`);
         return;
       }
+    }
+
+    // Idempotency guard: check if tip is already completed before entering $transaction
+    const existingTip = await this.prisma.tip.findUnique({
+      where: { id: tipId as string },
+      select: { status: true },
+    });
+    if (existingTip?.status === 'completed') {
+      this.logger.log(`Tip ${tipId} already completed — skipping (idempotent)`);
+      return;
     }
 
     // Atomically: update tip status + credit receiver
@@ -909,23 +959,70 @@ export class PaymentsService {
 
     this.logger.error(`CHARGEBACK DISPUTE: payment_intent=${paymentIntentId}, reason=${reason}, amount=${amount}`);
 
-    // If we can find the tip associated with this payment intent, mark it as disputed
-    if (paymentIntentId) {
-      const tipId = await this.redis.get(`payment_intent:${paymentIntentId}`);
-      if (tipId) {
-        await this.prisma.tip.update({
-          where: { id: tipId },
-          data: {
-            status: 'disputed',
-            message: JSON.stringify({
-              stripePaymentIntentId: paymentIntentId,
-              status: 'disputed',
-              disputeReason: reason,
-              disputedAt: new Date().toISOString(),
-            }),
-          },
-        });
-      }
+    if (!paymentIntentId) return;
+
+    // Find the tip: Redis first, then DB fallback (disputes arrive days/weeks after payment — Redis TTL may have expired)
+    let tipId = await this.redis.get(`payment_intent:${paymentIntentId}`);
+    if (!tipId) {
+      const mapping = await this.prisma.paymentMapping.findUnique({
+        where: { stripeId: paymentIntentId },
+        select: { internalId: true },
+      }).catch(() => null);
+      tipId = mapping?.internalId ?? null;
     }
+    if (!tipId) {
+      // Last resort: find by stripePaymentId on tip
+      const tipByPI = await this.prisma.tip.findFirst({
+        where: { stripePaymentId: paymentIntentId },
+        select: { id: true },
+      });
+      tipId = tipByPI?.id ?? null;
+    }
+    if (!tipId) {
+      this.logger.warn(`No tip found for disputed payment intent ${paymentIntentId} (Redis + DB fallback failed)`);
+      return;
+    }
+
+    // Atomically: mark tip as disputed AND reverse diamond credit to receiver
+    await this.prisma.$transaction(async (tx) => {
+      const tip = await tx.tip.update({
+        where: { id: tipId as string },
+        data: {
+          status: 'disputed',
+          message: JSON.stringify({
+            stripePaymentIntentId: paymentIntentId,
+            status: 'disputed',
+            disputeReason: reason,
+            disputedAt: new Date().toISOString(),
+          }),
+        },
+        select: { receiverId: true, amount: true, platformFee: true },
+      });
+
+      // Reverse the diamond credit that was given to the receiver
+      if (tip.receiverId) {
+        const netAmount = Number(tip.amount) - Number(tip.platformFee);
+        const diamondsToDeduct = Math.floor(netAmount / 0.007);
+
+        if (diamondsToDeduct > 0) {
+          // Conditional decrement: don't go below 0
+          await tx.coinBalance.updateMany({
+            where: { userId: tip.receiverId, diamonds: { gte: diamondsToDeduct } },
+            data: { diamonds: { decrement: diamondsToDeduct } },
+          });
+
+          await tx.coinTransaction.create({
+            data: {
+              userId: tip.receiverId,
+              type: 'TIP_RECEIVED',
+              amount: -diamondsToDeduct,
+              description: `Tip disputed — ${diamondsToDeduct} diamonds reversed. Stripe PI: ${paymentIntentId}`,
+            },
+          });
+        }
+      }
+    });
+
+    this.logger.warn(`Tip ${tipId} marked as disputed, diamonds reversed for PI ${paymentIntentId}`);
   }
 }
