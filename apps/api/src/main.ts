@@ -12,19 +12,28 @@ import * as compression from 'compression';
 
 function validateEnv() {
   const logger = new Logger('EnvValidation');
+  const isProduction = process.env.NODE_ENV === 'production';
+
   const required: [string, string][] = [
     ['DATABASE_URL', 'PostgreSQL connection string'],
     ['CLERK_SECRET_KEY', 'Clerk authentication'],
   ];
+
+  // These are required in production — missing them causes silent security degradation
+  const requiredInProd: [string, string][] = [
+    ['REDIS_URL', 'Redis (rate limiting, queues, presence — without it: no rate limiting = DDoS vector)'],
+    ['TOTP_ENCRYPTION_KEY', '2FA encryption (without it: TOTP secrets stored in plaintext)'],
+    ['R2_ACCOUNT_ID', 'Cloudflare R2 (file uploads)'],
+    ['R2_ACCESS_KEY_ID', 'Cloudflare R2 access key'],
+    ['R2_SECRET_ACCESS_KEY', 'Cloudflare R2 secret key'],
+    ['STRIPE_WEBHOOK_SECRET', 'Stripe webhook signature verification'],
+  ];
+
   const recommended: [string, string][] = [
-    ['REDIS_URL', 'Redis (caching, rate limiting, presence, queues)'],
     ['CLERK_PUBLISHABLE_KEY', 'Clerk frontend key'],
     ['STRIPE_SECRET_KEY', 'Stripe payments'],
     ['ANTHROPIC_API_KEY', 'AI features (Claude)'],
     ['SENTRY_DSN', 'Error monitoring'],
-    ['R2_ACCOUNT_ID', 'Cloudflare R2 (file uploads)'],
-    ['R2_ACCESS_KEY_ID', 'Cloudflare R2 access key'],
-    ['R2_SECRET_ACCESS_KEY', 'Cloudflare R2 secret key'],
     ['R2_PUBLIC_URL', 'Cloudflare R2 public URL'],
     ['CF_STREAM_ACCOUNT_ID', 'Cloudflare Stream (video hosting)'],
     ['CF_STREAM_API_TOKEN', 'Cloudflare Stream API token'],
@@ -41,9 +50,41 @@ function validateEnv() {
       fatal = true;
     }
   }
+
+  // In production, promote critical vars to required
+  if (isProduction) {
+    for (const [key, desc] of requiredInProd) {
+      if (!process.env[key]) {
+        logger.error(`Missing env var required in production: ${key} — ${desc}`);
+        fatal = true;
+      }
+    }
+
+    // Prevent deploying with test keys in production
+    const clerkKey = process.env.CLERK_SECRET_KEY || '';
+    if (clerkKey.includes('_test_')) {
+      logger.error('CLERK_SECRET_KEY is a test key — production requires a live key (sk_live_...)');
+      fatal = true;
+    }
+    const stripeKey = process.env.STRIPE_SECRET_KEY || '';
+    if (stripeKey.includes('_test_')) {
+      logger.error('STRIPE_SECRET_KEY is a test key — production requires a live key (sk_live_...)');
+      fatal = true;
+    }
+  }
+
   if (fatal) {
     logger.error('Cannot start — required environment variables are missing');
     process.exit(1);
+  }
+
+  // Non-production: warn about production-required vars
+  if (!isProduction) {
+    for (const [key, desc] of requiredInProd) {
+      if (!process.env[key]) {
+        logger.warn(`Missing env var (required in production): ${key} — ${desc}`);
+      }
+    }
   }
 
   for (const [key, desc] of recommended) {

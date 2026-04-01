@@ -1,0 +1,6 @@
+.git
+*.md
+*_test.go
+.env*
+.dockerignore
+railway.json
