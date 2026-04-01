@@ -47,8 +47,8 @@ describe('ChannelPostsController', () => {
     it('should call service.getFeed', async () => {
       const expected = { data: [], meta: { cursor: null, hasMore: false } };
       mockService.getFeed.mockResolvedValue(expected);
-      const result = await controller.getFeed('channel-1', undefined);
-      expect(service.getFeed).toHaveBeenCalledWith('channel-1', undefined);
+      const result = await controller.getFeed('channel-1', undefined, undefined);
+      expect(service.getFeed).toHaveBeenCalledWith('channel-1', undefined, undefined);
       expect(result).toEqual(expected);
     });
   });

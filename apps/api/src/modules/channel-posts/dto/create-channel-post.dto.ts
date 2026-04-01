@@ -10,6 +10,7 @@ export class CreateChannelPostDto {
   @ApiProperty({ required: false, type: [String] })
   @IsArray()
   @IsString({ each: true })
+  @MaxLength(2000, { each: true })
   @IsOptional()
   mediaUrls?: string[];
 }

@@ -80,7 +80,7 @@ export class MeilisearchSyncService {
 
     while (true) {
       const posts = await this.prisma.post.findMany({
-        where: { isRemoved: false, visibility: 'PUBLIC' },
+        where: { isRemoved: false, visibility: 'PUBLIC', OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] },
         select: { id: true, content: true, hashtags: true, userId: true, postType: true, likesCount: true, createdAt: true,
           user: { select: { username: true } } },
         take: BATCH + 1,
@@ -122,7 +122,7 @@ export class MeilisearchSyncService {
 
     while (true) {
       const threads = await this.prisma.thread.findMany({
-        where: { isRemoved: false, visibility: 'PUBLIC', isChainHead: true },
+        where: { isRemoved: false, visibility: 'PUBLIC', isChainHead: true, OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] },
         select: { id: true, content: true, hashtags: true, userId: true, likesCount: true, createdAt: true,
           user: { select: { username: true } } },
         take: BATCH + 1,
@@ -164,7 +164,7 @@ export class MeilisearchSyncService {
 
     while (true) {
       const reels = await this.prisma.reel.findMany({
-        where: { isRemoved: false, status: 'READY' },
+        where: { isRemoved: false, status: 'READY', OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] },
         select: { id: true, caption: true, hashtags: true, userId: true, likesCount: true, viewsCount: true, createdAt: true,
           user: { select: { username: true } } },
         take: BATCH + 1,
@@ -206,7 +206,7 @@ export class MeilisearchSyncService {
 
     while (true) {
       const videos = await this.prisma.video.findMany({
-        where: { isRemoved: false, status: 'PUBLISHED' },
+        where: { isRemoved: false, status: 'PUBLISHED', OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] },
         select: { id: true, title: true, description: true, tags: true, userId: true, channelId: true,
           viewsCount: true, likesCount: true, createdAt: true, category: true,
           user: { select: { username: true } } },

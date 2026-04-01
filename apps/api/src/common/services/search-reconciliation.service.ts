@@ -32,9 +32,14 @@ export class SearchReconciliationService {
     let indexed = 0;
     let deleted = 0;
 
-    // Re-index recent posts
+    // Re-index recent posts (only public, non-scheduled)
     const recentPosts = await this.prisma.post.findMany({
-      where: { createdAt: { gte: sevenDaysAgo }, isRemoved: false },
+      where: {
+        createdAt: { gte: sevenDaysAgo },
+        isRemoved: false,
+        visibility: 'PUBLIC',
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+      },
       select: { id: true, content: true, hashtags: true, userId: true },
       take: 1000,
     });
@@ -65,9 +70,14 @@ export class SearchReconciliationService {
       deleted++;
     }
 
-    // Re-index recent threads
+    // Re-index recent threads (only public, non-scheduled)
     const recentThreads = await this.prisma.thread.findMany({
-      where: { createdAt: { gte: sevenDaysAgo }, isRemoved: false },
+      where: {
+        createdAt: { gte: sevenDaysAgo },
+        isRemoved: false,
+        visibility: 'PUBLIC',
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+      },
       select: { id: true, content: true, hashtags: true, userId: true },
       take: 1000,
     });
@@ -82,9 +92,14 @@ export class SearchReconciliationService {
       indexed++;
     }
 
-    // Re-index recent reels
+    // Re-index recent reels (only non-scheduled)
     const recentReels = await this.prisma.reel.findMany({
-      where: { createdAt: { gte: sevenDaysAgo }, isRemoved: false, status: 'READY' },
+      where: {
+        createdAt: { gte: sevenDaysAgo },
+        isRemoved: false,
+        status: 'READY',
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+      },
       select: { id: true, caption: true, hashtags: true, userId: true },
       take: 1000,
     });
@@ -131,9 +146,14 @@ export class SearchReconciliationService {
       deleted++;
     }
 
-    // Re-index recent videos
+    // Re-index recent videos (only non-scheduled)
     const recentVideos = await this.prisma.video.findMany({
-      where: { createdAt: { gte: sevenDaysAgo }, isRemoved: false, status: 'PUBLISHED' },
+      where: {
+        createdAt: { gte: sevenDaysAgo },
+        isRemoved: false,
+        status: 'PUBLISHED',
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+      },
       select: { id: true, title: true, description: true, tags: true, userId: true, channelId: true, category: true },
       take: 1000,
     });

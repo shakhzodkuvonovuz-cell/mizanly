@@ -24,8 +24,8 @@ export class ChannelPostsController {
   @Get('channel/:channelId')
   @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Get channel community feed' })
-  async getFeed(@Param('channelId') channelId: string, @Query('cursor') cursor?: string) {
-    return this.channelPosts.getFeed(channelId, cursor);
+  async getFeed(@Param('channelId') channelId: string, @CurrentUser('id') userId?: string, @Query('cursor') cursor?: string) {
+    return this.channelPosts.getFeed(channelId, userId, cursor);
   }
 
   @Get(':id')

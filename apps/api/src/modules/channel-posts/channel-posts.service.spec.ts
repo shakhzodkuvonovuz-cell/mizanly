@@ -20,7 +20,12 @@ describe('ChannelPostsService', () => {
         count: jest.fn().mockResolvedValue(0),
       },
       channelSubscription: { findUnique: jest.fn() },
+      channelPostLike: { findUnique: jest.fn().mockResolvedValue(null), create: jest.fn(), delete: jest.fn() },
+      block: { findMany: jest.fn().mockResolvedValue([]) },
+      mute: { findMany: jest.fn().mockResolvedValue([]) },
+      restrict: { findMany: jest.fn().mockResolvedValue([]) },
       $executeRaw: jest.fn(),
+      $transaction: jest.fn().mockImplementation((ops: unknown[]) => Promise.resolve(ops)),
     };
     const module = await Test.createTestingModule({
       providers: [...globalMockProviders, ChannelPostsService, { provide: PrismaService, useValue: prisma }],

@@ -37,7 +37,9 @@ export class CommunityService {
   }
 
   async getBoards(city?: string, country?: string, cursor?: string, limit = 20) {
-    const where: Record<string, unknown> = {};
+    const where: Record<string, unknown> = {
+      creator: { isBanned: false, isDeactivated: false, isDeleted: false },
+    };
     if (city) where.city = city;
     if (country) where.country = country;
 
@@ -113,7 +115,10 @@ export class CommunityService {
   }
 
   async getStudyCircles(topic?: string, cursor?: string, limit = 20) {
-    const where: Record<string, unknown> = { isActive: true };
+    const where: Record<string, unknown> = {
+      isActive: true,
+      leader: { isBanned: false, isDeactivated: false, isDeleted: false },
+    };
     if (topic) where.topic = topic;
 
     const circles = await this.prisma.studyCircle.findMany({
@@ -136,7 +141,9 @@ export class CommunityService {
   }
 
   async getFatwaQuestions(status?: string, madhab?: string, cursor?: string, limit = 20) {
-    const where: Record<string, unknown> = {};
+    const where: Record<string, unknown> = {
+      asker: { isBanned: false, isDeactivated: false, isDeleted: false },
+    };
     if (status) where.status = status;
     if (madhab) where.madhab = madhab;
 
@@ -202,7 +209,10 @@ export class CommunityService {
   }
 
   async getOpportunities(category?: string, cursor?: string, limit = 20) {
-    const where: Record<string, unknown> = { isActive: true };
+    const where: Record<string, unknown> = {
+      isActive: true,
+      organizer: { isBanned: false, isDeactivated: false, isDeleted: false },
+    };
     if (category) where.category = category;
 
     const opps = await this.prisma.volunteerOpportunity.findMany({
@@ -229,7 +239,10 @@ export class CommunityService {
   }
 
   async getEvents(eventType?: string, cursor?: string, limit = 20) {
-    const where: Record<string, unknown> = { startDate: { gte: new Date() } };
+    const where: Record<string, unknown> = {
+      startDate: { gte: new Date() },
+      organizer: { isBanned: false, isDeactivated: false, isDeleted: false },
+    };
     if (eventType) where.eventType = eventType;
 
     const events = await this.prisma.islamicEvent.findMany({
@@ -250,6 +263,8 @@ export class CommunityService {
     return rep;
   }
 
+  // DEFERRED (B09-#13): _reason is accepted but NOT stored — UserReputation model has no reason field.
+  // Requires Prisma schema change to add a reason/audit log field to UserReputation or a separate ReputationLog table.
   async updateReputation(userId: string, delta: number, _reason: string) {
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const rep = await tx.userReputation.upsert({
@@ -278,7 +293,9 @@ export class CommunityService {
   }
 
   async getVoicePosts(cursor?: string, limit = 20) {
-    const where: Record<string, unknown> = {};
+    const where: Record<string, unknown> = {
+      user: { isBanned: false, isDeactivated: false, isDeleted: false },
+    };
 
     const posts = await this.prisma.voicePost.findMany({
       where, orderBy: { createdAt: 'desc' }, take: limit + 1,
@@ -305,7 +322,10 @@ export class CommunityService {
 
   async getActiveWatchParties() {
     return this.prisma.watchParty.findMany({
-      where: { isActive: true },
+      where: {
+        isActive: true,
+        host: { isBanned: false, isDeactivated: false, isDeleted: false },
+      },
       orderBy: { viewerCount: 'desc' },
       take: 50,
       include: { host: { select: USER_SELECT } },
@@ -339,7 +359,10 @@ export class CommunityService {
   }
 
   async getWaqfFunds(cursor?: string, limit = 20) {
-    const where: Record<string, unknown> = { isActive: true };
+    const where: Record<string, unknown> = {
+      isActive: true,
+      creator: { isBanned: false, isDeactivated: false, isDeleted: false },
+    };
 
     const funds = await this.prisma.waqfFund.findMany({
       where, orderBy: { raisedAmount: 'desc' }, take: limit + 1,

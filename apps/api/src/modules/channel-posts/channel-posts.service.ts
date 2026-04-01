@@ -1,14 +1,17 @@
-import { Injectable, NotFoundException, ForbiddenException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, ForbiddenException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { Prisma } from '@prisma/client';
+import Redis from 'ioredis';
 import { ContentSafetyService } from '../moderation/content-safety.service';
 import { sanitizeText } from '@/common/utils/sanitize';
+import { getExcludedUserIds } from '../../common/utils/excluded-users';
 
 @Injectable()
 export class ChannelPostsService {
   private readonly logger = new Logger(ChannelPostsService.name);
   constructor(
     private prisma: PrismaService,
+    @Inject('REDIS') private redis: Redis,
     private contentSafety: ContentSafetyService,
   ) {}
 
@@ -30,12 +33,14 @@ export class ChannelPostsService {
     });
   }
 
-  async getFeed(channelId: string, cursor?: string, limit = 20) {
+  async getFeed(channelId: string, userId?: string, cursor?: string, limit = 20) {
     const safeLim = Math.min(Math.max(limit, 1), 50);
+    const excludedIds = userId ? await getExcludedUserIds(this.prisma, this.redis, userId) : [];
     const posts = await this.prisma.channelPost.findMany({
       where: {
         channelId,
         user: { isBanned: false, isDeactivated: false, isDeleted: false },
+        ...(excludedIds.length > 0 ? { userId: { notIn: excludedIds } } : {}),
       },
       include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } } },
       orderBy: { createdAt: 'desc' },
@@ -95,7 +100,7 @@ export class ChannelPostsService {
 
     await this.prisma.$transaction([
       this.prisma.channelPostLike.create({ data: { userId, postId } }),
-      this.prisma.$executeRaw`UPDATE "channel_posts" SET "likesCount" = "likesCount" + 1 WHERE id = ${postId}`,
+      this.prisma.$executeRaw`UPDATE "channel_posts" SET "likesCount" = GREATEST("likesCount" + 1, 0) WHERE id = ${postId}`,
     ]);
     return { liked: true };
   }
