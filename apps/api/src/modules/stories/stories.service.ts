@@ -1,13 +1,18 @@
 import {
   Injectable,
+  Inject,
   Logger,
   NotFoundException,
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
+import * as Sentry from '@sentry/node';
+import Redis from 'ioredis';
 import { PrismaService } from '../../config/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AiService } from '../ai/ai.service';
+import { acquireCronLock } from '../../common/utils/cron-lock';
 import { ContentSafetyService } from '../moderation/content-safety.service';
 import { QueueService } from '../../common/queue/queue.service';
 import { Prisma, MessageType, ReportReason } from '@prisma/client';
@@ -54,6 +59,7 @@ export class StoriesService {
     private contentSafety: ContentSafetyService,
     private queueService: QueueService,
     private notifications: NotificationsService,
+    @Inject('REDIS') private redis: Redis,
   ) {}
 
   async getFeedStories(userId: string) {
@@ -705,5 +711,37 @@ export class StoriesService {
     });
 
     return { reported: true };
+  }
+
+  /**
+   * Cleanup expired stories older than 7 days (grace period for highlight saves).
+   * Soft-deletes via isRemoved flag. Does NOT touch highlighted stories.
+   * Runs daily at 3:45 AM (staggered from other cleanup crons).
+   */
+  @Cron('0 45 3 * * *')
+  async cleanupExpiredStories(): Promise<number> {
+    try {
+      if (!await acquireCronLock(this.redis, 'cron:cleanupExpiredStories', 3500, this.logger)) return 0;
+
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+      const result = await this.prisma.story.updateMany({
+        where: {
+          expiresAt: { lt: sevenDaysAgo },
+          isHighlight: false,
+          isRemoved: false,
+        },
+        data: { isRemoved: true },
+      });
+
+      if (result.count > 0) {
+        this.logger.log(`Cleaned up ${result.count} expired stories older than 7 days`);
+      }
+      return result.count;
+    } catch (error) {
+      this.logger.error('cleanupExpiredStories cron failed', error instanceof Error ? error.message : error);
+      Sentry.captureException(error);
+      return 0;
+    }
   }
 }

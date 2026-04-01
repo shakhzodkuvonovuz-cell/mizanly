@@ -93,6 +93,18 @@ function validateEnv() {
     }
   }
 
+  // Warn if production database credentials are used in development mode
+  if (!isProduction) {
+    const dbUrl = process.env.DATABASE_URL || '';
+    if (dbUrl.includes('neon.tech') || dbUrl.includes('amazonaws.com') || dbUrl.includes('.rds.')) {
+      logger.warn(
+        'Production database credentials detected in development mode. ' +
+        'Consider using a Neon branch or local PostgreSQL for development. ' +
+        'See: https://neon.tech/docs/introduction/branching',
+      );
+    }
+  }
+
   // Warn about NODE_ENV — Swagger and stack traces leak if not set to 'production'
   if (!process.env.NODE_ENV) {
     logger.warn('NODE_ENV is not set — defaulting to development mode (Swagger enabled, verbose errors). Set NODE_ENV=production for production deploys.');

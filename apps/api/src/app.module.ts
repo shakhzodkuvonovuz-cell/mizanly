@@ -3,6 +3,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
+import * as Joi from 'joi';
 import { ScheduleModule } from '@nestjs/schedule';
 import { UserThrottlerGuard } from './common/guards/user-throttler.guard';
 import { LoggerModule } from 'nestjs-pino';
@@ -110,7 +111,27 @@ import { ResponseTimeMiddleware } from './common/middleware/response-time.middle
         redact: ['req.headers.authorization', 'req.headers.cookie'],
       },
     }),
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validationSchema: Joi.object({
+        DATABASE_URL: Joi.string().required(),
+        CLERK_SECRET_KEY: Joi.string().required(),
+        REDIS_URL: Joi.string().allow('').default(''),
+        STRIPE_SECRET_KEY: Joi.string().allow('').default(''),
+        STRIPE_WEBHOOK_SECRET: Joi.string().allow('').default(''),
+        R2_ACCOUNT_ID: Joi.string().allow('').default(''),
+        R2_ACCESS_KEY_ID: Joi.string().allow('').default(''),
+        R2_SECRET_ACCESS_KEY: Joi.string().allow('').default(''),
+        R2_BUCKET_NAME: Joi.string().allow('').default(''),
+        TOTP_ENCRYPTION_KEY: Joi.string().allow('').default(''),
+        NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
+        PORT: Joi.number().default(3000),
+      }),
+      validationOptions: {
+        allowUnknown: true,
+        abortEarly: false,
+      },
+    }),
     // Redis-backed distributed rate limiting (persists across deploys, shared across instances)
     ThrottlerModule.forRoot({
       throttlers: [{ ttl: 60000, limit: 100 }],
