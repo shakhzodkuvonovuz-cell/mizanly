@@ -28,6 +28,7 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { colors, spacing, fontSize, radius, animation, fonts, tabBar } from '@/theme';
 import { useStore } from '@/store';
 import { messagesApi } from '@/services/api';
+import { showToast } from '@/components/ui/Toast';
 import type { Conversation } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -98,17 +99,17 @@ const ConversationRow = memo(function ConversationRow({
       <Avatar uri={avi} name={name} size="lg" showOnline={!item.isGroup && isOnline} />
       <View style={styles.chatInfo}>
         <View style={[styles.chatTopRow, { flexDirection: rtlFlexRow(isRTL) }]}>
-          <Text style={[styles.chatName, hasUnread && styles.chatNameUnread, { textAlign: rtlTextAlign(isRTL) }, rtlMargin(isRTL, 0, spacing.sm)]} numberOfLines={1}>
+          <Text style={[styles.chatName, { color: tc.text.primary }, hasUnread && styles.chatNameUnread, { textAlign: rtlTextAlign(isRTL) }, rtlMargin(isRTL, 0, spacing.sm)]} numberOfLines={1}>
             {name}
           </Text>
-          <Text style={[styles.chatTime, hasUnread && styles.chatTimeUnread]}>{time}</Text>
+          <Text style={[styles.chatTime, { color: tc.text.tertiary }, hasUnread && styles.chatTimeUnread]}>{time}</Text>
         </View>
         <View style={[styles.chatBottomRow, { flexDirection: rtlFlexRow(isRTL) }]}>
           {isTyping ? (
             <TypingIndicator label={t('risalah.typing')} dotSize={4} variant="inline" />
           ) : (
             <Text
-              style={[styles.chatPreview, hasUnread && styles.chatPreviewUnread]}
+              style={[styles.chatPreview, { color: tc.text.tertiary }, hasUnread && [styles.chatPreviewUnread, { color: tc.text.secondary }]]}
               numberOfLines={1}
             >
               {item.lastMessageText || t('risalah.noMessages')}
@@ -154,6 +155,8 @@ export default function RisalahScreen() {
 
   const listRef = useRef<FlatList<Conversation>>(null);
   useScrollToTop(listRef);
+  // D42-#20: Prevent duplicate navigation on rapid taps
+  const isNavigating = useRef(false);
 
   // useScrollToTop handles scroll-to-top on tab press — no need for a separate focus listener
   // which would reset scroll position when returning from sub-screens
@@ -247,6 +250,10 @@ export default function RisalahScreen() {
     mutationFn: (conversationId: string) => messagesApi.archiveConversation(conversationId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      showToast({ message: t('risalah.archived'), variant: 'success' });
+    },
+    onError: () => {
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
     },
   });
 
@@ -300,7 +307,7 @@ export default function RisalahScreen() {
         onAction={() => router.push('/(screens)/new-conversation')}
       />
     )
-  ), [isLoading, isError, activeTab, router, t]);
+  ), [isLoading, isError, activeTab, router, t, refetch]);
 
   const listHeader = useMemo(() => {
     if (archivedCount === 0) return null;
@@ -318,22 +325,27 @@ export default function RisalahScreen() {
         <Icon name={rtlChevron(isRTL, 'forward')} size="sm" color={tc.text.tertiary} />
       </Pressable>
     );
-  }, [archivedCount, router, isRTL, t, tc.border]);
+  }, [archivedCount, router, isRTL, t, tc.border, tc.text.secondary, tc.text.tertiary]);
 
   const keyExtractor = useCallback((item: Conversation) => item.id, []);
   const renderItem = useCallback(({ item }: { item: Conversation }) => {
     const otherUserId = item.isGroup ? undefined : item.members.find(m => m.user.id !== user?.id)?.user.id;
     const isOnline = otherUserId ? onlineUsers.has(otherUserId) : false;
     const isTyping = (typingUsers.get(item.id)?.size ?? 0) > 0;
-    const isPinned = !!(item as unknown as Record<string, unknown>).isPinned;
+    const isPinned = !!item.isPinned;
     const renderRightActions = () => (
       <View style={{ flexDirection: 'row' }}>
         <Pressable
           style={[styles.archiveAction, { backgroundColor: colors.emerald }]}
-          onPress={() => {
+          onPress={async () => {
             haptic.tick();
-            messagesApi.pinConversation(item.id, !isPinned);
-            queryClient.invalidateQueries({ queryKey: ['conversations'] });
+            try {
+              await messagesApi.pinConversation(item.id, !isPinned);
+              queryClient.invalidateQueries({ queryKey: ['conversations'] });
+              showToast({ message: isPinned ? t('messages.unpinned', 'Unpinned') : t('messages.pinned', 'Pinned'), variant: 'success' });
+            } catch {
+              showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+            }
           }}
           accessibilityLabel={isPinned ? t('messages.unpin', 'Unpin') : t('messages.pin', 'Pin')}
           accessibilityRole="button"
@@ -342,7 +354,7 @@ export default function RisalahScreen() {
         </Pressable>
         <Pressable
           style={styles.archiveAction}
-          onPress={() => archiveMutation.mutate(item.id)}
+          onPress={() => { haptic.tick(); archiveMutation.mutate(item.id); }}
           accessibilityLabel={t('accessibility.archiveConversation')}
           accessibilityRole="button"
         >
@@ -360,13 +372,18 @@ export default function RisalahScreen() {
         <ConversationRow
           item={item}
           userId={user?.id}
-          onPress={() => router.push(`/(screens)/conversation/${item.id}`)}
+          onPress={() => {
+            if (isNavigating.current) return;
+            isNavigating.current = true;
+            router.push(`/(screens)/conversation/${item.id}`);
+            setTimeout(() => { isNavigating.current = false; }, 500);
+          }}
           isOnline={isOnline}
           isTyping={isTyping}
         />
       </Swipeable>
     );
-  }, [user?.id, router, onlineUsers, typingUsers, archiveMutation, t]);
+  }, [user?.id, router, onlineUsers, typingUsers, archiveMutation, t, haptic, queryClient, tc.text.primary, tc.bg]);
   const getItemLayout = useCallback((_: ArrayLike<Conversation> | null | undefined, index: number) => ({
     length: 72,
     offset: 72 * index,
@@ -476,7 +493,7 @@ export default function RisalahScreen() {
             accessibilityLabel={chip === 'groups' ? t('risalah.groups') : chip === 'unread' ? t('risalah.unread') : t('risalah.all')}
             accessibilityRole="button"
           >
-            <Text style={[styles.filterChipText, filterChip === chip && styles.filterChipTextSelected]}>
+            <Text style={[styles.filterChipText, { color: tc.text.secondary }, filterChip === chip && styles.filterChipTextSelected]}>
               {chip === 'groups' ? t('risalah.groups') : chip === 'unread' ? t('risalah.unread') : t('risalah.all')}
             </Text>
           </Pressable>

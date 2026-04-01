@@ -449,6 +449,7 @@ export interface Conversation {
   // From membership row
   isMuted?: boolean;
   isArchived?: boolean;
+  isPinned?: boolean;
   unreadCount?: number;
   lastReadAt?: string;
 }
