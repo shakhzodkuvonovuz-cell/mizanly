@@ -19,7 +19,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 class BoostPostDto {
   @IsString() @MaxLength(50) postId: string;
   @IsNumber() @Min(1) @Max(10000) budget: number;
-  @IsNumber() @Min(1) @Max(720) duration: number;
+  @IsNumber() @Min(1) @Max(30) duration: number; // Duration in days (matches MAX_DURATION_DAYS in service)
 }
 
 class SetReminderDto {

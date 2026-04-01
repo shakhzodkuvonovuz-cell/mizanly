@@ -11,6 +11,14 @@ describe('FeedTransparencyService', () => {
       providers: [
         FeedTransparencyService,
         {
+          provide: 'REDIS',
+          useValue: {
+            get: jest.fn().mockResolvedValue(null),
+            set: jest.fn().mockResolvedValue('OK'),
+            del: jest.fn().mockResolvedValue(1),
+          },
+        },
+        {
           provide: PrismaService,
           useValue: {
             post: { findUnique: jest.fn(), findMany: jest.fn() },
@@ -21,6 +29,7 @@ describe('FeedTransparencyService', () => {
             thread: { findUnique: jest.fn() },
             block: { findMany: jest.fn().mockResolvedValue([]) },
             mute: { findMany: jest.fn().mockResolvedValue([]) },
+            restrict: { findMany: jest.fn().mockResolvedValue([]) },
           },
         },
       ],

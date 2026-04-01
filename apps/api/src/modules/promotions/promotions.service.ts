@@ -172,7 +172,9 @@ export class PromotionsService {
 
     // Store branded partnership info in content metadata via a tag prefix
     // Format: [Paid partnership with PartnerName]
-    const brandedTag = `[Paid partnership with ${partnerName.trim()}]`;
+    // Strip brackets from partnerName to prevent regex injection in removal
+    const safePartnerName = partnerName.trim().replace(/[\[\]]/g, '');
+    const brandedTag = `[Paid partnership with ${safePartnerName}]`;
     const currentContent = post.content || '';
 
     // Remove existing branded tag if present

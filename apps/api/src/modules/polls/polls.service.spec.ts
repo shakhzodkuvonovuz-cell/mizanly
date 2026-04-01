@@ -188,14 +188,14 @@ describe('PollsService', () => {
     it('should delete vote and decrement counts', async () => {
       const pollId = 'poll-123';
       const userId = 'user-456';
-      const mockVote = { optionId: 'opt1' };
+      const mockVotes = [{ optionId: 'opt1' }];
       prisma.poll.findUnique.mockResolvedValue({ id: pollId, expiresAt: null });
-      prisma.pollVote.findFirst.mockResolvedValue(mockVote);
+      prisma.pollVote.findMany.mockResolvedValue(mockVotes);
       prisma.$transaction.mockResolvedValue([{}, {}, {}]);
 
       const result = await service.retractVote(pollId, userId);
 
-      expect(prisma.pollVote.findFirst).toHaveBeenCalledWith({
+      expect(prisma.pollVote.findMany).toHaveBeenCalledWith({
         where: {
           userId,
           option: { pollId },
@@ -209,7 +209,7 @@ describe('PollsService', () => {
       const pollId = 'poll-123';
       const userId = 'user-456';
       prisma.poll.findUnique.mockResolvedValue({ id: pollId, expiresAt: null });
-      prisma.pollVote.findFirst.mockResolvedValue(null);
+      prisma.pollVote.findMany.mockResolvedValue([]);
 
       await expect(service.retractVote(pollId, userId)).rejects.toThrow(
         BadRequestException,
@@ -255,7 +255,7 @@ describe('PollsService', () => {
         include: { options: { where: { id: optionId } } },
       });
       expect(prisma.pollVote.findMany).toHaveBeenCalledWith({
-        where: { optionId },
+        where: { optionId, user: { isBanned: false, isDeactivated: false, isDeleted: false } },
         include: {
           user: {
             select: { id: true, username: true, displayName: true, avatarUrl: true },
@@ -295,7 +295,7 @@ describe('PollsService', () => {
       await service.getVoters(pollId, optionId, cursor);
 
       expect(prisma.pollVote.findMany).toHaveBeenCalledWith({
-        where: { optionId },
+        where: { optionId, user: { isBanned: false, isDeactivated: false, isDeleted: false } },
         include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
         orderBy: { createdAt: 'desc' },
         take: 21,

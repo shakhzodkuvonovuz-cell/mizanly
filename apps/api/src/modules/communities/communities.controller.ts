@@ -42,7 +42,8 @@ export class CommunitiesController {
     @Query('cursor') cursor?: string,
     @Query('limit') limit = 20,
   ) {
-    return this.communitiesService.list(viewerId, cursor, limit);
+    const safeLim = Math.min(Math.max(Number(limit) || 20, 1), 100);
+    return this.communitiesService.list(viewerId, cursor, safeLim);
   }
 
   @Get(':id')
@@ -115,6 +116,7 @@ export class CommunitiesController {
     @Query('cursor') cursor?: string,
     @Query('limit') limit = 50,
   ) {
-    return this.communitiesService.listMembers(id, viewerId, cursor, limit);
+    const safeLim = Math.min(Math.max(Number(limit) || 50, 1), 100);
+    return this.communitiesService.listMembers(id, viewerId, cursor, safeLim);
   }
 }

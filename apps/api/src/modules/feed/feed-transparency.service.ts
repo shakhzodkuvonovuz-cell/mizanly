@@ -1,5 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { getExcludedUserIds } from '../../common/utils/excluded-users';
+import Redis from 'ioredis';
 
 export interface ExplainResult {
   reasons: string[];
@@ -40,7 +42,10 @@ const ENHANCED_POST_SELECT = {
 
 @Injectable()
 export class FeedTransparencyService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject('REDIS') private redis: Redis,
+  ) {}
 
   private static readonly ISLAMIC_TAGS = new Set([
     'quran', 'hadith', 'sunnah', 'islam', 'muslim', 'dua', 'salah', 'ramadan',
@@ -171,31 +176,8 @@ export class FeedTransparencyService {
       return { data: [], meta: { cursor: null, hasMore: false } };
     }
 
-    // Build exclusion list from blocks and mutes if user is authenticated
-    let excludedUserIds: string[] = [];
-    if (userId) {
-      const [blocks, mutes] = await Promise.all([
-        this.prisma.block.findMany({
-          where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
-          select: { blockerId: true, blockedId: true },
-          take: 10000,
-        }),
-        this.prisma.mute.findMany({
-          where: { userId },
-          select: { mutedId: true },
-          take: 10000,
-        }),
-      ]);
-      const blockedIds = new Set<string>();
-      for (const b of blocks) {
-        if (b.blockerId === userId) blockedIds.add(b.blockedId);
-        else blockedIds.add(b.blockerId);
-      }
-      for (const m of mutes) {
-        blockedIds.add(m.mutedId);
-      }
-      excludedUserIds = Array.from(blockedIds);
-    }
+    // Use cached utility for block/mute/restrict exclusion
+    const excludedUserIds = userId ? await getExcludedUserIds(this.prisma, this.redis, userId) : [];
 
     const take = limit + 1;
     const posts = await this.prisma.post.findMany({
@@ -208,9 +190,10 @@ export class FeedTransparencyService {
           })) },
           { OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] },
         ],
-        ...(excludedUserIds.length > 0
-          ? { userId: { notIn: excludedUserIds } }
-          : {}),
+        user: {
+          isDeactivated: false, isBanned: false, isDeleted: false,
+          ...(excludedUserIds.length > 0 ? { id: { notIn: excludedUserIds } } : {}),
+        },
       },
       select: ENHANCED_POST_SELECT,
       take,

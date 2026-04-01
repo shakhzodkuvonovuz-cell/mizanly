@@ -155,40 +155,37 @@ export class PollsService {
     return { success: true };
   }
 
-  async retractVote(pollId: string, userId: string) {
-    // Check if poll has expired
+  async retractVote(pollId: string, userId: string, optionId?: string) {
     const poll = await this.prisma.poll.findUnique({ where: { id: pollId } });
     if (!poll) throw new NotFoundException('Poll not found');
     if (poll.endsAt && poll.endsAt < new Date()) {
       throw new BadRequestException('Cannot retract vote from an expired poll');
     }
 
-    // Find the user's vote in this poll
-    const vote = await this.prisma.pollVote.findFirst({
+    // Find the user's votes in this poll
+    const votes = await this.prisma.pollVote.findMany({
       where: {
         userId,
-        option: {
-          pollId,
-        },
+        option: { pollId },
+        ...(optionId ? { optionId } : {}),
       },
     });
 
-    if (!vote) {
-      throw new BadRequestException('You have not voted in this poll');
+    if (votes.length === 0) {
+      throw new BadRequestException(optionId ? 'You have not voted for this option' : 'You have not voted in this poll');
     }
 
-    await this.prisma.$transaction([
-      this.prisma.pollVote.delete({
-        where: {
-          userId_optionId: {
-            userId,
-            optionId: vote.optionId,
-          },
-        },
-      }),
-      this.prisma.$executeRaw`UPDATE "poll_options" SET "votesCount" = GREATEST("votesCount" - 1, 0) WHERE id = ${vote.optionId}`,
-      this.prisma.$executeRaw`UPDATE "polls" SET "totalVotes" = GREATEST("totalVotes" - 1, 0) WHERE id = ${pollId}`,
-    ]);
+    // Delete all matching votes and decrement counts atomically
+    const ops: Prisma.PrismaPromise<unknown>[] = [];
+    for (const vote of votes) {
+      ops.push(
+        this.prisma.pollVote.delete({ where: { userId_optionId: { userId, optionId: vote.optionId } } }),
+        this.prisma.$executeRaw`UPDATE "poll_options" SET "votesCount" = GREATEST("votesCount" - 1, 0) WHERE id = ${vote.optionId}`,
+      );
+    }
+    ops.push(this.prisma.$executeRaw`UPDATE "polls" SET "totalVotes" = GREATEST("totalVotes" - ${votes.length}, 0) WHERE id = ${pollId}`);
+
+    await this.prisma.$transaction(ops);
 
     return { success: true };
   }
@@ -213,7 +210,7 @@ export class PollsService {
       ? { userId_optionId: { userId: cursor, optionId } }
       : undefined;
     const votes = await this.prisma.pollVote.findMany({
-      where: { optionId },
+      where: { optionId, user: { isBanned: false, isDeactivated: false, isDeleted: false } },
       include: {
         user: {
           select: {

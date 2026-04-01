@@ -69,7 +69,7 @@ export class CommunitiesService {
 
     // If slug is empty (all characters were stripped), generate a random one
     if (!slug) {
-      slug = 'community-' + Math.random().toString(36).slice(2, 9);
+      slug = 'community-' + require('crypto').randomUUID().slice(0, 8);
     }
 
     return slug;
@@ -238,11 +238,19 @@ export class CommunitiesService {
       updateData.privacy = dto.isPrivate ? CirclePrivacy.PRIVATE : CirclePrivacy.PUBLIC;
     }
 
-    const updated = await this.prisma.circle.update({
-      where: { id },
-      data: updateData,
-      select: CIRCLE_SELECT,
-    });
+    let updated;
+    try {
+      updated = await this.prisma.circle.update({
+        where: { id },
+        data: updateData,
+        select: CIRCLE_SELECT,
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('A community with a similar name already exists');
+      }
+      throw error;
+    }
 
     return { data: updated, success: true, timestamp: new Date().toISOString() };
   }

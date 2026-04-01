@@ -631,19 +631,17 @@ export class FeedService {
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
     // Use SQL aggregation instead of loading 500 interactions into JS
-    const results = await this.prisma.$queryRawUnsafe<Array<{ creatorId: string }>>(
-      `SELECT p."userId" as "creatorId"
+    const results = await this.prisma.$queryRaw<Array<{ creatorId: string }>>`
+      SELECT p."userId" as "creatorId"
        FROM "feed_interactions" fi
        JOIN "posts" p ON fi."postId" = p.id
-       WHERE fi."userId" = $1
-         AND fi."createdAt" >= $2
+       WHERE fi."userId" = ${userId}
+         AND fi."createdAt" >= ${sevenDaysAgo}
          AND (fi."viewed" = true OR fi."liked" = true OR fi."commented" = true OR fi."shared" = true OR fi."saved" = true)
-         AND p."userId" != $1
+         AND p."userId" != ${userId}
        GROUP BY p."userId"
-       HAVING COUNT(*) >= 10`,
-      userId,
-      sevenDaysAgo,
-    );
+       HAVING COUNT(*) >= 10
+    `;
 
     return new Set(results.map(r => r.creatorId));
   }
