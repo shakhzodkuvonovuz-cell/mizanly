@@ -10,3 +10,7 @@ expo-env.d.ts
 .env.local
 .env.*.local
 !.env.example
+
+# Firebase config (contains API keys — should not be tracked)
+google-services.json
+GoogleService-Info.plist
