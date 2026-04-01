@@ -923,8 +923,8 @@ describe('PostsService', () => {
       const result = await service.dismiss(postId, userId);
 
       expect(prisma.feedDismissal.upsert).toHaveBeenCalledWith({
-        where: { userId_contentId_contentType: { userId, contentId: postId, contentType: 'POST' } },
-        create: { userId, contentId: postId, contentType: 'POST' },
+        where: { userId_contentId_contentType: { userId, contentId: postId, contentType: 'post' } },
+        create: { userId, contentId: postId, contentType: 'post' },
         update: {},
       });
       expect(result).toEqual({ dismissed: true });
@@ -1443,7 +1443,7 @@ describe('PostsService', () => {
       await service.dismiss('p1', 'u1');
       expect(prisma.feedDismissal.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
-          create: expect.objectContaining({ contentType: 'POST' }),
+          create: expect.objectContaining({ contentType: 'post' }),
         }),
       );
     });

@@ -117,7 +117,7 @@ export class PostsService {
         async (): Promise<ScoredItem[]> => {
           const [excludedIds, dismissals] = await Promise.all([
             getExcludedUserIds(this.prisma, this.redis, userId),
-            this.prisma.feedDismissal.findMany({ where: { userId, contentType: 'POST' }, select: { contentId: true }, take: 200 }),
+            this.prisma.feedDismissal.findMany({ where: { userId, contentType: 'post' }, select: { contentId: true }, take: 200 }),
           ]);
           const dismissedPostIds = dismissals.map(d => d.contentId);
 
@@ -1552,8 +1552,8 @@ export class PostsService {
 
   async dismiss(postId: string, userId: string) {
     await this.prisma.feedDismissal.upsert({
-      where: { userId_contentId_contentType: { userId, contentId: postId, contentType: 'POST' } },
-      create: { userId, contentId: postId, contentType: 'POST' },
+      where: { userId_contentId_contentType: { userId, contentId: postId, contentType: 'post' } },
+      create: { userId, contentId: postId, contentType: 'post' },
       update: {},
     });
     return { dismissed: true };

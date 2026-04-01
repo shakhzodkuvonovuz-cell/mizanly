@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
-import { ForwardedFromType, ChatFolderFilterType, AdminLogAction } from '@prisma/client';
+import { ForwardedFromType, ChatFolderFilterType, AdminLogAction, MediaType } from '@prisma/client';
 
 const VALID_ADMIN_ACTIONS = [
   'MEMBER_ADDED', 'MEMBER_REMOVED', 'MEMBER_BANNED',
@@ -59,7 +59,12 @@ export class TelegramFeaturesService {
     }
 
     return this.prisma.savedMessage.create({
-      data: { userId, ...dto, forwardedFromType: dto.forwardedFromType as ForwardedFromType | undefined },
+      data: {
+        userId,
+        ...dto,
+        mediaType: dto.mediaType as MediaType | undefined,
+        forwardedFromType: dto.forwardedFromType as ForwardedFromType | undefined,
+      },
     });
   }
 

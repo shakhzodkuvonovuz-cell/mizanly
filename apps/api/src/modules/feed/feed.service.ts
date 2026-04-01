@@ -1,6 +1,6 @@
 import { Injectable, Inject, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
-import { ContentSpace, PostVisibility, Prisma } from '@prisma/client';
+import { ContentSpace, PostVisibility, Prisma, FeedContentType } from '@prisma/client';
 import Redis from 'ioredis';
 import { CANDIDATE_POOL_SIZE, TIME_WINDOWS } from '../../common/constants/feed-scoring';
 import { getExcludedUserIds } from '../../common/utils/excluded-users';
@@ -80,7 +80,7 @@ export class FeedService {
     });
   }
 
-  async dismiss(userId: string, contentId: string, contentType: string) {
+  async dismiss(userId: string, contentId: string, contentType: FeedContentType) {
     // Dismissal is persisted in DB (feedDismissal table). The feed algorithm reads
     // dismissed content IDs via getDismissedIds() to exclude from future pages.
     const result = this.prisma.feedDismissal.upsert({
@@ -93,7 +93,7 @@ export class FeedService {
     return result;
   }
 
-  async getDismissedIds(userId: string, contentType: string): Promise<string[]> {
+  async getDismissedIds(userId: string, contentType: FeedContentType): Promise<string[]> {
     const cacheKey = `dismissed:${userId}:${contentType}`;
     const cached = await this.redis.get(cacheKey);
     if (cached) {
@@ -145,7 +145,7 @@ export class FeedService {
         take: 50,
       }),
       this.getExcludedUserIds(userId),
-      this.getDismissedIds(userId, 'POST'),
+      this.getDismissedIds(userId, 'post' as FeedContentType),
     ]);
     const hashtagIds = followedTags.map(h => h.hashtagId);
     const hashtags = hashtagIds.length > 0
@@ -234,7 +234,7 @@ export class FeedService {
     return { reset: true, message: 'Your algorithm has been reset. Your feed will now show fresh content.' };
   }
 
-  async undismiss(userId: string, contentId: string, contentType: string) {
+  async undismiss(userId: string, contentId: string, contentType: FeedContentType) {
     try {
       await this.prisma.feedDismissal.delete({ where: { userId_contentId_contentType: { userId, contentId, contentType } } });
     } catch (error) {
@@ -314,7 +314,7 @@ export class FeedService {
     if (userId) {
       const [excludedIds, dismissed, cf] = await Promise.all([
         this.getExcludedUserIds(userId),
-        this.getDismissedIds(userId, 'POST'),
+        this.getDismissedIds(userId, 'post' as FeedContentType),
         this.buildContentFilterWhere(userId),
       ]);
       if (excludedIds.length > 0) {
@@ -445,7 +445,7 @@ export class FeedService {
     if (userId) {
       const [excludedIds, dismissed] = await Promise.all([
         this.getExcludedUserIds(userId),
-        this.getDismissedIds(userId, 'POST'),
+        this.getDismissedIds(userId, 'post' as FeedContentType),
       ]);
       if (excludedIds.length > 0) {
         userFilter = { id: { notIn: excludedIds } };
@@ -573,7 +573,7 @@ export class FeedService {
     if (userId) {
       const [excludedIds, dismissed] = await Promise.all([
         this.getExcludedUserIds(userId),
-        this.getDismissedIds(userId, 'POST'),
+        this.getDismissedIds(userId, 'post' as FeedContentType),
       ]);
       if (excludedIds.length > 0) {
         userFilter = { id: { notIn: excludedIds } };

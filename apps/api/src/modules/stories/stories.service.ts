@@ -15,7 +15,7 @@ import { AiService } from '../ai/ai.service';
 import { acquireCronLock } from '../../common/utils/cron-lock';
 import { ContentSafetyService } from '../moderation/content-safety.service';
 import { QueueService } from '../../common/queue/queue.service';
-import { Prisma, MessageType, ReportReason } from '@prisma/client';
+import { Prisma, MessageType, ReportReason, StickerResponseType } from '@prisma/client';
 import { sanitizeText } from '../../common/utils/sanitize';
 
 const STORY_SELECT = {
@@ -618,7 +618,7 @@ export class StoriesService {
     });
   }
 
-  async submitStickerResponse(storyId: string, userId: string, stickerType: string, responseData: Record<string, unknown>) {
+  async submitStickerResponse(storyId: string, userId: string, stickerType: StickerResponseType, responseData: Record<string, unknown>) {
     const story = await this.prisma.story.findUnique({ where: { id: storyId } });
     if (!story) throw new NotFoundException('Story not found');
 
@@ -654,7 +654,7 @@ export class StoriesService {
     });
   }
 
-  async getStickerResponses(storyId: string, ownerId: string, stickerType?: string) {
+  async getStickerResponses(storyId: string, ownerId: string, stickerType?: StickerResponseType) {
     const story = await this.prisma.story.findUnique({ where: { id: storyId } });
     if (!story || story.userId !== ownerId) throw new ForbiddenException('Only story owner can view responses');
     return this.prisma.storyStickerResponse.findMany({

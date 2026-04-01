@@ -1,9 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { ConfigService } from '@nestjs/config';
-import { Prisma } from '@prisma/client';
-
-type StickerStyle = 'cartoon' | 'calligraphy' | 'emoji' | 'geometric' | 'kawaii';
+import { Prisma, StickerStyle } from '@prisma/client';
 
 // Inappropriate content filters for sticker generation
 const BLOCKED_TERMS = [

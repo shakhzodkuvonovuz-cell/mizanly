@@ -17,7 +17,8 @@ import { StoriesService } from './stories.service';
 import { CreateStoryDto } from './dto/create-story.dto';
 import { CreateHighlightDto } from './dto/create-highlight.dto';
 import { UpdateHighlightDto } from './dto/update-highlight.dto';
-import { IsString, IsObject, MaxLength, MinLength } from 'class-validator';
+import { IsString, IsObject, MaxLength, MinLength, IsEnum } from 'class-validator';
+import { StickerResponseType } from '@prisma/client';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -27,7 +28,7 @@ class StoryReplyDto {
 }
 
 class StickerResponseDto {
-  @IsString() @MaxLength(50) stickerType: string;
+  @IsEnum(StickerResponseType) stickerType: StickerResponseType;
   @IsObject() responseData: Record<string, unknown>;
 }
 
@@ -218,7 +219,7 @@ export class StoriesController {
   @Get(':id/sticker-responses')
   @UseGuards(ClerkAuthGuard) @ApiBearerAuth()
   @ApiOperation({ summary: 'Get sticker responses' })
-  async getStickerResponses(@Param('id') id: string, @CurrentUser('id') userId: string, @Query('type') type?: string) {
+  async getStickerResponses(@Param('id') id: string, @CurrentUser('id') userId: string, @Query('type') type?: StickerResponseType) {
     return this.storiesService.getStickerResponses(id, userId, type);
   }
 

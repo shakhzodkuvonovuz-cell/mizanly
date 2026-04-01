@@ -4,6 +4,7 @@ import { Throttle } from '@nestjs/throttler';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { FeedContentType } from '@prisma/client';
 import { FeedService } from './feed.service';
 import { FeedTransparencyService } from './feed-transparency.service';
 import { PersonalizedFeedService } from './personalized-feed.service';
@@ -42,7 +43,7 @@ export class FeedController {
     if (!validTypes.includes(t)) {
       throw new BadRequestException(`Invalid contentType: ${t}. Must be one of: ${validTypes.join(', ')}`);
     }
-    return this.feed.dismiss(userId, id, t);
+    return this.feed.dismiss(userId, id, t as FeedContentType);
   }
 
   @UseGuards(ClerkAuthGuard)
@@ -58,7 +59,7 @@ export class FeedController {
     if (!validTypes.includes(t)) {
       throw new BadRequestException(`Invalid contentType: ${t}. Must be one of: ${validTypes.join(', ')}`);
     }
-    return this.feed.undismiss(userId, id, t);
+    return this.feed.undismiss(userId, id, t as FeedContentType);
   }
 
   // Finding #402: Trending in your community

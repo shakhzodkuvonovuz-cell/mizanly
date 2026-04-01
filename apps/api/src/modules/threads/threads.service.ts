@@ -1075,8 +1075,8 @@ export class ThreadsService {
 
   async dismiss(threadId: string, userId: string) {
     await this.prisma.feedDismissal.upsert({
-      where: { userId_contentId_contentType: { userId, contentId: threadId, contentType: 'THREAD' } },
-      create: { userId, contentId: threadId, contentType: 'THREAD' },
+      where: { userId_contentId_contentType: { userId, contentId: threadId, contentType: 'thread' } },
+      create: { userId, contentId: threadId, contentType: 'thread' },
       update: {},
     });
     return { dismissed: true };

@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { TierLevel } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 interface UpdateTierData {
@@ -215,7 +216,7 @@ export class MonetizationService {
         price,
         currency: 'USD',
         benefits,
-        level: tierLevel,
+        level: tierLevel as TierLevel,
         isActive: true,
       },
     });
@@ -252,7 +253,7 @@ export class MonetizationService {
         ...(dto.name !== undefined && { name: dto.name }),
         ...(dto.price !== undefined && { price: dto.price }),
         ...(dto.benefits !== undefined && { benefits: dto.benefits }),
-        ...(dto.level !== undefined && { level: dto.level }),
+        ...(dto.level !== undefined && { level: dto.level as TierLevel }),
         ...(dto.isActive !== undefined && { isActive: dto.isActive }),
       },
     });

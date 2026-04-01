@@ -3,7 +3,7 @@ import { randomInt } from 'crypto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import * as Sentry from '@sentry/node';
 import { ConfigService } from '@nestjs/config';
-import { Prisma } from '@prisma/client';
+import { Prisma, QuranPlanType } from '@prisma/client';
 import Redis from 'ioredis';
 import { acquireCronLock } from '../../common/utils/cron-lock';
 import { PrismaService } from '../../config/prisma.service';
@@ -584,7 +584,7 @@ export class IslamicService {
     return this.prisma.quranReadingPlan.create({
       data: {
         userId,
-        planType: dto.planType,
+        planType: dto.planType as QuranPlanType,
         startDate,
         endDate,
       },

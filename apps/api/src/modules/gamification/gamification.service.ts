@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
-import { StreakType, ChallengeType, ChallengeCategory, SeriesCategory, ProfileLayout, ProfileBioFont } from '@prisma/client';
+import { StreakType, ChallengeType, ChallengeCategory, SeriesCategory, ProfileLayout, ProfileBioFont, XPReason } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 
 // XP rewards for different actions
@@ -156,7 +156,7 @@ export class GamificationService {
       }
 
       await tx.xPHistory.create({
-        data: { userXPId: xp.id, amount, reason },
+        data: { userXPId: xp.id, amount, reason: reason as XPReason },
       });
 
       return { ...xp, level: newLevel };

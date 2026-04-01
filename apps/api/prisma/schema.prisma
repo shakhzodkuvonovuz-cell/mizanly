@@ -806,7 +806,7 @@ enum MediaType {
 enum StickerStyle {
   cartoon
   calligraphy
-  emoji_style @map("emoji")
+  emoji
   geometric
   kawaii
 }
@@ -868,6 +868,14 @@ enum XPReason {
   custom
 }
 
+enum CreatorCategory {
+  educator
+  entertainer
+  scholar
+  business
+  journalist
+}
+
 // ============================================================
 // USER & PROFILE
 // ============================================================
@@ -913,7 +921,7 @@ model User {
 
   isScholarVerified Boolean @default(false)
   nasheedMode       Boolean @default(false)
-  creatorCategory   String?  @db.VarChar(30) // educator, entertainer, scholar, business, journalist
+  creatorCategory   CreatorCategory? // S01-#44: was String, closed set per DTO @IsIn
 
   // Legal/compliance
   tosAcceptedAt     DateTime?
@@ -1166,6 +1174,9 @@ model User {
   adminAuditLogs           AdminAuditLog[]              @relation("adminAuditLogs")
   savedSearches            SavedSearch[]                @relation("savedSearches")
   ownedStickerPacks        StickerPack[]                @relation("ownedStickerPacks")
+  audioTracks              AudioTrack[]                 @relation("audioTracks")
+  fatwaAnswers             FatwaQuestion[]              @relation("FatwaAnswers")
+  broadcastChannelsCreated BroadcastChannel[]           @relation("broadcastChannelsCreated")
 
   // @@index([username]) — redundant: username is @unique
   // @@index([clerkId]) — redundant: clerkId is @unique
@@ -2009,12 +2020,15 @@ model BroadcastChannel {
   channelType      ChannelType        @default(BROADCAST)
   subscribersCount Int                @default(0)
   postsCount       Int                @default(0)
+  createdById      String?            // R2: owner/creator FK (nullable for existing rows)
+  createdBy        User?              @relation("broadcastChannelsCreated", fields: [createdById], references: [id], onDelete: SetNull)
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
   members          ChannelMember[]
   messages         BroadcastMessage[]
 
   // @@index([slug]) — redundant: slug is @unique
+  @@index([createdById]) // R2: owner lookup
   @@map("broadcast_channels")
 }
 
@@ -2284,6 +2298,15 @@ model Report {
   @@index([reportedCommentId]) // B11-#9: FK index for comment reports
   @@index([reportedMessageId]) // B11-#9: FK index for message reports
   @@index([reviewedById]) // B11-#9: reviewer lookup
+  // B11-#7: prevent duplicate reports (same reporter + same target)
+  // Prisma nullable unique: multiple NULLs allowed, only non-null values deduplicated
+  @@unique([reporterId, reportedPostId])
+  @@unique([reporterId, reportedCommentId])
+  @@unique([reporterId, reportedMessageId])
+  @@unique([reporterId, reportedThreadId])
+  @@unique([reporterId, reportedReelId])
+  @@unique([reporterId, reportedVideoId])
+  @@unique([reporterId, reportedUserId])
   @@map("reports")
 }
 
@@ -2466,6 +2489,8 @@ model PollVote {
 
 model AudioTrack {
   id         String   @id @default(cuid())
+  userId     String?  // R2-A16-#2: track creator/uploader
+  user       User?    @relation("audioTracks", fields: [userId], references: [id], onDelete: SetNull)
   title      String   @db.VarChar(200)
   artist     String?  @db.VarChar(100)
   duration   Float
@@ -2478,6 +2503,7 @@ model AudioTrack {
   reels      Reel[]
 
   @@index([reelsCount(sort: Desc)])
+  @@index([userId]) // R2-A16-#2: lookup by uploader
   @@map("audio_tracks")
 }
 
@@ -2564,7 +2590,7 @@ model StoryStickerResponse {
   id           String   @id @default(cuid())
   storyId      String
   userId       String
-  stickerType  String
+  stickerType  StickerResponseType // S01-#34: was String
   responseData Json
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt // S01-#22: upsert mutation tracking
@@ -2747,8 +2773,8 @@ model GeneratedSticker {
   user      User     @relation("generatedStickers", fields: [userId], references: [id], onDelete: Cascade)
   imageUrl  String
   prompt    String
-  style     String   @default("cartoon")
-  createdAt DateTime @default(now())
+  style     StickerStyle @default(cartoon) // S02-#47: was String
+  createdAt DateTime     @default(now())
 
   @@index([userId, createdAt(sort: Desc)])
   @@map("generated_stickers")
@@ -3058,7 +3084,7 @@ model MembershipTier {
   currency      String                   @default("USD") @db.VarChar(3)
   benefits      String[]                 @default([])
   isActive      Boolean                  @default(true)
-  level         String                   @default("bronze") @db.VarChar(10)
+  level         TierLevel                @default(bronze) // S02-#48: was String
   subscriptions MembershipSubscription[]
   createdAt     DateTime                 @default(now())
   updatedAt     DateTime                 @updatedAt
@@ -3371,7 +3397,7 @@ model GiftRecord {
   giftType    String   @db.VarChar(50)
   coinCost    Int
   contentId   String?
-  contentType String?  @db.VarChar(10)
+  contentType FeedContentType? // S02-#56: was String?, reuses FeedContentType
   createdAt   DateTime @default(now())
 
   @@index([receiverId])
@@ -3429,7 +3455,7 @@ model QuranReadingPlan {
   id          String   @id @default(uuid())
   userId      String
   user        User     @relation("quranReadingPlans", fields: [userId], references: [id], onDelete: Cascade)
-  planType    String
+  planType    QuranPlanType // S02-#27: was String
   startDate   DateTime
   endDate     DateTime
   currentJuz  Int      @default(1)
@@ -3749,7 +3775,7 @@ model EndScreen {
   targetId      String?
   label         String        @db.VarChar(60)
   url           String?
-  position      String        @default("bottom-right")
+  position      ScreenPosition @default(bottom_right) // S02-#49: was String
   showAtSeconds Float         @default(10)
   createdAt     DateTime      @default(now())
   video         Video         @relation(fields: [videoId], references: [id], onDelete: Cascade)
@@ -3899,7 +3925,7 @@ model XPHistory {
   id        String   @id @default(uuid())
   userXPId  String
   amount    Int
-  reason    String // post_created | comment_helpful | quran_read | challenge_completed | etc.
+  reason    XPReason // S02-#55: was String
   createdAt DateTime @default(now())
   userXP    UserXP   @relation(fields: [userXPId], references: [id], onDelete: Cascade)
 
@@ -4268,6 +4294,7 @@ model PremiumSubscription {
 
 // ── Community & Safety Models (Tier 12) ─────────────────
 
+/// @deprecated Dead model — zero service references. Remove in next major migration.
 model LocalBoard {
   id           String   @id @default(uuid())
   name         String   @db.VarChar(200)
@@ -4335,7 +4362,8 @@ model FatwaQuestion {
   status     FatwaStatus @default(FATWA_PENDING)
   answerId   String?
   answer     FatwaQuestion? @relation("FatwaAnswer", fields: [answerId], references: [id], onDelete: SetNull)
-  answeredBy String?
+  answeredBy     String?
+  answeredByUser User?  @relation("FatwaAnswers", fields: [answeredBy], references: [id], onDelete: SetNull)
   answeredAt DateTime?
   createdAt  DateTime  @default(now())
   asker          User            @relation("FatwaAsker", fields: [askerId], references: [id], onDelete: Cascade)
@@ -4346,6 +4374,7 @@ model FatwaQuestion {
   @@map("fatwa_questions")
 }
 
+/// @deprecated Dead model — zero service references. Remove in next major migration.
 model VolunteerOpportunity {
   id          String    @id @default(uuid())
   organizerId String
@@ -4392,6 +4421,7 @@ model IslamicEvent {
   @@map("islamic_events")
 }
 
+/// @deprecated No standalone service — only referenced in a DEFERRED comment. Remove in next major migration.
 model UserReputation {
   id            String   @id @default(uuid())
   userId        String   @unique
@@ -4443,6 +4473,7 @@ model WatchParty {
   @@map("watch_parties")
 }
 
+/// @deprecated Dead model — zero service references. Remove in next major migration.
 model SharedCollection {
   id          String   @id @default(uuid())
   name        String   @db.VarChar(100)
@@ -4498,7 +4529,7 @@ model SavedMessage {
   userId            String
   content           String?  @db.Text
   mediaUrl          String?
-  mediaType         String?
+  mediaType         MediaType? // S02-#28: was String?
   forwardedFromType ForwardedFromType?
   forwardedFromId   String?
   isPinned          Boolean  @default(false)
@@ -4734,9 +4765,9 @@ model ViewerDemographic {
   channelId String?
   channel   Channel? @relation("viewerDemographics", fields: [channelId], references: [id], onDelete: SetNull)
   country   String   @db.VarChar(2)
-  ageRange  String   @db.VarChar(10) // 13-17, 18-24, 25-34, 35-44, 45-54, 55+
-  gender    String   @db.VarChar(10) // male, female, other
-  source    String   @default("browse") @db.VarChar(20) // search, browse, suggested, external, direct
+  ageRange  DemoAgeRange // S02-#52: was String
+  gender    DemoGender   // S02-#52: was String
+  source    TrafficSource @default(browse) // S02-#51: was String
   viewDate  DateTime @default(now())
 
   @@index([videoId, viewDate])

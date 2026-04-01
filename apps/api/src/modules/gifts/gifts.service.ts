@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
-import { CoinTransactionType } from '@prisma/client';
+import { CoinTransactionType, FeedContentType } from '@prisma/client';
 
 export interface GiftCatalogItem {
   type: string;
@@ -151,7 +151,7 @@ export class GiftsService {
           giftType,
           coinCost: catalogItem.coins,
           contentId: contentId || null,
-          contentType: contentType || null,
+          contentType: (contentType || null) as FeedContentType | null,
         },
       });
 

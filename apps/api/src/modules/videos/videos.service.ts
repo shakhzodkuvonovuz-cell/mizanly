@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
-import { CountdownTheme, EndScreenType } from '@prisma/client';
+import { CountdownTheme, EndScreenType, ScreenPosition } from '@prisma/client';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
 import { Prisma, VideoStatus, VideoCategory, ReportReason } from '@prisma/client';
@@ -1073,7 +1073,7 @@ export class VideosService {
               targetId: item.targetId,
               label: item.label,
               url: item.url,
-              position: item.position,
+              position: item.position as ScreenPosition,
               showAtSeconds: item.showAtSeconds,
             },
           })
