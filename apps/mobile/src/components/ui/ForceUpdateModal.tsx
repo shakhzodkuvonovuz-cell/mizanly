@@ -7,7 +7,8 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, fonts, radius } from '@/theme';
 
-const IOS_APP_STORE_URL = 'https://apps.apple.com/app/mizanly/id0000000000';
+// TODO: Replace with actual App Store ID after Apple Developer enrollment
+const IOS_APP_STORE_URL = process.env.EXPO_PUBLIC_IOS_APP_STORE_URL || 'https://apps.apple.com/app/mizanly';
 const ANDROID_PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=app.mizanly.mobile';
 
 interface ForceUpdateModalProps {

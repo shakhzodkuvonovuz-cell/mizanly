@@ -79,7 +79,7 @@ export function TabSelector({ tabs, activeKey, onTabChange, variant = 'underline
               onPress={() => handlePress(tab.key, i)}
               onLayout={handleTabLayout(i)}
               accessibilityLabel={`${tab.label} tab`}
-              accessibilityRole="button"
+              accessibilityRole="tab"
             >
               <Text
                 style={[
@@ -105,7 +105,7 @@ export function TabSelector({ tabs, activeKey, onTabChange, variant = 'underline
           onPress={() => handlePress(tab.key, i)}
           onLayout={handleTabLayout(i)}
           accessibilityLabel={`${tab.label} tab`}
-          accessibilityRole="button"
+          accessibilityRole="tab"
         >
           <Text
             style={[

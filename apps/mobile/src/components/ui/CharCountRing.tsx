@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import Animated, {
   useSharedValue,
   useAnimatedProps,
@@ -25,6 +26,7 @@ const CIRCUMFERENCE = 2 * Math.PI * R;
 const SHOW_AT = 0.7;
 
 export function CharCountRing({ current, max, size = 28 }: CharCountRingProps) {
+  const tc = useThemeColors();
   const ratio = Math.min(current / max, 1);
   const prevRatioRef = useRef(ratio);
 
@@ -96,7 +98,7 @@ export function CharCountRing({ current, max, size = 28 }: CharCountRingProps) {
       <Svg width={size} height={size} viewBox="0 0 28 28">
         <Circle
           cx={14} cy={14} r={R}
-          stroke="rgba(255,255,255,0.1)"
+          stroke={tc.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}
           strokeWidth={2.5}
           fill="none"
         />

@@ -81,7 +81,10 @@ export const widgetData = {
     const raw = await AsyncStorage.getItem(PRAYER_KEY);
     if (!raw) return null;
     try { return JSON.parse(raw) as PrayerTimesWidgetData; }
-    catch { await AsyncStorage.removeItem(PRAYER_KEY); return null; }
+    catch {
+      if (__DEV__) console.warn('[widgetData] Corrupted prayer cache, returning null');
+      return null;
+    }
   },
 
   /** Read cached unread-count widget data (or null). */
@@ -89,6 +92,9 @@ export const widgetData = {
     const raw = await AsyncStorage.getItem(UNREAD_KEY);
     if (!raw) return null;
     try { return JSON.parse(raw) as UnreadWidgetData; }
-    catch { await AsyncStorage.removeItem(UNREAD_KEY); return null; }
+    catch {
+      if (__DEV__) console.warn('[widgetData] Corrupted unread cache, returning null');
+      return null;
+    }
   },
 };

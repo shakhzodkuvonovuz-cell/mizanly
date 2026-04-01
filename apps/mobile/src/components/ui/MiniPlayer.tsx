@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, memo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
   View,
@@ -36,7 +36,7 @@ const MINI_PLAYER_HEIGHT = PROGRESS_BAR_HEIGHT + CONTENT_HEIGHT;
 const DISMISS_Y_THRESHOLD = 150;
 const DISMISS_X_THRESHOLD = 150;
 
-export function MiniPlayer() {
+export const MiniPlayer = memo(function MiniPlayer() {
   const { t } = useTranslation();
   const router = useRouter();
   const haptic = useContextualHaptic();
@@ -272,7 +272,7 @@ export function MiniPlayer() {
       </GestureDetector>
     </Animated.View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

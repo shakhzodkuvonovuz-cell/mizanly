@@ -38,6 +38,7 @@ type CallKitEventHandler = {
 const activeCalls = new Map<string, CallInfo>();
 let eventHandlers: CallKitEventHandler = {};
 let isInitialized = false;
+let callKitSetupFailed = false;
 
 // [F12 fix] Queue for events that arrive before navigation is ready (cold start).
 // When the app is killed and a VoIP push wakes it, handleDidLoadWithEvents fires
@@ -105,6 +106,7 @@ export function initCallKit(): void {
 
   RNCallKeep.setup(options).catch((err: Error) => {
     if (__DEV__) console.error('[CallKit] Setup failed:', err);
+    callKitSetupFailed = true;
   });
 
   // Register event listeners

@@ -1064,6 +1064,7 @@ model User {
   starredMessageRecords    StarredMessage[]             @relation("starredMessages")
   adminAuditLogs           AdminAuditLog[]              @relation("adminAuditLogs")
   savedSearches            SavedSearch[]                @relation("savedSearches")
+  ownedStickerPacks        StickerPack[]                @relation("ownedStickerPacks")
 
   // @@index([username]) — redundant: username is @unique
   // @@index([clerkId]) — redundant: clerkId is @unique
@@ -1517,9 +1518,9 @@ model Channel {
   description        String?             @db.VarChar(5000)
   avatarUrl          String?
   bannerUrl          String?
-  subscribersCount   Int                 @default(0)
+  subscribersCount   BigInt              @default(0) // S01-#43: overflow protection
   videosCount        Int                 @default(0)
-  totalViews         Int                 @default(0)
+  totalViews         BigInt              @default(0) // S01-#3: overflow protection
   isMonetized        Boolean             @default(false)
   isVerified         Boolean             @default(false)
   createdAt          DateTime            @default(now())
@@ -2604,6 +2605,7 @@ model StickerPack {
   stickersCount Int               @default(0)
   isFree        Boolean           @default(true)
   ownerId       String?
+  owner         User?             @relation("ownedStickerPacks", fields: [ownerId], references: [id], onDelete: SetNull) // S01-#31: FK integrity
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt // S01-#38: mutation tracking
   stickers      Sticker[]
@@ -3444,7 +3446,7 @@ model HajjProgress {
   user          User     @relation("hajjProgress", fields: [userId], references: [id], onDelete: Cascade)
   year          Int
   currentStep   Int      @default(0)
-  checklistJson String   @default("{}")
+  checklistJson Json     @default("{}") // S02-#50: was String, now proper JSON type
   notes         String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -3761,7 +3763,7 @@ model Achievement {
   category    AchievementCategory
   xpReward    Int                 @default(0)
   rarity      AchievementRarity   @default(COMMON)
-  criteria    String            @db.Text // JSON criteria for unlocking
+  criteria    Json // S02-#58: was String @db.Text, now proper JSON type
   createdAt   DateTime          @default(now())
   unlocks     UserAchievement[]
 
@@ -4045,7 +4047,7 @@ model HalalBusiness {
   rating        Decimal          @default(0) @db.Decimal(3, 2)
   reviewCount   Int              @default(0)
   halalCertUrl  String?
-  openingHours  String?          @db.VarChar(500) // JSON
+  openingHours  Json? // S02-#23: was String, now proper JSON type
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
   owner         User              @relation("BusinessOwner", fields: [ownerId], references: [id], onDelete: Cascade)

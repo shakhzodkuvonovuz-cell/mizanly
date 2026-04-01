@@ -403,7 +403,7 @@ export class ChannelsService {
       videosCount: channel.videosCount,
       totalViews: channel.totalViews,
       recentSubs,
-      averageViewsPerVideo: channel.videosCount > 0 ? channel.totalViews / channel.videosCount : 0,
+      averageViewsPerVideo: channel.videosCount > 0 ? Number(channel.totalViews) / channel.videosCount : 0,
       topVideos,
     };
   }

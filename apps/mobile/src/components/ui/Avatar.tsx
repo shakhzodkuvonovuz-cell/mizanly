@@ -280,7 +280,7 @@ export const Avatar = memo(function Avatar({
     );
   }
 
-  return <View style={styles.container} accessibilityLabel={name || undefined}>{content}</View>;
+  return <View style={styles.container} accessibilityRole="image" accessibilityLabel={name ? `${name}'s avatar` : 'Avatar'}>{content}</View>;
 });
 
 const styles = StyleSheet.create({

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { Skeleton } from '@/components/ui/Skeleton';
 import Animated, {
   useAnimatedStyle,
   withTiming,
@@ -195,7 +196,7 @@ export function MentionAutocomplete({ query, onSelect, visible }: MentionAutocom
     >
       {loading && suggestions.length === 0 ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color={colors.emerald} />
+          <Skeleton.Rect width={200} height={16} borderRadius={8} />
         </View>
       ) : (
         suggestions.map((user) => (

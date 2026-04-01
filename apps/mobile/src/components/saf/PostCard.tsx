@@ -91,8 +91,10 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
       setLocalLiked((p) => !p);
       setLocalLikes((p) => localLiked ? p - 1 : p + 1);
       // Animate like count bump
-      likeCountScale.value = withSpring(1.2, { damping: 8, stiffness: 300 });
-      setTimeout(() => { likeCountScale.value = withSpring(1, { damping: 10, stiffness: 200 }); }, 150);
+      likeCountScale.value = withSequence(
+        withSpring(1.2, { damping: 8, stiffness: 300 }),
+        withSpring(1, { damping: 10, stiffness: 200 }),
+      );
       return prev;
     },
     onError: (_e, _v, ctx) => {

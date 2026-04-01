@@ -54,6 +54,7 @@ const ReactionButton = memo(function ReactionButton({
   onPress,
 }: ReactionButtonProps) {
   const tc = useThemeColors();
+  const { t } = useTranslation();
   const scale = useSharedValue(1);
 
   const handlePressIn = useCallback(() => {
@@ -91,6 +92,7 @@ const ReactionButton = memo(function ReactionButton({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       accessibilityRole="button"
+      accessibilityLabel={t(config.labelKey)}
       accessibilityState={{ selected: isSelected }}
     >
       <Icon

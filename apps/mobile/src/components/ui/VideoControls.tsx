@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, memo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
   View,
@@ -43,7 +43,7 @@ export interface VideoControlsProps {
   onMinimize?: () => void;    // Opens mini player
 }
 
-export function VideoControls({
+export const VideoControls = memo(function VideoControls({
   isPlaying,
   currentTime,
   duration,
@@ -339,7 +339,7 @@ export function VideoControls({
       </BottomSheet>
     </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   controlsContainer: {

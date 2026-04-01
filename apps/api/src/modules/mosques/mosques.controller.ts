@@ -4,7 +4,8 @@ import { Throttle } from '@nestjs/throttler';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { IsString, IsNumber, IsOptional, IsArray, MaxLength, Min, Max, IsUrl, ArrayMaxSize } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsArray, MaxLength, Min, Max, IsUrl, ArrayMaxSize, IsEnum } from 'class-validator';
+import { MadhhabType } from '@prisma/client';
 import { MosquesService } from './mosques.service';
 
 class CreateMosqueDto {
@@ -14,7 +15,7 @@ class CreateMosqueDto {
   @IsString() @MaxLength(100) country: string;
   @IsNumber() @Min(-90) @Max(90) latitude: number;
   @IsNumber() @Min(-180) @Max(180) longitude: number;
-  @IsOptional() @IsString() @MaxLength(50) madhab?: string;
+  @IsOptional() @IsEnum(MadhhabType) madhab?: MadhhabType;
   @IsOptional() @IsString() @MaxLength(10) language?: string;
   @IsOptional() @IsString() @MaxLength(30) phone?: string;
   @IsOptional() @IsString() @IsUrl() website?: string;
