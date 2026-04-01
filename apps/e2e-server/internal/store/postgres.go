@@ -12,7 +12,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"os"
 	"sync"
 	"time"
 
@@ -43,8 +42,8 @@ type Store struct {
 }
 
 // New creates a new Store with a connection pool configured for Neon.
-func New(ctx context.Context) (*Store, error) {
-	dbURL := os.Getenv("DATABASE_URL")
+// G03-#2/G03-#8: Accepts explicit parameters instead of reading os.Getenv.
+func New(ctx context.Context, dbURL, transparencySigningKeyB64 string) (*Store, error) {
 	if dbURL == "" {
 		return nil, errors.New("DATABASE_URL is required")
 	}
@@ -74,12 +73,12 @@ func New(ctx context.Context) (*Store, error) {
 
 	s := &Store{pool: pool}
 
-	// F1: Load transparency signing key from env var.
+	// F1: Load transparency signing key from parameter.
 	// This Ed25519 key signs Merkle roots so clients can verify the tree
 	// was built by an authorized party, not a compromised server.
 	// The corresponding PUBLIC key is hardcoded in the mobile client.
-	if sigKeyB64 := os.Getenv("TRANSPARENCY_SIGNING_KEY"); sigKeyB64 != "" {
-		seed, err := base64.StdEncoding.DecodeString(sigKeyB64)
+	if transparencySigningKeyB64 != "" {
+		seed, err := base64.StdEncoding.DecodeString(transparencySigningKeyB64)
 		if err != nil || len(seed) != ed25519.SeedSize {
 			return nil, fmt.Errorf("TRANSPARENCY_SIGNING_KEY must be base64-encoded 32-byte Ed25519 seed")
 		}
@@ -112,6 +111,11 @@ func (s *Store) UpsertIdentityKey(ctx context.Context, userID string, deviceID i
 		return false, "", errors.New("registrationId must be 1-16383 (14-bit, non-zero)")
 	}
 
+	// G02-#1 NOTE: ON CONFLICT ("userId","deviceId") requires a UNIQUE index on
+	// ("userId","deviceId") in the database. The Prisma schema currently only has
+	// @unique on "userId". A migration adding @@unique([userId, deviceId]) is needed
+	// for this conflict target to work correctly. DEFERRED — schema change required.
+	//
 	// Codex-V7-F4 FIX: Conflict on ("userId","deviceId") — NOT just "userId".
 	// Previously: one row per user → device 2 overwrites device 1's key.
 	// Now: one row per (user, device) → multi-device identity keys coexist.
@@ -208,10 +212,8 @@ func (s *Store) GetLatestSignedPreKey(ctx context.Context, userID string, device
 // --- One-Time Pre-Keys ---
 
 // InsertOneTimePreKeys batch inserts OTP keys. Max 100 per call, max 500 per user.
-func (s *Store) InsertOneTimePreKeys(ctx context.Context, userID string, deviceID int, keys []struct {
-	KeyID     int
-	PublicKey string
-}) error {
+// G03-#11: Uses model.PreKeyItem instead of anonymous struct.
+func (s *Store) InsertOneTimePreKeys(ctx context.Context, userID string, deviceID int, keys []model.PreKeyItem) error {
 	if len(keys) > 100 {
 		return errors.New("max 100 one-time pre-keys per upload")
 	}
@@ -223,10 +225,11 @@ func (s *Store) InsertOneTimePreKeys(ctx context.Context, userID string, deviceI
 	}
 	defer tx.Rollback(ctx)
 
-	// Lock-based count check inside transaction
+	// G02-H2: FOR SHARE instead of FOR UPDATE — count query only needs read consistency,
+	// not exclusive lock. FOR UPDATE on COUNT(*) locks ALL matching rows, causing contention.
 	var count int
 	err = tx.QueryRow(ctx,
-		`SELECT COUNT(*) FROM e2e_one_time_pre_keys WHERE "userId" = $1 AND "deviceId" = $2 FOR UPDATE`,
+		`SELECT COUNT(*) FROM e2e_one_time_pre_keys WHERE "userId" = $1 AND "deviceId" = $2 FOR SHARE`,
 		userID, deviceID,
 	).Scan(&count)
 	if err != nil {
@@ -503,8 +506,11 @@ func (s *Store) GetDeviceIDs(ctx context.Context, userID string) ([]int, error) 
 		}
 		ids = append(ids, id)
 	}
-	if len(ids) == 0 {
-		ids = []int{1} // Default to device 1 if no keys registered
+	// G02-M5: Return empty slice when no keys exist — don't fabricate device 1.
+	// Returning [1] when no identity key is registered causes GetPreKeyBundle to fail
+	// with "no identity key" for a non-existent device, which is misleading.
+	if ids == nil {
+		ids = []int{}
 	}
 	return ids, rows.Err()
 }
@@ -655,7 +661,9 @@ func (s *Store) GetTransparencyProof(ctx context.Context, targetUserID string) (
 		Root:        base64.StdEncoding.EncodeToString(s.cachedRoot),
 		RootSig:     s.cachedRootSig,
 		TreeSize:    s.cachedTreeSize,
-		UpdatedAt:   time.Now().UTC().Format(time.RFC3339), // Codex-V7-F8: Client needs this for freshness check
+		// G02-H1: Return actual cache rebuild time, not time.Now().
+		// Previously this always returned current time, hiding tree staleness.
+		UpdatedAt:   s.cacheRebuiltAt.Format(time.RFC3339),
 	}, nil
 }
 

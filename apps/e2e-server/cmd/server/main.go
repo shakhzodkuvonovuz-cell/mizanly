@@ -10,7 +10,6 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -23,6 +22,7 @@ import (
 	sentryhttp "github.com/getsentry/sentry-go/http"
 	"github.com/redis/go-redis/v9"
 
+	"github.com/mizanly/e2e-server/internal/config"
 	"github.com/mizanly/e2e-server/internal/handler"
 	"github.com/mizanly/e2e-server/internal/middleware"
 	"github.com/mizanly/e2e-server/internal/store"
@@ -33,12 +33,19 @@ func main() {
 		Level: slog.LevelInfo,
 	}))
 
+	// G03-#2: Load all config from centralized config package.
+	cfg, err := config.Load()
+	if err != nil {
+		logger.Error("config load failed", "error", err)
+		os.Exit(1)
+	}
+
 	// --- Sentry ---
-	if dsn := os.Getenv("SENTRY_DSN"); dsn != "" {
+	if cfg.SentryDSN != "" {
 		if err := sentry.Init(sentry.ClientOptions{
-			Dsn:              dsn,
+			Dsn:              cfg.SentryDSN,
 			TracesSampleRate: 0.1,
-			Environment:      envOrDefault("NODE_ENV", "development"),
+			Environment:      cfg.NodeEnv,
 		}); err != nil {
 			logger.Error("sentry init failed", "error", err)
 		}
@@ -46,16 +53,11 @@ func main() {
 	}
 
 	// --- Clerk ---
-	clerkKey := os.Getenv("CLERK_SECRET_KEY")
-	if clerkKey == "" {
-		logger.Error("CLERK_SECRET_KEY is required")
-		os.Exit(1)
-	}
-	clerk.SetKey(clerkKey)
+	clerk.SetKey(cfg.ClerkSecretKey)
 
 	// --- PostgreSQL ---
 	ctx := context.Background()
-	db, err := store.New(ctx)
+	db, err := store.New(ctx, cfg.DatabaseURL, cfg.TransparencySigningKey)
 	if err != nil {
 		logger.Error("database connection failed", "error", err)
 		os.Exit(1)
@@ -64,12 +66,7 @@ func main() {
 	logger.Info("connected to PostgreSQL")
 
 	// --- Redis ---
-	redisURL := os.Getenv("REDIS_URL")
-	if redisURL == "" {
-		logger.Error("REDIS_URL is required")
-		os.Exit(1)
-	}
-	redisOpt, err := redis.ParseURL(redisURL)
+	redisOpt, err := redis.ParseURL(cfg.RedisURL)
 	if err != nil {
 		logger.Error("parse REDIS_URL failed", "error", err)
 		os.Exit(1)
@@ -88,7 +85,7 @@ func main() {
 
 	// --- Handlers ---
 	rl := middleware.NewRateLimiter(rdb)
-	h := handler.New(db, rdb, rl, logger)
+	h := handler.New(db, rdb, rl, cfg, logger)
 
 	// --- Sentry HTTP middleware ---
 	sentryHandler := sentryhttp.New(sentryhttp.Options{Repanic: true})
@@ -100,6 +97,38 @@ func main() {
 			w.Header().Set("X-Frame-Options", "DENY")
 			w.Header().Set("Cache-Control", "no-store") // Never cache key material responses
 			w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+			// G03-#6: Missing security headers added.
+			w.Header().Set("Content-Security-Policy", "default-src 'none'")
+			w.Header().Set("Referrer-Policy", "no-referrer")
+			w.Header().Set("Permissions-Policy", "")
+			next.ServeHTTP(w, r)
+		})
+	}
+
+	// G03-#1: CORS middleware — restrict to known origins.
+	allowedOrigins := map[string]bool{
+		"https://mizanly.app":     true,
+		"https://www.mizanly.app": true,
+		"https://api.mizanly.app": true,
+	}
+	if cfg.NodeEnv != "production" {
+		allowedOrigins["http://localhost:8080"] = true
+		allowedOrigins["http://localhost:3000"] = true
+		allowedOrigins["http://localhost:19006"] = true
+	}
+	cors := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			origin := r.Header.Get("Origin")
+			if allowedOrigins[origin] {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+				w.Header().Set("Vary", "Origin")
+			}
+			if r.Method == "OPTIONS" {
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
 			next.ServeHTTP(w, r)
 		})
 	}
@@ -175,10 +204,13 @@ func main() {
 	}()
 
 	// --- Server ---
-	port := envOrDefault("PORT", "8080")
+	// G03-#7: MaxBytesHandler wraps the entire mux with a 1MB body limit.
+	// Individual handlers can use io.LimitReader for tighter limits.
+	// G03-#5: RequestID middleware for request tracing.
+	// G03-#1: CORS middleware.
 	server := &http.Server{
-		Addr:              ":" + port,
-		Handler:           securityHeaders(mux),
+		Addr:              ":" + cfg.Port,
+		Handler:           middleware.RequestID(cors(securityHeaders(http.MaxBytesHandler(mux, 1<<20)))),
 		ReadTimeout:       10 * time.Second,
 		ReadHeaderTimeout: 5 * time.Second, // Slowloris protection
 		WriteTimeout:      30 * time.Second,
@@ -188,7 +220,7 @@ func main() {
 
 	// --- Graceful shutdown ---
 	go func() {
-		logger.Info("e2e key server listening", "port", port)
+		logger.Info("e2e key server listening", "port", cfg.Port)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Error("server error", "error", err)
 			os.Exit(1)
@@ -209,15 +241,4 @@ func main() {
 	logger.Info("server stopped")
 }
 
-func envOrDefault(key, def string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return def
-}
-
-// Export for use in rate limit middleware
-func init() {
-	// Ensure handler package export is accessible
-	_ = fmt.Sprintf
-}
+// G03-#9: Removed pointless init() function and envOrDefault (now in config package).

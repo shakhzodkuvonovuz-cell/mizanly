@@ -107,6 +107,13 @@ type IdentityChangedWebhook struct {
 	NewFingerprint string `json:"newFingerprint"`
 }
 
+// PreKeyItem represents a single pre-key with its ID and public key.
+// Used by both handler and store to avoid anonymous struct repetition.
+type PreKeyItem struct {
+	KeyID     int    `json:"keyId"`
+	PublicKey string `json:"publicKey"`
+}
+
 // ErrorResponse is the standard error format.
 type ErrorResponse struct {
 	Error   string `json:"error"`

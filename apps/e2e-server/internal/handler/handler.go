@@ -18,12 +18,12 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 
+	"github.com/mizanly/e2e-server/internal/config"
 	"github.com/mizanly/e2e-server/internal/middleware"
 	"github.com/mizanly/e2e-server/internal/model"
 	"github.com/mizanly/e2e-server/internal/store"
@@ -34,12 +34,27 @@ type Handler struct {
 	store       *store.Store
 	rdb         *redis.Client
 	rateLimiter *middleware.RateLimiter
+	cfg         *config.Config
 	logger      *slog.Logger
+	// G03-#4: SSRF-safe HTTP client — no redirect following, 10s timeout.
+	webhookClient *http.Client
 }
 
 // New creates a new Handler.
-func New(s *store.Store, rdb *redis.Client, rl *middleware.RateLimiter, logger *slog.Logger) *Handler {
-	return &Handler{store: s, rdb: rdb, rateLimiter: rl, logger: logger}
+func New(s *store.Store, rdb *redis.Client, rl *middleware.RateLimiter, cfg *config.Config, logger *slog.Logger) *Handler {
+	return &Handler{
+		store:       s,
+		rdb:         rdb,
+		rateLimiter: rl,
+		cfg:         cfg,
+		logger:      logger,
+		webhookClient: &http.Client{
+			Timeout: 10 * time.Second,
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse // Never follow redirects (SSRF prevention)
+			},
+		},
+	}
 }
 
 // --- Health ---
@@ -92,7 +107,15 @@ func (h *Handler) HandleRegisterIdentity(w http.ResponseWriter, r *http.Request)
 	changed, oldFP, err := h.store.UpsertIdentityKey(r.Context(), userID, req.DeviceID, req.PublicKey, req.RegistrationID)
 	if err != nil {
 		h.logger.Error("register identity key", "error", err) // Log real error server-side
-		writeError(w, http.StatusBadRequest, "invalid identity key request") // Generic to client
+		// G01-#10: Distinguish client errors from server errors.
+		// Context cancellation, DB errors, and connection issues are 500s, not 400s.
+		errMsg := err.Error()
+		if strings.Contains(errMsg, "context") || strings.Contains(errMsg, "connection") ||
+			strings.Contains(errMsg, "upsert") || strings.Contains(errMsg, "pool") {
+			writeError(w, http.StatusInternalServerError, "internal error")
+		} else {
+			writeError(w, http.StatusBadRequest, "invalid identity key request") // Generic to client
+		}
 		return
 	}
 
@@ -158,15 +181,10 @@ func (h *Handler) HandleUploadOneTimePreKeys(w http.ResponseWriter, r *http.Requ
 		req.DeviceID = 1 // Default to 1 if out of range (max 10 devices per user)
 	}
 
-	keys := make([]struct {
-		KeyID     int
-		PublicKey string
-	}, len(req.PreKeys))
+	// G03-#11: Use model.PreKeyItem instead of anonymous struct.
+	keys := make([]model.PreKeyItem, len(req.PreKeys))
 	for i, k := range req.PreKeys {
-		keys[i] = struct {
-			KeyID     int
-			PublicKey string
-		}{KeyID: k.KeyID, PublicKey: k.PublicKey}
+		keys[i] = model.PreKeyItem{KeyID: k.KeyID, PublicKey: k.PublicKey}
 	}
 
 	if err := h.store.InsertOneTimePreKeys(r.Context(), userID, req.DeviceID, keys); err != nil {
@@ -186,6 +204,14 @@ func (h *Handler) HandleUploadOneTimePreKeys(w http.ResponseWriter, r *http.Requ
 
 // HandleGetBundle handles GET /keys/bundle/{userId}.
 func (h *Handler) HandleGetBundle(w http.ResponseWriter, r *http.Request) {
+	// G01-#2: Defense-in-depth auth check — even though middleware should enforce auth,
+	// verify here too in case this handler is accidentally mounted without auth middleware.
+	userID := middleware.UserIDFromContext(r.Context())
+	if userID == "" {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
 	targetUserID := extractPathParam(r, "/api/v1/e2e/keys/bundle/")
 	if err := validatePathParam(targetUserID); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid userId")
@@ -232,6 +258,31 @@ func (h *Handler) HandleGetBundlesBatch(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 	}
+
+	// G01-#3: Validate per-ID length and strip control characters.
+	// Prevents oversized IDs from reaching Redis/DB and control chars from log injection.
+	validIDs := make([]string, 0, len(req.UserIDs))
+	for _, uid := range req.UserIDs {
+		if len(uid) > 128 {
+			continue // Skip oversized IDs
+		}
+		if len(uid) == 0 {
+			continue // Skip empty IDs
+		}
+		// Strip control characters
+		clean := true
+		for _, c := range uid {
+			if c < 0x20 || c == 0x7f {
+				clean = false
+				break
+			}
+		}
+		if !clean {
+			continue
+		}
+		validIDs = append(validIDs, uid)
+	}
+	req.UserIDs = validIDs
 
 	// Deduplicate user IDs — prevent consuming multiple OTPs for the same user
 	seen := make(map[string]bool, len(req.UserIDs))
@@ -457,9 +508,18 @@ func (h *Handler) HandleGetTransparencyRoot(w http.ResponseWriter, r *http.Reque
 // --- Internal webhook ---
 
 // notifyIdentityChanged sends a webhook to NestJS when an identity key changes.
+// G01-#7: Has panic recovery — this runs in a goroutine.
 func (h *Handler) notifyIdentityChanged(userID, oldFingerprint, newPublicKeyB64 string) {
-	webhookURL := os.Getenv("NESTJS_INTERNAL_URL")
-	secret := os.Getenv("INTERNAL_WEBHOOK_SECRET")
+	// G01-#7: Recover from panics in goroutine to prevent server crash.
+	defer func() {
+		if r := recover(); r != nil {
+			h.logger.Error("panic in notifyIdentityChanged", "panic", r)
+		}
+	}()
+
+	// G03-#8: Use config instead of os.Getenv on every call.
+	webhookURL := h.cfg.NestJSInternalURL
+	secret := h.cfg.InternalWebhookSecret
 	if webhookURL == "" || secret == "" {
 		h.logger.Warn("identity key changed but NESTJS_INTERNAL_URL or INTERNAL_WEBHOOK_SECRET not configured", "userId", hashUserID(userID))
 		return
@@ -510,12 +570,28 @@ func (h *Handler) notifyIdentityChanged(userID, oldFingerprint, newPublicKeyB64 
 			req, _ = http.NewRequest("POST", webhookURL+"/api/v1/internal/e2e/identity-changed", bytes.NewReader(body))
 			req.Header.Set("Content-Type", "application/json")
 			req.Header.Set("X-Webhook-Signature", signature)
+			// G01-#1: Call rCancel() explicitly at end of iteration instead of defer.
+			// defer inside a for-loop leaks contexts until the function returns.
 			rCtx, rCancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer rCancel()
 			req = req.WithContext(rCtx)
+
+			// G03-#4: Use SSRF-safe webhookClient instead of http.DefaultClient.
+			resp, err := h.webhookClient.Do(req)
+			rCancel() // G01-#1: Explicit cancel — no defer leak
+			if err != nil {
+				lastErr = err
+				continue
+			}
+			resp.Body.Close()
+			if resp.StatusCode < 400 {
+				return // Success
+			}
+			lastErr = fmt.Errorf("status %d", resp.StatusCode)
+			continue
 		}
 
-		resp, err := http.DefaultClient.Do(req)
+		// First attempt uses the outer context
+		resp, err := h.webhookClient.Do(req)
 		if err != nil {
 			lastErr = err
 			continue
@@ -550,7 +626,11 @@ func readJSON(r *http.Request, v interface{}) error {
 func writeJSON(w http.ResponseWriter, status int, v interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(v)
+	// G01-#8: Log encode errors instead of silently swallowing them.
+	if err := json.NewEncoder(w).Encode(v); err != nil {
+		// Can't use writeError here (would recurse). Log server-side.
+		slog.Default().Error("writeJSON: failed to encode response", "error", err)
+	}
 }
 
 func writeError(w http.ResponseWriter, status int, msg string) {
@@ -566,18 +646,6 @@ func extractPathParam(r *http.Request, prefix string) string {
 		return param
 	}
 	return ""
-}
-
-func concat(slices ...[]byte) []byte {
-	total := 0
-	for _, s := range slices {
-		total += len(s)
-	}
-	result := make([]byte, 0, total)
-	for _, s := range slices {
-		result = append(result, s...)
-	}
-	return result
 }
 
 // ExtractBundleTargetID extracts the target userId from a bundle request path.

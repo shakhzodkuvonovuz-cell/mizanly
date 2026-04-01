@@ -224,40 +224,7 @@ func TestWriteError_Format(t *testing.T) {
 	}
 }
 
-// ============================================================
-// concat
-// ============================================================
-
-func TestConcat_MultipleSlices(t *testing.T) {
-	result := concat([]byte{1, 2}, []byte{3, 4}, []byte{5})
-	expected := []byte{1, 2, 3, 4, 5}
-	if !bytes.Equal(result, expected) {
-		t.Errorf("expected %v, got %v", expected, result)
-	}
-}
-
-func TestConcat_EmptySlices(t *testing.T) {
-	result := concat([]byte{}, []byte{1}, []byte{})
-	expected := []byte{1}
-	if !bytes.Equal(result, expected) {
-		t.Errorf("expected %v, got %v", expected, result)
-	}
-}
-
-func TestConcat_SingleSlice(t *testing.T) {
-	input := []byte{1, 2, 3}
-	result := concat(input)
-	if !bytes.Equal(result, input) {
-		t.Errorf("expected %v, got %v", input, result)
-	}
-}
-
-func TestConcat_NoSlices(t *testing.T) {
-	result := concat()
-	if len(result) != 0 {
-		t.Errorf("expected empty slice, got %v", result)
-	}
-}
+// G01-#6: concat function and tests removed — dead code.
 
 // ============================================================
 // hashUserID

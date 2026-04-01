@@ -86,8 +86,12 @@ func (rl *RateLimiter) RateLimitMiddleware(targetIDFunc func(*http.Request) stri
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			requesterID := UserIDFromContext(r.Context())
 			targetID := targetIDFunc(r)
+			// G03-#3: Reject requests with empty requester/target instead of bypassing rate limit.
+			// Previously, unauthenticated or malformed requests skipped rate limiting entirely.
 			if requesterID == "" || targetID == "" {
-				next.ServeHTTP(w, r)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte(`{"error":"bad request","message":"missing requester or target ID"}`))
 				return
 			}
 			if err := rl.CheckBundleFetch(r.Context(), requesterID, targetID); err != nil {
