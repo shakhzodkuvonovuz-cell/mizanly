@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"testing"
 )
 
@@ -31,5 +32,31 @@ func TestRateLimiter_KeyFormat(t *testing.T) {
 				t.Error("userID should not be empty")
 			}
 		})
+	}
+}
+
+// [G06-#8 fix] Nil Redis in production mode must fail closed
+func TestRateLimiter_NilRedis_FailsClosed(t *testing.T) {
+	rl := NewRateLimiter(nil) // no test mode
+	ctx := context.Background()
+
+	if err := rl.CheckCreateRoom(ctx, "user-1"); err == nil {
+		t.Error("expected error for nil Redis in production mode (CheckCreateRoom)")
+	}
+	if err := rl.CheckTokenRequest(ctx, "user-1"); err == nil {
+		t.Error("expected error for nil Redis in production mode (CheckTokenRequest)")
+	}
+}
+
+// [G06-#8 fix] Nil Redis in test mode passes through
+func TestRateLimiter_NilRedis_TestModeAllows(t *testing.T) {
+	rl := NewRateLimiter(nil, WithTestMode())
+	ctx := context.Background()
+
+	if err := rl.CheckCreateRoom(ctx, "user-1"); err != nil {
+		t.Errorf("expected nil error in test mode (CheckCreateRoom), got %v", err)
+	}
+	if err := rl.CheckTokenRequest(ctx, "user-1"); err != nil {
+		t.Errorf("expected nil error in test mode (CheckTokenRequest), got %v", err)
 	}
 }

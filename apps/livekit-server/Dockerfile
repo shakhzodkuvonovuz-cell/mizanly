@@ -1,12 +1,17 @@
-FROM golang:1.26-alpine AS builder
+# [G06-#2 fix] Use actual Go version from go.mod (1.25), not nonexistent 1.26
+FROM golang:1.25-alpine AS builder
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -o /server ./cmd/server/
+# [G06-#19 fix] Strip debug info and symbol table to reduce binary size
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /server ./cmd/server/
 
 FROM alpine:3.21
 RUN apk --no-cache add ca-certificates
 COPY --from=builder /server /server
+# [G06-#3 fix] Run as non-root user
+RUN addgroup -S app && adduser -S app -G app
+USER app
 EXPOSE 8081
 CMD ["/server"]

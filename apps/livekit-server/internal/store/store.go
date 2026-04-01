@@ -193,19 +193,59 @@ func (s *Store) CreateCallSession(ctx context.Context, callType, livekitRoomName
 	return &session, nil
 }
 
-func (s *Store) UpdateSessionStatus(ctx context.Context, sessionID, status string) error {
+// [G06-#4 fix] Valid session statuses — reject unknown values.
+// [B12-#2 fix] Valid transitions — prevent overwriting terminal states.
+var validStatuses = map[string]bool{
+	"RINGING": true, "ACTIVE": true, "ENDED": true, "MISSED": true, "DECLINED": true,
+}
+
+// validTransitions defines which source statuses can transition to each target status.
+// Terminal states (ENDED, MISSED, DECLINED) cannot transition to anything.
+var validTransitions = map[string][]string{
+	"RINGING":  {"ACTIVE", "MISSED", "ENDED", "DECLINED"},
+	"ACTIVE":   {"ENDED"},
+	"MISSED":   {},
+	"ENDED":    {},
+	"DECLINED": {},
+}
+
+func (s *Store) UpdateSessionStatus(ctx context.Context, sessionID, newStatus string) error {
+	// [G06-#4 fix] Reject unknown statuses
+	if !validStatuses[newStatus] {
+		return fmt.Errorf("invalid status: %s", newStatus)
+	}
+
+	// [B12-#2 fix] Compute allowed source statuses for this transition
+	allowedFrom := make([]string, 0)
+	for fromStatus, targets := range validTransitions {
+		for _, t := range targets {
+			if t == newStatus {
+				allowedFrom = append(allowedFrom, fromStatus)
+			}
+		}
+	}
+	if len(allowedFrom) == 0 {
+		return fmt.Errorf("no valid transition to status: %s", newStatus)
+	}
+
 	now := time.Now()
 	var query string
-	switch status {
+	switch newStatus {
 	case "ACTIVE":
-		query = `UPDATE call_sessions SET status = $2, "startedAt" = $3, "updatedAt" = $3 WHERE id = $1`
+		query = `UPDATE call_sessions SET status = $2, "startedAt" = $3, "updatedAt" = $3 WHERE id = $1 AND status = ANY($4)`
 	case "ENDED", "MISSED", "DECLINED":
-		query = `UPDATE call_sessions SET status = $2, "endedAt" = $3, "updatedAt" = $3 WHERE id = $1`
+		query = `UPDATE call_sessions SET status = $2, "endedAt" = $3, "updatedAt" = $3 WHERE id = $1 AND status = ANY($4)`
 	default:
-		query = `UPDATE call_sessions SET status = $2, "updatedAt" = $3 WHERE id = $1`
+		query = `UPDATE call_sessions SET status = $2, "updatedAt" = $3 WHERE id = $1 AND status = ANY($4)`
 	}
-	_, err := s.pool.Exec(ctx, query, sessionID, status, now)
-	return err
+	result, err := s.pool.Exec(ctx, query, sessionID, newStatus, now, allowedFrom)
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("session %s not updated: either not found or invalid transition to %s", sessionID, newStatus)
+	}
+	return nil
 }
 
 func (s *Store) UpdateSessionDuration(ctx context.Context, sessionID string, duration int) error {
@@ -233,22 +273,60 @@ func (s *Store) UpdateSessionRecordingURL(ctx context.Context, roomName, recordi
 }
 
 // [C1 fix] WipeE2EEKey zeroes the key and salt in DB after the call ends.
+// [G06-#13 fix] Check RowsAffected — log if session not found.
 func (s *Store) WipeE2EEKey(ctx context.Context, sessionID string) error {
-	_, err := s.pool.Exec(ctx,
+	result, err := s.pool.Exec(ctx,
 		`UPDATE call_sessions SET "e2eeKey" = NULL, "e2eeSalt" = NULL, "updatedAt" = NOW() WHERE id = $1`,
 		sessionID,
 	)
-	return err
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("E2EE key wipe: session %s not found", sessionID)
+	}
+	return nil
+}
+
+// [B12-#8 fix] EndCallSession atomically updates status, marks all participants left, and wipes E2EE key.
+// Uses a CTE to ensure all three operations happen in a single round-trip, preventing
+// partial cleanup if the server crashes between steps.
+func (s *Store) EndCallSession(ctx context.Context, sessionID, newStatus string) error {
+	if !validStatuses[newStatus] {
+		return fmt.Errorf("invalid status: %s", newStatus)
+	}
+	result, err := s.pool.Exec(ctx,
+		`WITH update_session AS (
+			UPDATE call_sessions
+			SET status = $2, "endedAt" = NOW(), "updatedAt" = NOW(), "e2eeKey" = NULL, "e2eeSalt" = NULL
+			WHERE id = $1 AND status IN ('RINGING', 'ACTIVE')
+		)
+		UPDATE call_participants SET "leftAt" = NOW()
+		WHERE "sessionId" = $1 AND "leftAt" IS NULL`,
+		sessionID, newStatus,
+	)
+	if err != nil {
+		return fmt.Errorf("end call session: %w", err)
+	}
+	_ = result // CTE returns participant rows affected, session update is implicit
+	return nil
 }
 
 // --- Participants ---
 
+// [B12-#3 fix] Check RowsAffected — return error if participant not found or already left.
 func (s *Store) MarkParticipantLeft(ctx context.Context, sessionID, userID string) error {
-	_, err := s.pool.Exec(ctx,
+	result, err := s.pool.Exec(ctx,
 		`UPDATE call_participants SET "leftAt" = NOW() WHERE "sessionId" = $1 AND "userId" = $2 AND "leftAt" IS NULL`,
 		sessionID, userID,
 	)
-	return err
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("participant %s not found in session %s or already left", userID, sessionID)
+	}
+	return nil
 }
 
 func (s *Store) MarkAllParticipantsLeft(ctx context.Context, sessionID string) error {
@@ -589,6 +667,7 @@ func BuildCursor(createdAt time.Time, id string) string {
 }
 
 // SplitCursor parses a composite cursor into [timestamp, id]. Returns nil on invalid format.
+// [G06-#10 fix] Validates the timestamp portion parses as RFC3339Nano.
 func SplitCursor(cursor string) []string {
 	idx := -1
 	for i := len(cursor) - 1; i >= 0; i-- {
@@ -600,7 +679,11 @@ func SplitCursor(cursor string) []string {
 	if idx <= 0 || idx >= len(cursor)-1 {
 		return nil
 	}
-	return []string{cursor[:idx], cursor[idx+1:]}
+	ts := cursor[:idx]
+	if _, err := time.Parse(time.RFC3339Nano, ts); err != nil {
+		return nil // invalid timestamp
+	}
+	return []string{ts, cursor[idx+1:]}
 }
 
 // --- Structured Errors [H3 fix] ---

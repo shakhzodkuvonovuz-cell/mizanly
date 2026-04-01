@@ -195,14 +195,9 @@ func (h *Handler) HandleCreateRoom(w http.ResponseWriter, r *http.Request) {
 		})
 		if err2 != nil {
 			h.logger.Error("create livekit room failed", "error", err2, "requestId", reqID)
-			if err := h.db.UpdateSessionStatus(r.Context(), session.ID, "ENDED"); err != nil {
-				h.logger.Error("failed to update session status", "sessionID", session.ID, "error", err)
-			}
-			if err := h.db.MarkAllParticipantsLeft(r.Context(), session.ID); err != nil {
-				h.logger.Error("failed to mark participants left", "sessionID", session.ID, "error", err)
-			}
-			if err := h.db.WipeE2EEKey(r.Context(), session.ID); err != nil {
-				h.logger.Error("CRITICAL: E2EE key not wiped", "sessionID", session.ID, "error", err)
+			// [B12-#8 fix] Atomic cleanup on LiveKit SDK failure
+			if err := h.db.EndCallSession(r.Context(), session.ID, "ENDED"); err != nil {
+				h.logger.Error("failed to end call session", "sessionID", session.ID, "error", err)
 			}
 			writeError(w, http.StatusInternalServerError, "failed to create room")
 			return
@@ -366,14 +361,9 @@ func (h *Handler) HandleDeleteRoom(w http.ResponseWriter, r *http.Request) {
 	if h.roomClient != nil {
 		h.roomClient.DeleteRoom(sdkCtx, &livekit.DeleteRoomRequest{Room: roomID})
 	}
-	if err := h.db.UpdateSessionStatus(r.Context(), session.ID, "ENDED"); err != nil {
-		h.logger.Error("failed to update session status", "sessionID", session.ID, "error", err)
-	}
-	if err := h.db.MarkAllParticipantsLeft(r.Context(), session.ID); err != nil {
-		h.logger.Error("failed to mark participants left", "sessionID", session.ID, "error", err)
-	}
-	if err := h.db.WipeE2EEKey(r.Context(), session.ID); err != nil {
-		h.logger.Error("CRITICAL: E2EE key not wiped", "sessionID", session.ID, "error", err)
+	// [B12-#8 fix] Atomic cleanup: status + participants + E2EE key in single CTE
+	if err := h.db.EndCallSession(r.Context(), session.ID, "ENDED"); err != nil {
+		h.logger.Error("failed to end call session", "sessionID", session.ID, "error", err)
 	}
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{"success": true})
@@ -441,14 +431,9 @@ func (h *Handler) HandleLeaveRoom(w http.ResponseWriter, r *http.Request) {
 		// Only end the session if ALL callees have now left (no remaining callees).
 		// If other callees remain, the call keeps ringing for them.
 		if remainingCallees == 0 {
-			if err := h.db.UpdateSessionStatus(r.Context(), session.ID, "DECLINED"); err != nil {
-				h.logger.Error("failed to update session status", "sessionID", session.ID, "error", err)
-			}
-			if err := h.db.MarkAllParticipantsLeft(r.Context(), session.ID); err != nil {
-				h.logger.Error("failed to mark participants left", "sessionID", session.ID, "error", err)
-			}
-			if err := h.db.WipeE2EEKey(r.Context(), session.ID); err != nil {
-				h.logger.Error("CRITICAL: E2EE key not wiped", "sessionID", session.ID, "error", err)
+			// [B12-#8 fix] Atomic cleanup
+			if err := h.db.EndCallSession(r.Context(), session.ID, "DECLINED"); err != nil {
+				h.logger.Error("failed to end call session", "sessionID", session.ID, "error", err)
 			}
 			if h.roomClient != nil {
 				h.roomClient.DeleteRoom(sdkCtx, &livekit.DeleteRoomRequest{Room: roomID})
@@ -457,14 +442,9 @@ func (h *Handler) HandleLeaveRoom(w http.ResponseWriter, r *http.Request) {
 	} else if session.Status == "ACTIVE" {
 		// Active call — end if only 0 or 1 participant remains
 		if totalRemaining <= 1 {
-			if err := h.db.UpdateSessionStatus(r.Context(), session.ID, "ENDED"); err != nil {
-				h.logger.Error("failed to update session status", "sessionID", session.ID, "error", err)
-			}
-			if err := h.db.MarkAllParticipantsLeft(r.Context(), session.ID); err != nil {
-				h.logger.Error("failed to mark participants left", "sessionID", session.ID, "error", err)
-			}
-			if err := h.db.WipeE2EEKey(r.Context(), session.ID); err != nil {
-				h.logger.Error("CRITICAL: E2EE key not wiped", "sessionID", session.ID, "error", err)
+			// [B12-#8 fix] Atomic cleanup
+			if err := h.db.EndCallSession(r.Context(), session.ID, "ENDED"); err != nil {
+				h.logger.Error("failed to end call session", "sessionID", session.ID, "error", err)
 			}
 			if h.roomClient != nil {
 				h.roomClient.DeleteRoom(sdkCtx, &livekit.DeleteRoomRequest{Room: roomID})
@@ -914,10 +894,7 @@ func (h *Handler) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 						h.logger.Error("webhook: failed to update session duration", "sessionID", session.ID, "error", err)
 					}
 				} else {
-					// Call was never answered — mark as MISSED and notify callees
-					if err := h.db.UpdateSessionStatus(ctx, session.ID, "MISSED"); err != nil {
-						h.logger.Error("webhook: failed to update session status to MISSED", "sessionID", session.ID, "error", err)
-					}
+					// Call was never answered — notify callees about missed call
 					// Send missed call notification to non-caller participants
 					if h.cfg.NestJSBaseURL != "" {
 						var calleeIDs []string
@@ -931,11 +908,13 @@ func (h *Handler) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 						}
 					}
 				}
-				if err := h.db.MarkAllParticipantsLeft(ctx, session.ID); err != nil {
-					h.logger.Error("webhook: failed to mark all participants left", "sessionID", session.ID, "error", err)
+				// [B12-#8 fix] Atomic cleanup: determine final status based on whether call was answered
+				endStatus := "ENDED"
+				if session.StartedAt == nil {
+					endStatus = "MISSED"
 				}
-				if err := h.db.WipeE2EEKey(ctx, session.ID); err != nil {
-					h.logger.Error("webhook: CRITICAL: E2EE key not wiped", "sessionID", session.ID, "error", err)
+				if err := h.db.EndCallSession(ctx, session.ID, endStatus); err != nil {
+					h.logger.Error("webhook: failed to end call session", "sessionID", session.ID, "error", err)
 				}
 
 				h.logger.Info("call_finished", // [H5]
@@ -966,10 +945,20 @@ func (h *Handler) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 
 	case "participant_left":
 		if event.GetRoom() != nil && event.GetParticipant() != nil {
-			session, err := h.db.GetSessionByRoomName(ctx, event.GetRoom().GetName())
-			if err == nil && session != nil {
-				if err := h.db.MarkParticipantLeft(ctx, session.ID, event.GetParticipant().GetIdentity()); err != nil {
-					h.logger.Error("webhook: failed to mark participant left", "sessionID", session.ID, "participant", event.GetParticipant().GetIdentity(), "error", err)
+			rn := event.GetRoom().GetName()
+			pid := event.GetParticipant().GetIdentity()
+			session, err := h.db.GetSessionByRoomName(ctx, rn)
+			if err == nil && session != nil && session.Status != "ENDED" && session.Status != "MISSED" && session.Status != "DECLINED" {
+				if err := h.db.MarkParticipantLeft(ctx, session.ID, pid); err != nil {
+					h.logger.Error("webhook: failed to mark participant left", "sessionID", session.ID, "participant", pid, "error", err)
+				}
+				// [B12-#16 fix] Check if this was the last participant — if so, end the call
+				remaining, countErr := h.db.GetActiveParticipantCount(ctx, rn)
+				if countErr == nil && remaining == 0 {
+					if err := h.db.EndCallSession(ctx, session.ID, "ENDED"); err != nil {
+						h.logger.Error("webhook: failed to end call after last participant left", "sessionID", session.ID, "error", err)
+					}
+					h.logger.Info("call_ended_last_participant", "sessionId", session.ID, "roomName", rn)
 				}
 			}
 		}

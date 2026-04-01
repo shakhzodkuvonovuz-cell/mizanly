@@ -41,7 +41,7 @@ func newTestHandler() (*Handler, *mockStore) {
 		db:     ms,
 		cfg:    testCfg,
 		logger: logger,
-		rl:     &middleware.RateLimiter{}, // nil redis — tests don't hit Redis
+		rl:     middleware.NewRateLimiter(nil, middleware.WithTestMode()), // [G06-#8] nil redis allowed in test mode
 	}
 	return h, ms
 }
@@ -1250,6 +1250,26 @@ func TestBuildAndSplitCursor_RoundTrip(t *testing.T) {
 	}
 	if parts[1] != id {
 		t.Errorf("expected %s, got %s", id, parts[1])
+	}
+}
+
+// [G06-#10 fix] Invalid timestamp in cursor returns nil
+func TestSplitCursor_InvalidTimestamp(t *testing.T) {
+	tests := []struct {
+		name   string
+		cursor string
+	}{
+		{"garbage timestamp", "not-a-timestamp|cuid_123"},
+		{"date only", "2026-03-29|cuid_123"},
+		{"unix epoch", "1711720000|cuid_123"},
+		{"sql injection", "'; DROP TABLE call_sessions;--|cuid_123"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if store.SplitCursor(tt.cursor) != nil {
+				t.Errorf("expected nil for cursor with invalid timestamp: %s", tt.cursor)
+			}
+		})
 	}
 }
 

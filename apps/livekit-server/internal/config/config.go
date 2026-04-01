@@ -3,7 +3,9 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"os"
+	"strconv"
 )
 
 // Config holds all required and optional environment variables.
@@ -66,6 +68,16 @@ func Load() (*Config, error) {
 	if cfg.InternalServiceKey == "" {
 		return nil, errors.New("INTERNAL_SERVICE_KEY is required")
 	}
+
+	// [G06-#16 fix] Validate port is numeric and in valid range 1-65535
+	portNum, err := strconv.Atoi(cfg.Port)
+	if err != nil {
+		return nil, fmt.Errorf("PORT must be numeric: %w", err)
+	}
+	if portNum < 1 || portNum > 65535 {
+		return nil, fmt.Errorf("PORT must be between 1 and 65535, got %d", portNum)
+	}
+
 	return cfg, nil
 }
 

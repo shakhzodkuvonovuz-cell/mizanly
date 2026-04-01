@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -70,7 +71,8 @@ func main() {
 		logger.Error("parse REDIS_URL failed", "error", err)
 		os.Exit(1)
 	}
-	if redisOpt.TLSConfig == nil {
+	// [G06-#1 fix] Only force TLS for rediss:// URLs — plain redis:// (localhost) must not get TLS.
+	if strings.HasPrefix(cfg.RedisURL, "rediss://") && redisOpt.TLSConfig == nil {
 		redisOpt.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12}
 	}
 	rdb := redis.NewClient(redisOpt)
@@ -116,6 +118,7 @@ func main() {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
 				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 				w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+				w.Header().Set("Access-Control-Max-Age", "86400") // [G06-#11 fix] Cache preflight for 24h
 				w.Header().Set("Vary", "Origin")
 			}
 			if r.Method == "OPTIONS" {
@@ -190,17 +193,24 @@ func main() {
 		}
 	}()
 
+	// [G06-#5 fix] Signal main goroutine instead of calling os.Exit(1) in background goroutine.
+	// os.Exit bypasses deferred cleanup (db.Close, rdb.Close, sentry.Flush).
+	errCh := make(chan error, 1)
 	go func() {
 		logger.Info("livekit call server listening", "port", cfg.Port)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Error("server error", "error", err)
-			os.Exit(1)
+			errCh <- err
 		}
 	}()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
+
+	select {
+	case err := <-errCh:
+		logger.Error("server error", "error", err)
+	case <-quit:
+	}
 	logger.Info("shutting down...")
 	cleanupCancel()
 

@@ -90,3 +90,79 @@ func TestLoad_CustomPort(t *testing.T) {
 		t.Errorf("expected 9090, got %s", cfg.Port)
 	}
 }
+
+// [G06-#16 fix] Port validation tests
+func TestLoad_InvalidPort_NotNumeric(t *testing.T) {
+	clearEnv()
+	setRequiredEnv()
+	os.Setenv("PORT", "abc")
+	defer clearEnv()
+
+	_, err := Load()
+	if err == nil {
+		t.Fatal("expected error for non-numeric port")
+	}
+}
+
+func TestLoad_InvalidPort_Zero(t *testing.T) {
+	clearEnv()
+	setRequiredEnv()
+	os.Setenv("PORT", "0")
+	defer clearEnv()
+
+	_, err := Load()
+	if err == nil {
+		t.Fatal("expected error for port 0")
+	}
+}
+
+func TestLoad_InvalidPort_TooHigh(t *testing.T) {
+	clearEnv()
+	setRequiredEnv()
+	os.Setenv("PORT", "70000")
+	defer clearEnv()
+
+	_, err := Load()
+	if err == nil {
+		t.Fatal("expected error for port > 65535")
+	}
+}
+
+func TestLoad_InvalidPort_Negative(t *testing.T) {
+	clearEnv()
+	setRequiredEnv()
+	os.Setenv("PORT", "-1")
+	defer clearEnv()
+
+	_, err := Load()
+	if err == nil {
+		t.Fatal("expected error for negative port")
+	}
+}
+
+func TestLoad_ValidPort_Boundaries(t *testing.T) {
+	tests := []struct {
+		name string
+		port string
+	}{
+		{"min port", "1"},
+		{"max port", "65535"},
+		{"common https", "443"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clearEnv()
+			setRequiredEnv()
+			os.Setenv("PORT", tt.port)
+			defer clearEnv()
+
+			cfg, err := Load()
+			if err != nil {
+				t.Fatalf("unexpected error for port %s: %v", tt.port, err)
+			}
+			if cfg.Port != tt.port {
+				t.Errorf("expected %s, got %s", tt.port, cfg.Port)
+			}
+		})
+	}
+}

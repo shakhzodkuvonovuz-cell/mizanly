@@ -24,6 +24,7 @@ type Querier interface {
 	UpdateSessionLivekitSid(ctx context.Context, roomName, roomSid string) error
 	UpdateSessionRecordingURL(ctx context.Context, roomName, recordingURL string) error
 	WipeE2EEKey(ctx context.Context, sessionID string) error
+	EndCallSession(ctx context.Context, sessionID, newStatus string) error // [B12-#8] atomic cleanup
 
 	// Participants
 	MarkParticipantLeft(ctx context.Context, sessionID, userID string) error

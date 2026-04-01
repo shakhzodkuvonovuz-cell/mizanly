@@ -119,6 +119,32 @@ func (m *mockStore) UpdateSessionStatus(_ context.Context, sessionID, status str
 	return nil
 }
 
+// [B12-#8 fix] Atomic end-call cleanup in mock store
+func (m *mockStore) EndCallSession(_ context.Context, sessionID, newStatus string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if s, ok := m.sessionsByID[sessionID]; ok {
+		s.Status = newStatus
+		// Wipe E2EE key
+		if s.LivekitRoomName != nil {
+			delete(m.e2eeKeys, *s.LivekitRoomName)
+		}
+		// Mark all participants left
+		now := time.Now()
+		for i := range s.Participants {
+			if s.Participants[i].LeftAt == nil {
+				s.Participants[i].LeftAt = &now
+			}
+		}
+	}
+	for uid, sid := range m.activeCalls {
+		if sid == sessionID {
+			delete(m.activeCalls, uid)
+		}
+	}
+	return nil
+}
+
 func (m *mockStore) UpdateSessionDuration(_ context.Context, sessionID string, duration int) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()

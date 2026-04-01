@@ -9,12 +9,17 @@ import (
 
 // RateLimiter provides per-user rate limiting using Redis.
 type RateLimiter struct {
-	rdb *redis.Client
+	rdb      *redis.Client
+	testMode bool // [G06-#8] when true, nil Redis is allowed (test-only)
 }
 
 // NewRateLimiter creates a rate limiter backed by Redis.
-func NewRateLimiter(rdb *redis.Client) *RateLimiter {
-	return &RateLimiter{rdb: rdb}
+func NewRateLimiter(rdb *redis.Client, opts ...RateLimiterOption) *RateLimiter {
+	rl := &RateLimiter{rdb: rdb}
+	for _, opt := range opts {
+		opt(rl)
+	}
+	return rl
 }
 
 // Lua script for atomic INCR + EXPIRE (prevents TTL-less keys on crash between INCR and EXPIRE).
@@ -38,10 +43,22 @@ func (rl *RateLimiter) CheckRateLimit(ctx context.Context, key string, maxCount 
 	return count, nil
 }
 
+// [G06-#8 fix] testMode flag — when true, nil Redis is allowed (test-only).
+// In production, nil Redis means rate limiter is misconfigured and must fail closed.
+type RateLimiterOption func(*RateLimiter)
+
+// WithTestMode allows nil Redis for unit tests.
+func WithTestMode() RateLimiterOption {
+	return func(rl *RateLimiter) { rl.testMode = true }
+}
+
 // CheckCreateRoom enforces room creation rate limit: 10 per minute per user.
 func (rl *RateLimiter) CheckCreateRoom(ctx context.Context, userID string) error {
 	if rl.rdb == nil {
-		return nil // No Redis in test mode
+		if rl.testMode {
+			return nil
+		}
+		return fmt.Errorf("rate limiter not configured")
 	}
 	key := fmt.Sprintf("lk:rl:room:%s", userID)
 	_, err := rl.CheckRateLimit(ctx, key, 10, 60)
@@ -51,7 +68,10 @@ func (rl *RateLimiter) CheckCreateRoom(ctx context.Context, userID string) error
 // CheckTokenRequest enforces token request rate limit: 30 per minute per user.
 func (rl *RateLimiter) CheckTokenRequest(ctx context.Context, userID string) error {
 	if rl.rdb == nil {
-		return nil // No Redis in test mode
+		if rl.testMode {
+			return nil
+		}
+		return fmt.Errorf("rate limiter not configured")
 	}
 	key := fmt.Sprintf("lk:rl:token:%s", userID)
 	_, err := rl.CheckRateLimit(ctx, key, 30, 60)
