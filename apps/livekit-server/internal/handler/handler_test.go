@@ -1898,6 +1898,215 @@ func TestDeleteIngress_CallerAllowed(t *testing.T) {
 	}
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// G04 + G05 audit fix validation tests
+// ══════════════════════════════════════════════════════════════════════════════
+
+// G04-#9: roomID validation — empty
+func TestDeleteRoom_EmptyRoomID(t *testing.T) {
+	h, _ := newTestHandler()
+	r := withAuth(httptest.NewRequest("DELETE", "/api/v1/calls/rooms/", nil), "caller-1")
+	r.SetPathValue("id", "")
+	w := httptest.NewRecorder()
+	h.HandleDeleteRoom(w, r)
+	if w.Code != 400 {
+		t.Errorf("expected 400 for empty room ID, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+// G04-#9: roomID validation — too long
+func TestDeleteRoom_TooLongRoomID(t *testing.T) {
+	h, _ := newTestHandler()
+	longID := strings.Repeat("x", 129)
+	r := withAuth(httptest.NewRequest("DELETE", "/api/v1/calls/rooms/"+longID, nil), "caller-1")
+	r.SetPathValue("id", longID)
+	w := httptest.NewRecorder()
+	h.HandleDeleteRoom(w, r)
+	if w.Code != 400 {
+		t.Errorf("expected 400 for too-long room ID, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+// G04-#9: roomID validation in LeaveRoom
+func TestLeaveRoom_EmptyRoomID(t *testing.T) {
+	h, _ := newTestHandler()
+	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/rooms//leave", nil), "caller-1")
+	r.SetPathValue("id", "")
+	w := httptest.NewRecorder()
+	h.HandleLeaveRoom(w, r)
+	if w.Code != 400 {
+		t.Errorf("expected 400 for empty room ID, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+// G04-#9: roomID validation in ListParticipants
+func TestListParticipants_EmptyRoomID(t *testing.T) {
+	h, _ := newTestHandler()
+	r := withAuth(httptest.NewRequest("GET", "/api/v1/calls/rooms//participants", nil), "caller-1")
+	r.SetPathValue("id", "")
+	w := httptest.NewRecorder()
+	h.HandleListParticipants(w, r)
+	if w.Code != 400 {
+		t.Errorf("expected 400 for empty room ID, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+// G04-#9: roomID validation in MuteParticipant
+func TestMuteParticipant_EmptyRoomID(t *testing.T) {
+	h, _ := newTestHandler()
+	body := strings.NewReader(`{"identity":"callee-1","trackSid":"TR_123","muted":true}`)
+	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/rooms//mute", body), "caller-1")
+	r.SetPathValue("id", "")
+	w := httptest.NewRecorder()
+	h.HandleMuteParticipant(w, r)
+	if w.Code != 400 {
+		t.Errorf("expected 400 for empty room ID, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+// G04-#7: identity validation in MuteParticipant
+func TestMuteParticipant_EmptyIdentity(t *testing.T) {
+	h, ms := newTestHandler()
+	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-mute-val", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
+
+	body := strings.NewReader(`{"identity":"","trackSid":"TR_123","muted":true}`)
+	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/rooms/room-mute-val/mute", body), "caller-1")
+	r.SetPathValue("id", "room-mute-val")
+	w := httptest.NewRecorder()
+	h.HandleMuteParticipant(w, r)
+	if w.Code != 400 {
+		t.Errorf("expected 400 for empty identity, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+// G04-#7: trackSid validation in MuteParticipant
+func TestMuteParticipant_EmptyTrackSid(t *testing.T) {
+	h, ms := newTestHandler()
+	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-mute-ts", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
+
+	body := strings.NewReader(`{"identity":"callee-1","trackSid":"","muted":true}`)
+	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/rooms/room-mute-ts/mute", body), "caller-1")
+	r.SetPathValue("id", "room-mute-ts")
+	w := httptest.NewRecorder()
+	h.HandleMuteParticipant(w, r)
+	if w.Code != 400 {
+		t.Errorf("expected 400 for empty trackSid, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+// G04-#7: identity too long in MuteParticipant
+func TestMuteParticipant_IdentityTooLong(t *testing.T) {
+	h, ms := newTestHandler()
+	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-mute-long", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
+
+	longIdentity := strings.Repeat("x", 257)
+	body := strings.NewReader(fmt.Sprintf(`{"identity":"%s","trackSid":"TR_123","muted":true}`, longIdentity))
+	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/rooms/room-mute-long/mute", body), "caller-1")
+	r.SetPathValue("id", "room-mute-long")
+	w := httptest.NewRecorder()
+	h.HandleMuteParticipant(w, r)
+	if w.Code != 400 {
+		t.Errorf("expected 400 for identity too long, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+// G04-#10: filterAndDedup skips IDs longer than 64 chars
+func TestFilterAndDedup_SkipsLongIDs(t *testing.T) {
+	longID := strings.Repeat("x", 65)
+	result := filterAndDedup([]string{"a", longID, "b"})
+	for _, r := range result {
+		if r == longID {
+			t.Error("expected long ID to be filtered out")
+		}
+	}
+	if len(result) != 2 {
+		t.Errorf("expected 2 results, got %d: %v", len(result), result)
+	}
+}
+
+// G04-#10: filterAndDedup keeps IDs of exactly 64 chars
+func TestFilterAndDedup_Keeps64CharIDs(t *testing.T) {
+	exactID := strings.Repeat("x", 64)
+	result := filterAndDedup([]string{exactID, "b"})
+	if len(result) != 2 {
+		t.Errorf("expected 2 results (64-char ID should be kept), got %d: %v", len(result), result)
+	}
+}
+
+// G05-#1: StopEgress rejects non-caller participant
+func TestStopEgress_NonCallerParticipantRejected(t *testing.T) {
+	h, ms := newTestHandler()
+	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-stop-auth", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
+
+	body := strings.NewReader(`{"egressId":"eg_123","roomName":"room-stop-auth"}`)
+	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/egress/stop", body), "callee-1")
+	w := httptest.NewRecorder()
+	h.HandleStopEgress(w, r)
+	if w.Code != 403 {
+		t.Errorf("expected 403 for non-caller stopping recording, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+// G05-#2: CreateIngress rejects non-active session
+func TestCreateIngress_RingingSessionRejected(t *testing.T) {
+	h, ms := newTestHandler()
+	ms.CreateCallSession(context.Background(), "BROADCAST", "room-ingress-ring", "caller-1", []string{"caller-1"}, 10000)
+	// Session is RINGING (not ACTIVE)
+
+	body := strings.NewReader(`{"roomName":"room-ingress-ring","inputType":"rtmp"}`)
+	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/ingress/create", body), "caller-1")
+	w := httptest.NewRecorder()
+	h.HandleCreateIngress(w, r)
+	if w.Code != 400 {
+		t.Errorf("expected 400 for ringing session, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+// G05-#2: CreateIngress rejects ended session
+func TestCreateIngress_EndedSessionRejected(t *testing.T) {
+	h, ms := newTestHandler()
+	session, _ := ms.CreateCallSession(context.Background(), "BROADCAST", "room-ingress-end", "caller-1", []string{"caller-1"}, 10000)
+	ms.UpdateSessionStatus(context.Background(), session.ID, "ENDED")
+
+	body := strings.NewReader(`{"roomName":"room-ingress-end","inputType":"rtmp"}`)
+	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/ingress/create", body), "caller-1")
+	w := httptest.NewRecorder()
+	h.HandleCreateIngress(w, r)
+	if w.Code != 400 {
+		t.Errorf("expected 400 for ended session, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+// G04-#4: Room name uses hashed userID prefix, not raw userID
+func TestCreateRoom_RoomNameDoesNotContainRawUserID(t *testing.T) {
+	h, _ := newTestHandler()
+	body := strings.NewReader(`{"targetUserId":"callee-1","callType":"VOICE"}`)
+	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/rooms", body), "caller-1")
+	w := httptest.NewRecorder()
+	h.HandleCreateRoom(w, r)
+	if w.Code != 201 {
+		t.Fatalf("expected 201, got %d: %s", w.Code, w.Body.String())
+	}
+	var resp map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	data, ok := resp["data"].(map[string]interface{})
+	if !ok {
+		t.Fatal("expected data object")
+	}
+	roomName, _ := data["livekitRoomName"].(string)
+	if roomName == "" {
+		t.Fatal("expected non-empty room name")
+	}
+	// Room name should NOT start with "caller-1" (the raw userID prefix)
+	if strings.HasPrefix(roomName, "caller-1") {
+		t.Errorf("room name should use hashed prefix, not raw userID: %s", roomName)
+	}
+}
+
 // --- JSON helper ---
 
 func toJSON(v interface{}) string {

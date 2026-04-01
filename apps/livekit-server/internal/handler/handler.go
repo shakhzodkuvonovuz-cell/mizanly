@@ -17,6 +17,7 @@ package handler
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -45,6 +46,14 @@ const (
 	sdkTimeout  = 10 * time.Second
 	webhookDedupTTL = 5 * time.Minute // [C5] dedup window for webhook events
 )
+
+// [G05-#7 fix] Dedicated HTTP client for internal push — no redirects, 10s timeout
+var pushClient = &http.Client{
+	Timeout: 10 * time.Second,
+	CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
+	},
+}
 
 type Handler struct {
 	db            store.Querier
@@ -141,8 +150,9 @@ func (h *Handler) HandleCreateRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Room name: the store generates the crypto-random suffix internally now [H2]
-	roomNameBase := fmt.Sprintf("%s_%d", userID[:min(8, len(userID))], time.Now().UnixMilli())
+	// Room name: hash userID prefix to avoid leaking raw user IDs [G04-#4]
+	idHash := sha256.Sum256([]byte(userID))
+	roomNameBase := fmt.Sprintf("%x_%d", idHash[:4], time.Now().UnixMilli())
 	maxParticipants := uint32(len(allParticipants))
 	if req.CallType == "BROADCAST" {
 		maxParticipants = 10000
@@ -185,9 +195,15 @@ func (h *Handler) HandleCreateRoom(w http.ResponseWriter, r *http.Request) {
 		})
 		if err2 != nil {
 			h.logger.Error("create livekit room failed", "error", err2, "requestId", reqID)
-			h.db.UpdateSessionStatus(r.Context(), session.ID, "ENDED")
-			h.db.MarkAllParticipantsLeft(r.Context(), session.ID)
-			h.db.WipeE2EEKey(r.Context(), session.ID)
+			if err := h.db.UpdateSessionStatus(r.Context(), session.ID, "ENDED"); err != nil {
+				h.logger.Error("failed to update session status", "sessionID", session.ID, "error", err)
+			}
+			if err := h.db.MarkAllParticipantsLeft(r.Context(), session.ID); err != nil {
+				h.logger.Error("failed to mark participants left", "sessionID", session.ID, "error", err)
+			}
+			if err := h.db.WipeE2EEKey(r.Context(), session.ID); err != nil {
+				h.logger.Error("CRITICAL: E2EE key not wiped", "sessionID", session.ID, "error", err)
+			}
 			writeError(w, http.StatusInternalServerError, "failed to create room")
 			return
 		}
@@ -203,16 +219,19 @@ func (h *Handler) HandleCreateRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// [F1 fix] Return both key and per-session salt
-	e2eeMaterial, _ := h.db.GetSessionE2EEMaterial(r.Context(), actualRoomName)
+	// [G04-#1 fix] E2EE material is mandatory — call MUST NOT proceed without encryption keys
+	e2eeMaterial, e2eeErr := h.db.GetSessionE2EEMaterial(r.Context(), actualRoomName)
+	if e2eeErr != nil || e2eeMaterial == nil {
+		h.logger.Error("failed to get E2EE material", "room", actualRoomName, "error", e2eeErr)
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
 	var e2eeKey, e2eeSalt string
-	if e2eeMaterial != nil {
-		if len(e2eeMaterial.Key) > 0 {
-			e2eeKey = base64.StdEncoding.EncodeToString(e2eeMaterial.Key)
-		}
-		if len(e2eeMaterial.Salt) > 0 {
-			e2eeSalt = base64.StdEncoding.EncodeToString(e2eeMaterial.Salt)
-		}
+	if len(e2eeMaterial.Key) > 0 {
+		e2eeKey = base64.StdEncoding.EncodeToString(e2eeMaterial.Key)
+	}
+	if len(e2eeMaterial.Salt) > 0 {
+		e2eeSalt = base64.StdEncoding.EncodeToString(e2eeMaterial.Salt)
 	}
 
 	calleeIDs := make([]string, 0, len(allParticipants)-1)
@@ -290,16 +309,19 @@ func (h *Handler) HandleCreateToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// [C2 fix] Material only returned for RINGING/ACTIVE sessions (enforced by store query)
-	// [F1 fix] Return both key and per-session salt
-	e2eeMaterial, _ := h.db.GetSessionE2EEMaterial(r.Context(), req.RoomName)
+	// [G04-#1 fix] E2EE material is mandatory — call MUST NOT proceed without encryption keys
+	e2eeMaterial, e2eeErr := h.db.GetSessionE2EEMaterial(r.Context(), req.RoomName)
+	if e2eeErr != nil || e2eeMaterial == nil {
+		h.logger.Error("failed to get E2EE material", "room", req.RoomName, "error", e2eeErr)
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
 	var e2eeKey, e2eeSalt string
-	if e2eeMaterial != nil {
-		if len(e2eeMaterial.Key) > 0 {
-			e2eeKey = base64.StdEncoding.EncodeToString(e2eeMaterial.Key)
-		}
-		if len(e2eeMaterial.Salt) > 0 {
-			e2eeSalt = base64.StdEncoding.EncodeToString(e2eeMaterial.Salt)
-		}
+	if len(e2eeMaterial.Key) > 0 {
+		e2eeKey = base64.StdEncoding.EncodeToString(e2eeMaterial.Key)
+	}
+	if len(e2eeMaterial.Salt) > 0 {
+		e2eeSalt = base64.StdEncoding.EncodeToString(e2eeMaterial.Salt)
 	}
 
 	w.Header().Set("Cache-Control", "no-store") // [M4]
@@ -313,6 +335,10 @@ func (h *Handler) HandleCreateToken(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) HandleDeleteRoom(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.UserIDFromContext(r.Context())
 	roomID := r.PathValue("id")
+	if roomID == "" || len(roomID) > 128 {
+		writeError(w, http.StatusBadRequest, "invalid room ID")
+		return
+	}
 
 	session, err := h.db.GetSessionWithParticipantsByRoomName(r.Context(), roomID)
 	if err != nil || session == nil {
@@ -340,9 +366,15 @@ func (h *Handler) HandleDeleteRoom(w http.ResponseWriter, r *http.Request) {
 	if h.roomClient != nil {
 		h.roomClient.DeleteRoom(sdkCtx, &livekit.DeleteRoomRequest{Room: roomID})
 	}
-	h.db.UpdateSessionStatus(r.Context(), session.ID, "ENDED")
-	h.db.MarkAllParticipantsLeft(r.Context(), session.ID)
-	h.db.WipeE2EEKey(r.Context(), session.ID)
+	if err := h.db.UpdateSessionStatus(r.Context(), session.ID, "ENDED"); err != nil {
+		h.logger.Error("failed to update session status", "sessionID", session.ID, "error", err)
+	}
+	if err := h.db.MarkAllParticipantsLeft(r.Context(), session.ID); err != nil {
+		h.logger.Error("failed to mark participants left", "sessionID", session.ID, "error", err)
+	}
+	if err := h.db.WipeE2EEKey(r.Context(), session.ID); err != nil {
+		h.logger.Error("CRITICAL: E2EE key not wiped", "sessionID", session.ID, "error", err)
+	}
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{"success": true})
 }
@@ -353,6 +385,10 @@ func (h *Handler) HandleDeleteRoom(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) HandleLeaveRoom(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.UserIDFromContext(r.Context())
 	roomID := r.PathValue("id")
+	if roomID == "" || len(roomID) > 128 {
+		writeError(w, http.StatusBadRequest, "invalid room ID")
+		return
+	}
 
 	session, err := h.db.GetSessionWithParticipantsByRoomName(r.Context(), roomID)
 	if err != nil || session == nil {
@@ -368,8 +404,12 @@ func (h *Handler) HandleLeaveRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Mark this participant as left
-	h.db.MarkParticipantLeft(r.Context(), session.ID, userID)
+	// [G04-#5 fix] Mark this participant as left — check error
+	if err := h.db.MarkParticipantLeft(r.Context(), session.ID, userID); err != nil {
+		h.logger.Error("failed to mark participant left", "error", err)
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
 
 	// Remove from LiveKit room (best-effort — they may have already disconnected)
 	sdkCtx, cancel := context.WithTimeout(r.Context(), sdkTimeout)
@@ -401,9 +441,15 @@ func (h *Handler) HandleLeaveRoom(w http.ResponseWriter, r *http.Request) {
 		// Only end the session if ALL callees have now left (no remaining callees).
 		// If other callees remain, the call keeps ringing for them.
 		if remainingCallees == 0 {
-			h.db.UpdateSessionStatus(r.Context(), session.ID, "DECLINED")
-			h.db.MarkAllParticipantsLeft(r.Context(), session.ID)
-			h.db.WipeE2EEKey(r.Context(), session.ID)
+			if err := h.db.UpdateSessionStatus(r.Context(), session.ID, "DECLINED"); err != nil {
+				h.logger.Error("failed to update session status", "sessionID", session.ID, "error", err)
+			}
+			if err := h.db.MarkAllParticipantsLeft(r.Context(), session.ID); err != nil {
+				h.logger.Error("failed to mark participants left", "sessionID", session.ID, "error", err)
+			}
+			if err := h.db.WipeE2EEKey(r.Context(), session.ID); err != nil {
+				h.logger.Error("CRITICAL: E2EE key not wiped", "sessionID", session.ID, "error", err)
+			}
 			if h.roomClient != nil {
 				h.roomClient.DeleteRoom(sdkCtx, &livekit.DeleteRoomRequest{Room: roomID})
 			}
@@ -411,9 +457,15 @@ func (h *Handler) HandleLeaveRoom(w http.ResponseWriter, r *http.Request) {
 	} else if session.Status == "ACTIVE" {
 		// Active call — end if only 0 or 1 participant remains
 		if totalRemaining <= 1 {
-			h.db.UpdateSessionStatus(r.Context(), session.ID, "ENDED")
-			h.db.MarkAllParticipantsLeft(r.Context(), session.ID)
-			h.db.WipeE2EEKey(r.Context(), session.ID)
+			if err := h.db.UpdateSessionStatus(r.Context(), session.ID, "ENDED"); err != nil {
+				h.logger.Error("failed to update session status", "sessionID", session.ID, "error", err)
+			}
+			if err := h.db.MarkAllParticipantsLeft(r.Context(), session.ID); err != nil {
+				h.logger.Error("failed to mark participants left", "sessionID", session.ID, "error", err)
+			}
+			if err := h.db.WipeE2EEKey(r.Context(), session.ID); err != nil {
+				h.logger.Error("CRITICAL: E2EE key not wiped", "sessionID", session.ID, "error", err)
+			}
 			if h.roomClient != nil {
 				h.roomClient.DeleteRoom(sdkCtx, &livekit.DeleteRoomRequest{Room: roomID})
 			}
@@ -426,6 +478,10 @@ func (h *Handler) HandleLeaveRoom(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) HandleListParticipants(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.UserIDFromContext(r.Context())
 	roomID := r.PathValue("id")
+	if roomID == "" || len(roomID) > 128 {
+		writeError(w, http.StatusBadRequest, "invalid room ID")
+		return
+	}
 
 	session, err := h.db.GetSessionWithParticipantsByRoomName(r.Context(), roomID)
 	if err != nil || session == nil {
@@ -492,14 +548,22 @@ func (h *Handler) HandleKickParticipant(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 	}
-	// Mark the kicked participant as left in DB
-	h.db.MarkParticipantLeft(r.Context(), session.ID, participantID)
+	// [G04-#6 fix] Mark the kicked participant as left in DB — check error
+	if err := h.db.MarkParticipantLeft(r.Context(), session.ID, participantID); err != nil {
+		h.logger.Error("failed to mark participant left", "error", err)
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
 	writeJSON(w, http.StatusOK, map[string]interface{}{"success": true})
 }
 
 func (h *Handler) HandleMuteParticipant(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.UserIDFromContext(r.Context())
 	roomID := r.PathValue("id")
+	if roomID == "" || len(roomID) > 128 {
+		writeError(w, http.StatusBadRequest, "invalid room ID")
+		return
+	}
 
 	session, err := h.db.GetSessionWithParticipantsByRoomName(r.Context(), roomID)
 	if err != nil || session == nil {
@@ -522,6 +586,15 @@ func (h *Handler) HandleMuteParticipant(w http.ResponseWriter, r *http.Request) 
 	}
 	if err := decodeBody(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	// [G04-#7 fix] Validate identity and trackSid
+	if req.Identity == "" || len(req.Identity) > 256 {
+		writeError(w, http.StatusBadRequest, "invalid identity")
+		return
+	}
+	if req.TrackSid == "" || len(req.TrackSid) > 256 {
+		writeError(w, http.StatusBadRequest, "invalid trackSid")
 		return
 	}
 	// [N2 fix] Validate the mute target is a participant (consistent with F11 kick validation)
@@ -678,8 +751,9 @@ func (h *Handler) HandleStopEgress(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "session not found")
 		return
 	}
-	if !isCallerOrParticipant(session, userID) {
-		writeError(w, http.StatusForbidden, "not a participant")
+	// [G05-#1 fix] Only the caller can stop recording — consistent with start recording
+	if !isCaller(session, userID) {
+		writeError(w, http.StatusForbidden, "only the call creator can stop recording")
 		return
 	}
 
@@ -716,6 +790,11 @@ func (h *Handler) HandleCreateIngress(w http.ResponseWriter, r *http.Request) {
 	}
 	if !isCaller(session, userID) {
 		writeError(w, http.StatusForbidden, "only the broadcaster can create ingress")
+		return
+	}
+	// [G05-#2 fix] Only allow ingress creation for active sessions
+	if session.Status != "ACTIVE" {
+		writeError(w, http.StatusBadRequest, "session is not active")
 		return
 	}
 
@@ -810,10 +889,13 @@ func (h *Handler) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 
 	h.logger.Info("livekit webhook", "event", eventName, "room", roomName, "eventId", eventID)
 
+	// [G05-#3 fix] All webhook DB operations log errors instead of swallowing them
 	switch eventName {
 	case "room_started":
 		if event.GetRoom() != nil {
-			h.db.UpdateSessionLivekitSid(ctx, event.GetRoom().GetName(), event.GetRoom().GetSid())
+			if err := h.db.UpdateSessionLivekitSid(ctx, event.GetRoom().GetName(), event.GetRoom().GetSid()); err != nil {
+				h.logger.Error("webhook: failed to update livekit SID", "room", event.GetRoom().GetName(), "error", err)
+			}
 		}
 
 	case "room_finished":
@@ -828,10 +910,14 @@ func (h *Handler) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 					if callDuration < 0 {
 						callDuration = 0
 					}
-					h.db.UpdateSessionDuration(ctx, session.ID, callDuration)
+					if err := h.db.UpdateSessionDuration(ctx, session.ID, callDuration); err != nil {
+						h.logger.Error("webhook: failed to update session duration", "sessionID", session.ID, "error", err)
+					}
 				} else {
 					// Call was never answered — mark as MISSED and notify callees
-					h.db.UpdateSessionStatus(ctx, session.ID, "MISSED")
+					if err := h.db.UpdateSessionStatus(ctx, session.ID, "MISSED"); err != nil {
+						h.logger.Error("webhook: failed to update session status to MISSED", "sessionID", session.ID, "error", err)
+					}
 					// Send missed call notification to non-caller participants
 					if h.cfg.NestJSBaseURL != "" {
 						var calleeIDs []string
@@ -845,8 +931,12 @@ func (h *Handler) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 						}
 					}
 				}
-				h.db.MarkAllParticipantsLeft(ctx, session.ID)
-				h.db.WipeE2EEKey(ctx, session.ID) // [C1] destroy key when call ends
+				if err := h.db.MarkAllParticipantsLeft(ctx, session.ID); err != nil {
+					h.logger.Error("webhook: failed to mark all participants left", "sessionID", session.ID, "error", err)
+				}
+				if err := h.db.WipeE2EEKey(ctx, session.ID); err != nil {
+					h.logger.Error("webhook: CRITICAL: E2EE key not wiped", "sessionID", session.ID, "error", err)
+				}
 
 				h.logger.Info("call_finished", // [H5]
 					"sessionId", session.ID, "roomName", event.GetRoom().GetName(),
@@ -858,13 +948,17 @@ func (h *Handler) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 		if event.GetRoom() != nil && event.GetParticipant() != nil {
 			rn := event.GetRoom().GetName()
 			pid := event.GetParticipant().GetIdentity()
-			h.db.MarkParticipantLivekitJoined(ctx, rn, pid)
+			if err := h.db.MarkParticipantLivekitJoined(ctx, rn, pid); err != nil {
+				h.logger.Error("webhook: failed to mark participant joined", "room", rn, "participant", pid, "error", err)
+			}
 
 			session, err := h.db.GetSessionByRoomName(ctx, rn)
 			if err == nil && session != nil && session.Status == "RINGING" {
 				count, err := h.db.GetActiveParticipantCount(ctx, rn)
 				if err == nil && count >= 2 {
-					h.db.UpdateSessionStatus(ctx, session.ID, "ACTIVE")
+					if err := h.db.UpdateSessionStatus(ctx, session.ID, "ACTIVE"); err != nil {
+						h.logger.Error("webhook: failed to update session to ACTIVE", "sessionID", session.ID, "error", err)
+					}
 					h.logger.Info("call_active", "sessionId", session.ID, "roomName", rn) // [H5]
 				}
 			}
@@ -874,7 +968,9 @@ func (h *Handler) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 		if event.GetRoom() != nil && event.GetParticipant() != nil {
 			session, err := h.db.GetSessionByRoomName(ctx, event.GetRoom().GetName())
 			if err == nil && session != nil {
-				h.db.MarkParticipantLeft(ctx, session.ID, event.GetParticipant().GetIdentity())
+				if err := h.db.MarkParticipantLeft(ctx, session.ID, event.GetParticipant().GetIdentity()); err != nil {
+					h.logger.Error("webhook: failed to mark participant left", "sessionID", session.ID, "participant", event.GetParticipant().GetIdentity(), "error", err)
+				}
 			}
 		}
 
@@ -882,7 +978,9 @@ func (h *Handler) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 		if event.GetEgressInfo() != nil && event.GetEgressInfo().GetRoomName() != "" {
 			for _, result := range event.GetEgressInfo().GetFileResults() {
 				if result.GetFilename() != "" {
-					h.db.UpdateSessionRecordingURL(ctx, event.GetEgressInfo().GetRoomName(), result.GetFilename())
+					if err := h.db.UpdateSessionRecordingURL(ctx, event.GetEgressInfo().GetRoomName(), result.GetFilename()); err != nil {
+						h.logger.Error("webhook: failed to update recording URL", "room", event.GetEgressInfo().GetRoomName(), "error", err)
+					}
 					break
 				}
 			}
@@ -905,9 +1003,20 @@ func (h *Handler) createToken(roomName, identity string, canPublish bool) (strin
 // sendCallPush sends push notifications to callees via the NestJS API (server-to-server).
 // Runs in a goroutine — errors are logged, not returned to the caller.
 func (h *Handler) sendCallPush(calleeIDs []string, roomName, sessionID, callType, callerUserID string) {
+	// [G04-#3 fix] Recover from panics in goroutine
+	defer func() {
+		if r := recover(); r != nil {
+			h.logger.Error("panic in sendCallPush", "panic", r)
+		}
+	}()
+
+	// [G05-#5 fix] Use a bounded context for the DB call
+	dbCtx, dbCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer dbCancel()
+
 	// [F6] Look up caller display name from DB
 	callerName := callerUserID
-	if name, err := h.db.GetUserDisplayName(context.Background(), callerUserID); err == nil && name != "" {
+	if name, err := h.db.GetUserDisplayName(dbCtx, callerUserID); err == nil && name != "" {
 		callerName = name
 	}
 
@@ -942,6 +1051,13 @@ func (h *Handler) sendCallPush(calleeIDs []string, roomName, sessionID, callType
 
 // sendMissedCallPush notifies callees about a missed call.
 func (h *Handler) sendMissedCallPush(calleeIDs []string, sessionID, callType string) {
+	// [G04-#3 fix] Recover from panics in goroutine
+	defer func() {
+		if r := recover(); r != nil {
+			h.logger.Error("panic in sendMissedCallPush", "panic", r)
+		}
+	}()
+
 	pushBody := map[string]interface{}{
 		"userIds": calleeIDs,
 		"title":   "Missed Call",
@@ -954,6 +1070,8 @@ func (h *Handler) sendMissedCallPush(calleeIDs []string, sessionID, callType str
 	}
 	bodyBytes, err := json.Marshal(pushBody)
 	if err != nil {
+		// [G05-#6 fix] Log marshal error instead of silently returning
+		h.logger.Error("marshal missed call push body failed", "error", err)
 		return
 	}
 
@@ -984,7 +1102,7 @@ func (h *Handler) postInternalPush(bodyBytes []byte) error {
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("X-Internal-Key", h.cfg.InternalServiceKey)
 
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := pushClient.Do(req)
 		cancel()
 		if err != nil {
 			h.logger.Warn("push attempt failed", "attempt", attempt+1, "error", err)
@@ -1037,7 +1155,8 @@ func filterAndDedup(ids []string) []string {
 	seen := make(map[string]bool, len(ids))
 	result := make([]string, 0, len(ids))
 	for _, id := range ids {
-		if id != "" && !seen[id] {
+		// [G04-#10 fix] Skip empty and overly long IDs
+		if id != "" && len(id) <= 64 && !seen[id] {
 			seen[id] = true
 			result = append(result, id)
 		}
@@ -1048,7 +1167,10 @@ func filterAndDedup(ids []string) []string {
 func writeJSON(w http.ResponseWriter, status int, v interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(v)
+	// [G05-#14 fix] Log encode errors instead of silently swallowing
+	if err := json.NewEncoder(w).Encode(v); err != nil {
+		slog.Error("writeJSON encode failed", "error", err, "status", status)
+	}
 }
 
 func writeError(w http.ResponseWriter, status int, message string) {
