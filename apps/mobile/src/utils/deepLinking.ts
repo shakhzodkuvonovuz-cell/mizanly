@@ -1,7 +1,7 @@
 import { Linking } from 'react-native';
 import { navigate } from '@/utils/navigation';
 
-export type DeepLinkScreen =
+type DeepLinkScreen =
   | 'post'
   | 'profile'
   | 'conversation'
@@ -17,9 +17,9 @@ export type DeepLinkScreen =
   | 'search'
   | 'hashtag';
 
-export type DeepLinkParams = Record<string, string>;
+type DeepLinkParams = Record<string, string>;
 
-export interface ParsedDeepLink {
+interface ParsedDeepLink {
   screen: DeepLinkScreen;
   params: DeepLinkParams;
 }
@@ -31,7 +31,7 @@ const HOST = 'mizanly.com'; // Optional web fallback
  * Parse a deep link URL into screen and parameters
  * Supports both custom scheme (mizanly://) and universal links (https://mizanly.com)
  */
-export function parseDeepLink(url: string): ParsedDeepLink | null {
+function parseDeepLink(url: string): ParsedDeepLink | null {
   try {
     let path = '';
     let queryParams: DeepLinkParams = {};
@@ -124,40 +124,9 @@ export function parseDeepLink(url: string): ParsedDeepLink | null {
 }
 
 /**
- * Generate a deep link URL for a given screen and parameters
- */
-export function getDeepLinkUrl(screen: DeepLinkScreen, params: DeepLinkParams = {}): string {
-  const base = `${SCHEME}${screen}`;
-
-  // Handle special cases for ID/username
-  let path = '';
-  if (params.id && screen !== 'profile' && screen !== 'hashtag') {
-    path = `/${params.id}`;
-    const { id, ...rest } = params;
-    params = rest;
-  } else if (params.username && screen === 'profile') {
-    path = `/${params.username}`;
-    const { username, ...rest } = params;
-    params = rest;
-  } else if (params.tag && screen === 'hashtag') {
-    path = `/${params.tag}`;
-    const { tag, ...rest } = params;
-    params = rest;
-  }
-
-  // Add query parameters
-  const queryString = Object.entries(params)
-    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-    .join('&');
-
-  const url = `${base}${path}${queryString ? '?' + queryString : ''}`;
-  return url;
-}
-
-/**
  * Navigate to a deep link URL using expo-router
  */
-export function navigateToDeepLink(url: string): boolean {
+function navigateToDeepLink(url: string): boolean {
   const parsed = parseDeepLink(url);
   if (!parsed) return false;
 

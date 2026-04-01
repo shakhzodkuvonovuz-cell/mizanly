@@ -44,16 +44,6 @@ export function captureException(error: unknown, context?: Record<string, unknow
   }
 }
 
-export function captureMessage(message: string, level: 'info' | 'warning' | 'error' = 'info') {
-  if (__DEV__) {
-    console.log(`[Sentry:${level}]`, message);
-    return;
-  }
-  if (Sentry) {
-    Sentry.captureMessage(message, level);
-  }
-}
-
 export function setUser(user: { id: string; username?: string } | null) {
   if (Sentry) {
     Sentry.setUser(user);

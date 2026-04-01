@@ -27,19 +27,3 @@ export function navigate(
   }
 }
 
-/**
- * Navigate and replace current screen (no back navigation).
- */
-export function navigateReplace(
-  pathname: string,
-  params?: Record<string, string | number>,
-): void {
-  if (params && Object.keys(params).length > 0) {
-    const searchParams = Object.entries(params)
-      .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
-      .join('&');
-    (router as { replace: (href: string) => void }).replace(`${pathname}?${searchParams}`);
-  } else {
-    (router as { replace: (href: string) => void }).replace(pathname);
-  }
-}

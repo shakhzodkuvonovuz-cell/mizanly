@@ -1,4 +1,4 @@
-export interface HijriDate {
+interface HijriDate {
   year: number;
   month: number; // 1-12
   day: number;

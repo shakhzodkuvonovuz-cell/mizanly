@@ -43,26 +43,3 @@ export async function cacheAside<T>(
   return fetcher();
 }
 
-/**
- * Invalidate one or more cache keys.
- */
-export async function invalidateCache(redis: Redis, ...keys: string[]): Promise<void> {
-  if (keys.length > 0) {
-    await redis.del(...keys);
-  }
-}
-
-/**
- * Invalidate all keys matching a pattern using SCAN (non-blocking).
- * Unlike redis.keys(), SCAN iterates incrementally and doesn't block the server.
- */
-export async function invalidateCachePattern(redis: Redis, pattern: string): Promise<void> {
-  let cursor = '0';
-  do {
-    const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
-    cursor = nextCursor;
-    if (keys.length > 0) {
-      await redis.del(...keys);
-    }
-  } while (cursor !== '0');
-}

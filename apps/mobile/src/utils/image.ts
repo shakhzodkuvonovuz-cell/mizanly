@@ -22,7 +22,7 @@ function isImageUrl(url: string): boolean {
  * Get an optimized image URL via Cloudflare Image Resizing.
  * Falls back to original URL if not an image or already transformed.
  */
-export function optimizedImageUrl(url: string | null | undefined, options: ImageOptions = {}): string {
+function optimizedImageUrl(url: string | null | undefined, options: ImageOptions = {}): string {
   if (!url) return '';
   if (!isImageUrl(url) || url.includes('/cdn-cgi/image/')) return url;
 
