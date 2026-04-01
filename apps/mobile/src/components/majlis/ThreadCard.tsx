@@ -34,7 +34,7 @@ interface Props {
   isRead?: boolean;
 }
 
-function ImageGrid({ images, onPress }: { images: string[]; onPress: (index: number) => void }) {
+const ImageGrid = memo(function ImageGrid({ images, onPress }: { images: string[]; onPress: (index: number) => void }) {
   const count = images.length;
 
   if (count === 0) return null;
@@ -82,7 +82,7 @@ function ImageGrid({ images, onPress }: { images: string[]; onPress: (index: num
   return (
     <View style={styles.imageGrid4}>
       {images.slice(0, 4).map((uri, i) => (
-        <Pressable key={uri + i} onPress={() => onPress(i)} style={styles.imageGrid4Item}>
+        <Pressable key={`${i}-${uri}`} onPress={() => onPress(i)} style={styles.imageGrid4Item}>
           <ProgressiveImage uri={uri} width="100%" height={120} borderRadius={0} />
           {i === 3 && count > 4 && (
             <View style={styles.moreOverlay}>
@@ -93,7 +93,7 @@ function ImageGrid({ images, onPress }: { images: string[]; onPress: (index: num
       ))}
     </View>
   );
-}
+});
 
 export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn, isRead = true }: Props) {
   const { t } = useTranslation();
@@ -244,7 +244,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn, is
     >
       {/* Unread indicator */}
       {!isRead && (
-        <View style={{ position: 'absolute', top: 12, left: 4, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.emerald, zIndex: 1 }} />
+        <View style={styles.unreadDot} />
       )}
 
       {/* Repost header */}
@@ -668,4 +668,14 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
   spacer: { flex: 1 },
+  unreadDot: {
+    position: 'absolute',
+    top: 12,
+    start: 4,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.emerald,
+    zIndex: 1,
+  },
 });

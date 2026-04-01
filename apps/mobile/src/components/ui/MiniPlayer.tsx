@@ -233,10 +233,10 @@ export const MiniPlayer = memo(function MiniPlayer() {
 
             {/* Title + channel */}
             <View style={styles.textContainer}>
-              <Text style={styles.title} numberOfLines={1}>
+              <Text style={[styles.title, { color: tc.text.primary }]} numberOfLines={1}>
                 {miniPlayerVideo.title}
               </Text>
-              <Text style={styles.channel} numberOfLines={1}>
+              <Text style={[styles.channel, { color: tc.text.secondary }]} numberOfLines={1}>
                 {miniPlayerVideo.channelName}
               </Text>
             </View>
