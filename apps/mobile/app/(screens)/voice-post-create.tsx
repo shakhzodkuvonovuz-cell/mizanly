@@ -14,6 +14,7 @@ import { uploadApi, postsApi } from '@/services/api';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { showToast } from '@/components/ui/Toast';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { formatTime } from '@/utils/formatTime';
 
 const MAX_DURATION = 120; // 2 minutes max
 
@@ -133,8 +134,6 @@ export default function VoicePostCreateScreen() {
       showToast({ message: t('voicePost.postError', 'Failed to publish voice post'), variant: 'error' });
     },
   });
-
-  const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
   return (
     <ScreenErrorBoundary>

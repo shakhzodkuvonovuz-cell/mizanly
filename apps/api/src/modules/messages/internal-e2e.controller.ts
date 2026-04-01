@@ -4,6 +4,7 @@ import { Throttle } from '@nestjs/throttler';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { PrismaService } from '../../config/prisma.service';
 import { MessageType } from '@prisma/client';
+import { IdentityChangeDto } from './dto/identity-change.dto';
 
 /**
  * Internal webhook endpoint for the Go E2E Key Server.
@@ -36,7 +37,7 @@ export class InternalE2EController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   async handleIdentityChanged(
     @Headers('x-webhook-signature') signature: string,
-    @Body() body: { userId: string; oldFingerprint?: string; newFingerprint: string },
+    @Body() body: IdentityChangeDto,
     @Req() req: Request & { rawBody?: Buffer },
   ) {
     // Verify HMAC signature (constant-time comparison — no timing attack)

@@ -14,6 +14,7 @@ import { useCameraPermissions } from 'expo-camera';
 import { Icon } from '@/components/ui/Icon';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fonts } from '@/theme';
+import { formatTime } from '@/utils/formatTime';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -132,11 +133,7 @@ export default function CameraScreen() {
     );
   }, []);
 
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+  // formatTime extracted to @/utils/formatTime
 
   if (!permission?.granted) {
     return (

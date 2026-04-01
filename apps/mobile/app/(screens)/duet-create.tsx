@@ -21,6 +21,7 @@ import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { showToast } from '@/components/ui/Toast';
 import { navigate } from '@/utils/navigation';
+import { formatTime } from '@/utils/formatTime';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -123,12 +124,6 @@ export default function DuetCreateScreen() {
     setRefreshing(true);
     setRefreshing(false);
   }, []);
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
 
   const handleRecord = async () => {
     if (!cameraRef.current) return;

@@ -38,15 +38,11 @@ import { useStore } from '@/store';
 import type { Video as VideoType, VideoComment, VideoChapter } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { showToast } from '@/components/ui/Toast';
+import { formatTime } from '@/utils/formatTime';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // #region Helpers & Sub-Components
-function formatTimeValue(seconds: number) {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
-}
 
 // Chapter marker with progress indicator (extracted outside render)
 function ChapterMarker({ chapter, index, total, currentProgress, videoDuration, onSeek, nowPlayingLabel }: {
@@ -84,7 +80,7 @@ function ChapterMarker({ chapter, index, total, currentProgress, videoDuration, 
         <Text style={[styles.chapterMarkerTitle, isCurrent && styles.chapterMarkerTitleActive]}>
           {chapter.title}
         </Text>
-        <Text style={styles.chapterMarkerTime}>{formatTimeValue(chapter.startTime)}</Text>
+        <Text style={styles.chapterMarkerTime}>{formatTime(chapter.startTime)}</Text>
       </View>
       {isCurrent && (
         <Animated.View entering={FadeIn} style={styles.nowPlayingBadge}>

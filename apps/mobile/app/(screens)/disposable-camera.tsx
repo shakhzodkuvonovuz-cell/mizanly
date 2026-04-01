@@ -24,6 +24,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { showToast } from '@/components/ui/Toast';
+import { formatTime } from '@/utils/formatTime';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const CAMERA_H = SCREEN_H * 0.55;
@@ -87,13 +88,6 @@ function DisposableCameraScreen() {
       requestPermission();
     }
   }, [permission, requestPermission]);
-
-  // ── Format timer ──
-  const formatTime = useCallback((seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  }, []);
 
   // ── Swap cameras ──
   const swapCameras = useCallback(() => {

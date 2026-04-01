@@ -448,7 +448,6 @@ export const useStore = create<AppState>()(
         autoPlaySetting: state.autoPlaySetting,
         ambientModeEnabled: state.ambientModeEnabled,
         islamicThemeEnabled: state.islamicThemeEnabled,
-        feedDismissedIds: state.feedDismissedIds,
         discoveredFeatures: state.discoveredFeatures,
         userRole: state.userRole,
       }),

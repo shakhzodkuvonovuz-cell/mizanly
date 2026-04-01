@@ -20,6 +20,7 @@ import type { AudioTrack } from '@/types';
 import { executeExport, cancelExport, isFFmpegAvailable, type EditParams } from '@/services/ffmpegEngine';
 import * as Speech from 'expo-speech';
 import { EmojiPicker } from '@/components/ui/EmojiPicker';
+import { formatTime } from '@/utils/formatTime';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -295,12 +296,6 @@ export default function VideoEditorScreen() {
     width: `${exportProgressAnim.value}%`,
   }));
 
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
 
   // Handle video playback status updates
   const onPlaybackStatusUpdate = useCallback((status: AVPlaybackStatus) => {

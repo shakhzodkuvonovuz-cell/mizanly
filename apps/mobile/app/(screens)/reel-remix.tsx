@@ -29,6 +29,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { reelsApi, uploadApi } from '@/services/api';
 import type { Reel } from '@/types';
+import { formatTime } from '@/utils/formatTime';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
@@ -37,12 +38,6 @@ type AutocompleteType = 'hashtag' | 'mention' | null;
 
 const MAX_CAPTION = 500;
 const MAX_RECORD_SECONDS = 60;
-
-function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-}
 
 export default function ReelRemixScreen() {
   const tc = useThemeColors();
