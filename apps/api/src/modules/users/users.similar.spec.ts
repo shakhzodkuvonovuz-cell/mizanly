@@ -2,6 +2,12 @@ import { Test } from '@nestjs/testing';
 import { UsersService } from './users.service';
 import { PrismaService } from '../../config/prisma.service';
 import { mockRedis, mockConfigService, mockPrivacyService, mockPublishWorkflowService, mockNotificationsService, mockQueueService } from '../../common/test/mock-providers';
+import { ContentSafetyService } from '../moderation/content-safety.service';
+
+const mockContentSafety = {
+  provide: ContentSafetyService,
+  useValue: { moderateText: jest.fn().mockResolvedValue({ safe: true, flags: [] }) },
+};
 
 const mockPrisma = {
   provide: PrismaService,
@@ -29,7 +35,7 @@ describe('UsersService — Similar Accounts & Popular With Friends', () => {
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
-      providers: [UsersService, mockPrisma, mockRedis, mockConfigService, mockPrivacyService, mockPublishWorkflowService, mockNotificationsService, mockQueueService],
+      providers: [UsersService, mockPrisma, mockRedis, mockConfigService, mockPrivacyService, mockPublishWorkflowService, mockNotificationsService, mockQueueService, mockContentSafety],
     }).compile();
 
     service = module.get(UsersService);

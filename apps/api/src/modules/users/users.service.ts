@@ -4,6 +4,7 @@ import {
   NotFoundException,
   ForbiddenException,
   ConflictException,
+  BadRequestException,
   Logger,
   Optional,
 } from '@nestjs/common';
@@ -19,6 +20,7 @@ import { PostVisibility, ThreadVisibility, ReportReason } from '@prisma/client';
 import { sanitizeText } from '@/common/utils/sanitize';
 import { PublishWorkflowService } from '@/common/services/publish-workflow.service';
 import { QueueService } from '@/common/queue/queue.service';
+import { ContentSafetyService } from '../moderation/content-safety.service';
 
 // A01-#7 / B01-#7: Remove sensitive/moderation fields from public select.
 // lastSeenAt is a privacy concern (shows exact activity time).
@@ -73,6 +75,7 @@ export class UsersService {
     @Optional() private notificationsService: NotificationsService,
     private publishWorkflow: PublishWorkflowService,
     private queueService: QueueService,
+    private contentSafety: ContentSafetyService,
   ) {}
 
   touchLastSeen(userId: string) {
@@ -101,11 +104,18 @@ export class UsersService {
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
-    // X08-#13: TODO — Inject ContentSafetyService and call contentSafety.moderateText()
-    // on bio, displayName, and location fields before persisting. Currently, these fields
-    // are only sanitized (XSS prevention) but not moderated for hate speech, slurs, etc.
-    // ContentSafetyService exists at modules/moderation/content-safety.service.ts but is
-    // not injected into UsersService. Add it to UsersModule providers + constructor.
+    // X08-#13 FIX: Moderate publicly visible text fields before persisting
+    const textsToModerate = [dto.bio, dto.displayName, dto.location].filter(Boolean) as string[];
+    for (const text of textsToModerate) {
+      const result = await this.contentSafety.moderateText(text);
+      if (!result.safe) {
+        throw new BadRequestException(
+          result.suggestion
+            ? `Content flagged: ${result.flags.join(', ')}. Suggestion: ${result.suggestion}`
+            : `Content flagged: ${result.flags.join(', ')}`,
+        );
+      }
+    }
 
     // A01-#14: Explicitly destructure allowed fields instead of spreading entire DTO
     const { username, displayName, bio, avatarUrl, coverUrl, website, location,

@@ -6,6 +6,7 @@ import { PrivacyService } from '../privacy/privacy.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PublishWorkflowService } from '../../common/services/publish-workflow.service';
 import { QueueService } from '../../common/queue/queue.service';
+import { ContentSafetyService } from '../moderation/content-safety.service';
 
 describe('UsersService — audit fixes', () => {
   let service: UsersService;
@@ -43,6 +44,7 @@ describe('UsersService — audit fixes', () => {
         { provide: PublishWorkflowService, useValue: { onPublish: jest.fn().mockResolvedValue(undefined) } },
         { provide: QueueService, useValue: { addSearchIndexJob: jest.fn().mockResolvedValue(undefined) } },
         { provide: 'REDIS', useValue: redis },
+        { provide: ContentSafetyService, useValue: { moderateText: jest.fn().mockResolvedValue({ safe: true, flags: [] }) } },
       ],
     }).compile();
 

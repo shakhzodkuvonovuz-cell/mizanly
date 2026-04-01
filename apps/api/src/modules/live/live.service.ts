@@ -330,11 +330,13 @@ export class LiveService {
   }
 
   async getHostSessions(userId: string, cursor?: string, limit = 20) {
+    // A16-#6/#7 pattern: Use Prisma cursor pagination instead of manual id filter
     const sessions = await this.prisma.liveSession.findMany({
-      where: { hostId: userId, ...(cursor ? { id: { lt: cursor } } : {}) },
+      where: { hostId: userId },
       select: LIVE_SESSION_LIST_SELECT,
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
     const hasMore = sessions.length > limit;
     if (hasMore) sessions.pop();
