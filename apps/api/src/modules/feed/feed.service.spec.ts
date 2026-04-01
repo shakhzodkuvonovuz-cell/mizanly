@@ -8,7 +8,7 @@ describe('FeedService', () => {
   let prisma: Record<string, any>;
   let redis: Record<string, any>;
   beforeEach(async () => {
-    prisma = { feedInteraction: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn() }, feedDismissal: { upsert: jest.fn(), findMany: jest.fn(), delete: jest.fn() }, $queryRawUnsafe: jest.fn().mockResolvedValue([]), $queryRaw: jest.fn().mockResolvedValue([]) };
+    prisma = { feedInteraction: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn(), upsert: jest.fn() }, feedDismissal: { upsert: jest.fn(), findMany: jest.fn(), delete: jest.fn() }, $queryRawUnsafe: jest.fn().mockResolvedValue([]), $queryRaw: jest.fn().mockResolvedValue([]) };
     redis = {
       get: jest.fn().mockResolvedValue(null),
       set: jest.fn().mockResolvedValue('OK'),
@@ -25,10 +25,11 @@ describe('FeedService', () => {
     service = module.get(FeedService);
   });
   it('logs interaction', async () => {
-    prisma.feedInteraction.findFirst.mockResolvedValue(null);
-    prisma.feedInteraction.create.mockResolvedValue({ id: 'fi1' });
+    prisma.feedInteraction.upsert.mockResolvedValue({ id: 'fi1' });
     await service.logInteraction('u1', { postId: 'p1', space: 'SAF', viewed: true });
-    expect(prisma.feedInteraction.create).toHaveBeenCalled();
+    expect(prisma.feedInteraction.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      where: { userId_postId: { userId: 'u1', postId: 'p1' } },
+    }));
   });
   it('dismisses content', async () => {
     prisma.feedDismissal.upsert.mockResolvedValue({});
@@ -92,12 +93,12 @@ describe('FeedService', () => {
   });
 
   describe('logInteraction — update existing', () => {
-    it('should update existing interaction', async () => {
-      prisma.feedInteraction.findFirst.mockResolvedValue({ id: 'fi-existing' });
-      prisma.feedInteraction.update.mockResolvedValue({ id: 'fi-existing', liked: true });
+    it('should upsert with only defined update fields', async () => {
+      prisma.feedInteraction.upsert.mockResolvedValue({ id: 'fi-existing', liked: true });
       await service.logInteraction('u1', { postId: 'p1', space: 'SAF', liked: true });
-      expect(prisma.feedInteraction.update).toHaveBeenCalledWith(expect.objectContaining({
-        where: { id: 'fi-existing' },
+      expect(prisma.feedInteraction.upsert).toHaveBeenCalledWith(expect.objectContaining({
+        where: { userId_postId: { userId: 'u1', postId: 'p1' } },
+        update: { liked: true },
       }));
     });
   });

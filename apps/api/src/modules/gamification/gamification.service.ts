@@ -368,7 +368,11 @@ export class GamificationService {
   async updateChallengeProgress(userId: string, challengeId: string, progress: number) {
     const participant = await this.prisma.challengeParticipant.findUnique({
       where: { challengeId_userId: { challengeId, userId } },
-      include: { challenge: true },
+      include: {
+        challenge: {
+          select: { id: true, endDate: true, targetCount: true, xpReward: true, createdById: true, title: true },
+        },
+      },
     });
     if (!participant) throw new NotFoundException('Not participating');
 

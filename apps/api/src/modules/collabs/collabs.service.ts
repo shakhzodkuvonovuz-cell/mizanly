@@ -9,7 +9,7 @@ export class CollabsService {
   async invite(userId: string, postId: string, targetUserId: string) {
     if (userId === targetUserId) throw new BadRequestException('Cannot invite yourself');
 
-    const post = await this.prisma.post.findUnique({ where: { id: postId } });
+    const post = await this.prisma.post.findUnique({ where: { id: postId }, select: { id: true, userId: true } });
     if (!post) throw new NotFoundException('Post not found');
     if (post.userId !== userId) throw new ForbiddenException('Only post owner can invite collaborators');
 
@@ -75,7 +75,7 @@ export class CollabsService {
     const collab = await this.getCollab(collabId);
     // Allow removal by the invited user OR the post owner
     if (collab.userId !== userId) {
-      const post = await this.prisma.post.findUnique({ where: { id: collab.postId } });
+      const post = await this.prisma.post.findUnique({ where: { id: collab.postId }, select: { id: true, userId: true } });
       if (!post || post.userId !== userId) {
         throw new ForbiddenException('Only the invited user or post owner can remove a collaboration');
       }
@@ -125,7 +125,10 @@ export class CollabsService {
   }
 
   private async getCollab(collabId: string) {
-    const collab = await this.prisma.postCollab.findUnique({ where: { id: collabId } });
+    const collab = await this.prisma.postCollab.findUnique({
+      where: { id: collabId },
+      select: { id: true, userId: true, postId: true, status: true },
+    });
     if (!collab) throw new NotFoundException('Collab not found');
     return collab;
   }

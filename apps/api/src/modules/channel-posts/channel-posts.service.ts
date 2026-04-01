@@ -62,30 +62,40 @@ export class ChannelPostsService {
   }
 
   async delete(postId: string, userId: string) {
-    const post = await this.getById(postId);
+    const post = await this.getPostForPermissionCheck(postId);
     if (post.userId !== userId) throw new ForbiddenException();
     await this.prisma.channelPost.delete({ where: { id: postId } });
     return { deleted: true };
   }
 
   async pin(postId: string, userId: string) {
-    const post = await this.getById(postId);
+    const post = await this.getPostForPermissionCheck(postId);
     // Allow pin by post author or channel owner
     if (post.userId !== userId) {
-      const channel = await this.prisma.channel.findUnique({ where: { id: post.channelId } });
+      const channel = await this.prisma.channel.findUnique({ where: { id: post.channelId }, select: { id: true, userId: true } });
       if (!channel || channel.userId !== userId) throw new ForbiddenException('Only channel owner or post author can pin');
     }
     return this.prisma.channelPost.update({ where: { id: postId }, data: { isPinned: true } });
   }
 
   async unpin(postId: string, userId: string) {
-    const post = await this.getById(postId);
+    const post = await this.getPostForPermissionCheck(postId);
     // Allow unpin by post author or channel owner
     if (post.userId !== userId) {
-      const channel = await this.prisma.channel.findUnique({ where: { id: post.channelId } });
+      const channel = await this.prisma.channel.findUnique({ where: { id: post.channelId }, select: { id: true, userId: true } });
       if (!channel || channel.userId !== userId) throw new ForbiddenException('Only channel owner or post author can unpin');
     }
     return this.prisma.channelPost.update({ where: { id: postId }, data: { isPinned: false } });
+  }
+
+  /** Lightweight query for permission checks — loads only userId and channelId. */
+  private async getPostForPermissionCheck(postId: string) {
+    const post = await this.prisma.channelPost.findUnique({
+      where: { id: postId },
+      select: { id: true, userId: true, channelId: true },
+    });
+    if (!post) throw new NotFoundException('Community post not found');
+    return post;
   }
 
   async like(postId: string, userId: string) {

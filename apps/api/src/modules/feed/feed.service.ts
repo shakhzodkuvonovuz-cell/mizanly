@@ -61,21 +61,11 @@ export class FeedService {
     if (data.shared !== undefined) updateData.shared = data.shared;
     if (data.saved !== undefined) updateData.saved = data.saved;
 
-    // Use findFirst + update/create since FeedInteraction lacks @@unique([userId, postId])
-    // (adding the constraint requires schema migration — deferred to file 15)
-    const existing = await this.prisma.feedInteraction.findFirst({
-      where: { userId, postId: data.postId },
-    });
-
-    if (existing) {
-      return this.prisma.feedInteraction.update({
-        where: { id: existing.id },
-        data: updateData,
-      });
-    }
-
-    return this.prisma.feedInteraction.create({
-      data: {
+    // Atomic upsert on @@unique([userId, postId]) — no TOCTOU race
+    return this.prisma.feedInteraction.upsert({
+      where: { userId_postId: { userId, postId: data.postId } },
+      update: updateData,
+      create: {
         userId,
         postId: data.postId,
         space: data.space as ContentSpace, // Validated by LogInteractionDto @IsEnum
