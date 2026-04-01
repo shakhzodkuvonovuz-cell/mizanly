@@ -105,8 +105,11 @@ export class AdminController {
   @ApiOperation({ summary: 'Set a feature flag (admin only)' })
   async setFlag(@CurrentUser('id') adminId: string, @Param('name') name: string, @Body('value') value: string) {
     await this.adminService.verifyAdmin(adminId);
-    // Validate flag value format
-    if (!value || !/^(true|false|[0-9]{1,3})$/.test(value)) {
+    // A15-#8 FIX: Validate name length and fix regex to actually match 0-100
+    if (!name || name.length > 50) {
+      throw new BadRequestException('Flag name must be 1-50 characters');
+    }
+    if (!value || !/^(true|false|[0-9]{1,2}|100)$/.test(value)) {
       throw new BadRequestException('Flag value must be "true", "false", or a number 0-100');
     }
     return this.featureFlags.setFlag(name, value);

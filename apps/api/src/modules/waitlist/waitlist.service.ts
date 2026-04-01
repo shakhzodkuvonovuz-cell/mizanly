@@ -23,10 +23,10 @@ export class WaitlistService {
     });
 
     if (existing) {
-      // Return their existing position instead of erroring
+      // A15-#9 FIX: Return same shape as new signup to prevent email enumeration.
+      // Attacker cannot distinguish "already exists" from "new signup" response.
       const position = await this.getPositionByEmail(normalizedEmail);
       return {
-        alreadyJoined: true,
         position,
         referralCode: existing.referralCode,
         totalCount: await this.getCachedCount(),
@@ -64,7 +64,6 @@ export class WaitlistService {
       .catch(err => this.logger.error(`Failed to send waitlist email: ${err.message}`));
 
     return {
-      alreadyJoined: false,
       position,
       referralCode: entry.referralCode,
       totalCount,
@@ -98,17 +97,16 @@ export class WaitlistService {
   }
 
   private async getPositionByEmail(email: string): Promise<number> {
-    const count = await this.prisma.waitlistEntry.count({
-      where: {
-        createdAt: {
-          lte: (await this.prisma.waitlistEntry.findUnique({
-            where: { email },
-            select: { createdAt: true },
-          }))!.createdAt,
-        },
-      },
+    // A15-#10 FIX: Null-safe — avoid crash if entry deleted between check and position query
+    const entry = await this.prisma.waitlistEntry.findUnique({
+      where: { email },
+      select: { createdAt: true },
     });
-    return count;
+    if (!entry) return 0;
+
+    return this.prisma.waitlistEntry.count({
+      where: { createdAt: { lte: entry.createdAt } },
+    });
   }
 
   private async getCachedCount(): Promise<number> {

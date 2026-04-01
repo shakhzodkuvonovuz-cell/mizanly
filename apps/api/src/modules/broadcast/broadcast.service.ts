@@ -139,6 +139,12 @@ export class BroadcastService {
 
   async sendMessage(channelId: string, userId: string, data: { content?: string; messageType?: string; mediaUrl?: string; mediaType?: string }) {
     await this.requireRole(channelId, userId, [ChannelRole.OWNER, ChannelRole.ADMIN]);
+
+    // A16-#9 FIX: Reject empty messages (no content AND no media)
+    if (!data.content?.trim() && !data.mediaUrl) {
+      throw new BadRequestException('Message must have content or media');
+    }
+
     const msg = await this.prisma.broadcastMessage.create({
       data: {
         channelId,
@@ -152,13 +158,12 @@ export class BroadcastService {
     });
     await this.prisma.$executeRaw`UPDATE broadcast_channels SET "postsCount" = "postsCount" + 1 WHERE id = ${channelId}`;
 
-    // Notify subscribers about new broadcast message (non-blocking)
+    // A16-#5 FIX: Reduce take to 1000 and log errors instead of swallowing
     this.prisma.channelMember.findMany({
       where: { channelId, userId: { not: userId } },
       select: { userId: true },
-      take: 10000,
+      take: 1000,
     }).then(async (subscribers) => {
-      // Batch create notifications for subscribers
       if (subscribers.length > 0) {
         const BATCH = 500;
         for (let i = 0; i < subscribers.length; i += BATCH) {
@@ -172,7 +177,7 @@ export class BroadcastService {
               body: data.content?.slice(0, 100) || 'New message in channel',
             })),
             skipDuplicates: true,
-          }).catch(() => {});
+          }).catch(err => this.logger.warn(`Broadcast notification batch failed: ${err instanceof Error ? err.message : err}`));
         }
       }
       // Emit socket event for real-time update

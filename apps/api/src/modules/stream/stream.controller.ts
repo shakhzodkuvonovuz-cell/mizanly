@@ -100,9 +100,10 @@ export class StreamController {
       .update(signaturePayload)
       .digest('hex');
 
-    if (
-      !timingSafeEqual(Buffer.from(computed), Buffer.from(expectedSig))
-    ) {
+    // A16-#8 FIX: Check length before timingSafeEqual to prevent TypeError
+    const computedBuf = Buffer.from(computed);
+    const expectedBuf = Buffer.from(expectedSig);
+    if (computedBuf.length !== expectedBuf.length || !timingSafeEqual(computedBuf, expectedBuf)) {
       throw new UnauthorizedException('Invalid webhook signature');
     }
   }

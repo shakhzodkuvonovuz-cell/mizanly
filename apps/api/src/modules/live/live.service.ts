@@ -37,7 +37,8 @@ export class LiveService {
 
   async create(userId: string, data: { title: string; description?: string; thumbnailUrl?: string; liveType: string; scheduledAt?: string; isRecorded?: boolean }) {
     const streamKey = randomBytes(16).toString('hex');
-    return this.prisma.liveSession.create({
+    // A16-#4 FIX: Return streamKey only to host via separate field, not in the session select
+    const session = await this.prisma.liveSession.create({
       data: {
         hostId: userId,
         title: data.title,
@@ -50,8 +51,12 @@ export class LiveService {
         startedAt: data.scheduledAt ? undefined : new Date(),
         isRecorded: data.isRecorded ?? true,
       },
-      include: { host: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } } },
+      select: {
+        ...LIVE_SESSION_LIST_SELECT,
+        streamKey: true, // Only for create — host needs the key
+      },
     });
+    return session;
   }
 
   async getById(sessionId: string) {
@@ -96,7 +101,12 @@ export class LiveService {
   }
 
   async getActive(liveType?: string, cursor?: string, limit = 20) {
-    const where: Prisma.LiveSessionWhereInput = { status: LiveStatus.LIVE, isRehearsal: false };
+    // A16-#10 FIX: Filter out sessions from banned/deactivated/deleted hosts
+    const where: Prisma.LiveSessionWhereInput = {
+      status: LiveStatus.LIVE,
+      isRehearsal: false,
+      host: { isBanned: false, isDeactivated: false, isDeleted: false },
+    };
     if (liveType) {
       const validLiveTypes = Object.values(LiveType);
       if (!validLiveTypes.includes(liveType as LiveType)) {
@@ -153,6 +163,7 @@ export class LiveService {
       // Stream integration optional — continue without it for basic metadata-only live sessions
     }
 
+    // A16-#4/#19 FIX: Use select, return clean response without leaking streamKey
     const updated = await this.prisma.liveSession.update({
       where: { id: sessionId },
       data: {
@@ -162,6 +173,7 @@ export class LiveService {
         ...(liveInputId ? { streamId: liveInputId } : {}),
         ...(rtmpsKey ? { streamKey: rtmpsKey } : {}),
       },
+      select: LIVE_SESSION_LIST_SELECT,
     });
 
     return {
@@ -179,20 +191,22 @@ export class LiveService {
       where: { sessionId, leftAt: null },
       data: { leftAt: new Date() },
     });
+    // A16-#4 FIX: Use select to exclude streamKey from response
     return this.prisma.liveSession.update({
       where: { id: sessionId },
       data: { status: LiveStatus.ENDED, endedAt: new Date(), currentViewers: 0 },
+      select: LIVE_SESSION_LIST_SELECT,
     });
   }
 
   async cancelLive(sessionId: string, userId: string) {
     const session = await this.requireHost(sessionId, userId);
-    // Only SCHEDULED or LIVE sessions can be cancelled; ENDED/CANCELLED cannot
     if (session.status === LiveStatus.ENDED) throw new BadRequestException('Cannot cancel an ended session');
     if (session.status === LiveStatus.CANCELLED) throw new BadRequestException('Session is already cancelled');
     return this.prisma.liveSession.update({
       where: { id: sessionId },
       data: { status: LiveStatus.CANCELLED },
+      select: LIVE_SESSION_LIST_SELECT,
     });
   }
 
@@ -311,6 +325,7 @@ export class LiveService {
     return this.prisma.liveSession.update({
       where: { id: sessionId },
       data: { recordingUrl },
+      select: LIVE_SESSION_LIST_SELECT,
     });
   }
 
@@ -403,7 +418,7 @@ export class LiveService {
         isRehearsal: true,
         isRecorded: false,
       },
-      include: { host: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } } },
+      select: { ...LIVE_SESSION_LIST_SELECT, streamKey: true },
     });
   }
 
@@ -419,6 +434,7 @@ export class LiveService {
     return this.prisma.liveSession.update({
       where: { id: sessionId },
       data: { isRehearsal: false },
+      select: LIVE_SESSION_LIST_SELECT,
     });
   }
 
@@ -438,6 +454,7 @@ export class LiveService {
     return this.prisma.liveSession.update({
       where: { id: sessionId },
       data: { status: LiveStatus.ENDED, endedAt: new Date(), currentViewers: 0 },
+      select: LIVE_SESSION_LIST_SELECT,
     });
   }
 
@@ -451,6 +468,7 @@ export class LiveService {
     return this.prisma.liveSession.update({
       where: { id: sessionId },
       data: { isSubscribersOnly: subscribersOnly },
+      select: LIVE_SESSION_LIST_SELECT,
     });
   }
 

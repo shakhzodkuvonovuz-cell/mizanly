@@ -63,7 +63,7 @@ describe('WaitlistController', () => {
 
       const result = await controller.join({ email: 'test@example.com' });
 
-      expect(result.alreadyJoined).toBe(false);
+      // A15-#9: alreadyJoined field removed to prevent email enumeration
       expect(result.position).toBe(42);
       expect(result.referralCode).toBe('ref123');
       expect(result.totalCount).toBe(100);
@@ -98,7 +98,7 @@ describe('WaitlistController', () => {
 
       const result = await controller.join({ email: 'existing@example.com' });
 
-      expect(result.alreadyJoined).toBe(true);
+      // A15-#9: alreadyJoined field removed to prevent email enumeration
       expect(result.position).toBe(5);
       expect(result.referralCode).toBe('existref');
       expect(mockPrisma.waitlistEntry.create).not.toHaveBeenCalled();
@@ -118,7 +118,7 @@ describe('WaitlistController', () => {
 
       const result = await controller.join({ email: 'new@example.com', referralCode: 'validref' });
 
-      expect(result.alreadyJoined).toBe(false);
+      // A15-#9: alreadyJoined field removed to prevent email enumeration
       expect(mockPrisma.waitlistEntry.create).toHaveBeenCalledWith({
         data: expect.objectContaining({ referredBy: 'validref' }),
       });
@@ -138,7 +138,7 @@ describe('WaitlistController', () => {
 
       const result = await controller.join({ email: 'new2@example.com', referralCode: 'invalidref' });
 
-      expect(result.alreadyJoined).toBe(false);
+      // A15-#9: alreadyJoined field removed to prevent email enumeration
       expect(mockPrisma.waitlistEntry.create).toHaveBeenCalledWith({
         data: expect.objectContaining({ referredBy: null }),
       });
@@ -199,7 +199,7 @@ describe('WaitlistController', () => {
 
       const result = await controller.join({ email: 'fail@example.com' });
 
-      expect(result.alreadyJoined).toBe(false);
+      // A15-#9: alreadyJoined field removed to prevent email enumeration
       expect(result.position).toBe(30);
     });
   });

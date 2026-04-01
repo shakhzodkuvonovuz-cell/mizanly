@@ -12,7 +12,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiBody } from '@nestjs/swagger';
-import { IsString, IsNumber, IsOptional, IsIn, Min, Max, MaxLength } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsIn, Min, Max, MaxLength, MinLength, ValidateIf } from 'class-validator';
 import { SettingsService } from './settings.service';
 import { UpdatePrivacyDto } from './dto/update-privacy.dto';
 import { UpdateNotificationsDto } from './dto/update-notifications.dto';
@@ -23,7 +23,8 @@ import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 class AddKeywordDto {
-  @IsString() @MaxLength(100) keyword: string;
+  // A15-#13 FIX: Reject empty strings
+  @IsString() @MinLength(1) @MaxLength(100) keyword: string;
 }
 
 class AutoPlayDto {
@@ -35,7 +36,10 @@ class LogScreenTimeDto {
 }
 
 class SetScreenTimeLimitDto {
-  @IsOptional() @IsNumber() @Min(1) @Max(1440) limitMinutes: number | null;
+  // A15-#19 FIX: Allow null to clear limit, validate number when non-null
+  @ValidateIf(o => o.limitMinutes !== null)
+  @IsNumber() @Min(1) @Max(1440)
+  limitMinutes: number | null;
 }
 
 @ApiTags('Settings')
