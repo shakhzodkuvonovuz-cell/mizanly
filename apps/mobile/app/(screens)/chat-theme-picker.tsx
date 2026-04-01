@@ -1,28 +1,27 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   Pressable,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as ImagePicker from 'expo-image-picker';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { showToast } from '@/components/ui/Toast';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-
-const { width } = Dimensions.get('window');
 
 const CHAT_THEME_STORAGE_PREFIX = 'chat-theme:';
 
@@ -92,11 +91,14 @@ export default function ChatThemePickerScreen() {
   const conversationId = params.conversationId;
   const tc = useThemeColors();
   const { t } = useTranslation();
+  const haptic = useContextualHaptic();
+  const { width } = useWindowDimensions();
   const [activeTab, setActiveTab] = useState<TabType>('solid');
   const [selectedTheme, setSelectedTheme] = useState<string>('default');
   const [opacity, setOpacity] = useState(30);
   const [blur, setBlur] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const applyingRef = useRef(false);
 
   // Load saved theme on mount
   useEffect(() => {
@@ -163,12 +165,12 @@ export default function ChatThemePickerScreen() {
     const itemWidth = (width - 64) / 2;
 
     return (
-      <Animated.View entering={FadeInUp.delay(index * 60).duration(400)}>
+      <Animated.View entering={FadeInUp.delay(Math.min(index, 8) * 60).duration(400)}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t(`chatThemePicker.themeName.${item.id}`)}
           style={[styles.colorItem, { width: itemWidth }]}
-          onPress={() => setSelectedTheme(item.id)}
+          onPress={() => { setSelectedTheme(item.id); haptic.tick(); }}
         >
           <View
             style={[
@@ -197,12 +199,12 @@ export default function ChatThemePickerScreen() {
     const itemWidth = (width - 64) / 2;
 
     return (
-      <Animated.View entering={FadeInUp.delay(index * 60).duration(400)}>
+      <Animated.View entering={FadeInUp.delay(Math.min(index, 8) * 60).duration(400)}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t(`chatThemePicker.themeName.${item.id}`)}
           style={[styles.colorItem, { width: itemWidth }]}
-          onPress={() => setSelectedTheme(item.id)}
+          onPress={() => { setSelectedTheme(item.id); haptic.tick(); }}
         >
           <LinearGradient
             colors={item.gradient || ['#0D1117', '#0D1117']}
@@ -227,12 +229,12 @@ export default function ChatThemePickerScreen() {
     const isSelected = selectedTheme === item.id;
 
     return (
-      <Animated.View entering={FadeInUp.delay(index * 60).duration(400)}>
+      <Animated.View entering={FadeInUp.delay(Math.min(index, 8) * 60).duration(400)}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t(`chatThemePicker.themeName.${item.id}`)}
-          style={[styles.patternItem, isSelected && styles.patternItemSelected]}
-          onPress={() => setSelectedTheme(item.id)}
+          style={[styles.patternItem, { width: (width - 64) / 2 }, isSelected && styles.patternItemSelected]}
+          onPress={() => { setSelectedTheme(item.id); haptic.tick(); }}
         >
           <LinearGradient
             colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
@@ -251,17 +253,36 @@ export default function ChatThemePickerScreen() {
     );
   };
 
+  const handleUploadPhoto = useCallback(async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8,
+        allowsEditing: true,
+        aspect: [16, 9],
+      });
+      if (!result.canceled && result.assets[0]) {
+        setSelectedTheme(`custom:${result.assets[0].uri}`);
+        haptic.success();
+        showToast({ message: t('chatThemePicker.photoSelected', 'Photo selected'), variant: 'success' });
+      }
+    } catch {
+      haptic.error();
+      showToast({ message: t('chatThemePicker.photoError', 'Failed to select photo'), variant: 'error' });
+    }
+  }, [haptic, t]);
+
   const renderPhotoItem = ({ item, index }: { item: ThemeOption; index: number }) => {
     const isSelected = selectedTheme === item.id;
     const isUpload = item.id === 'upload';
 
     return (
-      <Animated.View entering={FadeInUp.delay(index * 60).duration(400)}>
+      <Animated.View entering={FadeInUp.delay(Math.min(index, 8) * 60).duration(400)}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t(`chatThemePicker.themeName.${item.id}`)}
-          style={[styles.photoItem, isUpload && styles.photoItemUpload, isSelected && styles.photoItemSelected]}
-          onPress={() => !isUpload && setSelectedTheme(item.id)}
+          style={[styles.photoItem, { backgroundColor: tc.surface, width: (width - 64) / 2 }, isUpload && styles.photoItemUpload, isSelected && styles.photoItemSelected]}
+          onPress={() => isUpload ? handleUploadPhoto() : setSelectedTheme(item.id)}
         >
           {isUpload ? (
             <View style={styles.uploadContent}>
@@ -290,7 +311,7 @@ export default function ChatThemePickerScreen() {
   return (
     <ScreenErrorBoundary>
     <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
-      <GlassHeader title={t('chatThemePicker.title')} onBack={() => router.back()} />
+      <GlassHeader title={t('chatThemePicker.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back', 'Go back') }} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -355,7 +376,7 @@ export default function ChatThemePickerScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={t(`chatThemePicker.tab.${tab.id}`)}
                     style={[styles.tab, isActive && styles.tabActive]}
-                    onPress={() => setActiveTab(tab.id)}
+                    onPress={() => { setActiveTab(tab.id); haptic.tick(); }}
                   >
                     {isActive ? (
                       <LinearGradient
@@ -483,14 +504,24 @@ export default function ChatThemePickerScreen() {
       <View style={[styles.bottomBar, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
         <Pressable
           onPress={async () => {
-            if (conversationId) {
-              await AsyncStorage.removeItem(`${CHAT_THEME_STORAGE_PREFIX}${conversationId}`);
+            if (applyingRef.current) return;
+            applyingRef.current = true;
+            try {
+              haptic.tick();
+              if (conversationId) {
+                await AsyncStorage.removeItem(`${CHAT_THEME_STORAGE_PREFIX}${conversationId}`);
+              }
+              setSelectedTheme('default');
+              setActiveTab('solid');
+              setOpacity(30);
+              setBlur(0);
+              router.back();
+            } catch {
+              haptic.error();
+              showToast({ message: t('chatThemePicker.errorReset', 'Failed to reset theme'), variant: 'error' });
+            } finally {
+              applyingRef.current = false;
             }
-            setSelectedTheme('default');
-            setActiveTab('solid');
-            setOpacity(30);
-            setBlur(0);
-            router.back();
           }}
           accessibilityRole="button"
           accessibilityLabel={t('chatThemePicker.resetToDefault')}
@@ -499,17 +530,28 @@ export default function ChatThemePickerScreen() {
         </Pressable>
         <Pressable
           onPress={async () => {
-            if (conversationId) {
-              await AsyncStorage.setItem(
-                `${CHAT_THEME_STORAGE_PREFIX}${conversationId}`,
-                JSON.stringify({ themeId: selectedTheme, opacity, blur }),
-              );
-              showToast({ message: t('chatThemePicker.themeApplied'), variant: 'success' });
+            if (applyingRef.current) return;
+            applyingRef.current = true;
+            try {
+              haptic.success();
+              if (conversationId) {
+                await AsyncStorage.setItem(
+                  `${CHAT_THEME_STORAGE_PREFIX}${conversationId}`,
+                  JSON.stringify({ themeId: selectedTheme, opacity, blur }),
+                );
+                showToast({ message: t('chatThemePicker.themeApplied'), variant: 'success' });
+              }
+              router.back();
+            } catch {
+              haptic.error();
+              showToast({ message: t('chatThemePicker.errorApply', 'Failed to apply theme'), variant: 'error' });
+            } finally {
+              applyingRef.current = false;
             }
-            router.back();
           }}
           accessibilityRole="button"
           accessibilityLabel={t('chatThemePicker.apply')}
+          disabled={selectedTheme === 'default'}
           style={{ opacity: selectedTheme === 'default' ? 0.5 : 1 }}
         >
           <LinearGradient
@@ -528,7 +570,6 @@ export default function ChatThemePickerScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   previewContainer: {
     paddingHorizontal: spacing.base,
@@ -567,18 +608,15 @@ const styles = StyleSheet.create({
   },
   messageText: {
     fontSize: fontSize.sm,
-    fontFamily: fonts.regular,
-    color: colors.text.primary,
+    fontFamily: fonts.body,
   },
   sentMessageText: {
     fontSize: fontSize.sm,
-    fontFamily: fonts.regular,
-    color: colors.text.primary,
+    fontFamily: fonts.body,
   },
   currentLabel: {
     fontSize: fontSize.sm,
-    fontFamily: fonts.medium,
-    color: colors.text.secondary,
+    fontFamily: fonts.bodyMedium,
     marginTop: spacing.md,
     textAlign: 'center',
   },
@@ -606,13 +644,11 @@ const styles = StyleSheet.create({
   tabInner: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.dark.surface,
     borderRadius: radius.full,
   },
   tabText: {
     fontSize: fontSize.sm,
-    fontFamily: fonts.medium,
-    color: colors.text.secondary,
+    fontFamily: fonts.bodyMedium,
   },
   tabTextActive: {
     color: colors.text.primary,
@@ -622,6 +658,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
   },
   gridRow: {
+    flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: spacing.base,
   },
@@ -649,12 +686,10 @@ const styles = StyleSheet.create({
   },
   themeName: {
     fontSize: fontSize.xs,
-    fontFamily: fonts.medium,
-    color: colors.text.secondary,
+    fontFamily: fonts.bodyMedium,
     marginTop: spacing.xs,
   },
   patternItem: {
-    width: (width - 64) / 2,
     borderRadius: radius.md,
     overflow: 'hidden',
     position: 'relative',
@@ -672,8 +707,7 @@ const styles = StyleSheet.create({
   },
   patternName: {
     fontSize: fontSize.sm,
-    fontFamily: fonts.medium,
-    color: colors.text.primary,
+    fontFamily: fonts.bodyMedium,
   },
   patternCheck: {
     position: 'absolute',
@@ -687,10 +721,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   photoItem: {
-    width: (width - 64) / 2,
     aspectRatio: 1.5,
     borderRadius: radius.md,
-    backgroundColor: colors.dark.surface,
     overflow: 'hidden',
     position: 'relative',
   },
@@ -724,7 +756,7 @@ const styles = StyleSheet.create({
   },
   uploadText: {
     fontSize: fontSize.sm,
-    fontFamily: fonts.medium,
+    fontFamily: fonts.bodyMedium,
     color: colors.emerald,
   },
   photoCheck: {
@@ -761,8 +793,7 @@ const styles = StyleSheet.create({
   },
   controlsTitle: {
     fontSize: fontSize.md,
-    fontFamily: fonts.semibold,
-    color: colors.text.primary,
+    fontFamily: fonts.bodySemiBold,
   },
   sliderRow: {
     flexDirection: 'row',
@@ -771,12 +802,11 @@ const styles = StyleSheet.create({
   },
   sliderLabel: {
     fontSize: fontSize.base,
-    fontFamily: fonts.medium,
-    color: colors.text.primary,
+    fontFamily: fonts.bodyMedium,
   },
   sliderValue: {
     fontSize: fontSize.sm,
-    fontFamily: fonts.semibold,
+    fontFamily: fonts.bodySemiBold,
     color: colors.gold,
   },
   sliderButtons: {
@@ -787,7 +817,6 @@ const styles = StyleSheet.create({
   },
   sliderTrack: {
     height: 4,
-    backgroundColor: colors.dark.surface,
     borderRadius: radius.full,
     marginTop: spacing.sm,
     overflow: 'hidden',
@@ -808,14 +837,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: spacing.base,
-    backgroundColor: colors.dark.bg,
     borderTopWidth: 1,
-    borderTopColor: colors.dark.border,
   },
   resetText: {
     fontSize: fontSize.base,
-    fontFamily: fonts.medium,
-    color: colors.text.secondary,
+    fontFamily: fonts.bodyMedium,
     padding: spacing.sm,
   },
   applyButton: {
@@ -825,7 +851,6 @@ const styles = StyleSheet.create({
   },
   applyText: {
     fontSize: fontSize.base,
-    fontFamily: fonts.semibold,
-    color: colors.text.primary,
+    fontFamily: fonts.bodySemiBold,
   },
 });

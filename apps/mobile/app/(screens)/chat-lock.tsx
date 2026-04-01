@@ -1,15 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Switch, Alert, Pressable } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
+import { showToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useChatLock } from '@/hooks/useChatLock';
 
 function ChatLockContent() {
@@ -18,6 +19,7 @@ function ChatLockContent() {
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
   const { t } = useTranslation();
   const { isLocked, lockConversation, unlockConversation, isBiometricAvailable } = useChatLock();
+  const haptic = useContextualHaptic();
 
   const [locked, setLocked] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
@@ -39,7 +41,7 @@ function ChatLockContent() {
       }
     }
     loadState();
-  }, [conversationId]);
+  }, [conversationId, isLocked, isBiometricAvailable]);
 
   const handleToggle = useCallback(async () => {
     if (!conversationId || toggling) return;
@@ -49,19 +51,27 @@ function ChatLockContent() {
         const success = await unlockConversation(conversationId);
         if (success) {
           setLocked(false);
+          haptic.success();
+          showToast({ message: t('chatLock.chatUnlocked', 'Chat unlocked'), variant: 'success' });
         }
       } else {
         const success = await lockConversation(conversationId);
         if (success) {
           setLocked(true);
+          haptic.success();
+          showToast({ message: t('chatLock.chatLocked', 'Chat locked'), variant: 'success' });
         }
       }
+    } catch {
+      haptic.error();
+      showToast({ message: t('chatLock.errorToggle', 'Failed to update lock state'), variant: 'error' });
     } finally {
       setToggling(false);
     }
-  }, [conversationId, locked, toggling, lockConversation, unlockConversation]);
+  }, [conversationId, locked, toggling, lockConversation, unlockConversation, haptic, t]);
 
   const handleRemoveLock = useCallback(() => {
+    haptic.delete();
     Alert.alert(
       t('chatLock.removeLockTitle', 'Remove Chat Lock'),
       t('chatLock.removeLockMessage', 'Are you sure you want to remove the lock from this chat?'),
@@ -73,16 +83,24 @@ function ChatLockContent() {
           onPress: async () => {
             if (!conversationId) return;
             setToggling(true);
-            const success = await unlockConversation(conversationId);
-            if (success) {
-              setLocked(false);
+            try {
+              const success = await unlockConversation(conversationId);
+              if (success) {
+                setLocked(false);
+                haptic.success();
+                showToast({ message: t('chatLock.chatUnlocked', 'Chat unlocked'), variant: 'success' });
+              }
+            } catch {
+              haptic.error();
+              showToast({ message: t('chatLock.errorRemoveLock', 'Failed to remove lock'), variant: 'error' });
+            } finally {
+              setToggling(false);
             }
-            setToggling(false);
           },
         },
       ],
     );
-  }, [conversationId, unlockConversation, t]);
+  }, [conversationId, unlockConversation, haptic, t]);
 
   return (
     <View style={[styles.container, { backgroundColor: tc.bg }]}>
@@ -131,7 +149,7 @@ function ChatLockContent() {
               onValueChange={handleToggle}
               disabled={loading || toggling || !biometricAvailable}
               trackColor={{ false: tc.surface, true: colors.emerald }}
-              thumbColor={colors.text.primary}
+              thumbColor={tc.text.primary}
             />
           </View>
         </Animated.View>
@@ -260,7 +278,6 @@ export default function ChatLockScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   scrollView: {
     flex: 1,
@@ -283,10 +300,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   card: {
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
     padding: spacing.base,
     marginBottom: spacing.md,
   },
@@ -302,13 +317,11 @@ const styles = StyleSheet.create({
   toggleLabel: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
     marginBottom: spacing.xs,
   },
   toggleDescription: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
     lineHeight: 18,
   },
   infoRow: {
@@ -329,7 +342,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
     lineHeight: 20,
   },
   removeLockContainer: {
@@ -362,7 +374,6 @@ const styles = StyleSheet.create({
   explanationTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.md,
-    color: colors.text.primary,
     marginBottom: spacing.base,
   },
   explanationItem: {
@@ -382,7 +393,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
     lineHeight: 20,
   },
 });

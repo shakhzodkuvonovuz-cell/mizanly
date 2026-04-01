@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, TextInput } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, StyleSheet, FlatList, Pressable, TextInput, Alert } from 'react-native';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -20,7 +20,7 @@ import { showToast } from '@/components/ui/Toast';
 import { api } from '@/services/api';
 
 const FOLDER_ICONS: IconName[] = ['users', 'heart', 'globe', 'layers', 'bell', 'bookmark', 'flag', 'lock'];
-const FOLDER_COLORS = [colors.emerald, colors.gold, colors.extended.blue, '#9333EA', '#F85149', '#EC4899', colors.extended.orange, '#10B981'];
+const FOLDER_COLORS = [colors.emerald, colors.gold, colors.extended.blue, colors.extended.violet, colors.extended.red, colors.extended.purple, colors.extended.orange, colors.extended.greenBright];
 
 interface PredefinedFilter {
   key: string;
@@ -56,7 +56,7 @@ const PREDEFINED_FILTERS: PredefinedFilter[] = [
     key: 'personal',
     labelKey: 'risalah.personal',
     icon: 'user',
-    color: '#9333EA',
+    color: colors.extended.violet,
     filter: (c) => c.isGroup !== true && c.isChannel !== true,
   },
 ];
@@ -87,6 +87,10 @@ export default function ChatFoldersScreen() {
       queryClient.invalidateQueries({ queryKey: ['chat-folders'] });
       haptic.success();
     },
+    onError: () => {
+      haptic.error();
+      showToast({ message: t('risalah.errorCreateFolder', 'Failed to create folder'), variant: 'error' });
+    },
   });
 
   const updateMutation = useMutation({
@@ -98,6 +102,10 @@ export default function ChatFoldersScreen() {
       queryClient.invalidateQueries({ queryKey: ['chat-folders'] });
       haptic.success();
     },
+    onError: () => {
+      haptic.error();
+      showToast({ message: t('risalah.errorUpdateFolder', 'Failed to update folder'), variant: 'error' });
+    },
   });
 
   const deleteMutation = useMutation({
@@ -107,6 +115,10 @@ export default function ChatFoldersScreen() {
       setMenuFolder(null);
       haptic.delete();
       showToast({ message: t('risalah.folderDeleted'), variant: 'success' });
+    },
+    onError: () => {
+      haptic.error();
+      showToast({ message: t('risalah.errorDeleteFolder', 'Failed to delete folder'), variant: 'error' });
     },
   });
 
@@ -152,7 +164,7 @@ export default function ChatFoldersScreen() {
         <GlassHeader
           title={t('risalah.chatFolders')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
-          rightAction={{ icon: 'plus', onPress: () => { setCreateMode(true); haptic.navigate(); } }}
+          rightAction={{ icon: 'plus', onPress: () => { setCreateMode(true); haptic.tick(); } }}
         />
 
         {/* Info */}
@@ -198,8 +210,9 @@ export default function ChatFoldersScreen() {
         {createMode && (
           <Animated.View entering={FadeIn.duration(200)} style={[styles.createCard, { backgroundColor: tc.bgCard }]}>
             <Text style={[styles.createTitle, { color: tc.text.primary }]}>{editingFolder ? t('risalah.editFolder') : t('risalah.newFolder')}</Text>
+
             <TextInput
-              style={[styles.createInput, { backgroundColor: tc.surface, borderColor: tc.border }]}
+              style={[styles.createInput, { backgroundColor: tc.surface, borderColor: tc.border, color: tc.text.primary }]}
               value={newName}
               onChangeText={setNewName}
               placeholder={t('risalah.folderNamePlaceholder')}
@@ -209,13 +222,14 @@ export default function ChatFoldersScreen() {
             />
 
             <Text style={[styles.iconLabel, { color: tc.text.secondary }]}>{t('risalah.icon')}</Text>
+
             <View style={styles.iconGrid}>
               {FOLDER_ICONS.map((icon, i) => (
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={icon}
                   key={icon}
-                  style={[styles.iconOption, selectedIcon === i && { borderColor: FOLDER_COLORS[i] }]}
+                  style={[styles.iconOption, { backgroundColor: tc.surface }, selectedIcon === i && { borderColor: FOLDER_COLORS[i] }]}
                   onPress={() => { setSelectedIcon(i); haptic.tick(); }}
                 >
                   <Icon name={icon} size="sm" color={selectedIcon === i ? FOLDER_COLORS[i] : tc.text.secondary} />
@@ -224,7 +238,7 @@ export default function ChatFoldersScreen() {
             </View>
 
             <View style={styles.createActions}>
-              <Pressable accessibilityRole="button" accessibilityLabel={t('common.cancel')} onPress={() => { setCreateMode(false); setEditingFolder(null); setNewName(''); }} style={[styles.cancelBtn, { backgroundColor: tc.surface }]}>
+              <Pressable accessibilityRole="button" accessibilityLabel={t('common.cancel')} onPress={() => { setCreateMode(false); setEditingFolder(null); setNewName(''); haptic.tick(); }} style={[styles.cancelBtn, { backgroundColor: tc.surface }]}>
                 <Text style={[styles.cancelText, { color: tc.text.secondary }]}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable
@@ -245,7 +259,7 @@ export default function ChatFoldersScreen() {
                 }}
                 disabled={!newName.trim() || createMutation.isPending || updateMutation.isPending}
               >
-                <LinearGradient colors={[colors.emerald, '#0D9B63']} style={styles.createBtnGradient}>
+                <LinearGradient colors={[colors.emerald, colors.emeraldDark]} style={styles.createBtnGradient}>
                   <Text style={styles.createBtnText}>{editingFolder ? t('common.save') : t('common.create')}</Text>
                 </LinearGradient>
               </Pressable>
@@ -300,7 +314,24 @@ export default function ChatFoldersScreen() {
             label={t('risalah.deleteFolder')}
             icon={<Icon name="trash" size="sm" color={colors.error} />}
             destructive
-            onPress={() => menuFolder && deleteMutation.mutate(menuFolder.id as string)}
+            onPress={() => {
+              if (!menuFolder) return;
+              const folderId = menuFolder.id as string;
+              const folderName = (menuFolder.name as string) || t('risalah.folder');
+              setMenuFolder(null);
+              Alert.alert(
+                t('risalah.deleteFolderTitle', 'Delete Folder'),
+                t('risalah.deleteFolderMessage', { name: folderName }),
+                [
+                  { text: t('common.cancel', 'Cancel'), style: 'cancel' },
+                  {
+                    text: t('common.delete', 'Delete'),
+                    style: 'destructive',
+                    onPress: () => deleteMutation.mutate(folderId),
+                  },
+                ],
+              );
+            }}
           />
         </BottomSheet>
       </View>
@@ -309,38 +340,38 @@ export default function ChatFoldersScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
   infoCard: { marginHorizontal: spacing.base, marginBottom: spacing.md, borderRadius: radius.md, overflow: 'hidden' },
   infoGradient: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md, borderRadius: radius.md },
-  infoText: { color: colors.text.secondary, fontSize: fontSize.xs, flex: 1, lineHeight: 18 },
-  createCard: { marginHorizontal: spacing.base, marginBottom: spacing.md, backgroundColor: colors.dark.bgCard, borderRadius: radius.lg, padding: spacing.base, borderWidth: 1, borderColor: colors.emerald + '30' },
-  createTitle: { color: colors.text.primary, fontSize: fontSize.md, fontWeight: '700', marginBottom: spacing.md },
-  createInput: { backgroundColor: colors.dark.surface, borderRadius: radius.md, padding: spacing.md, color: colors.text.primary, fontSize: fontSize.base, borderWidth: 1, borderColor: colors.dark.border, marginBottom: spacing.md },
-  iconLabel: { color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '500', marginBottom: spacing.sm },
+  infoText: { fontSize: fontSize.xs, fontFamily: fonts.body, flex: 1, lineHeight: 18 },
+  createCard: { marginHorizontal: spacing.base, marginBottom: spacing.md, borderRadius: radius.lg, padding: spacing.base, borderWidth: 1, borderColor: colors.emerald + '30' },
+  createTitle: { fontSize: fontSize.md, fontFamily: fonts.bodyBold, marginBottom: spacing.md },
+  createInput: { borderRadius: radius.md, padding: spacing.md, fontSize: fontSize.base, fontFamily: fonts.body, borderWidth: 1, marginBottom: spacing.md },
+  iconLabel: { fontSize: fontSize.sm, fontFamily: fonts.bodyMedium, marginBottom: spacing.sm },
   iconGrid: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap', marginBottom: spacing.md },
-  iconOption: { width: 40, height: 40, borderRadius: radius.md, backgroundColor: colors.dark.surface, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'transparent' },
+  iconOption: { width: 40, height: 40, borderRadius: radius.md, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'transparent' },
   createActions: { flexDirection: 'row', gap: spacing.md },
-  cancelBtn: { flex: 1, paddingVertical: spacing.md, alignItems: 'center', borderRadius: radius.md, backgroundColor: colors.dark.surface },
-  cancelText: { color: colors.text.secondary, fontSize: fontSize.base, fontWeight: '500' },
+  cancelBtn: { flex: 1, paddingVertical: spacing.md, alignItems: 'center', borderRadius: radius.md },
+  cancelText: { fontSize: fontSize.base, fontFamily: fonts.bodyMedium },
   createBtn: { flex: 1, borderRadius: radius.md, overflow: 'hidden' },
   createBtnGradient: { paddingVertical: spacing.md, alignItems: 'center', borderRadius: radius.md },
-  createBtnText: { color: '#FFF', fontSize: fontSize.base, fontWeight: '700' },
+  createBtnText: { color: colors.extended.white, fontSize: fontSize.base, fontFamily: fonts.bodyBold },
   list: { paddingHorizontal: spacing.base, paddingBottom: spacing['2xl'] },
   skeletons: { gap: spacing.sm },
-  folderCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: colors.dark.bgCard, padding: spacing.base, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.dark.border, marginBottom: spacing.sm },
+  folderCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.base, borderRadius: radius.lg, borderWidth: 1, marginBottom: spacing.sm },
   folderIcon: { width: 48, height: 48, borderRadius: radius.md, justifyContent: 'center', alignItems: 'center' },
-  folderName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
-  folderMeta: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: 2 },
+  folderName: { fontSize: fontSize.base, fontFamily: fonts.bodySemiBold },
+  folderMeta: { fontSize: fontSize.xs, fontFamily: fonts.body, marginTop: 2 },
   predefinedSection: { paddingHorizontal: spacing.base, marginBottom: spacing.md },
-  sectionLabel: { color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '600', marginBottom: spacing.sm, textTransform: 'uppercase' as const, letterSpacing: 0.5 },
+  sectionLabel: { fontSize: fontSize.sm, fontFamily: fonts.bodySemiBold, marginBottom: spacing.sm, textTransform: 'uppercase' as const, letterSpacing: 0.5 },
   predefinedGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   predefinedCard: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
-    backgroundColor: colors.dark.bgCard, borderRadius: radius.md,
+    borderRadius: radius.md,
     paddingHorizontal: spacing.md, paddingVertical: spacing.md,
-    borderWidth: 1, borderColor: colors.dark.border,
+    borderWidth: 1,
     width: '48%' as unknown as number,
   },
   predefinedIconWrap: { width: 36, height: 36, borderRadius: radius.sm, justifyContent: 'center', alignItems: 'center' },
-  predefinedLabel: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '600', flex: 1 },
+  predefinedLabel: { fontSize: fontSize.sm, fontFamily: fonts.bodySemiBold, flex: 1 },
 });

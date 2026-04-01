@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
@@ -26,7 +26,7 @@ const FILTER_META: Record<FilterKey, { labelKey: string; icon: string; color: st
   unread: { labelKey: 'chatFolders.unread', icon: 'bell', color: colors.extended.blue },
   groups: { labelKey: 'chatFolders.groups', icon: 'users', color: colors.emerald },
   channels: { labelKey: 'risalah.channels', icon: 'globe', color: colors.gold },
-  personal: { labelKey: 'risalah.personal', icon: 'user', color: '#9333EA' },
+  personal: { labelKey: 'risalah.personal', icon: 'user', color: colors.extended.violet },
   archived: { labelKey: 'chatFolders.archived', icon: 'layers', color: colors.text.secondary },
 };
 
@@ -125,12 +125,13 @@ function ChatFolderViewInner() {
     const lastText = item.lastMessageText;
 
     return (
-      <Animated.View entering={FadeInUp.delay(index * 50).duration(300)}>
+      <Animated.View entering={FadeInUp.delay(Math.min(index, 10) * 50).duration(300)}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={name}
-          style={[styles.conversationItem, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
+          style={({ pressed }) => [styles.conversationItem, { backgroundColor: tc.bgCard, borderColor: tc.border }, pressed && { opacity: 0.7 }]}
           onPress={() => handlePress(item.id)}
+          android_ripple={{ color: tc.surface }}
         >
           <Avatar uri={avatarUri} name={name} size="md" showOnline={!isArchived} />
           <View style={styles.convContent}>
@@ -243,7 +244,7 @@ const styles = StyleSheet.create({
   },
   filterCount: {
     fontSize: fontSize.sm,
-    fontWeight: '500',
+    fontFamily: fonts.bodyMedium,
   },
   skeletons: {
     paddingHorizontal: spacing.base,
@@ -266,7 +267,7 @@ const styles = StyleSheet.create({
   },
   convName: {
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   convLastMsg: {
     fontSize: fontSize.sm,
@@ -281,9 +282,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
   },
   unreadText: {
-    color: '#FFF',
+    color: colors.extended.white,
     fontSize: fontSize.xs,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
   },
   archivedBadge: {
     width: 28,

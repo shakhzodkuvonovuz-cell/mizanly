@@ -13,6 +13,7 @@ import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { showToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { chatExportApi } from '@/services/chatExportApi';
 import type { ChatExportStats } from '@/services/chatExportApi';
 
@@ -21,6 +22,7 @@ type ExportFormat = 'text' | 'json';
 function ChatExportContent() {
   const router = useRouter();
   const tc = useThemeColors();
+  const haptic = useContextualHaptic();
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
   const { t } = useTranslation();
 
@@ -65,7 +67,9 @@ function ChatExportContent() {
         title: exportData.filename,
         message: t('chatExport.shareMessage', 'Chat export from Mizanly'),
       });
+      haptic.success();
     } catch {
+      haptic.error();
       showToast({ message: t('chatExport.errorExport', 'Failed to export chat. Please try again.'), variant: 'error' });
     } finally {
       setExporting(false);
@@ -186,16 +190,16 @@ function ChatExportContent() {
               return (
                 <Pressable
                   key={option.key}
-                  onPress={() => setFormat(option.key)}
-                  style={[styles.formatOption, selected && styles.formatOptionSelected]}
+                  onPress={() => { setFormat(option.key); haptic.tick(); }}
+                  style={[styles.formatOption, { backgroundColor: tc.bgCard, borderColor: tc.border }, selected && styles.formatOptionSelected]}
                   accessibilityRole="radio"
                   accessibilityState={{ selected }}
                 >
-                  <View style={[styles.radioOuter, selected && styles.radioOuterSelected]}>
+                  <View style={[styles.radioOuter, { borderColor: tc.border }, selected && styles.radioOuterSelected]}>
                     {selected && <View style={styles.radioInner} />}
                   </View>
                   <View style={styles.formatOptionText}>
-                    <Text style={[styles.formatLabel, selected && styles.formatLabelSelected]}>
+                    <Text style={[styles.formatLabel, { color: tc.text.primary }, selected && styles.formatLabelSelected]}>
                       {option.label}
                     </Text>
                     <Text style={[styles.formatDescription, { color: tc.text.secondary }]}>
@@ -228,7 +232,7 @@ function ChatExportContent() {
                 value={includeMedia}
                 onValueChange={setIncludeMedia}
                 trackColor={{ false: tc.surface, true: colors.emerald }}
-                thumbColor={colors.text.primary}
+                thumbColor={tc.text.primary}
               />
             </View>
           </View>
@@ -288,7 +292,6 @@ export default function ChatExportScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   scrollView: {
     flex: 1,
@@ -299,17 +302,14 @@ const styles = StyleSheet.create({
     paddingBottom: spacing['2xl'],
   },
   card: {
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
     padding: spacing.base,
     marginBottom: spacing.md,
   },
   sectionTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
     marginTop: spacing.lg,
     marginBottom: spacing.md,
   },
@@ -331,17 +331,14 @@ const styles = StyleSheet.create({
   statsName: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.md,
-    color: colors.text.primary,
   },
   statsSubtitle: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
     marginTop: 2,
   },
   statsDivider: {
     height: 1,
-    backgroundColor: colors.dark.border,
     marginVertical: spacing.base,
   },
   statsGrid: {
@@ -363,12 +360,10 @@ const styles = StyleSheet.create({
   statValue: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.md,
-    color: colors.text.primary,
   },
   statLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
   },
   formatOptions: {
     gap: spacing.sm,
@@ -376,10 +371,8 @@ const styles = StyleSheet.create({
   formatOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
     padding: spacing.base,
     gap: spacing.md,
   },
@@ -392,7 +385,6 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: radius.full,
     borderWidth: 2,
-    borderColor: colors.dark.borderLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -411,7 +403,6 @@ const styles = StyleSheet.create({
   formatLabel: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
   },
   formatLabelSelected: {
     color: colors.emerald,
@@ -419,7 +410,6 @@ const styles = StyleSheet.create({
   formatDescription: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
     marginTop: 2,
   },
   toggleRow: {
@@ -434,13 +424,11 @@ const styles = StyleSheet.create({
   toggleLabel: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
     marginBottom: spacing.xs,
   },
   toggleDescription: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
     lineHeight: 18,
   },
   buttonContainer: {
@@ -457,7 +445,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
     lineHeight: 16,
   },
 });
