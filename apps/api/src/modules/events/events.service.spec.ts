@@ -211,10 +211,11 @@ describe('EventsService', () => {
         _count: { rsvps: 10 },
       };
       mockPrismaService.event.findUnique.mockResolvedValue(mockEvent);
-      mockPrismaService.eventRSVP.count
-        .mockResolvedValueOnce(5) // goingCount
-        .mockResolvedValueOnce(2) // maybeCount
-        .mockResolvedValueOnce(1); // notGoingCount
+      mockPrismaService.eventRSVP.groupBy.mockResolvedValue([
+        { status: 'going', _count: 5 },
+        { status: 'maybe', _count: 2 },
+        { status: 'not_going', _count: 1 },
+      ]);
       mockPrismaService.eventRSVP.findUnique.mockResolvedValue({ status: 'going' });
 
       const result = await service.getEvent(eventId, userId);
@@ -262,7 +263,7 @@ describe('EventsService', () => {
         _count: { rsvps: 0 },
       };
       mockPrismaService.event.findUnique.mockResolvedValue(mockEvent);
-      mockPrismaService.eventRSVP.count.mockResolvedValue(0);
+      mockPrismaService.eventRSVP.groupBy.mockResolvedValue([]);
       mockPrismaService.eventRSVP.findUnique.mockResolvedValue(null);
 
       const result = await service.getEvent('event1', 'owner');
@@ -287,7 +288,7 @@ describe('EventsService', () => {
       };
       mockPrismaService.event.findUnique.mockResolvedValue(mockExisting);
       mockPrismaService.event.update.mockResolvedValue(mockUpdated);
-      mockPrismaService.eventRSVP.count.mockResolvedValue(0);
+      mockPrismaService.eventRSVP.groupBy.mockResolvedValue([]);
 
       const result = await service.updateEvent(userId, eventId, dto);
 

@@ -264,16 +264,16 @@ export class EventsService {
       },
     });
 
-    // Add counts
-    const goingCount = await this.prisma.eventRSVP.count({
-      where: { eventId: updated.id, status: 'going' },
+    // Single groupBy for all RSVP counts
+    const updateRsvpCounts = await this.prisma.eventRSVP.groupBy({
+      by: ['status'],
+      where: { eventId: updated.id },
+      _count: true,
     });
-    const maybeCount = await this.prisma.eventRSVP.count({
-      where: { eventId: updated.id, status: 'maybe' },
-    });
-    const notGoingCount = await this.prisma.eventRSVP.count({
-      where: { eventId: updated.id, status: 'not_going' },
-    });
+    const updateCountMap = new Map(updateRsvpCounts.map((r: { status: string; _count: number }) => [r.status, r._count]));
+    const goingCount = updateCountMap.get('going') ?? 0;
+    const maybeCount = updateCountMap.get('maybe') ?? 0;
+    const notGoingCount = updateCountMap.get('not_going') ?? 0;
 
     return {
       ...updated,
