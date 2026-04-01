@@ -72,9 +72,21 @@ export class NotificationProcessor implements OnModuleInit, OnModuleDestroy {
     });
 
     this.worker.on('failed', (job: Job | undefined, err: Error) => {
-      this.logger.error(`Notification job ${job?.id} failed: ${err.message}`);
-      Sentry.captureException(err, { tags: { queue: job?.queueName, jobId: job?.id } });
-      this.queueService.moveToDlq(job, err, 'notifications').catch(() => {});
+      const maxAttempts = job?.opts?.attempts ?? 3;
+      if (job && job.attemptsMade >= maxAttempts) {
+        Sentry.captureException(err, { tags: { queue: 'notifications', jobId: job?.id } });
+        this.queueService.moveToDlq(job, err, 'notifications').catch(() => {});
+      }
+      this.logger.error(`Notification job ${job?.id} failed (attempt ${job?.attemptsMade ?? '?'}/${maxAttempts}): ${err.message}`);
+    });
+
+    this.worker.on('error', (err: Error) => {
+      this.logger.error(`Notification worker error: ${err.message}`);
+      Sentry.captureException(err, { tags: { queue: 'notifications' } });
+    });
+
+    this.worker.on('stalled', (jobId: string) => {
+      this.logger.warn(`Notification job ${jobId} stalled — being re-executed`);
     });
 
     this.logger.log('Notification worker started');

@@ -58,12 +58,10 @@ export class QueueService implements OnModuleDestroy {
   // ── Notification Jobs ─────────────────────────────────────
 
   async addPushNotificationJob(data: { notificationId: string }): Promise<string> {
-    // Backoff strategy: 3 attempts with custom delays (1s, 10s, 60s)
-    // defined in NotificationProcessor.backoffStrategy (notification.processor.ts).
-    // Using 'custom' type because the delays are non-standard exponential.
-    // If switching to separate worker processes, change to 'exponential' with delay: 1000.
+    // K04-#16 FIX: Use notificationId as jobId for natural deduplication
     const job = await this.circuitBreaker.exec('redis', () =>
       this.notificationsQueue.add('push-trigger', this.withCorrelation(data), {
+        jobId: `push:${data.notificationId}`,
         attempts: 3,
         backoff: { type: 'custom' },
       }),
@@ -97,12 +95,24 @@ export class QueueService implements OnModuleDestroy {
     payload: Record<string, unknown>;
     webhookId: string;
   }): Promise<string> {
-    // Backoff strategy: 5 attempts with custom delays (1s, 5s, 30s, 5m, 30m)
-    // defined in WebhookProcessor.backoffStrategy (webhook.processor.ts).
-    // Using 'custom' type for webhook-specific progressive delays.
-    // If switching to separate worker processes, change to 'exponential' with delay: 1000.
+    // K04-#1 FIX: Compute HMAC signature at enqueue time so the secret
+    // is never stored in Redis job data (it was exposed in plaintext).
+    const { createHmac } = await import('crypto');
+    const body = JSON.stringify(data.payload);
+    const timestamp = Math.floor(Date.now() / 1000).toString();
+    const signature = createHmac('sha256', data.secret).update(`${timestamp}.${body}`).digest('hex');
+
+    const jobData = {
+      url: data.url,
+      event: data.event,
+      payload: data.payload,
+      webhookId: data.webhookId,
+      signature,
+      timestamp,
+    };
+
     const job = await this.circuitBreaker.exec('redis', () =>
-      this.webhooksQueue.add('deliver', this.withCorrelation(data), {
+      this.webhooksQueue.add('deliver', this.withCorrelation(jobData), {
         attempts: 5,
         backoff: { type: 'custom' },
       }),

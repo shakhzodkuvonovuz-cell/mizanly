@@ -56,10 +56,23 @@ export class SearchIndexingProcessor implements OnModuleInit, OnModuleDestroy {
     });
 
     this.worker.on('failed', (job: Job | undefined, err: Error) => {
-      this.logger.error(`Search index job ${job?.id} failed: ${err.message}`);
-      Sentry.captureException(err, { tags: { queue: job?.queueName, jobId: job?.id } });
-      this.queueService.moveToDlq(job, err, 'search-indexing').catch(() => {});
+      const maxAttempts = job?.opts?.attempts ?? 3;
+      if (job && job.attemptsMade >= maxAttempts) {
+        Sentry.captureException(err, { tags: { queue: 'search-indexing', jobId: job?.id } });
+        this.queueService.moveToDlq(job, err, 'search-indexing').catch(() => {});
+      }
+      this.logger.error(`Search index job ${job?.id} failed (attempt ${job?.attemptsMade ?? '?'}/${maxAttempts}): ${err.message}`);
     });
+
+    this.worker.on('error', (err: Error) => {
+      this.logger.error(`Search indexing worker error: ${err.message}`);
+      Sentry.captureException(err, { tags: { queue: 'search-indexing' } });
+    });
+
+    this.worker.on('stalled', (jobId: string) => {
+      this.logger.warn(`Search index job ${jobId} stalled — being re-executed`);
+    });
+
     this.logger.log('Search indexing worker started');
   }
 

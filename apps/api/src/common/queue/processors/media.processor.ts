@@ -92,10 +92,23 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
     });
 
     this.worker.on('failed', (job: Job | undefined, err: Error) => {
-      this.logger.error(`Media job ${job?.id} failed: ${err.message}`);
-      Sentry.captureException(err, { tags: { queue: job?.queueName, jobId: job?.id } });
-      this.queueService.moveToDlq(job, err, 'media-processing').catch(() => {});
+      const maxAttempts = job?.opts?.attempts ?? 1;
+      if (job && job.attemptsMade >= maxAttempts) {
+        Sentry.captureException(err, { tags: { queue: 'media-processing', jobId: job?.id } });
+        this.queueService.moveToDlq(job, err, 'media-processing').catch(() => {});
+      }
+      this.logger.error(`Media job ${job?.id} failed (attempt ${job?.attemptsMade ?? '?'}/${maxAttempts}): ${err.message}`);
     });
+
+    this.worker.on('error', (err: Error) => {
+      this.logger.error(`Media worker error: ${err.message}`);
+      Sentry.captureException(err, { tags: { queue: 'media-processing' } });
+    });
+
+    this.worker.on('stalled', (jobId: string) => {
+      this.logger.warn(`Media job ${jobId} stalled — being re-executed`);
+    });
+
     this.logger.log('Media processing worker started');
   }
 

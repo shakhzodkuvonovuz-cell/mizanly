@@ -77,10 +77,23 @@ export class AiTasksProcessor implements OnModuleInit, OnModuleDestroy {
     });
 
     this.worker.on('failed', (job: Job | undefined, err: Error) => {
-      this.logger.error(`AI task ${job?.id} failed: ${err.message}`);
-      Sentry.captureException(err, { tags: { queue: job?.queueName, jobId: job?.id } });
-      this.queueService.moveToDlq(job, err, 'ai-tasks').catch(() => {});
+      const maxAttempts = job?.opts?.attempts ?? 2;
+      if (job && job.attemptsMade >= maxAttempts) {
+        Sentry.captureException(err, { tags: { queue: 'ai-tasks', jobId: job?.id } });
+        this.queueService.moveToDlq(job, err, 'ai-tasks').catch(() => {});
+      }
+      this.logger.error(`AI task ${job?.id} failed (attempt ${job?.attemptsMade ?? '?'}/${maxAttempts}): ${err.message}`);
     });
+
+    this.worker.on('error', (err: Error) => {
+      this.logger.error(`AI tasks worker error: ${err.message}`);
+      Sentry.captureException(err, { tags: { queue: 'ai-tasks' } });
+    });
+
+    this.worker.on('stalled', (jobId: string) => {
+      this.logger.warn(`AI task ${jobId} stalled — being re-executed`);
+    });
+
     this.logger.log('AI tasks worker started');
   }
 

@@ -3,25 +3,27 @@ import { Injectable, Logger, OnModuleInit, OnModuleDestroy, forwardRef, Inject }
 import { Worker, Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../../config/prisma.service';
-import { createHmac } from 'crypto';
 import { QueueService } from '../queue.service';
 import { assertNotPrivateUrl } from '../../utils/ssrf';
 import { attachCorrelationId } from '../with-correlation';
 
 interface WebhookJobData {
   url: string;
-  secret: string;
   event: string;
   payload: Record<string, unknown>;
   webhookId: string;
+  signature: string;
+  timestamp: string;
 }
 
 /**
  * Webhook processor — delivers webhook payloads with HMAC-SHA256 signing.
  *
+ * K04-#1 FIX: Secret is no longer stored in Redis. HMAC signature is computed
+ * at enqueue time (in QueueService.addWebhookDeliveryJob) and only the signature
+ * + timestamp are passed in the job data.
+ *
  * Retry strategy: 5 attempts with custom backoff (1s, 5s, 30s, 5m, 30m).
- * This aggressive retry schedule ensures reliable delivery even through
- * extended downtime on the receiver's end.
  */
 @Injectable()
 export class WebhookProcessor implements OnModuleInit, OnModuleDestroy {
@@ -67,10 +69,23 @@ export class WebhookProcessor implements OnModuleInit, OnModuleDestroy {
     });
 
     this.worker.on('failed', (job: Job | undefined, err: Error) => {
-      this.logger.error(`Webhook job ${job?.id} failed permanently: ${err.message}`);
-      Sentry.captureException(err, { tags: { queue: job?.queueName, jobId: job?.id } });
-      this.queueService.moveToDlq(job, err, 'webhooks').catch(() => {});
+      const maxAttempts = job?.opts?.attempts ?? 5;
+      if (job && job.attemptsMade >= maxAttempts) {
+        Sentry.captureException(err, { tags: { queue: 'webhooks', jobId: job?.id } });
+        this.queueService.moveToDlq(job, err, 'webhooks').catch(() => {});
+      }
+      this.logger.error(`Webhook job ${job?.id} failed (attempt ${job?.attemptsMade ?? '?'}/${maxAttempts}): ${err.message}`);
     });
+
+    this.worker.on('error', (err: Error) => {
+      this.logger.error(`Webhook worker error: ${err.message}`);
+      Sentry.captureException(err, { tags: { queue: 'webhooks' } });
+    });
+
+    this.worker.on('stalled', (jobId: string) => {
+      this.logger.warn(`Webhook job ${jobId} stalled — being re-executed`);
+    });
+
     this.logger.log('Webhook worker started');
   }
 
@@ -89,8 +104,8 @@ export class WebhookProcessor implements OnModuleInit, OnModuleDestroy {
   }
 
   private async deliverWebhook(job: Job<WebhookJobData>): Promise<void> {
-    const { url, secret, event, payload, webhookId } = job.data;
-    if (!url || !secret || !event) {
+    const { url, event, payload, webhookId, signature, timestamp } = job.data;
+    if (!url || !event || !signature) {
       this.logger.warn(`Invalid webhook job ${job.id}: missing required fields`);
       return;
     }
@@ -98,9 +113,6 @@ export class WebhookProcessor implements OnModuleInit, OnModuleDestroy {
     await this.validateUrl(url);
 
     const body = JSON.stringify(payload);
-    const timestamp = Math.floor(Date.now() / 1000).toString();
-    // Include timestamp in HMAC to prevent replay attacks
-    const signature = createHmac('sha256', secret).update(`${timestamp}.${body}`).digest('hex');
 
     const response = await fetch(url, {
       method: 'POST',
@@ -128,7 +140,7 @@ export class WebhookProcessor implements OnModuleInit, OnModuleDestroy {
         data: { lastUsedAt: new Date() },
       });
     } catch {
-      // Non-critical — webhook may have been deleted
+      this.logger.debug(`Webhook ${webhookId} lastUsedAt update failed (may have been deleted)`);
     }
 
     this.logger.debug(`Webhook delivered to ${url} (${event})`);

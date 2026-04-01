@@ -74,10 +74,23 @@ export class AnalyticsProcessor implements OnModuleInit, OnModuleDestroy {
     });
 
     this.worker.on('failed', (job: Job | undefined, err: Error) => {
-      this.logger.error(`Analytics job ${job?.id} failed: ${err.message}`);
-      Sentry.captureException(err, { tags: { queue: job?.queueName, jobId: job?.id } });
-      this.queueService.moveToDlq(job, err, 'analytics').catch(() => {});
+      const maxAttempts = job?.opts?.attempts ?? 2;
+      if (job && job.attemptsMade >= maxAttempts) {
+        Sentry.captureException(err, { tags: { queue: 'analytics', jobId: job?.id } });
+        this.queueService.moveToDlq(job, err, 'analytics').catch(() => {});
+      }
+      this.logger.error(`Analytics job ${job?.id} failed (attempt ${job?.attemptsMade ?? '?'}/${maxAttempts}): ${err.message}`);
     });
+
+    this.worker.on('error', (err: Error) => {
+      this.logger.error(`Analytics worker error: ${err.message}`);
+      Sentry.captureException(err, { tags: { queue: 'analytics' } });
+    });
+
+    this.worker.on('stalled', (jobId: string) => {
+      this.logger.warn(`Analytics job ${jobId} stalled — being re-executed`);
+    });
+
     this.logger.log('Analytics worker started');
   }
 
