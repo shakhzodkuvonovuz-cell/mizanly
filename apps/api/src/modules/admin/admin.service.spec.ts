@@ -540,6 +540,16 @@ describe('AdminService', () => {
       expect(publishWorkflow.onUnpublish).toHaveBeenCalledWith(
         expect.objectContaining({ contentType: 'user', contentId: 'user-1' }),
       );
+      // Verify individual content items were deindexed
+      expect(publishWorkflow.onUnpublish).toHaveBeenCalledWith(
+        expect.objectContaining({ contentType: 'post', contentId: 'post-1' }),
+      );
+      expect(publishWorkflow.onUnpublish).toHaveBeenCalledWith(
+        expect.objectContaining({ contentType: 'post', contentId: 'post-2' }),
+      );
+      expect(publishWorkflow.onUnpublish).toHaveBeenCalledWith(
+        expect.objectContaining({ contentType: 'thread', contentId: 'thread-1' }),
+      );
     });
   });
 

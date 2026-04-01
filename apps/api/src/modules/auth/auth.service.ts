@@ -185,8 +185,7 @@ export class AuthService {
     // TTL of 365 days prevents indefinite Redis key accumulation while maintaining abuse prevention
     if (dto.deviceId) {
       const deviceKey = `device_accounts:${dto.deviceId}`;
-      await this.redis.incr(deviceKey);
-      await this.redis.expire(deviceKey, 365 * 24 * 60 * 60);
+      await atomicIncr(this.redis, deviceKey, 365 * 24 * 60 * 60);
     }
 
     // Clear attempt counter on successful registration

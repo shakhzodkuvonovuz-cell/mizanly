@@ -513,8 +513,11 @@ describe('AuthService', () => {
       } as any);
 
       expect(result.id).toBe('user-new');
-      // Should increment device counter after successful registration
-      expect(redis.incr).toHaveBeenCalledWith('device_accounts:device-456');
+      // Should increment device counter atomically after successful registration
+      expect(redis.eval).toHaveBeenCalledWith(
+        expect.stringContaining('INCR'),
+        1, 'device_accounts:device-456', 365 * 24 * 60 * 60,
+      );
     });
 
     it('should skip device check when deviceId is not provided', async () => {
