@@ -373,9 +373,10 @@ describe('PaymentsService', () => {
           data: expect.objectContaining({ diamonds: expect.objectContaining({ decrement: expect.any(Number) }) }),
         }),
       );
+      // netAmount = 10 - 1 = 9, diamonds = Math.floor(9 / 0.007) = 1285, reversed = -1285
       expect(mockCoinTxCreate).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ userId: 'u2', amount: expect.any(Number) }),
+          data: expect.objectContaining({ userId: 'u2', amount: -1285 }),
         }),
       );
     });

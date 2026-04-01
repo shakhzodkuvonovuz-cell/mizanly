@@ -1429,7 +1429,7 @@ describe('MessagesService', () => {
       prisma.conversation.findUnique.mockResolvedValue({ isE2E: true });
       await expect(
         service.scheduleMessage('conv-e2e', 'user-1', 'hello', new Date(Date.now() + 60000)),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(/E2E|encrypted/i);
       expect(prisma.message.create).not.toHaveBeenCalled();
     });
 
