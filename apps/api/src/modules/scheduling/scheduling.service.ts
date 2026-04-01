@@ -249,9 +249,10 @@ export class SchedulingService {
           indexDocument: { id, content: post.content || '', hashtags: post.hashtags || [], userId, postType: post.postType, visibility: post.visibility },
         }).catch(err => this.logger.warn(`Publish workflow failed`, err instanceof Error ? err.message : err));
 
-        // Hashtag counts
-        for (const name of extractHashtags(post.content ?? '')) {
-          this.prisma.hashtag.update({ where: { name }, data: { postsCount: { increment: 1 } } }).catch(() => {});
+        // Hashtag counts — batch update instead of N+1
+        const postHashtags = extractHashtags(post.content ?? '');
+        if (postHashtags.length > 0) {
+          this.prisma.$executeRaw`UPDATE "hashtags" SET "postsCount" = "postsCount" + 1 WHERE name = ANY(${postHashtags}::text[])`.catch(() => {});
         }
 
         // Gamification
@@ -276,8 +277,9 @@ export class SchedulingService {
           indexDocument: { id, content: thread.content || '', hashtags: thread.hashtags || [], userId, visibility: thread.visibility },
         }).catch(err => this.logger.warn(`Publish workflow failed`, err instanceof Error ? err.message : err));
 
-        for (const name of extractHashtags(thread.content ?? '')) {
-          this.prisma.hashtag.update({ where: { name }, data: { threadsCount: { increment: 1 } } }).catch(() => {});
+        const threadHashtags = extractHashtags(thread.content ?? '');
+        if (threadHashtags.length > 0) {
+          this.prisma.$executeRaw`UPDATE "hashtags" SET "threadsCount" = "threadsCount" + 1 WHERE name = ANY(${threadHashtags}::text[])`.catch(() => {});
         }
 
         this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'thread_created' }).catch(err => this.logger.warn('Queue job failed:', err?.message));
@@ -302,8 +304,9 @@ export class SchedulingService {
           indexDocument: { id, caption: reel.caption || '', hashtags: reel.hashtags || [], userId },
         }).catch(err => this.logger.warn(`Publish workflow failed`, err instanceof Error ? err.message : err));
 
-        for (const name of extractHashtags(reel.caption ?? '')) {
-          this.prisma.hashtag.update({ where: { name }, data: { reelsCount: { increment: 1 } } }).catch(() => {});
+        const reelHashtags = extractHashtags(reel.caption ?? '');
+        if (reelHashtags.length > 0) {
+          this.prisma.$executeRaw`UPDATE "hashtags" SET "reelsCount" = "reelsCount" + 1 WHERE name = ANY(${reelHashtags}::text[])`.catch(() => {});
         }
 
         this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'reel_created' }).catch(err => this.logger.warn('Queue job failed:', err?.message));
@@ -479,13 +482,10 @@ export class SchedulingService {
         },
       }).catch(err => this.logger.warn(`Publish workflow failed for scheduled post ${post.id}`, err instanceof Error ? err.message : err));
 
-      // Deferred: Hashtag count increment
-      const postHashtags = extractHashtags(post.content ?? '');
-      for (const name of postHashtags) {
-        this.prisma.hashtag.update({
-          where: { name },
-          data: { postsCount: { increment: 1 } },
-        }).catch(() => {}); // Hashtag may have been deleted
+      // Hashtag count increment — batched
+      const postHashtags2 = extractHashtags(post.content ?? '');
+      if (postHashtags2.length > 0) {
+        this.prisma.$executeRaw`UPDATE "hashtags" SET "postsCount" = "postsCount" + 1 WHERE name = ANY(${postHashtags2}::text[])`.catch(() => {});
       }
 
       // Deferred: Gamification XP
@@ -524,12 +524,9 @@ export class SchedulingService {
       }).catch(err => this.logger.warn(`Publish workflow failed for scheduled thread ${thread.id}`, err instanceof Error ? err.message : err));
 
       // Deferred: Hashtag count increment
-      const threadHashtags = extractHashtags(thread.content ?? '');
-      for (const name of threadHashtags) {
-        this.prisma.hashtag.update({
-          where: { name },
-          data: { threadsCount: { increment: 1 } },
-        }).catch(() => {});
+      const threadHashtags2 = extractHashtags(thread.content ?? '');
+      if (threadHashtags2.length > 0) {
+        this.prisma.$executeRaw`UPDATE "hashtags" SET "threadsCount" = "threadsCount" + 1 WHERE name = ANY(${threadHashtags2}::text[])`.catch(() => {});
       }
 
       // Deferred: Gamification XP
@@ -564,13 +561,10 @@ export class SchedulingService {
         },
       }).catch(err => this.logger.warn(`Publish workflow failed for scheduled reel ${reel.id}`, err instanceof Error ? err.message : err));
 
-      // Deferred: Hashtag count increment
-      const reelHashtags = extractHashtags(reel.caption ?? '');
-      for (const name of reelHashtags) {
-        this.prisma.hashtag.update({
-          where: { name },
-          data: { reelsCount: { increment: 1 } },
-        }).catch(() => {});
+      // Hashtag count increment — batched
+      const reelHashtags2 = extractHashtags(reel.caption ?? '');
+      if (reelHashtags2.length > 0) {
+        this.prisma.$executeRaw`UPDATE "hashtags" SET "reelsCount" = "reelsCount" + 1 WHERE name = ANY(${reelHashtags2}::text[])`.catch(() => {});
       }
 
       // Deferred: Gamification XP

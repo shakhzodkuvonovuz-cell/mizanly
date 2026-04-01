@@ -901,13 +901,9 @@ export class PostsService {
       this.prisma.$executeRaw`UPDATE "users" SET "postsCount" = GREATEST("postsCount" - 1, 0) WHERE id = ${userId}`,
     ]);
 
-    // Decrement hashtag counters
+    // Decrement hashtag counters — batch single query instead of N+1
     if (post.hashtags && post.hashtags.length > 0) {
-      await Promise.all(
-        post.hashtags.map((name: string) =>
-          this.prisma.$executeRaw`UPDATE "hashtags" SET "postsCount" = GREATEST("postsCount" - 1, 0) WHERE name = ${name}`,
-        ),
-      );
+      await this.prisma.$executeRaw`UPDATE "hashtags" SET "postsCount" = GREATEST("postsCount" - 1, 0) WHERE name = ANY(${post.hashtags}::text[])`;
     }
 
     await Promise.all([

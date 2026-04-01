@@ -163,15 +163,14 @@ export class ReelsService {
     // For scheduled content: create the hashtag record but don't increment count yet —
     // counts are incremented when the scheduling cron publishes the content
     if (hashtagNames.length > 0) {
-      await Promise.all(
-        hashtagNames.map((name) =>
-          this.prisma.hashtag.upsert({
-            where: { name },
-            create: { name, reelsCount: isScheduled ? 0 : 1 },
-            update: isScheduled ? {} : { reelsCount: { increment: 1 } },
-          }),
-        ),
-      );
+      // Batch: create missing hashtags, then increment counts in a single query
+      await this.prisma.hashtag.createMany({
+        data: hashtagNames.map((name) => ({ name })),
+        skipDuplicates: true,
+      });
+      if (!isScheduled) {
+        await this.prisma.$executeRaw`UPDATE "hashtags" SET "reelsCount" = "reelsCount" + 1 WHERE name = ANY(${hashtagNames}::text[])`;
+      }
     }
 
     // Create tagged user records (accepts user IDs or usernames — resolves both)
