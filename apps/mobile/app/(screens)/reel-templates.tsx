@@ -74,7 +74,7 @@ function SegmentTimeline({ segments, totalDurationMs }: { segments: ReelTemplate
             end={{ x: 1, y: 0 }}
             style={[
               styles.timelineSegment,
-              { left: `${left}%`, width: `${Math.max(width, 2)}%` },
+              { start: `${left}%`, width: `${Math.max(width, 2)}%` },
             ]}
           />
         );

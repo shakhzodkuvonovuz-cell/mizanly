@@ -87,11 +87,11 @@ export default function ReelRemixScreen() {
     if (isRecording) {
       timerRef.current = setInterval(() => {
         setRecordTime((prev) => {
-          if (prev >= MAX_RECORD_SECONDS) {
-            stopRecording();
+          const next = prev + 1;
+          if (next >= MAX_RECORD_SECONDS) {
             return MAX_RECORD_SECONDS;
           }
-          return prev + 1;
+          return next;
         });
       }, 1000);
     } else if (timerRef.current) {
@@ -136,6 +136,13 @@ export default function ReelRemixScreen() {
       startRecording();
     }
   }, [isRecording, startRecording, stopRecording]);
+
+  // Auto-stop when max recording time reached (extracted from state updater to avoid side-effect anti-pattern)
+  useEffect(() => {
+    if (recordTime >= MAX_RECORD_SECONDS && isRecording) {
+      stopRecording();
+    }
+  }, [recordTime, isRecording, stopRecording]);
 
   const toggleCamera = useCallback(() => {
     haptic.tick();
