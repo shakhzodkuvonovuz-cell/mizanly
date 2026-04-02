@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput, ScrollView,
-  Platform, Image as RNImage, KeyboardAvoidingView,
+  Platform, KeyboardAvoidingView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
@@ -403,7 +403,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   inputCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.active.white6,
+    borderColor: tc.border,
     padding: spacing.md,
   },
   inputLabel: {

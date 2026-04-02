@@ -553,7 +553,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   previewGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.active.white6,
+    borderColor: tc.border,
     padding: spacing.base,
   },
   userRow: {
@@ -635,7 +635,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   dateGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.active.white6,
+    borderColor: tc.border,
     padding: spacing.base,
   },
   dateHeader: {
@@ -750,7 +750,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   timeGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.active.white6,
+    borderColor: tc.border,
     padding: spacing.base,
   },
   timeHeader: {
@@ -855,7 +855,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   timezoneGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.active.white6,
+    borderColor: tc.border,
     padding: spacing.base,
   },
   timezoneRow: {

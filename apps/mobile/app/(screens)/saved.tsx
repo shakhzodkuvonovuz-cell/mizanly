@@ -149,8 +149,7 @@ export default function SavedScreen() {
     haptic.tick();
     router.push(path as never);
   };
-  const params = useLocalSearchParams<{ folder?: string; collection?: string }>();
-  const folderId = params.folder;
+  const params = useLocalSearchParams<{ collection?: string }>();
   const collectionName = params.collection;
   // Determine active collection for API filtering (from either folder or collection param)
   const activeCollection = collectionName || undefined;

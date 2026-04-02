@@ -64,6 +64,13 @@ describe('gift-shop', () => {
     expect(src).not.toMatch(/import.*shadow.*animation.*from/);
   });
 
+  test('gift history uses infinite query with pagination', () => {
+    expect(src).toContain('useInfiniteQuery');
+    expect(src).toContain("queryKey: ['gifts', 'history']");
+    expect(src).toContain('historyQuery.hasNextPage');
+    expect(src).toContain('historyQuery.fetchNextPage');
+  });
+
   test('uses tc.bg for container background', () => {
     expect(src).toContain('backgroundColor: tc.bg');
   });
@@ -85,6 +92,10 @@ describe('followed-topics', () => {
 
   test('no colors.dark.border in stylesheet', () => {
     expect(styles).not.toContain('colors.dark.border');
+  });
+
+  test('no dead useMemo import', () => {
+    expect(src).not.toContain('useMemo');
   });
 
   test('timer cleanup on unmount', () => {
@@ -274,6 +285,10 @@ describe('saved', () => {
   const src = readScreen('saved');
   const styles = getStylesSection(src);
 
+  test('no dead folderId variable', () => {
+    expect(src).not.toContain('folderId');
+  });
+
   test('query keys include activeCollection', () => {
     expect(src).toContain("queryKey: ['saved-posts', activeCollection]");
     expect(src).toContain("queryKey: ['saved-threads', activeCollection]");
@@ -398,6 +413,14 @@ describe('schedule-live', () => {
 
   test('has KeyboardAvoidingView', () => {
     expect(src).toContain('KeyboardAvoidingView');
+  });
+
+  test('no dead RNImage import', () => {
+    expect(src).not.toContain('Image as RNImage');
+  });
+
+  test('no colors.active.white6 in stylesheet', () => {
+    expect(styles).not.toContain('colors.active.white6');
   });
 });
 

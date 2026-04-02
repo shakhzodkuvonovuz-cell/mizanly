@@ -139,7 +139,7 @@ export default function GoLiveScreen() {
           <Animated.View entering={FadeInUp.delay(0).duration(400)}>
             <LinearGradient
               colors={colors.gradient.cardDark}
-              style={styles.inputCard}
+              style={[styles.inputCard, { borderColor: tc.border }]}
             >
               <Text style={[styles.inputLabel, { color: tc.text.primary }]}>{t('common.title')}</Text>
               <TextInput
@@ -162,7 +162,7 @@ export default function GoLiveScreen() {
           <Animated.View entering={FadeInUp.delay(100).duration(400)}>
             <LinearGradient
               colors={colors.gradient.cardDark}
-              style={styles.inputCard}
+              style={[styles.inputCard, { borderColor: tc.border }]}
             >
               <Text style={[styles.inputLabel, { color: tc.text.primary }]}>{t('common.descriptionOptional')}</Text>
               <TextInput
@@ -186,7 +186,7 @@ export default function GoLiveScreen() {
           <Animated.View entering={FadeInUp.delay(200).duration(400)}>
             <LinearGradient
               colors={colors.gradient.cardDark}
-              style={styles.inputCard}
+              style={[styles.inputCard, { borderColor: tc.border }]}
             >
               <Text style={[styles.inputLabel, { color: tc.text.primary }]}>{t('live.streamType')}</Text>
               <Pressable
@@ -211,7 +211,7 @@ export default function GoLiveScreen() {
           <Animated.View entering={FadeInUp.delay(300).duration(400)}>
             <LinearGradient
               colors={colors.gradient.cardDark}
-              style={styles.inputCard}
+              style={[styles.inputCard, { borderColor: tc.border }]}
             >
               <View style={styles.scheduleRow}>
                 <View>
@@ -330,7 +330,6 @@ const styles = StyleSheet.create({
   inputCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.active.white6,
     padding: spacing.md,
   },
   inputLabel: {

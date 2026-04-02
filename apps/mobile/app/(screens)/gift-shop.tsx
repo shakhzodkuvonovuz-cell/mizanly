@@ -5,7 +5,7 @@ import {
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
@@ -75,11 +75,16 @@ function GiftShopContent() {
     queryFn: () => giftsApi.getCatalog(),
   });
 
-  const { data: history, isLoading: historyLoading, isError: historyError, refetch: refetchHistory } = useQuery({
+  const historyQuery = useInfiniteQuery({
     queryKey: ['gifts', 'history'],
-    queryFn: () => giftsApi.getHistory(),
+    queryFn: ({ pageParam }) => giftsApi.getHistory(pageParam as string | undefined),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last) => last.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
     enabled: activeTab === 'history',
   });
+  const historyLoading = historyQuery.isLoading;
+  const historyError = historyQuery.isError;
+  const refetchHistory = historyQuery.refetch;
 
   const purchaseMutation = useMutation({
     mutationFn: (amount: number) => giftsApi.purchaseCoins({ amount }),
@@ -434,7 +439,7 @@ function GiftShopContent() {
       );
     }
 
-    const historyData = Array.isArray(history) ? history : [];
+    const historyData = historyQuery.data?.pages.flatMap((p) => p.data) ?? [];
 
     if (historyData.length === 0) {
       return (
@@ -452,11 +457,24 @@ function GiftShopContent() {
         renderItem={renderHistoryItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[styles.historyList, { paddingBottom: insets.bottom + spacing.xl }]}
+        onEndReached={() => {
+          if (historyQuery.hasNextPage && !historyQuery.isFetchingNextPage) {
+            historyQuery.fetchNextPage();
+          }
+        }}
+        onEndReachedThreshold={0.4}
         refreshControl={
           <BrandedRefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
           />
+        }
+        ListFooterComponent={
+          historyQuery.isFetchingNextPage ? (
+            <View style={{ padding: spacing.md, alignItems: 'center' }}>
+              <Skeleton.Rect width="80%" height={40} borderRadius={radius.md} />
+            </View>
+          ) : null
         }
       />
     );
