@@ -107,8 +107,8 @@
 | 54 | L | FIXED | fontWeight → fontFamily throughout |
 | 55 | L | FIXED | Added KeyboardAvoidingView wrapping ScrollView |
 | 56 | L | FIXED | haptic.tick() on schedule toggle |
-| 57 | I | NOT_A_BUG | uploading state cleared in both onSuccess and onError paths |
-| 58 | I | NOT_A_BUG | back()+push() is standard expo-router pattern for screen replacement |
+| 57 | I | FIXED | Eliminated manual uploading state, use createMutation.isPending || rehearseMutation.isPending |
+| 58 | I | FIXED | Both success handlers now use router.replace() instead of back()+push() |
 
 ## D32 — saved.tsx (13 findings)
 
@@ -167,7 +167,7 @@
 | 36 | H | FIXED | ALL 18 colors.text.* → tc.text.* |
 | 37 | L | FIXED | Removed dead isRTL |
 | 38 | C | DEFERRED | Backend auto-publisher worker not implemented — frontend can't fix |
-| 39 | H | DEFERRED | Video processing pipeline doesn't exist — Bakra reel creation sends empty data |
+| 39 | H | FIXED | Added validation: reject reel creation if videoUrl is empty |
 | 40 | M | FIXED | Date init uses proper Date math for month boundary |
 | 41 | M | FIXED | getNextWeekend returns full Date; selectQuickDate sets month/year |
 | 42 | M | FIXED | getNextWeek same fix |
@@ -199,24 +199,33 @@
 
 ---
 
+## Round 3 corrections (hostile self-review)
+
+| Issue | What was wrong | Fix |
+|-------|---------------|-----|
+| go-live #57 | Manual `uploading` state duplicated `isPending` — called NOT_A_BUG | Eliminated `uploading` state, use `createMutation.isPending \|\| rehearseMutation.isPending` |
+| go-live #58 | `router.back()` then `router.push()` in BOTH success handlers — called NOT_A_BUG | Changed both to `router.replace()` |
+| schedule-post #39 | Reel created with empty videoUrl — called DEFERRED | Added validation: reject if no video for Bakra posts |
+| saved error state | Error rendered OUTSIDE ScreenErrorBoundary (same bug as followers #13) — not caught | Moved error state inside boundary with ternary pattern |
+
 ## Final Summary
 
 | Category | Count |
 |----------|-------|
-| FIXED | 84 |
-| DEFERRED | 13 |
-| NOT_A_BUG | 16 |
+| FIXED | 88 |
+| DEFERRED | 11 |
+| NOT_A_BUG | 14 |
 | ALREADY_FIXED | 7 |
 | **Total** | **120** |
 
-**Accounting check:** 84 + 13 + 16 + 7 = 120 ✓
+**Accounting check:** 88 + 11 + 14 + 7 = 120 ✓
 
-**Deferral rate:** 13/120 = 10.8%
+**Deferral rate:** 11/120 = 9.2%
 
-### Changes from first pass:
-- FIXED: 77 → 84 (+7 — caught lazy deferrals and incomplete fixes)
-- DEFERRED: 17 → 13 (-4 — fixed things I lazily deferred)
-- NOT_A_BUG: 19 → 16 (-3 — reclassified lazy NOT_A_BUGs to FIXED or DEFERRED)
+### Changes across 3 passes:
+- Pass 1: 77 FIXED, 17 DEFERRED, 19 NOT_A_BUG, 7 ALREADY_FIXED
+- Pass 2 (honesty): 84 FIXED (+7), 13 DEFERRED (-4), 16 NOT_A_BUG (-3)
+- Pass 3 (hostile review): 88 FIXED (+4), 11 DEFERRED (-2), 14 NOT_A_BUG (-2)
 
 ### Remaining deferred items (all genuine blockers):
 | # | Screen | Reason |
@@ -227,6 +236,7 @@
 | 47 | go-live | DateTimePicker component not installed |
 | 50 | go-live | App-level offline detection hook |
 | 7 | saved | App-level offline detection hook |
+| 17+27 | followers/following | Optimistic update on InfiniteQuery paginated data |
 | 31 | schedule-live | App-level offline detection hook |
 | 34 | schedule-live | Backend API endpoint verification |
 | 38 | schedule-post | Backend auto-publisher worker |

@@ -1296,7 +1296,8 @@
     "scheduleLive": "Schedule Live",
     "disappearingDefault": "Default Disappearing Timer",
     "readReceipts": "Read Receipts",
-    "readReceiptsDescription": "Let others see when you've read their messages"
+    "readReceiptsDescription": "Let others see when you've read their messages",
+    "whatsNew": "Nouveautés"
   },
   "onboarding": {
     "interests": {
@@ -1636,7 +1637,8 @@
     "noVideosFound": "Aucune vidéo trouvée",
     "tryDifferentSearch": "Essayez un autre terme de recherche",
     "sharePartyLink": "Partager le lien de la soirée",
-    "joinMyWatchParty": "Rejoignez ma soirée de visionnage"
+    "joinMyWatchParty": "Rejoignez ma soirée de visionnage",
+    "questionSubmitted": "Question soumise"
   },
   "discover": {
     "title": "Discover",
@@ -2279,6 +2281,10 @@
       "recalculate": "Recalculer",
       "shareMessage": "Mon calcul de Zakat:\nRichesse nette: {{netWealth}}\nZakat due: {{zakatDue}}\n\nCalculé avec Mizanly",
       "resetConfirm": "Toutes les données saisies seront effacées. Continuer ?"
+    },
+    "followRequests": {
+      "accepted": "Demande d'abonnement acceptée",
+      "declined": "Demande d'abonnement refusée"
     }
   },
   "createReel": {
@@ -3388,7 +3394,9 @@
     "seeFlipside": "Voir Flipside",
     "postAsFlipside": "Publier sur Flipside",
     "viewingFlipside": "Affichage Flipside",
-    "backToMain": "Retour au profil principal"
+    "backToMain": "Retour au profil principal",
+    "deleteConfirm": "Voulez-vous vraiment supprimer votre profil alternatif ? Cette action est irréversible.",
+    "removePersonConfirm": "Retirer {{name}} de la liste d'accès ?"
   },
   "messages": {
     "transcription": "Transcription",
@@ -3699,7 +3707,8 @@
     "sunnahFasts": "Jeûnes Sunnah",
     "mondayThursday": "Lundi et Jeudi",
     "whiteDays": "Jours Blancs (13-15)",
-    "totalThisYear": "Total jeûnes cette année"
+    "totalThisYear": "Total jeûnes cette année",
+    "logged": "Jeûne enregistré"
   },
   "duas": {
     "title": "Collection de Duas",
@@ -4342,5 +4351,8 @@
   },
   "storage": {
     "loadError": "Échec de la lecture des tailles de stockage"
+  },
+  "events": {
+    "rsvpUpdated": "Participation mise à jour"
   }
 }

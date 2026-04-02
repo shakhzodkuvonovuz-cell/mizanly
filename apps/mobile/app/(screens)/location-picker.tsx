@@ -18,6 +18,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { showToast } from '@/components/ui/Toast';
+import { rtlFlexRow } from '@/utils/rtl';
 
 interface LocationData {
   latitude: number;
@@ -28,7 +29,7 @@ interface LocationData {
 function LocationPickerContent() {
   const router = useRouter();
   const params = useLocalSearchParams<{ conversationId: string }>();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const haptic = useContextualHaptic();
 
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -173,7 +174,7 @@ function LocationPickerContent() {
         >
           {/* Search Bar */}
           <Animated.View entering={FadeInUp.delay(100).duration(300)} style={styles.searchContainer}>
-            <View style={[styles.searchBar, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
+            <View style={[styles.searchBar, { backgroundColor: tc.bgCard, borderColor: tc.border, flexDirection: rtlFlexRow(isRTL) }]}>
               <Icon name="search" size="sm" color={tc.text.tertiary} />
               <TextInput
                 style={[styles.searchInput, { color: tc.text.primary }]}
@@ -226,7 +227,7 @@ function LocationPickerContent() {
                       {t('location.mapPreview', 'Map Preview')}
                     </Text>
                   </View>
-                  <View style={styles.coordsRow}>
+                  <View style={[styles.coordsRow, { flexDirection: rtlFlexRow(isRTL) }]}>
                     <Text style={[styles.coordLabel, { color: tc.text.tertiary }]}>{t('location.lat', 'Lat')}</Text>
                     <Text style={[styles.coordValue, { color: tc.text.primary }]}>{location.latitude.toFixed(6)}</Text>
                     <Text style={[styles.coordLabel, styles.coordLabelRight, { color: tc.text.tertiary }]}>
@@ -269,7 +270,7 @@ function LocationPickerContent() {
             <Text style={[styles.sectionTitle, { color: tc.text.secondary }]}>
               {t('location.manualEntry', 'Manual Coordinates')}
             </Text>
-            <View style={styles.coordInputRow}>
+            <View style={[styles.coordInputRow, { flexDirection: rtlFlexRow(isRTL) }]}>
               <View style={styles.coordInputWrapper}>
                 <Text style={[styles.inputLabel, { color: tc.text.secondary }]}>{t('location.latitude', 'Latitude')}</Text>
                 <TextInput

@@ -1296,7 +1296,8 @@
     "scheduleLive": "Schedule Live",
     "disappearingDefault": "Default Disappearing Timer",
     "readReceipts": "Read Receipts",
-    "readReceiptsDescription": "Let others see when you've read their messages"
+    "readReceiptsDescription": "Let others see when you've read their messages",
+    "whatsNew": "What's New"
   },
   "onboarding": {
     "interests": {
@@ -1636,7 +1637,8 @@
     "noVideosFound": "No videos found",
     "tryDifferentSearch": "Try a different search term",
     "sharePartyLink": "Share Party Link",
-    "joinMyWatchParty": "Join my watch party"
+    "joinMyWatchParty": "Join my watch party",
+    "questionSubmitted": "Question submitted"
   },
   "discover": {
     "title": "Discover",
@@ -2279,6 +2281,10 @@
       "recalculate": "Recalculate",
       "shareMessage": "My Zakat Calculation:\nNet Wealth: {{netWealth}}\nZakat Due: {{zakatDue}}\n\nCalculated with Mizanly",
       "resetConfirm": "This will clear all entered data. Continue?"
+    },
+    "followRequests": {
+      "accepted": "Follow request accepted",
+      "declined": "Follow request declined"
     }
   },
   "createReel": {
@@ -3437,7 +3443,9 @@
     "seeFlipside": "See Flipside",
     "postAsFlipside": "Post to Flipside",
     "viewingFlipside": "Viewing Flipside",
-    "backToMain": "Back to Main Profile"
+    "backToMain": "Back to Main Profile",
+    "deleteConfirm": "Are you sure you want to delete your alt profile? This cannot be undone.",
+    "removePersonConfirm": "Remove {{name}} from your flipside access list?"
   },
   "messages": {
     "transcription": "Transcription",
@@ -3748,7 +3756,8 @@
     "sunnahFasts": "Sunnah Fasts",
     "mondayThursday": "Monday & Thursday",
     "whiteDays": "White Days (13-15)",
-    "totalThisYear": "Total Fasts This Year"
+    "totalThisYear": "Total Fasts This Year",
+    "logged": "Fasting logged"
   },
   "duas": {
     "title": "Dua Collection",
@@ -4340,5 +4349,8 @@
   },
   "storage": {
     "loadError": "Failed to read storage sizes"
+  },
+  "events": {
+    "rsvpUpdated": "RSVP updated"
   }
 }

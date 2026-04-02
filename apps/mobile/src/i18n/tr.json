@@ -1289,7 +1289,8 @@
     "scheduleLive": "Canlı Yayın Planla",
     "disappearingDefault": "Varsayılan Kaybolma Zamanlayıcısı",
     "readReceipts": "Okundu Bilgisi",
-    "readReceiptsDescription": "Diğer kullanıcıların mesajlarını okuduğunuzu görmesine izin ver"
+    "readReceiptsDescription": "Diğer kullanıcıların mesajlarını okuduğunuzu görmesine izin ver",
+    "whatsNew": "Yenilikler"
   },
   "onboarding": {
     "interests": {
@@ -1629,7 +1630,8 @@
     "noVideosFound": "Video bulunamadı",
     "tryDifferentSearch": "Farklı bir arama terimi deneyin",
     "sharePartyLink": "Parti Bağlantısını Paylaş",
-    "joinMyWatchParty": "İzleme partime katıl"
+    "joinMyWatchParty": "İzleme partime katıl",
+    "questionSubmitted": "Soru gönderildi"
   },
   "discover": {
     "title": "Keşfet",
@@ -2272,6 +2274,10 @@
       "recalculate": "Yeniden Hesapla",
       "shareMessage": "Zekat Hesabım:\nNet Servet: {{netWealth}}\nZekat: {{zakatDue}}\n\nMizanly ile hesaplandı",
       "resetConfirm": "Tüm girilen veriler silinecek. Devam edilsin mi?"
+    },
+    "followRequests": {
+      "accepted": "Takip isteği kabul edildi",
+      "declined": "Takip isteği reddedildi"
     }
   },
   "createReel": {
@@ -3381,7 +3387,9 @@
     "seeFlipside": "Flipside'ı Gör",
     "postAsFlipside": "Flipside'a Gönder",
     "viewingFlipside": "Flipside Görüntüleniyor",
-    "backToMain": "Ana Profile Dön"
+    "backToMain": "Ana Profile Dön",
+    "deleteConfirm": "Alternatif profilinizi silmek istediğinizden emin misiniz? Bu geri alınamaz.",
+    "removePersonConfirm": "{{name}} erişim listesinden kaldırılsın mı?"
   },
   "messages": {
     "transcription": "Transkripsiyon",
@@ -3692,7 +3700,8 @@
     "sunnahFasts": "Sünnet Oruçları",
     "mondayThursday": "Pazartesi ve Perşembe",
     "whiteDays": "Eyyam-ı Biyd (13-15)",
-    "totalThisYear": "Bu Yıl Toplam Oruç"
+    "totalThisYear": "Bu Yıl Toplam Oruç",
+    "logged": "Oruç kaydedildi"
   },
   "duas": {
     "title": "Dua Koleksiyonu",
@@ -4335,5 +4344,8 @@
   },
   "storage": {
     "loadError": "Depolama boyutları okunamadı"
+  },
+  "events": {
+    "rsvpUpdated": "Katılım güncellendi"
   }
 }

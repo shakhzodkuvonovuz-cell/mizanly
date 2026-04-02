@@ -163,7 +163,7 @@ export default function FollowRequestsScreen() {
         {requestsQuery.isLoading ? (
           <View style={[styles.skeletonList, { paddingTop: insets.top + 52 }]}>
             {Array.from({ length: 5 }).map((_, i) => (
-              <View key={i} style={styles.skeletonRow}>
+              <View key={i} style={[styles.skeletonRow, { flexDirection: rtlFlexRow(isRTL) }]}>
                 <Skeleton.Circle size={48} />
                 <View style={{ flex: 1, gap: 6 }}>
                   <Skeleton.Rect width={120} height={14} />

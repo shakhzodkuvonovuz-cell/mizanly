@@ -1295,7 +1295,8 @@
     "scheduleLive": "Schedule Live",
     "disappearingDefault": "Default Disappearing Timer",
     "readReceipts": "Read Receipts",
-    "readReceiptsDescription": "Let others see when you've read their messages"
+    "readReceiptsDescription": "Let others see when you've read their messages",
+    "whatsNew": "নতুন কী"
   },
   "onboarding": {
     "interests": {
@@ -1635,7 +1636,8 @@
     "noVideosFound": "No videos found",
     "tryDifferentSearch": "Try a different search term",
     "sharePartyLink": "Share Party Link",
-    "joinMyWatchParty": "Join my watch party"
+    "joinMyWatchParty": "Join my watch party",
+    "questionSubmitted": "প্রশ্ন পাঠানো হয়েছে"
   },
   "discover": {
     "title": "Discover",
@@ -2278,6 +2280,10 @@
       "recalculate": "পুনরায় গণনা",
       "shareMessage": "আমার যাকাত গণনা:\nনিট সম্পদ: {{netWealth}}\nযাকাত: {{zakatDue}}\n\nমিজানলি দিয়ে গণনা",
       "resetConfirm": "সমস্ত প্রবেশকৃত তথ্য মুছে যাবে। চালিয়ে যেতে চান?"
+    },
+    "followRequests": {
+      "accepted": "ফলো অনুরোধ গৃহীত",
+      "declined": "ফলো অনুরোধ প্রত্যাখ্যাত"
     }
   },
   "createReel": {
@@ -3387,7 +3393,9 @@
     "seeFlipside": "ফ্লিপসাইড দেখুন",
     "postAsFlipside": "ফ্লিপসাইডে পোস্ট করুন",
     "viewingFlipside": "ফ্লিপসাইড দেখা হচ্ছে",
-    "backToMain": "মূল প্রোফাইলে ফিরুন"
+    "backToMain": "মূল প্রোফাইলে ফিরুন",
+    "deleteConfirm": "আপনি কি আপনার বিকল্প প্রোফাইল মুছতে চান? এটি ফিরিয়ে আনা যাবে না।",
+    "removePersonConfirm": "{{name}}-কে অ্যাক্সেস তালিকা থেকে সরাবেন?"
   },
   "messages": {
     "transcription": "প্রতিলিপি",
@@ -3698,7 +3706,8 @@
     "sunnahFasts": "সুন্নত রোজা",
     "mondayThursday": "সোমবার ও বৃহস্পতিবার",
     "whiteDays": "আইয়ামে বীয (১৩-১৫)",
-    "totalThisYear": "এই বছর মোট রোজা"
+    "totalThisYear": "এই বছর মোট রোজা",
+    "logged": "রোজা রেকর্ড হয়েছে"
   },
   "duas": {
     "title": "দোয়া সংকলন",
@@ -4341,5 +4350,8 @@
   },
   "storage": {
     "loadError": "স্টোরেজ আকার পড়তে ব্যর্থ"
+  },
+  "events": {
+    "rsvpUpdated": "উপস্থিতি আপডেট হয়েছে"
   }
 }

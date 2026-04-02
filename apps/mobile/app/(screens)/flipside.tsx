@@ -370,7 +370,7 @@ export default function FlipsideScreen() {
                   textAlignVertical="top"
                 />
               </View>
-              <View style={styles.editActions}>
+              <View style={[styles.editActions, { flexDirection: rtlFlexRow(isRTL) }]}>
                 <Pressable onPress={() => setIsEditing(false)}>
                   <Text style={[styles.cancelText, { color: tc.text.secondary }]}>{t('common.cancel')}</Text>
                 </Pressable>
@@ -384,7 +384,7 @@ export default function FlipsideScreen() {
               </View>
             </View>
           ) : (
-            <View style={styles.actionRow}>
+            <View style={[styles.actionRow, { flexDirection: rtlFlexRow(isRTL) }]}>
               <GradientButton
                 label={t('profile.editProfile')}
                 size="sm"

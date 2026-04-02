@@ -1295,7 +1295,8 @@
     "scheduleLive": "Schedule Live",
     "disappearingDefault": "Default Disappearing Timer",
     "readReceipts": "Read Receipts",
-    "readReceiptsDescription": "Let others see when you've read their messages"
+    "readReceiptsDescription": "Let others see when you've read their messages",
+    "whatsNew": "Apa Yang Baharu"
   },
   "onboarding": {
     "interests": {
@@ -1635,7 +1636,8 @@
     "noVideosFound": "Tiada video ditemui",
     "tryDifferentSearch": "Cuba istilah carian lain",
     "sharePartyLink": "Kongsi Pautan Parti",
-    "joinMyWatchParty": "Sertai parti tontonan saya"
+    "joinMyWatchParty": "Sertai parti tontonan saya",
+    "questionSubmitted": "Soalan dihantar"
   },
   "discover": {
     "title": "Discover",
@@ -2278,6 +2280,10 @@
       "recalculate": "Kira Semula",
       "shareMessage": "Kiraan Zakat Saya:\nKekayaan Bersih: {{netWealth}}\nZakat: {{zakatDue}}\n\nDikira dengan Mizanly",
       "resetConfirm": "Semua data yang dimasukkan akan dipadam. Teruskan?"
+    },
+    "followRequests": {
+      "accepted": "Permintaan ikut diterima",
+      "declined": "Permintaan ikut ditolak"
     }
   },
   "createReel": {
@@ -3387,7 +3393,9 @@
     "seeFlipside": "Lihat Flipside",
     "postAsFlipside": "Hantar ke Flipside",
     "viewingFlipside": "Melihat Flipside",
-    "backToMain": "Kembali ke Profil Utama"
+    "backToMain": "Kembali ke Profil Utama",
+    "deleteConfirm": "Adakah anda pasti mahu memadam profil alternatif? Tindakan ini tidak boleh dibatalkan.",
+    "removePersonConfirm": "Alih keluar {{name}} daripada senarai akses?"
   },
   "messages": {
     "transcription": "Transkripsi",
@@ -3698,7 +3706,8 @@
     "sunnahFasts": "Puasa Sunat",
     "mondayThursday": "Isnin & Khamis",
     "whiteDays": "Ayyamul Bidh (13-15)",
-    "totalThisYear": "Jumlah Puasa Tahun Ini"
+    "totalThisYear": "Jumlah Puasa Tahun Ini",
+    "logged": "Puasa direkodkan"
   },
   "duas": {
     "title": "Koleksi Doa",
@@ -4341,5 +4350,8 @@
   },
   "storage": {
     "loadError": "Gagal membaca saiz storan"
+  },
+  "events": {
+    "rsvpUpdated": "Kehadiran dikemas kini"
   }
 }

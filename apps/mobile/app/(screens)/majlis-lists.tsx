@@ -22,6 +22,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { navigate } from '@/utils/navigation';
+import { rtlFlexRow } from '@/utils/rtl';
 
 export default function MajlisListsScreen() {
   const { t, isRTL } = useTranslation();
@@ -108,7 +109,7 @@ export default function MajlisListsScreen() {
       <Pressable accessibilityRole="button" accessibilityLabel={item.name} onPress={() => navigate(`/(screens)/majlis-list/${item.id}`)} style={deletingId === item.id ? { opacity: 0.5 } : undefined}>
         <LinearGradient
           colors={colors.gradient.cardDark}
-          style={styles.card}
+          style={[styles.card, { flexDirection: rtlFlexRow(isRTL) }]}
         >
           <LinearGradient
             colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
@@ -117,7 +118,7 @@ export default function MajlisListsScreen() {
             <Icon name="users" size="md" color={colors.emerald} />
           </LinearGradient>
           <View style={styles.cardInfo}>
-            <View style={styles.titleRow}>
+            <View style={[styles.titleRow, { flexDirection: rtlFlexRow(isRTL) }]}>
               {!item.isPublic && (
                 <Icon name="lock" size={14} color={tc.text.tertiary} />
               )}
@@ -128,7 +129,7 @@ export default function MajlisListsScreen() {
             )}
             <LinearGradient
               colors={['rgba(10,123,79,0.15)', 'rgba(200,150,62,0.1)']}
-              style={styles.membersBadge}
+              style={[styles.membersBadge, { flexDirection: rtlFlexRow(isRTL) }]}
             >
               <Icon name="users" size="xs" color={colors.gold} />
               <Text style={styles.membersText}>
@@ -244,7 +245,7 @@ export default function MajlisListsScreen() {
               numberOfLines={3}
             />
 
-            <View style={styles.toggleRow}>
+            <View style={[styles.toggleRow, { flexDirection: rtlFlexRow(isRTL) }]}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.toggleTitle, { color: tc.text.primary }]}>{t('screens.majlis-lists.publicList')}</Text>
                 <Text style={[styles.toggleDesc, { color: tc.text.secondary }]}>{t('screens.majlis-lists.publicListDesc')}</Text>

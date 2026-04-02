@@ -308,7 +308,7 @@ export default function EventDetailScreen() {
         <Animated.View entering={FadeInUp.delay(150).duration(400)} style={styles.cardContainer}>
           <LinearGradient
             colors={colors.gradient.cardDark}
-            style={styles.infoCard}
+            style={[styles.infoCard, { flexDirection: rtlFlexRow(isRTL) }]}
           >
             <LinearGradient
               colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.15)']}
@@ -345,7 +345,7 @@ export default function EventDetailScreen() {
           <Animated.View entering={FadeInUp.delay(200).duration(400)} style={styles.cardContainer}>
             <LinearGradient
               colors={colors.gradient.cardDark}
-              style={styles.infoCard}
+              style={[styles.infoCard, { flexDirection: rtlFlexRow(isRTL) }]}
             >
               <LinearGradient
                 colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']}
@@ -446,7 +446,7 @@ export default function EventDetailScreen() {
             colors={colors.gradient.cardDark}
             style={styles.attendeesCard}
           >
-            <View style={styles.attendeesHeader}>
+            <View style={[styles.attendeesHeader, { flexDirection: rtlFlexRow(isRTL) }]}>
               <LinearGradient
                 colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
                 style={styles.smallIconBg}
@@ -469,7 +469,7 @@ export default function EventDetailScreen() {
               />
             ) : (
               <>
-                <View style={styles.avatarRow}>
+                <View style={[styles.avatarRow, { flexDirection: rtlFlexRow(isRTL) }]}>
                   {attendees.slice(0, 5).map((attendee, index) => (
                     <View
                       key={attendee.id}

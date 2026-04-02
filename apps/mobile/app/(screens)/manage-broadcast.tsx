@@ -21,6 +21,7 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { rtlFlexRow } from '@/utils/rtl';
 
 export default function ManageBroadcastScreen() {
   const { t, isRTL } = useTranslation();
@@ -157,7 +158,7 @@ export default function ManageBroadcastScreen() {
     <Animated.View entering={FadeInUp.delay(Math.min(index * 50, 300)).duration(400)}>
       <LinearGradient
         colors={colors.gradient.cardDark}
-        style={styles.row}
+        style={[styles.row, { flexDirection: rtlFlexRow(isRTL) }]}
       >
         <Avatar uri={item.avatarUrl ?? null} name={item.displayName || item.username || ''} size="md" />
         <View style={styles.info}>

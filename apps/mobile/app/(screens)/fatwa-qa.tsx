@@ -79,7 +79,7 @@ export default function FatwaQAScreen() {
           onPress={() => { setExpandedId(expandedId === item.id as string ? null : item.id as string); haptic.tick(); }}
           accessibilityRole="button"
         >
-          <View style={styles.questionHeader}>
+          <View style={[styles.questionHeader, { flexDirection: rtlFlexRow(isRTL) }]}>
             <Avatar uri={asker?.avatarUrl as string | null} name={asker?.displayName as string || ''} size="sm" />
             <View style={{ flex: 1 }}>
               <Text style={[styles.askerName, { color: tc.text.primary }]}>{asker?.displayName as string}</Text>
@@ -89,7 +89,7 @@ export default function FatwaQAScreen() {
                 </View>
               ) : null}
             </View>
-            <View style={[styles.statusBadge, { backgroundColor: isAnswered ? colors.emerald + '20' : colors.gold + '20' }]}>
+            <View style={[styles.statusBadge, { backgroundColor: isAnswered ? colors.emerald + '20' : colors.gold + '20', flexDirection: rtlFlexRow(isRTL) }]}>
               <Icon name={isAnswered ? 'check-circle' : 'clock'} size="xs" color={isAnswered ? colors.emerald : colors.gold} />
               <Text style={[styles.statusText, { color: isAnswered ? colors.emerald : colors.gold }]}>
                 {isAnswered ? t('community.answered') : t('community.pending')}
@@ -98,7 +98,7 @@ export default function FatwaQAScreen() {
           </View>
           <Text style={[styles.questionText, { color: tc.text.primary }]} numberOfLines={expandedId === item.id as string ? undefined : 3}>{item.question as string}</Text>
           {isAnswered && (item.answer || item.answerText) ? (
-            <View style={styles.answerCard}>
+            <View style={[styles.answerCard, { flexDirection: rtlFlexRow(isRTL) }]}>
               <Icon name="check-circle" size="sm" color={colors.emerald} />
               <Text style={[styles.answerText, { color: tc.text.secondary }]} numberOfLines={expandedId === item.id as string ? undefined : 3}>{String(item.answer || item.answerText)}</Text>
             </View>
@@ -191,7 +191,7 @@ export default function FatwaQAScreen() {
             </View>
 
             <Text style={[styles.askLabel, { marginTop: spacing.xl }, { color: tc.text.secondary }]}>{t('community.preferredMadhab')}</Text>
-            <Pressable accessibilityRole="button" style={[styles.madhabSelector, { backgroundColor: tc.bgCard, borderColor: tc.border }]} onPress={() => setMadhabSheetOpen(true)}>
+            <Pressable accessibilityRole="button" style={[styles.madhabSelector, { backgroundColor: tc.bgCard, borderColor: tc.border, flexDirection: rtlFlexRow(isRTL) }]} onPress={() => setMadhabSheetOpen(true)}>
               <Text style={[styles.madhabSelectorText, { color: tc.text.primary }]}>
                 {t(`community.madhab.${askMadhab}`)}
               </Text>

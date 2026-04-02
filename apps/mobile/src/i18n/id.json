@@ -1296,7 +1296,8 @@
     "scheduleLive": "Schedule Live",
     "disappearingDefault": "Default Disappearing Timer",
     "readReceipts": "Read Receipts",
-    "readReceiptsDescription": "Let others see when you've read their messages"
+    "readReceiptsDescription": "Let others see when you've read their messages",
+    "whatsNew": "Yang Baru"
   },
   "onboarding": {
     "interests": {
@@ -1636,7 +1637,8 @@
     "noVideosFound": "Tidak ada video ditemukan",
     "tryDifferentSearch": "Coba kata kunci pencarian lain",
     "sharePartyLink": "Bagikan Tautan Pesta",
-    "joinMyWatchParty": "Bergabung dengan pesta nonton saya"
+    "joinMyWatchParty": "Bergabung dengan pesta nonton saya",
+    "questionSubmitted": "Pertanyaan terkirim"
   },
   "discover": {
     "title": "Discover",
@@ -2279,6 +2281,10 @@
       "recalculate": "Hitung Ulang",
       "shareMessage": "Perhitungan Zakat Saya:\nKekayaan Bersih: {{netWealth}}\nZakat: {{zakatDue}}\n\nDihitung dengan Mizanly",
       "resetConfirm": "Semua data yang dimasukkan akan dihapus. Lanjutkan?"
+    },
+    "followRequests": {
+      "accepted": "Permintaan mengikuti diterima",
+      "declined": "Permintaan mengikuti ditolak"
     }
   },
   "createReel": {
@@ -3388,7 +3394,9 @@
     "seeFlipside": "Lihat Flipside",
     "postAsFlipside": "Posting ke Flipside",
     "viewingFlipside": "Melihat Flipside",
-    "backToMain": "Kembali ke Profil Utama"
+    "backToMain": "Kembali ke Profil Utama",
+    "deleteConfirm": "Yakin ingin menghapus profil alternatif? Tindakan ini tidak bisa dibatalkan.",
+    "removePersonConfirm": "Hapus {{name}} dari daftar akses?"
   },
   "messages": {
     "transcription": "Transkripsi",
@@ -3699,7 +3707,8 @@
     "sunnahFasts": "Puasa Sunnah",
     "mondayThursday": "Senin & Kamis",
     "whiteDays": "Ayyamul Bidh (13-15)",
-    "totalThisYear": "Total Puasa Tahun Ini"
+    "totalThisYear": "Total Puasa Tahun Ini",
+    "logged": "Puasa tercatat"
   },
   "duas": {
     "title": "Koleksi Doa",
@@ -4342,5 +4351,8 @@
   },
   "storage": {
     "loadError": "Gagal membaca ukuran penyimpanan"
+  },
+  "events": {
+    "rsvpUpdated": "Kehadiran diperbarui"
   }
 }

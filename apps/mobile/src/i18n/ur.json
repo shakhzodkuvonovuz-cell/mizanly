@@ -1296,7 +1296,8 @@
     "scheduleLive": "Schedule Live",
     "disappearingDefault": "Default Disappearing Timer",
     "readReceipts": "Read Receipts",
-    "readReceiptsDescription": "Let others see when you've read their messages"
+    "readReceiptsDescription": "Let others see when you've read their messages",
+    "whatsNew": "نیا کیا ہے"
   },
   "onboarding": {
     "interests": {
@@ -1636,7 +1637,8 @@
     "noVideosFound": "No videos found",
     "tryDifferentSearch": "Try a different search term",
     "sharePartyLink": "Share Party Link",
-    "joinMyWatchParty": "Join my watch party"
+    "joinMyWatchParty": "Join my watch party",
+    "questionSubmitted": "سوال بھیجا گیا"
   },
   "discover": {
     "title": "Discover",
@@ -2279,6 +2281,10 @@
       "recalculate": "دوبارہ حساب لگائیں",
       "shareMessage": "میرا زکوٰۃ حساب:\nخالص دولت: {{netWealth}}\nزکوٰۃ: {{zakatDue}}\n\nمیزانلی سے حساب",
       "resetConfirm": "تمام درج شدہ ڈیٹا صاف ہو جائے گا۔ جاری رکھیں؟"
+    },
+    "followRequests": {
+      "accepted": "فالو درخواست قبول ہوئی",
+      "declined": "فالو درخواست مسترد ہوئی"
     }
   },
   "createReel": {
@@ -3388,7 +3394,9 @@
     "seeFlipside": "فلپ سائیڈ دیکھیں",
     "postAsFlipside": "فلپ سائیڈ پر پوسٹ کریں",
     "viewingFlipside": "فلپ سائیڈ دیکھ رہے ہیں",
-    "backToMain": "مرکزی پروفائل پر واپس"
+    "backToMain": "مرکزی پروفائل پر واپس",
+    "deleteConfirm": "کیا آپ اپنا متبادل پروفائل حذف کرنا چاہتے ہیں؟ یہ واپس نہیں ہو سکتا۔",
+    "removePersonConfirm": "{{name}} کو رسائی کی فہرست سے ہٹائیں؟"
   },
   "messages": {
     "transcription": "ٹرانسکرپشن",
@@ -3705,7 +3713,8 @@
     "sunnahFasts": "سنت روزے",
     "mondayThursday": "پیر اور جمعرات",
     "whiteDays": "ایام بیض (13-15)",
-    "totalThisYear": "اس سال کل روزے"
+    "totalThisYear": "اس سال کل روزے",
+    "logged": "روزہ ریکارڈ ہوا"
   },
   "duas": {
     "title": "دعاؤں کا مجموعہ",
@@ -4348,5 +4357,8 @@
   },
   "storage": {
     "loadError": "اسٹوریج سائز پڑھنے میں ناکامی"
+  },
+  "events": {
+    "rsvpUpdated": "شرکت اپ ڈیٹ ہوئی"
   }
 }

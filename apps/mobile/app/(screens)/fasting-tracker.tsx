@@ -271,7 +271,7 @@ export default function FastingTrackerScreen() {
 
           {/* Stats */}
           {statsQuery.isLoading ? (
-            <View style={styles.statsRow}>
+            <View style={[styles.statsRow, { flexDirection: rtlFlexRow(isRTL) }]}>
               <Skeleton.Rect width="30%" height={70} borderRadius={radius.md} />
               <Skeleton.Rect width="30%" height={70} borderRadius={radius.md} />
               <Skeleton.Rect width="30%" height={70} borderRadius={radius.md} />
@@ -286,7 +286,7 @@ export default function FastingTrackerScreen() {
               />
             </View>
           ) : stats ? (
-            <View style={styles.statsRow}>
+            <View style={[styles.statsRow, { flexDirection: rtlFlexRow(isRTL) }]}>
               <StatCard label={t('fasting.streak')} value={stats.currentStreak} color={colors.emerald} />
               <StatCard label={t('fasting.totalThisYear')} value={stats.totalDays} />
               <StatCard label={t('fasting.makeupNeeded')} value={0} color={tc.text.secondary} />
@@ -325,11 +325,11 @@ export default function FastingTrackerScreen() {
             <Text style={[styles.sectionTitle, { textAlign: rtlTextAlign(isRTL) }, { color: tc.text.primary }]}>
               {t('fasting.sunnahFasts')}
             </Text>
-            <View style={styles.sunnahItem}>
+            <View style={[styles.sunnahItem, { flexDirection: rtlFlexRow(isRTL) }]}>
               <Icon name="check-circle" size={16} color={colors.emerald} />
               <Text style={[styles.sunnahText, { color: tc.text.secondary }]}>{t('fasting.mondayThursday')}</Text>
             </View>
-            <View style={styles.sunnahItem}>
+            <View style={[styles.sunnahItem, { flexDirection: rtlFlexRow(isRTL) }]}>
               <Icon name="check-circle" size={16} color={colors.emerald} />
               <Text style={[styles.sunnahText, { color: tc.text.secondary }]}>{t('fasting.whiteDays')}</Text>
             </View>

@@ -1289,7 +1289,8 @@
     "scheduleLive": "جدولة بث مباشر",
     "disappearingDefault": "مؤقت الاختفاء الافتراضي",
     "readReceipts": "إيصالات القراءة",
-    "readReceiptsDescription": "اسمح للآخرين بمعرفة متى قرأت رسائلهم"
+    "readReceiptsDescription": "اسمح للآخرين بمعرفة متى قرأت رسائلهم",
+    "whatsNew": "ما الجديد"
   },
   "accessibility": {
     "goBack": "رجوع",
@@ -1993,6 +1994,10 @@
       "recalculate": "إعادة الحساب",
       "shareMessage": "حساب زكاتي:\nصافي الثروة: {{netWealth}}\nالزكاة المستحقة: {{zakatDue}}\n\nتم الحساب بواسطة ميزانلي",
       "resetConfirm": "سيتم مسح جميع البيانات المدخلة. متابعة؟"
+    },
+    "followRequests": {
+      "accepted": "تم قبول طلب المتابعة",
+      "declined": "تم رفض طلب المتابعة"
     }
   },
   "createReel": {
@@ -3182,7 +3187,8 @@
     "noVideosFound": "لم يتم العثور على فيديوهات",
     "tryDifferentSearch": "جرب كلمة بحث مختلفة",
     "sharePartyLink": "مشاركة رابط الحفلة",
-    "joinMyWatchParty": "انضم إلى حفلة المشاهدة"
+    "joinMyWatchParty": "انضم إلى حفلة المشاهدة",
+    "questionSubmitted": "تم إرسال السؤال"
   },
   "discover": {
     "title": "اكتشف",
@@ -3381,7 +3387,9 @@
     "seeFlipside": "رؤية الملف البديل",
     "postAsFlipside": "نشر في الملف البديل",
     "viewingFlipside": "عرض الملف البديل",
-    "backToMain": "العودة للملف الرئيسي"
+    "backToMain": "العودة للملف الرئيسي",
+    "deleteConfirm": "هل أنت متأكد من حذف ملفك البديل؟ لا يمكن التراجع.",
+    "removePersonConfirm": "إزالة {{name}} من قائمة الوصول؟"
   },
   "messages": {
     "transcription": "نسخ صوتي",
@@ -3692,7 +3700,8 @@
     "sunnahFasts": "صيام السنة",
     "mondayThursday": "الإثنين والخميس",
     "whiteDays": "الأيام البيض (13-15)",
-    "totalThisYear": "إجمالي الصيام هذا العام"
+    "totalThisYear": "إجمالي الصيام هذا العام",
+    "logged": "تم تسجيل الصيام"
   },
   "duas": {
     "title": "مجموعة الأدعية",
@@ -4335,5 +4344,8 @@
   },
   "storage": {
     "loadError": "فشل في قراءة أحجام التخزين"
+  },
+  "events": {
+    "rsvpUpdated": "تم تحديث الحضور"
   }
 }
