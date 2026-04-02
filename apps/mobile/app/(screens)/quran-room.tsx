@@ -466,7 +466,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   participantText: {
     color: colors.emerald,
     fontSize: fontSize.sm,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   skeletonContainer: {
     width: '100%',
@@ -517,7 +517,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   audioPlayText: {
     color: colors.emerald,
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   toggleRow: {
     flexDirection: 'row',
@@ -559,7 +559,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   reciterText: {
     color: colors.gold,
     fontSize: fontSize.sm,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   spacer: {
     height: spacing.xl,

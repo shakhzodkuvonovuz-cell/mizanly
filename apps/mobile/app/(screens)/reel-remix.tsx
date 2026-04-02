@@ -821,7 +821,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   pipLabelText: {
     color: '#fff',
     fontSize: fontSize.xs,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
 
   // Side by side overlay
@@ -880,7 +880,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   fullOverlayLabelText: {
     color: colors.emerald,
     fontSize: fontSize.xs,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
 
   // Recording badge
@@ -905,7 +905,6 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   recordingTimeText: {
     color: '#fff',
     fontSize: fontSize.sm,
-    fontWeight: '600',
     fontFamily: fonts.mono,
   },
 
@@ -1030,7 +1029,6 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     fontSize: fontSize.lg,
     fontFamily: fonts.mono,
     color: tc.text.primary,
-    fontWeight: '600',
   },
   timerTextWarning: {
     color: colors.gold,
@@ -1084,7 +1082,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   previewPipLabelText: {
     color: '#fff',
     fontSize: fontSize.xs,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
 
   // Caption

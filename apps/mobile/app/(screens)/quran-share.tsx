@@ -559,7 +559,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   verseNumberText: {
     color: tc.text.primary,
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
 
   // Verse Card
@@ -707,7 +707,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   shareButtonText: {
     color: '#fff',
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   copyButton: {
     borderRadius: radius.lg,
@@ -754,7 +754,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   shareSheetTitle: {
     color: tc.text.primary,
     fontSize: fontSize.md,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
     textAlign: 'center',
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
