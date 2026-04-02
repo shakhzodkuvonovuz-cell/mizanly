@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -23,6 +23,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { commerceApi } from '@/services/api';
 import { navigate } from '@/utils/navigation';
@@ -83,15 +84,22 @@ function RatingStars({ rating, tc }: { rating: number; tc: ReturnType<typeof use
 }
 
 function MarketplaceContent() {
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
 
   const [selectedCategory, setSelectedCategory] = useState<CategoryKey>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [searchActive, setSearchActive] = useState(false);
   const tc = useThemeColors();
+
+  // Debounce search to avoid API spam on every keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearchQuery(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const CATEGORIES = CATEGORY_KEYS.map((key) => ({
     key,
@@ -99,16 +107,17 @@ function MarketplaceContent() {
   }));
 
   const productsQuery = useInfiniteQuery<ProductsResponse>({
-    queryKey: ['marketplace-products', selectedCategory, searchQuery],
+    queryKey: ['marketplace-products', selectedCategory, debouncedSearchQuery],
     queryFn: ({ pageParam }) =>
       commerceApi.getProducts({
         cursor: pageParam as string | undefined,
         category: selectedCategory === 'all' ? undefined : selectedCategory,
-        search: searchQuery || undefined,
+        search: debouncedSearchQuery || undefined,
       }) as Promise<ProductsResponse>,
     getNextPageParam: (lastPage) =>
       lastPage.meta.hasMore ? lastPage.meta.cursor ?? undefined : undefined,
     initialPageParam: undefined as string | undefined,
+    staleTime: 30_000,
   });
 
   const allProducts = productsQuery.data?.pages.flatMap((p) => p.data) ?? [];
@@ -153,7 +162,7 @@ function MarketplaceContent() {
           <Text
             style={[
               styles.chipText,
-              selectedCategory === cat.key && styles.chipTextActive,
+              { color: selectedCategory === cat.key ? colors.emerald : tc.text.secondary },
             ]}
           >
             {cat.label}
@@ -165,7 +174,7 @@ function MarketplaceContent() {
 
   const renderProduct = ({ item, index }: { item: Product; index: number }) => (
     <Animated.View
-      entering={FadeInUp.delay(index * 50).duration(300)}
+      entering={FadeInUp.delay(Math.min(index, 10) * 50).duration(300)}
       style={[styles.productCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
     >
       <Pressable
@@ -206,11 +215,11 @@ function MarketplaceContent() {
           <Text style={styles.productPrice}>
             {formatCurrency(item.price / 100, item.currency || 'USD')}
           </Text>
-          <View style={styles.ratingRow}>
+          <View style={[styles.ratingRow, { flexDirection: rtlFlexRow(isRTL) }]}>
             <RatingStars rating={item.rating} tc={tc} />
             <Text style={[styles.reviewCount, { color: tc.text.tertiary }]}>({formatCount(item.reviewCount)})</Text>
           </View>
-          <View style={styles.sellerRow}>
+          <View style={[styles.sellerRow, { flexDirection: rtlFlexRow(isRTL) }]}>
             <Avatar
               uri={item.seller.avatarUrl}
               name={item.seller.displayName}
@@ -244,7 +253,7 @@ function MarketplaceContent() {
     <View>
       {/* Search bar */}
       <View style={styles.searchRow}>
-        <View style={[styles.searchInput, { backgroundColor: tc.bgCard, borderColor: tc.border }, searchActive && styles.searchInputActive]}>
+        <View style={[styles.searchInput, { backgroundColor: tc.bgCard, borderColor: tc.border, flexDirection: rtlFlexRow(isRTL) }, searchActive && styles.searchInputActive]}>
           <Icon name="search" size="sm" color={tc.text.tertiary} />
           <TextInput
             style={[styles.searchText, { color: tc.text.primary }]}
@@ -315,7 +324,7 @@ function MarketplaceContent() {
                 </View>
               ) : null
             }
-            contentContainerStyle={styles.listPadding}
+            contentContainerStyle={[styles.listPadding, { paddingBottom: insets.bottom + spacing['2xl'] }]}
             onEndReached={handleLoadMore}
             onEndReachedThreshold={0.5}
             refreshControl={
@@ -342,7 +351,6 @@ export default function MarketplaceScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   content: {
     flex: 1,
@@ -359,20 +367,17 @@ const styles = StyleSheet.create({
   searchInput: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     height: 44,
     gap: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.dark.border,
   },
   searchInputActive: {
     borderColor: colors.emerald,
   },
   searchText: {
     flex: 1,
-    color: colors.text.primary,
     fontSize: fontSize.base,
     fontFamily: fonts.body,
   },
@@ -385,16 +390,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.bgCard,
     borderWidth: 1,
-    borderColor: colors.dark.border,
   },
   chipActive: {
     backgroundColor: colors.active.emerald10,
     borderColor: colors.emerald,
   },
   chipText: {
-    color: colors.text.secondary,
     fontSize: fontSize.sm,
     fontFamily: fonts.bodySemiBold,
   },
@@ -415,11 +417,9 @@ const styles = StyleSheet.create({
   // Product card
   productCard: {
     width: COLUMN_WIDTH,
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: colors.dark.border,
   },
   productPressable: {
     flex: 1,
@@ -436,7 +436,6 @@ const styles = StyleSheet.create({
   productImagePlaceholder: {
     width: '100%',
     height: '100%',
-    backgroundColor: colors.dark.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -460,7 +459,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
   },
   badgeText: {
-    color: '#FFFFFF',
+    color: colors.text.onColor,
     fontSize: fontSize.xs,
     fontFamily: fonts.bodySemiBold,
   },
@@ -469,7 +468,6 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   productTitle: {
-    color: colors.text.primary,
     fontSize: fontSize.sm,
     fontFamily: fonts.bodySemiBold,
     lineHeight: 18,

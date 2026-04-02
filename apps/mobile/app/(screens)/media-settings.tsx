@@ -16,6 +16,7 @@ import { Icon } from '@/components/ui/Icon';
 import type { IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { showToast } from '@/components/ui/Toast';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, fonts, fontSize, spacing, radius } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
@@ -87,13 +88,13 @@ function SettingRow({
   return (
     <View style={[styles.settingRow, { borderBottomColor: tc.border }, { flexDirection: rtlFlexRow(isRTL) }]}>
       <View style={styles.settingIcon}>
-        <Icon name={icon} size="sm" color={disabled ? colors.text.tertiary : tc.text.secondary} />
+        <Icon name={icon} size="sm" color={disabled ? tc.text.tertiary : tc.text.secondary} />
       </View>
       <Text
         style={[
           styles.settingLabel,
           { color: tc.text.primary, textAlign: rtlTextAlign(isRTL) },
-          disabled && styles.settingLabelDisabled,
+          disabled && { color: tc.text.tertiary },
         ]}
       >
         {label}
@@ -103,7 +104,7 @@ function SettingRow({
         onValueChange={handleToggle}
         disabled={disabled}
         trackColor={{ false: tc.surface, true: colors.emerald }}
-        thumbColor={value && !disabled ? '#FFFFFF' : tc.text.tertiary}
+        thumbColor={value && !disabled ? colors.text.onColor : tc.text.tertiary}
         ios_backgroundColor={tc.surface}
         accessibilityRole="switch"
         accessibilityLabel={label}
@@ -156,7 +157,10 @@ export default function MediaSettingsScreen() {
   useEffect(() => {
     settingsApi.getAutoPlay().then(res => {
       if (res?.autoPlaySetting) setAutoPlay(res.autoPlaySetting.toLowerCase() as 'wifi' | 'always' | 'never');
-    }).catch(__DEV__ ? (err) => console.warn('Failed to load auto-play setting:', err) : () => {});
+    }).catch((err) => {
+      if (__DEV__) console.warn('Failed to load auto-play setting:', err);
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+    });
   }, []);
 
   const loadSettings = useCallback(async () => {
@@ -184,7 +188,7 @@ export default function MediaSettingsScreen() {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     } catch {
-      // Silently fail on save error
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
     }
   }, []);
 
@@ -349,7 +353,10 @@ export default function MediaSettingsScreen() {
                     onPress={() => {
                       haptic.tick();
                       setAutoPlay(option);
-                      settingsApi.updateAutoPlay(option).catch(__DEV__ ? (err) => console.warn('Failed to save auto-play setting:', err) : () => {});
+                      settingsApi.updateAutoPlay(option).catch((err) => {
+                        if (__DEV__) console.warn('Failed to save auto-play setting:', err);
+                        showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+                      });
                       useStore.getState().setAutoPlaySetting(option);
                     }}
                   >
@@ -363,7 +370,7 @@ export default function MediaSettingsScreen() {
                     <Text
                       style={[
                         styles.settingLabel,
-                        { textAlign: rtlTextAlign(isRTL) },
+                        { color: tc.text.primary, textAlign: rtlTextAlign(isRTL) },
                         autoPlay === option && { color: colors.emerald },
                       ]}
                     >
@@ -383,9 +390,9 @@ export default function MediaSettingsScreen() {
                   label={t('ambient.toggle')}
                   value={ambientMode}
                   onToggle={(v: boolean) => {
+                    haptic.tick();
                     useStore.getState().setAmbientModeEnabled(v);
                     setAmbientMode(v);
-                    haptic.tick();
                   }}
                   isRTL={isRTL}
                 />
@@ -411,7 +418,6 @@ export default function MediaSettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   scrollView: {
     flex: 1,
@@ -424,7 +430,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: colors.dark.border,
     marginBottom: spacing.xl,
   },
   dataSaverGradient: {
@@ -439,29 +444,24 @@ const styles = StyleSheet.create({
   dataSaverTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
   },
   dataSaverHint: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
     marginTop: 2,
   },
   // Section
   sectionTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: spacing.sm,
     marginTop: spacing.sm,
   },
   sectionCard: {
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
     overflow: 'hidden',
     marginBottom: spacing.base,
   },
@@ -472,7 +472,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.dark.border,
+    borderBottomColor: 'transparent',
   },
   settingIcon: {
     marginEnd: spacing.md,
@@ -481,10 +481,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.base,
-    color: colors.text.primary,
-  },
-  settingLabelDisabled: {
-    color: colors.text.tertiary,
   },
   // Radio buttons
   radioOuter: {
@@ -492,7 +488,6 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: radius.full,
     borderWidth: 2,
-    borderColor: colors.dark.border,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
   },

@@ -18,12 +18,13 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import type { IconName } from '@/components/ui/Icon';
-import { Skeleton } from '@/components/ui/Skeleton';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi, accountApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 
@@ -38,11 +39,12 @@ function InfoRow({
   icon?: IconName;
 }) {
   const tc = useThemeColors();
+  const { isRTL } = useTranslation();
   return (
-    <View style={styles.infoRow}>
+    <View style={[styles.infoRow, { flexDirection: rtlFlexRow(isRTL) }]}>
       <View style={styles.infoText}>
-        <Text style={[styles.infoLabel, { color: tc.text.primary }]}>{label}</Text>
-        {description && <Text style={[styles.infoDescription, { color: tc.text.tertiary }]}>{description}</Text>}
+        <Text style={[styles.infoLabel, { color: tc.text.primary, textAlign: rtlTextAlign(isRTL) }]}>{label}</Text>
+        {description && <Text style={[styles.infoDescription, { color: tc.text.tertiary, textAlign: rtlTextAlign(isRTL) }]}>{description}</Text>}
       </View>
       {icon && (
         <LinearGradient
@@ -72,17 +74,19 @@ function ActionRow({
   loading?: boolean;
 }) {
   const tc = useThemeColors();
+  const { isRTL } = useTranslation();
   return (
-    <View style={styles.actionRow}>
+    <View style={[styles.actionRow, { flexDirection: rtlFlexRow(isRTL) }]}>
       <View style={styles.actionText}>
-        <Text style={[styles.actionLabel, { color: tc.text.primary }]}>{label}</Text>
-        {description && <Text style={[styles.actionDescription, { color: tc.text.tertiary }]}>{description}</Text>}
+        <Text style={[styles.actionLabel, { color: tc.text.primary, textAlign: rtlTextAlign(isRTL) }]}>{label}</Text>
+        {description && <Text style={[styles.actionDescription, { color: tc.text.tertiary, textAlign: rtlTextAlign(isRTL) }]}>{description}</Text>}
       </View>
       <Pressable
         onPress={onPress}
         disabled={loading}
         accessibilityLabel={buttonLabel}
         accessibilityRole="button"
+        accessibilityState={{ disabled: !!loading }}
       >
         <LinearGradient
           colors={destructive ? ['rgba(248,81,73,0.3)', 'rgba(248,81,73,0.1)'] : ['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.1)']}
@@ -104,8 +108,9 @@ function ActionRow({
 export default function ManageDataScreen() {
   const router = useRouter();
   const { signOut } = useClerk();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const tc = useThemeColors();
+  const haptic = useContextualHaptic();
 
   // No async data to load — content is rendered immediately
 
@@ -213,6 +218,7 @@ export default function ManageDataScreen() {
     mutationFn: () => usersApi.deleteAccount(),
     onSuccess: async () => {
       await signOut();
+      router.replace('/');
     },
     onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
@@ -241,8 +247,12 @@ export default function ManageDataScreen() {
           text: t('settings.clearButton'),
           style: 'destructive',
           onPress: async () => {
-            await AsyncStorage.removeItem('search-history');
-            showToast({ message: t('settings.searchHistoryCleared'), variant: 'success' });
+            try {
+              await AsyncStorage.removeItem('search-history');
+              showToast({ message: t('settings.searchHistoryCleared'), variant: 'success' });
+            } catch {
+              showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+            }
           },
         },
       ],
@@ -265,6 +275,7 @@ export default function ManageDataScreen() {
   };
 
   const handleDeleteAccount = () => {
+    haptic.error();
     Alert.alert(
       t('settings.deleteAccount'),
       t('settings.deleteAccountMessage'),
@@ -368,7 +379,7 @@ export default function ManageDataScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
   body: { flex: 1 },
   bodyContent: { paddingBottom: 60, paddingTop: 100 },
   card: {
@@ -388,12 +399,10 @@ const styles = StyleSheet.create({
   },
   actionText: { flex: 1, marginEnd: spacing.md },
   actionLabel: {
-    color: colors.text.primary,
     fontSize: fontSize.base,
     fontWeight: '500',
   },
   actionDescription: {
-    color: colors.text.tertiary,
     fontSize: fontSize.sm,
     marginTop: 2,
     lineHeight: 16,
@@ -422,12 +431,10 @@ const styles = StyleSheet.create({
   },
   infoText: { flex: 1, marginEnd: spacing.md },
   infoLabel: {
-    color: colors.text.primary,
     fontSize: fontSize.base,
     fontWeight: '500',
   },
   infoDescription: {
-    color: colors.text.tertiary,
     fontSize: fontSize.sm,
     marginTop: 2,
     lineHeight: 16,
@@ -445,7 +452,6 @@ const styles = StyleSheet.create({
     marginStart: spacing.md,
   },
   footerNote: {
-    color: colors.text.tertiary,
     fontSize: fontSize.xs,
     textAlign: 'center',
     marginTop: spacing.xl,
