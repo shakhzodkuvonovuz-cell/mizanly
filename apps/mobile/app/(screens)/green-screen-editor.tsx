@@ -3,7 +3,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -109,49 +109,50 @@ export default function GreenScreenEditorScreen() {
   const [isRecording, setIsRecording] = useState(false);
   const [facing, setFacing] = useState<'front' | 'back'>('front');
   const [permission, requestPermission] = useCameraPermissions();
-  const [audioPermission, setAudioPermission] = useState(false);
   const cameraRef = useRef<CameraView>(null);
-  const [recordedUri, setRecordedUri] = useState<string | null>(null);
+  const recordingGuard = useRef(false);
   const tc = useThemeColors();
   const haptic = useContextualHaptic();
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
-    (async () => {
-      const { granted } = await Audio.requestPermissionsAsync();
-      setAudioPermission(granted);
-    })();
+    Audio.requestPermissionsAsync();
   }, []);
 
   const handleRecord = async () => {
-    if (!cameraRef.current) return;
+    if (!cameraRef.current || recordingGuard.current) return;
+    recordingGuard.current = true;
 
-    if (isRecording) {
-      cameraRef.current.stopRecording();
-      setIsRecording(false);
-      haptic.tick();
-    } else {
-      // Honest: background segmentation is not available — camera just records normally
-      showToast({ message: t('screens.greenScreen.noSegmentation'), variant: 'info' });
-      setIsRecording(true);
-      haptic.navigate();
-      try {
-        const video = await cameraRef.current.recordAsync({ maxDuration: 60 });
-        if (video?.uri) {
-          setRecordedUri(video.uri);
-          haptic.success();
-        }
-      } catch (_err: unknown) {
-        // Recording was cancelled or failed
-      } finally {
+    try {
+      if (isRecording) {
+        cameraRef.current.stopRecording();
         setIsRecording(false);
+        haptic.tick();
+      } else {
+        // Honest: background segmentation is not available — camera just records normally
+        showToast({ message: t('screens.greenScreen.noSegmentation'), variant: 'info' });
+        setIsRecording(true);
+        haptic.navigate();
+        try {
+          const video = await cameraRef.current.recordAsync({ maxDuration: 60 });
+          if (video?.uri) {
+            haptic.success();
+          }
+        } catch {
+          showToast({ message: t('common.error'), variant: 'error' });
+          haptic.error();
+        } finally {
+          setIsRecording(false);
+        }
       }
+    } finally {
+      recordingGuard.current = false;
     }
   };
 
-  // No data to refresh on this screen — refresh is a no-op
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    setRefreshing(false);
+    setTimeout(() => setRefreshing(false), 500);
   }, []);
 
   const categories: { id: CategoryType; label: string }[] = [
@@ -225,7 +226,7 @@ export default function GreenScreenEditorScreen() {
                     <Icon name="check" size="xs" color="#FFF" />
                   )}
                 </Pressable>
-                <Text style={styles.colorName}>{t(`screens.greenScreen.color.${color.name}`)}</Text>
+                <Text style={[styles.colorName, { color: tc.text.tertiary }]}>{t(`screens.greenScreen.color.${color.name}`)}</Text>
               </Animated.View>
             ))}
           </View>
@@ -262,7 +263,7 @@ export default function GreenScreenEditorScreen() {
                     )}
                   </LinearGradient>
                 </Pressable>
-                <Text style={styles.gradientName}>{t(`screens.greenScreen.gradient.${gradient.name}`)}</Text>
+                <Text style={[styles.gradientName, { color: tc.text.tertiary }]}>{t(`screens.greenScreen.gradient.${gradient.name}`)}</Text>
               </Animated.View>
             ))}
           </View>
@@ -289,7 +290,7 @@ export default function GreenScreenEditorScreen() {
                   >
                     <Icon name="image" size="md" color={tc.text.tertiary} />
                   </LinearGradient>
-                  <Text style={styles.imageName}>{t(`screens.greenScreen.bg.${image.name}`)}</Text>
+                  <Text style={[styles.imageName, { color: tc.text.secondary }]}>{t(`screens.greenScreen.bg.${image.name}`)}</Text>
                 </Pressable>
               </Animated.View>
             ))}
@@ -319,7 +320,7 @@ export default function GreenScreenEditorScreen() {
                       <Icon name="play" size="sm" color="#FFF" />
                     </View>
                   </LinearGradient>
-                  <Text style={styles.videoName}>{t(`screens.greenScreen.bg.${video.name}`)}</Text>
+                  <Text style={[styles.videoName, { color: tc.text.secondary }]}>{t(`screens.greenScreen.bg.${video.name}`)}</Text>
                 </Pressable>
               </Animated.View>
             ))}
@@ -340,8 +341,8 @@ export default function GreenScreenEditorScreen() {
                     <Icon name="plus" size="xs" color="#FFF" />
                   </View>
                 </View>
-                <Text style={styles.uploadButtonText}>{t('screens.greenScreen.uploadImage')}</Text>
-                <Text style={styles.uploadButtonSubtext}>{t('screens.greenScreen.imageFormats')}</Text>
+                <Text style={[styles.uploadButtonText, { color: tc.text.primary }]}>{t('screens.greenScreen.uploadImage')}</Text>
+                <Text style={[styles.uploadButtonSubtext, { color: tc.text.tertiary }]}>{t('screens.greenScreen.imageFormats')}</Text>
               </LinearGradient>
             </Pressable>
 
@@ -356,13 +357,13 @@ export default function GreenScreenEditorScreen() {
                     <Icon name="plus" size="xs" color="#FFF" />
                   </View>
                 </View>
-                <Text style={styles.uploadButtonText}>{t('screens.greenScreen.uploadVideo')}</Text>
-                <Text style={styles.uploadButtonSubtext}>{t('screens.greenScreen.videoFormats')}</Text>
+                <Text style={[styles.uploadButtonText, { color: tc.text.primary }]}>{t('screens.greenScreen.uploadVideo')}</Text>
+                <Text style={[styles.uploadButtonSubtext, { color: tc.text.tertiary }]}>{t('screens.greenScreen.videoFormats')}</Text>
               </LinearGradient>
             </Pressable>
 
             <View style={styles.recentSection}>
-              <Text style={styles.recentTitle}>{t('screens.greenScreen.recentUploads')}</Text>
+              <Text style={[styles.recentTitle, { color: tc.text.secondary }]}>{t('screens.greenScreen.recentUploads')}</Text>
               <EmptyState
                 icon="image"
                 title={t('screens.greenScreen.noUploadsYet')}
@@ -506,6 +507,7 @@ export default function GreenScreenEditorScreen() {
                   >
                     <Text style={[
                       styles.categoryButtonText,
+                      { color: tc.text.secondary },
                       selectedCategory === category.id && styles.categoryButtonTextActive
                     ]}>
                       {category.label}
@@ -523,7 +525,7 @@ export default function GreenScreenEditorScreen() {
                 colors={colors.gradient.cardDark}
                 style={styles.gridGradient}
               >
-                <Text style={styles.gridTitle}>
+                <Text style={[styles.gridTitle, { color: tc.text.primary }]}>
                   {categories.find(c => c.id === selectedCategory)?.label}
                 </Text>
                 {renderBackgroundGrid()}
@@ -548,12 +550,12 @@ export default function GreenScreenEditorScreen() {
                       <Icon name="sliders" size="sm" color={colors.emerald} />
                     </LinearGradient>
                   </View>
-                  <Text style={styles.sliderTitle}>{t('screens.greenScreen.adjustments')}</Text>
+                  <Text style={[styles.sliderTitle, { color: tc.text.primary }]}>{t('screens.greenScreen.adjustments')}</Text>
                 </View>
 
                 {/* Background Blur */}
                 <View style={styles.sliderRow}>
-                  <Text style={styles.sliderLabel}>{t('screens.greenScreen.backgroundBlur')}</Text>
+                  <Text style={[styles.sliderLabel, { color: tc.text.secondary }]}>{t('screens.greenScreen.backgroundBlur')}</Text>
                   <Text style={styles.sliderValue}>{blurIntensity}%</Text>
                 </View>
                 <SimpleSlider
@@ -565,7 +567,7 @@ export default function GreenScreenEditorScreen() {
 
                 {/* Edge Smoothing */}
                 <View style={[styles.sliderRow, styles.sliderRowSecond]}>
-                  <Text style={styles.sliderLabel}>{t('screens.greenScreen.edgeSmoothing')}</Text>
+                  <Text style={[styles.sliderLabel, { color: tc.text.secondary }]}>{t('screens.greenScreen.edgeSmoothing')}</Text>
                   <Text style={styles.sliderValue}>{edgeSmoothing}%</Text>
                 </View>
                 <SimpleSlider
@@ -583,15 +585,15 @@ export default function GreenScreenEditorScreen() {
         </ScrollView>
 
         {/* Bottom Action Bar */}
-        <View style={styles.bottomBar}>
+        <View style={[styles.bottomBar, { paddingBottom: insets.bottom }]}>
           <LinearGradient
             colors={['rgba(13,17,23,0.95)', 'rgba(13,17,23,1)']}
             style={styles.bottomBarGradient}
           >
-            <Pressable style={styles.cancelButton} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel={t('common.cancel')}>
-              <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
+            <Pressable style={styles.cancelButton} onPress={() => { haptic.tick(); router.back(); }} accessibilityRole="button" accessibilityLabel={t('common.cancel')}>
+              <Text style={[styles.cancelButtonText, { color: tc.text.secondary }]}>{t('common.cancel')}</Text>
             </Pressable>
-            <Pressable style={styles.applyButton} onPress={() => navigate('/(screens)/camera')} accessibilityRole="button" accessibilityLabel={t('screens.greenScreen.applyAndRecord')}>
+            <Pressable style={styles.applyButton} onPress={() => { haptic.navigate(); navigate('/(screens)/camera'); }} accessibilityRole="button" accessibilityLabel={t('screens.greenScreen.applyAndRecord')}>
               <LinearGradient
                 colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
                 style={styles.applyButtonGradient}
@@ -936,7 +938,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.xl,
   },
   cancelButton: {
     paddingHorizontal: spacing.lg,

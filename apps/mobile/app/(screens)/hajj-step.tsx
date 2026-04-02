@@ -17,6 +17,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { showToast } from '@/components/ui/Toast';
 
 interface ChecklistState {
   [stepIndex: string]: boolean[];
@@ -32,6 +34,7 @@ function HajjStepContent() {
   const [expandedDua, setExpandedDua] = useState<number | null>(null);
   const [checklistState, setChecklistState] = useState<boolean[]>([]);
   const tc = useThemeColors();
+  const haptic = useContextualHaptic();
 
   const guideQuery = useQuery({
     queryKey: ['hajj-guide'],
@@ -81,6 +84,10 @@ function HajjStepContent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hajj-progress'] });
     },
+    onError: () => {
+      showToast({ message: t('common.error'), variant: 'error' });
+      haptic.error();
+    },
   });
 
   const toggleCheckItem = useCallback(
@@ -108,14 +115,19 @@ function HajjStepContent() {
   );
 
   const handleMarkComplete = useCallback(() => {
-    if (!progress) return;
+    if (!progress || updateMutation.isPending) return;
+    haptic.success();
     const maxStep = guide.length > 0 ? guide.length - 1 : 6;
     const nextStep = Math.min(stepIndex + 1, maxStep);
-    updateMutation.mutate({ currentStep: nextStep });
-    if (nextStep > stepIndex) {
-      router.back();
-    }
-  }, [progress, stepIndex, updateMutation, router, guide.length]);
+    updateMutation.mutate({ currentStep: nextStep }, {
+      onSuccess: () => {
+        showToast({ message: t('hajj.stepCompleted', { defaultValue: 'Step completed!' }), variant: 'success' });
+        if (nextStep > stepIndex) {
+          router.back();
+        }
+      },
+    });
+  }, [progress, stepIndex, updateMutation, router, guide.length, haptic, t]);
 
   const onRefresh = useCallback(() => {
     guideQuery.refetch();
@@ -205,10 +217,10 @@ function HajjStepContent() {
               accessibilityState={{ expanded: expandedDua === duaIndex }}
               key={duaIndex}
               style={[styles.duaCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
-              onPress={() =>
-                setExpandedDua(expandedDua === duaIndex ? null : duaIndex)
-              }
-
+              onPress={() => {
+                haptic.tick();
+                setExpandedDua(expandedDua === duaIndex ? null : duaIndex);
+              }}
             >
               <Text style={styles.duaArabic}>{dua.arabic}</Text>
               {expandedDua === duaIndex && (
@@ -239,8 +251,7 @@ function HajjStepContent() {
               accessibilityState={{ checked: checklistState[idx] ?? false }}
               key={idx}
               style={styles.checkItem}
-              onPress={() => toggleCheckItem(idx)}
-
+              onPress={() => { haptic.tick(); toggleCheckItem(idx); }}
             >
               <View
                 style={[
@@ -255,6 +266,7 @@ function HajjStepContent() {
               <Text
                 style={[
                   styles.checkText,
+                  { color: tc.text.primary },
                   checklistState[idx] && styles.checkTextDone,
                 ]}
               >
@@ -270,9 +282,9 @@ function HajjStepContent() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t('hajj.markComplete')}
-              style={styles.completeButton}
+              style={[styles.completeButton, updateMutation.isPending && { opacity: 0.6 }]}
               onPress={handleMarkComplete}
-
+              disabled={updateMutation.isPending}
             >
               <LinearGradient
                 colors={[colors.emerald, '#0A6B42']}

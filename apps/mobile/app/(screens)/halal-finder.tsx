@@ -34,9 +34,9 @@ interface HalalRestaurant {
   cuisineType?: string;
   priceRange?: number;
   halalCertified: boolean;
-  isVerified: boolean;
-  averageRating: number;
-  reviewCount: number;
+  verificationCount?: number;
+  rating?: number;
+  reviewCount?: number;
   imageUrl?: string;
   distanceKm?: number;
 }
@@ -73,7 +73,7 @@ function RestaurantCard({ restaurant, onPress }: { restaurant: HalalRestaurant; 
               <Text style={styles.certBadgeText}>{t('halal.certified')}</Text>
             </View>
           )}
-          {restaurant.isVerified && !restaurant.halalCertified && (
+          {(restaurant.verificationCount ?? 0) > 0 && !restaurant.halalCertified && (
             <View style={styles.verifiedBadge}>
               <Text style={styles.verifiedBadgeText}>{t('halal.verified')}</Text>
             </View>
@@ -87,11 +87,11 @@ function RestaurantCard({ restaurant, onPress }: { restaurant: HalalRestaurant; 
             <Text style={[styles.metaText, { color: tc.text.tertiary }]}>{restaurant.cuisineType}</Text>
           )}
           {priceLabel ? <Text style={[styles.metaText, { color: tc.text.tertiary }]}>{priceLabel}</Text> : null}
-          {restaurant.averageRating > 0 && (
+          {(restaurant.rating ?? 0) > 0 && (
             <View style={[styles.ratingRow, { flexDirection: rtlFlexRow(isRTL) }]}>
               <Icon name="heart-filled" size={12} color={colors.gold} />
               <Text style={styles.ratingText}>
-                {restaurant.averageRating.toFixed(1)} ({restaurant.reviewCount})
+                {(restaurant.rating ?? 0).toFixed(1)} ({restaurant.reviewCount ?? 0})
               </Text>
             </View>
           )}
@@ -186,7 +186,7 @@ export default function HalalFinderScreen() {
         )}
       />
     </View>
-  ), [selectedCuisine, haptic]);
+  ), [selectedCuisine, haptic, tc]);
 
   const listEmpty = useMemo(() => (
     !restaurantsQuery.isLoading ? (

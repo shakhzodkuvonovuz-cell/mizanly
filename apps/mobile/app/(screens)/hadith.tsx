@@ -30,6 +30,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { showToast } from '@/components/ui/Toast';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { rtlFlexRow } from '@/utils/rtl';
 
 const { width } = Dimensions.get('window');
 
@@ -124,7 +125,7 @@ function PreviousHadithCard({
 export default function HadithScreen() {
   const router = useRouter();
   const haptic = useContextualHaptic();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -133,6 +134,7 @@ export default function HadithScreen() {
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
   const scaleAnim = useSharedValue(1);
   const tc = useThemeColors();
+  const listRef = useRef<FlatList>(null);
 
   // Audio playback (hadith recitation not yet available from API)
   const soundRef = useRef<Audio.Sound | null>(null);
@@ -163,7 +165,8 @@ export default function HadithScreen() {
         date: '',
         isBookmarked: false,
       };
-      const listHadiths: Hadith[] = (Array.isArray(listResp) ? listResp : []).map((h: ApiHadith) => ({
+      const listData = Array.isArray(listResp) ? listResp : ((listResp as { data?: ApiHadith[] })?.data ?? []);
+      const listHadiths: Hadith[] = listData.map((h: ApiHadith) => ({
         id: h.id.toString(),
         arabic: h.arabic,
         english: h.english,
@@ -191,10 +194,13 @@ export default function HadithScreen() {
     fetchData();
   }, [fetchData]);
 
+  const bookmarkGuard = useRef(false);
   const handleBookmark = useCallback(() => {
-    if (!currentHadith) return;
+    if (!currentHadith || bookmarkGuard.current) return;
+    bookmarkGuard.current = true;
     haptic.save();
     const hadithId = currentHadith.id;
+    const wasBookmarked = currentHadith.isBookmarked;
     // Optimistic UI update
     setCurrentHadith(prev => prev ? { ...prev, isBookmarked: !prev.isBookmarked } : prev);
     setHadiths(prev => prev.map(h => h.id === hadithId ? { ...h, isBookmarked: !h.isBookmarked } : h));
@@ -209,14 +215,22 @@ export default function HadithScreen() {
     });
     // Persist bookmark to API
     islamicApi.bookmarkHadith(hadithId).catch(() => {
-      // Revert on failure
-      setCurrentHadith(prev => prev ? { ...prev, isBookmarked: !prev.isBookmarked } : prev);
-      setHadiths(prev => prev.map(h => h.id === hadithId ? { ...h, isBookmarked: !h.isBookmarked } : h));
+      // Revert on failure — both hadith state AND bookmarkedIds
+      setCurrentHadith(prev => prev ? { ...prev, isBookmarked: wasBookmarked } : prev);
+      setHadiths(prev => prev.map(h => h.id === hadithId ? { ...h, isBookmarked: wasBookmarked } : h));
+      setBookmarkedIds(prev => {
+        const next = new Set(prev);
+        if (wasBookmarked) { next.add(hadithId); } else { next.delete(hadithId); }
+        return next;
+      });
+      showToast({ message: t('common.error'), variant: 'error' });
+    }).finally(() => {
+      bookmarkGuard.current = false;
     });
     scaleAnim.value = withSpring(1.1, { damping: 10, stiffness: 400 }, () => {
       scaleAnim.value = withSpring(1);
     });
-  }, [haptic, scaleAnim, currentHadith]);
+  }, [haptic, scaleAnim, currentHadith, t]);
 
   const handleShare = useCallback(async () => {
     if (!currentHadith) return;
@@ -239,6 +253,7 @@ export default function HadithScreen() {
 
   const selectHadith = useCallback((hadith: Hadith) => {
     setCurrentHadith(hadith);
+    listRef.current?.scrollToOffset({ offset: 0, animated: true });
   }, []);
 
   const animatedBookmarkStyle = useAnimatedStyle(() => ({
@@ -310,6 +325,7 @@ export default function HadithScreen() {
         />
 
         <FlatList
+          ref={listRef}
           data={hadiths.slice(1)}
           keyExtractor={item => item.id}
           refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -343,7 +359,7 @@ export default function HadithScreen() {
                   </View>
 
                   {/* Action Row */}
-                  <View style={styles.actionRow}>
+                  <View style={[styles.actionRow, { flexDirection: rtlFlexRow(isRTL) }]}>
                     <ActionButton icon="play" label={t('common.listen', { defaultValue: 'Listen' })} onPress={handlePlayAudio} />
                     <Animated.View style={animatedBookmarkStyle}>
                       <ActionButton

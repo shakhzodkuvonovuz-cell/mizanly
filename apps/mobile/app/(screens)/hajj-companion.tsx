@@ -23,6 +23,8 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { showToast } from '@/components/ui/Toast';
 
 const TOTAL_STEPS = 7;
 
@@ -58,6 +60,7 @@ function HajjCompanionContent() {
   const [showResetSheet, setShowResetSheet] = useState(false);
   const [showYearPicker, setShowYearPicker] = useState(false);
   const tc = useThemeColors();
+  const haptic = useContextualHaptic();
   const currentYear = new Date().getFullYear();
 
   const guideQuery = useQuery({
@@ -75,6 +78,11 @@ function HajjCompanionContent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hajj-progress'] });
       setShowYearPicker(false);
+      haptic.success();
+    },
+    onError: () => {
+      showToast({ message: t('common.error'), variant: 'error' });
+      haptic.error();
     },
   });
 
@@ -90,6 +98,12 @@ function HajjCompanionContent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hajj-progress'] });
       setShowResetSheet(false);
+      haptic.success();
+    },
+    onError: () => {
+      setShowResetSheet(false);
+      showToast({ message: t('common.error'), variant: 'error' });
+      haptic.error();
     },
   });
 
@@ -171,9 +185,9 @@ function HajjCompanionContent() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={t('hajj.startTracker')}
-                style={styles.startButton}
-                onPress={() => setShowYearPicker(true)}
-
+                style={[styles.startButton, createMutation.isPending && { opacity: 0.6 }]}
+                onPress={() => { haptic.tick(); setShowYearPicker(true); }}
+                disabled={createMutation.isPending}
               >
                 <LinearGradient
                   colors={[colors.emerald, '#0A6B42']}
@@ -282,6 +296,7 @@ function HajjCompanionContent() {
                         <Text
                           style={[
                             styles.stepNumber,
+                            { color: tc.text.secondary },
                             isCurrent && styles.stepNumberCurrent,
                           ]}
                         >
@@ -317,7 +332,7 @@ function HajjCompanionContent() {
             accessibilityRole="button"
             accessibilityLabel={t('hajj.shareProgress')}
             style={styles.shareButton}
-            onPress={handleShare}
+            onPress={() => { haptic.send(); handleShare(); }}
           >
             <Icon name="share" size="sm" color={colors.emerald} />
             <Text style={styles.shareButtonText}>
@@ -475,7 +490,7 @@ const styles = StyleSheet.create({
   },
   timelineLine: {
     position: 'absolute',
-    left: 23,
+    start: 23,
     top: 56,
     width: 2,
     height: 48,
