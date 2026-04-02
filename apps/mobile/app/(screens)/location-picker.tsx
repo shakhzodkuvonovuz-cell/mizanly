@@ -1,10 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Pressable,
   KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import * as Location from 'expo-location';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -39,7 +39,9 @@ function LocationPickerContent() {
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [manualLat, setManualLat] = useState('');
   const [manualLng, setManualLng] = useState('');
+  const [applyingCoords, setApplyingCoords] = useState(false);
   const tc = useThemeColors();
+  const insets = useSafeAreaInsets();
 
   const reverseGeocode = useCallback(async (lat: number, lng: number) => {
     try {
@@ -106,18 +108,21 @@ function LocationPickerContent() {
   }, [searchQuery, t, haptic, reverseGeocode]);
 
   const handleManualCoordinates = useCallback(async () => {
+    if (applyingCoords) return;
     const lat = parseFloat(manualLat);
     const lng = parseFloat(manualLng);
     if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
       showToast({ message: t('location.invalidCoordsMessage', 'Please enter valid latitude (-90 to 90) and longitude (-180 to 180).'), variant: 'error' });
       return;
     }
+    setApplyingCoords(true);
     haptic.tick();
     const coords = { latitude: lat, longitude: lng };
     setLocation(coords);
     const addr = await reverseGeocode(lat, lng);
     setAddress(addr);
-  }, [manualLat, manualLng, t, haptic, reverseGeocode]);
+    setApplyingCoords(false);
+  }, [manualLat, manualLng, t, haptic, reverseGeocode, applyingCoords]);
 
   const handleShareLocation = useCallback(() => {
     if (!location) return;
@@ -159,7 +164,7 @@ function LocationPickerContent() {
       >
         <ScrollView
           style={styles.flex}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 56 }]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
@@ -291,8 +296,9 @@ function LocationPickerContent() {
               </View>
             </View>
             <Pressable
-              style={styles.applyButton}
+              style={({ pressed }) => [styles.applyButton, pressed && { opacity: 0.7 }]}
               onPress={handleManualCoordinates}
+              disabled={applyingCoords}
               accessibilityRole="button"
               accessibilityLabel={t('location.applyCoords', 'Apply coordinates')}
             >
@@ -305,7 +311,7 @@ function LocationPickerContent() {
         </ScrollView>
 
         {/* Share Button */}
-        <View style={[styles.bottomBar, { backgroundColor: tc.bgElevated, borderTopColor: tc.border }]}>
+        <View style={[styles.bottomBar, { backgroundColor: tc.bgElevated, borderTopColor: tc.border, paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
           <GradientButton
             label={t('location.share', 'Share Location')}
             onPress={handleShareLocation}
@@ -337,7 +343,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 100,
     paddingBottom: spacing['2xl'],
   },
   searchContainer: {

@@ -13,7 +13,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Icon } from '@/components/ui/Icon';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { majlisListsApi } from '@/services/api';
 import type { MajlisList } from '@/types';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
@@ -35,6 +35,7 @@ export default function MajlisListsScreen() {
   const [newName, setNewName] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [isPublic, setIsPublic] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const tc = useThemeColors();
 
   const { data: lists, isLoading, isError, refetch } = useQuery({
@@ -62,10 +63,13 @@ export default function MajlisListsScreen() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => majlisListsApi.delete(id),
     onSuccess: () => {
+      setDeletingId(null);
       queryClient.invalidateQueries({ queryKey: ['majlis-lists'] });
       haptic.success();
+      showToast({ message: t('common.deleted'), variant: 'success' });
     },
     onError: () => {
+      setDeletingId(null);
       haptic.error();
       showToast({ message: t('screens.majlis-lists.errorDelete'), variant: 'error' });
     },
@@ -87,19 +91,21 @@ export default function MajlisListsScreen() {
   };
 
   const confirmDelete = (id: string, name: string) => {
+    if (deleteMutation.isPending) return;
+    haptic.delete();
     Alert.alert(
       t('screens.majlis-lists.deleteConfirmTitle'),
       t('screens.majlis-lists.deleteConfirmMessage', { name }),
       [
         { text: t('common.cancel'), style: 'cancel' },
-        { text: t('common.delete'), style: 'destructive', onPress: () => deleteMutation.mutate(id) },
+        { text: t('common.delete'), style: 'destructive', onPress: () => { setDeletingId(id); deleteMutation.mutate(id); } },
       ]
     );
   };
 
   const renderItem = ({ item, index }: { item: MajlisList; index: number }) => (
-    <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
-      <Pressable accessibilityRole="button" accessibilityLabel={item.name} onPress={() => navigate(`/(screens)/majlis-list/${item.id}`)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index * 50, 300)).duration(400)}>
+      <Pressable accessibilityRole="button" accessibilityLabel={item.name} onPress={() => navigate(`/(screens)/majlis-list/${item.id}`)} style={deletingId === item.id ? { opacity: 0.5 } : undefined}>
         <LinearGradient
           colors={colors.gradient.cardDark}
           style={styles.card}
@@ -220,7 +226,7 @@ export default function MajlisListsScreen() {
 
             <Text style={[styles.inputLabel, { color: tc.text.secondary }]}>{t('screens.majlis-lists.name')}</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: tc.surface }]}
+              style={[styles.input, { backgroundColor: tc.surface, color: tc.text.primary }]}
               placeholder={t('screens.majlis-lists.namePlaceholder')}
               placeholderTextColor={tc.text.secondary}
               value={newName}
@@ -229,7 +235,7 @@ export default function MajlisListsScreen() {
 
             <Text style={[styles.inputLabel, { color: tc.text.secondary }]}>{t('screens.majlis-lists.descriptionOptional')}</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: tc.surface }, styles.textArea]}
+              style={[styles.input, { backgroundColor: tc.surface, color: tc.text.primary }, styles.textArea]}
               placeholder={t('screens.majlis-lists.descPlaceholder')}
               placeholderTextColor={tc.text.secondary}
               value={newDesc}
@@ -309,7 +315,7 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
     color: colors.text.primary,
   },
   desc: {
@@ -329,7 +335,7 @@ const styles = StyleSheet.create({
   membersText: {
     fontSize: fontSize.xs,
     color: colors.gold,
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
   },
   deleteButton: {
     padding: spacing.sm,
@@ -341,13 +347,13 @@ const styles = StyleSheet.create({
   },
   sheetTitle: {
     fontSize: fontSize.lg,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
     color: colors.text.primary,
     marginBottom: spacing.xl,
   },
   inputLabel: {
     fontSize: fontSize.sm,
-    fontWeight: '500',
+    fontFamily: fonts.medium,
     color: colors.text.secondary,
     marginBottom: spacing.xs,
   },
@@ -372,7 +378,7 @@ const styles = StyleSheet.create({
   },
   toggleTitle: {
     fontSize: fontSize.base,
-    fontWeight: '500',
+    fontFamily: fonts.medium,
     color: colors.text.primary,
   },
   toggleDesc: {

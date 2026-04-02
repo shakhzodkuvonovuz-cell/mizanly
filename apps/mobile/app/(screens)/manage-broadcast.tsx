@@ -14,7 +14,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Avatar } from '@/components/ui/Avatar';
 import { TabSelector } from '@/components/ui/TabSelector';
 import { Icon } from '@/components/ui/Icon';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { broadcastApi, followsApi } from '@/services/api';
 import type { User } from '@/types';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
@@ -56,8 +56,13 @@ export default function ManageBroadcastScreen() {
     onSuccess: () => {
       haptic.success();
       showToast({ message: t('screens.manage-broadcast.promotedSuccess'), variant: 'success' });
+      queryClient.invalidateQueries({ queryKey: ['simulated-subscribers'] });
+      queryClient.invalidateQueries({ queryKey: ['broadcast-channel', params.channelId] });
     },
-    onError: () => haptic.error(),
+    onError: () => {
+      haptic.error();
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+    },
   });
 
   const demoteMutation = useMutation({
@@ -65,8 +70,13 @@ export default function ManageBroadcastScreen() {
     onSuccess: () => {
       haptic.success();
       showToast({ message: t('screens.manage-broadcast.demotedSuccess'), variant: 'success' });
+      queryClient.invalidateQueries({ queryKey: ['simulated-subscribers'] });
+      queryClient.invalidateQueries({ queryKey: ['broadcast-channel', params.channelId] });
     },
-    onError: () => haptic.error(),
+    onError: () => {
+      haptic.error();
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+    },
   });
 
   const removeMutation = useMutation({
@@ -74,11 +84,18 @@ export default function ManageBroadcastScreen() {
     onSuccess: () => {
       haptic.success();
       showToast({ message: t('screens.manage-broadcast.removedSuccess'), variant: 'success' });
+      queryClient.invalidateQueries({ queryKey: ['simulated-subscribers'] });
+      queryClient.invalidateQueries({ queryKey: ['broadcast-channel', params.channelId] });
     },
-    onError: () => haptic.error(),
+    onError: () => {
+      haptic.error();
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+    },
   });
 
   const handleAction = (user: User) => {
+    if (promoteMutation.isPending || demoteMutation.isPending || removeMutation.isPending) return;
+    haptic.tick();
     if (activeTab === 'subscribers') {
       Alert.alert(
         t('screens.manage-broadcast.manageSubscriber'),
@@ -137,17 +154,12 @@ export default function ManageBroadcastScreen() {
   }
 
   const renderItem = ({ item, index }: { item: User; index: number }) => (
-    <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index * 50, 300)).duration(400)}>
       <LinearGradient
         colors={colors.gradient.cardDark}
         style={styles.row}
       >
-        <LinearGradient
-          colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-          style={styles.iconBg}
-        >
-          <Icon name="user" size="sm" color={colors.emerald} />
-        </LinearGradient>
+        <Avatar uri={item.avatarUrl ?? null} name={item.displayName || item.username || ''} size="md" />
         <View style={styles.info}>
           <Text style={[styles.name, { color: tc.text.primary }]} numberOfLines={1}>{item.displayName || item.username}</Text>
           <Text style={[styles.username, { color: tc.text.secondary }]} numberOfLines={1}>@{item.username}</Text>
@@ -196,7 +208,7 @@ export default function ManageBroadcastScreen() {
           refreshControl={
             <BrandedRefreshControl
               refreshing={refreshing}
-              onRefresh={async () => { setRefreshing(true); await refetch(); setRefreshing(false); }}
+              onRefresh={async () => { setRefreshing(true); haptic.navigate(); await refetch(); setRefreshing(false); }}
             />
           }
           ListEmptyComponent={
@@ -266,7 +278,7 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
     color: colors.text.primary,
   },
   username: {

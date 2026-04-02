@@ -1,5 +1,7 @@
 import { useCallback, useState, useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
@@ -10,11 +12,12 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ThreadCard } from '@/components/majlis/ThreadCard';
-import { colors, spacing, fontSize } from '@/theme';
+import { colors, spacing, fontSize, fonts } from '@/theme';
 import { majlisListsApi } from '@/services/api';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import type { Thread, MajlisList } from '@/types';
 
 export default function MajlisListDetailScreen() {
@@ -24,6 +27,8 @@ export default function MajlisListDetailScreen() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const tc = useThemeColors();
+  const haptic = useContextualHaptic();
+  const insets = useSafeAreaInsets();
 
   const listQuery = useQuery({
     queryKey: ['majlis-list', id],
@@ -94,7 +99,30 @@ export default function MajlisListDetailScreen() {
         </Text>
       </View>
     );
-  }, [listData, t]);
+  }, [listData, t, tc]);
+
+  // Error state (#25)
+  if (listQuery.isError || timelineQuery.isError) {
+    return (
+      <ScreenErrorBoundary>
+        <View style={[styles.container, { backgroundColor: tc.bg }]}>
+          <GlassHeader
+            title={t('screens.majlis-lists.title')}
+            leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
+          />
+          <View style={{ paddingTop: insets.top + 52 }}>
+            <EmptyState
+              icon="alert-circle"
+              title={t('common.error')}
+              subtitle={t('common.errorSubtitle')}
+              actionLabel={t('common.retry')}
+              onAction={() => { listQuery.refetch(); timelineQuery.refetch(); }}
+            />
+          </View>
+        </View>
+      </ScreenErrorBoundary>
+    );
+  }
 
   return (
     <ScreenErrorBoundary>
@@ -102,7 +130,7 @@ export default function MajlisListDetailScreen() {
         title={listData?.name ?? t('screens.majlis-lists.title')}
         leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
       />
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <FlashList
           data={threads}
           keyExtractor={keyExtractor}
@@ -113,6 +141,7 @@ export default function MajlisListDetailScreen() {
           ListEmptyComponent={listEmpty}
           ListFooterComponent={listFooter}
           estimatedItemSize={200}
+          contentContainerStyle={{ paddingTop: insets.top + 52 + spacing.md }}
           refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         />
       </View>
@@ -121,26 +150,24 @@ export default function MajlisListDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
   listInfo: {
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
   },
   listName: {
-    color: colors.text.primary,
     fontSize: fontSize.lg,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
   },
   listDesc: {
-    color: colors.text.secondary,
     fontSize: fontSize.sm,
+    fontFamily: fonts.regular,
     marginTop: spacing.xs,
   },
   memberCount: {
-    color: colors.text.tertiary,
     fontSize: fontSize.xs,
+    fontFamily: fonts.regular,
     marginTop: spacing.sm,
   },
   footer: { paddingVertical: spacing.sm },
