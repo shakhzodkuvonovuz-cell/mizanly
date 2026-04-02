@@ -318,7 +318,7 @@ export default function EventDetailScreen() {
             </LinearGradient>
             <View style={styles.infoTextContainer}>
               <Text style={[styles.infoMain, { color: tc.text.primary }]}>{formatEventDate(event.startDate)}</Text>
-              <Text style={styles.infoSub}>{formatEventTime(event.startDate, event.endDate)}</Text>
+              <Text style={[styles.infoSub, { color: tc.text.secondary }]}>{formatEventTime(event.startDate, event.endDate)}</Text>
             </View>
             <Pressable
               style={({ pressed }) => [styles.addToCalendar, { backgroundColor: tc.surface }, pressed && { opacity: 0.7 }]}
@@ -379,7 +379,7 @@ export default function EventDetailScreen() {
               colors={colors.gradient.cardDark}
               style={styles.descriptionCard}
             >
-              <Text style={styles.descriptionText} numberOfLines={descExpanded ? undefined : 4}>{event.description}</Text>
+              <Text style={[styles.descriptionText, { color: tc.text.secondary }]} numberOfLines={descExpanded ? undefined : 4}>{event.description}</Text>
               {!descExpanded && (
                 <Pressable onPress={() => { setDescExpanded(true); haptic.tick(); }} accessibilityRole="button">
                   <Text style={styles.readMore}>{t('common.readMore')}</Text>
@@ -416,7 +416,7 @@ export default function EventDetailScreen() {
                           style={styles.rsvpGradient}
                         >
                           <Icon name="check" size="xs" color={tc.text.primary} style={styles.rsvpCheck} />
-                          <Text style={styles.rsvpButtonTextActive}>{label}</Text>
+                          <Text style={[styles.rsvpButtonTextActive, { color: '#fff' }]}>{label}</Text>
                         </LinearGradient>
                       ) : isSelected && status === 'maybe' ? (
                         <LinearGradient
@@ -424,12 +424,12 @@ export default function EventDetailScreen() {
                           style={styles.rsvpGradient}
                         >
                           <Icon name="check" size="xs" color={tc.text.primary} style={styles.rsvpCheck} />
-                          <Text style={styles.rsvpButtonTextActive}>{label}</Text>
+                          <Text style={[styles.rsvpButtonTextActive, { color: '#fff' }]}>{label}</Text>
                         </LinearGradient>
                       ) : (
                         <View style={styles.rsvpInner}>
                           {isSelected && <Icon name="check" size="xs" color={tc.text.secondary} style={styles.rsvpCheck} />}
-                          <Text style={styles_result.text}>{label}</Text>
+                          <Text style={[styles_result.text, { color: tc.text.secondary }]}>{label}</Text>
                         </View>
                       )}
                     </Pressable>
@@ -455,7 +455,7 @@ export default function EventDetailScreen() {
               </LinearGradient>
               <Text style={[styles.attendeesTitle, { color: tc.text.primary }]}>{t('events.attendees')}</Text>
               <View style={styles.attendeesCount}>
-                <Text style={styles.countBadge}>
+                <Text style={[styles.countBadge, { color: tc.text.secondary }]}>
                   {goingCount} {t('events.going')} · {maybeCount} {t('events.maybe')}
                 </Text>
               </View>
@@ -480,7 +480,7 @@ export default function EventDetailScreen() {
                   ))}
                   {remainingAttendees > 0 && (
                     <View style={[styles.moreAvatar, { borderColor: tc.bg, backgroundColor: tc.surface }]}>
-                      <Text style={styles.moreText}>+{remainingAttendees}</Text>
+                      <Text style={[styles.moreText, { color: tc.text.secondary }]}>+{remainingAttendees}</Text>
                     </View>
                   )}
                 </View>
@@ -496,7 +496,7 @@ export default function EventDetailScreen() {
                   }}
                   accessibilityRole="button"
                 >
-                  <Text style={styles.seeAllText}>{t('events.seeAllAttendees')}</Text>
+                  <Text style={[styles.seeAllText, { color: tc.text.secondary }]}>{t('events.seeAllAttendees')}</Text>
                   <Icon name="chevron-right" size="xs" color={tc.text.secondary} />
                 </Pressable>
               </>

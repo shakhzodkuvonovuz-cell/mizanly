@@ -229,7 +229,7 @@ function LocationPickerContent() {
                   <View style={styles.coordsRow}>
                     <Text style={[styles.coordLabel, { color: tc.text.tertiary }]}>{t('location.lat', 'Lat')}</Text>
                     <Text style={[styles.coordValue, { color: tc.text.primary }]}>{location.latitude.toFixed(6)}</Text>
-                    <Text style={[styles.coordLabel, styles.coordLabelRight]}>
+                    <Text style={[styles.coordLabel, styles.coordLabelRight, { color: tc.text.tertiary }]}>
                       {t('location.lng', 'Lng')}
                     </Text>
                     <Text style={[styles.coordValue, { color: tc.text.primary }]}>{location.longitude.toFixed(6)}</Text>
@@ -273,7 +273,7 @@ function LocationPickerContent() {
               <View style={styles.coordInputWrapper}>
                 <Text style={[styles.inputLabel, { color: tc.text.secondary }]}>{t('location.latitude', 'Latitude')}</Text>
                 <TextInput
-                  style={[styles.coordInput, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
+                  style={[styles.coordInput, { backgroundColor: tc.bgCard, borderColor: tc.border, color: tc.text.primary }]}
                   placeholder="e.g. 21.4225"
                   placeholderTextColor={tc.text.tertiary}
                   value={manualLat}
@@ -286,7 +286,7 @@ function LocationPickerContent() {
               <View style={styles.coordInputWrapper}>
                 <Text style={[styles.inputLabel, { color: tc.text.secondary }]}>{t('location.longitude', 'Longitude')}</Text>
                 <TextInput
-                  style={[styles.coordInput, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
+                  style={[styles.coordInput, { backgroundColor: tc.bgCard, borderColor: tc.border, color: tc.text.primary }]}
                   placeholder="e.g. 39.8262"
                   placeholderTextColor={tc.text.tertiary}
                   value={manualLng}
