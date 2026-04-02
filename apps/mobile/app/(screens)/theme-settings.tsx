@@ -391,7 +391,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   divider: {
     height: 0.5,
-    backgroundColor: colors.active.white6,
+    backgroundColor: tc.border,
     marginHorizontal: spacing.md,
   },
   note: {

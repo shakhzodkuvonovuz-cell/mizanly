@@ -676,7 +676,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: tc.bgElevated, borderRadius: radius.full,
   },
   sendBtn: { color: colors.emerald, fontSize: fontSize.base, fontWeight: '700' },
-  sendBtnDisabled: { color: colors.text.tertiary },
+  sendBtnDisabled: { color: tc.text.tertiary },
   stickyBar: {
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: 'rgba(255,255,255,0.08)',
