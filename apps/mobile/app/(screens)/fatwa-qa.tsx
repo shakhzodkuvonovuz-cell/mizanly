@@ -35,6 +35,7 @@ export default function FatwaQAScreen() {
   const [question, setQuestion] = useState('');
   const [askMadhab, setAskMadhab] = useState('any');
   const [madhabSheetOpen, setMadhabSheetOpen] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const tc = useThemeColors();
 
   const questionsQuery = useInfiniteQuery<{ data?: Array<Record<string, unknown>>; meta?: { cursor: string | null; hasMore: boolean } }>({
@@ -73,7 +74,11 @@ export default function FatwaQAScreen() {
     const isAnswered = item.status === 'answered';
     return (
       <Animated.View entering={FadeInUp.delay(Math.min(index * 60, 300)).duration(300)}>
-        <View style={[styles.questionCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
+        <Pressable
+          style={[styles.questionCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
+          onPress={() => { setExpandedId(expandedId === item.id as string ? null : item.id as string); haptic.tick(); }}
+          accessibilityRole="button"
+        >
           <View style={styles.questionHeader}>
             <Avatar uri={asker?.avatarUrl as string | null} name={asker?.displayName as string || ''} size="sm" />
             <View style={{ flex: 1 }}>
@@ -91,14 +96,14 @@ export default function FatwaQAScreen() {
               </Text>
             </View>
           </View>
-          <Text style={[styles.questionText, { color: tc.text.primary }]}>{item.question as string}</Text>
+          <Text style={[styles.questionText, { color: tc.text.primary }]} numberOfLines={expandedId === item.id as string ? undefined : 3}>{item.question as string}</Text>
           {isAnswered && (item.answer || item.answerText) ? (
             <View style={styles.answerCard}>
               <Icon name="check-circle" size="sm" color={colors.emerald} />
-              <Text style={[styles.answerText, { color: tc.text.secondary }]} numberOfLines={3}>{String(item.answer || item.answerText)}</Text>
+              <Text style={[styles.answerText, { color: tc.text.secondary }]} numberOfLines={expandedId === item.id as string ? undefined : 3}>{String(item.answer || item.answerText)}</Text>
             </View>
           ) : null}
-        </View>
+        </Pressable>
       </Animated.View>
     );
   };

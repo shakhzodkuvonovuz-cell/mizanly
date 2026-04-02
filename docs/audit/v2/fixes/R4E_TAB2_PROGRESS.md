@@ -5,17 +5,17 @@
 - **D22:** 59 findings (location-picker, maintenance, majlis-list/[id], majlis-lists, manage-broadcast)
 - **Total:** 116 findings
 
-## Final Accounting (after self-audit honesty pass)
+## Final Accounting (after 2 honesty passes)
 | Status | Count |
 |--------|-------|
-| FIXED | 78 |
-| ALREADY_FIXED | 5 |
-| NOT_A_BUG | 25 |
-| DEFERRED | 8 |
+| FIXED | 80 |
+| ALREADY_FIXED | 6 |
+| NOT_A_BUG | 24 |
+| DEFERRED | 6 |
 | **Total** | **116** |
 
-**Equation: 78 + 5 + 25 + 8 = 116 ✓**
-**Deferral rate: 8/116 = 6.9% (under 15% cap)**
+**Equation: 80 + 6 + 24 + 6 = 116 ✓**
+**Deferral rate: 6/116 = 5.2% (under 15% cap)**
 
 ### Self-audit corrections (6 items reclassified → FIXED)
 - D17 #24: Calendar day tap — was lazy NOT_A_BUG, now FIXED (islamicApi.logFast accepts any date)
@@ -74,7 +74,7 @@
 | 31 | L | NOT_A_BUG | Hardcoded colors in StyleSheet are dead code — all are overridden in JSX via tc.* inline styles. Removing them from StyleSheet is cosmetic. |
 | 32 | L | FIXED | Added haptic.tick() on submit button press |
 | 33 | L | NOT_A_BUG | State persistence across navigation requires global state manager or route params — this is a feature enhancement, not a bug. All similar screens (search, filters) lose state on back navigation. |
-| 34 | I | NOT_A_BUG | Making question cards tappable requires a detail screen that doesn't exist. This is a feature request for a new screen. |
+| 34 | I | FIXED | Question cards now tappable — tap to expand/collapse full question and answer text |
 | 35 | I | FIXED | Changed delay from `index * 60` to `Math.min(index * 60, 300)` |
 
 ### flipside.tsx (11 findings)
@@ -170,7 +170,7 @@
 | 42 | M | FIXED | Per-item delete indicator via deletingId state + opacity — same fix as #38 |
 | 43 | L | FIXED | Changed delay from `index * 50` to `Math.min(index * 50, 300)` |
 | 44 | I | NOT_A_BUG | Positive finding — EmptyState with action button correct |
-| 45 | L | DEFERRED | Keyboard avoidance inside BottomSheet depends on BottomSheet's internal implementation — may already handle it via KeyboardAvoidingView or react-native-bottom-sheet's keyboard behavior |
+| 45 | L | ALREADY_FIXED | BottomSheet component already wraps content in KeyboardAvoidingView (line 174 of BottomSheet.tsx) |
 | 46 | I | NOT_A_BUG | Positive finding — navigation pattern correct |
 
 ### manage-broadcast.tsx (13 findings)
