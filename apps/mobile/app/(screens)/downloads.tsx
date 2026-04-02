@@ -428,16 +428,20 @@ export default function DownloadsScreen() {
             icon={<Icon name="trash" size="sm" color={colors.error} />}
             destructive
             onPress={() => {
+              const itemToDelete = sheetItem;
               handleSheetClose();
-              if (sheetItem) {
-                Alert.alert(t('downloads.deleteConfirm'), '', [
-                  { text: t('common.cancel'), style: 'cancel' },
-                  {
-                    text: t('downloads.delete'),
-                    style: 'destructive',
-                    onPress: () => deleteMutation.mutate(sheetItem.id),
-                  },
-                ]);
+              // Delay Alert to let BottomSheet dismiss first, avoiding stacked modals
+              if (itemToDelete) {
+                setTimeout(() => {
+                  Alert.alert(t('downloads.deleteConfirm'), '', [
+                    { text: t('common.cancel'), style: 'cancel' },
+                    {
+                      text: t('downloads.delete'),
+                      style: 'destructive',
+                      onPress: () => deleteMutation.mutate(itemToDelete.id),
+                    },
+                  ]);
+                }, 300);
               }
             }}
           />

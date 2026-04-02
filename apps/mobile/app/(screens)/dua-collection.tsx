@@ -51,9 +51,10 @@ const CATEGORY_ICONS: Record<string, IconName> = {
   general: 'heart',
 };
 
-function DuaCard({ dua, language, onBookmark, onShare, onPlayAudio }: {
+function DuaCard({ dua, language, index, onBookmark, onShare, onPlayAudio }: {
   dua: Dua;
   language: string;
+  index: number;
   onBookmark: () => void;
   onShare: () => void;
   onPlayAudio: () => void;
@@ -63,7 +64,7 @@ function DuaCard({ dua, language, onBookmark, onShare, onPlayAudio }: {
   const translation = typeof dua.translation === 'string' ? dua.translation : ((dua.translation as Record<string, string>)[language] || (dua.translation as Record<string, string>).en || '');
 
   return (
-    <Animated.View entering={FadeInUp.delay(50).duration(350).springify()} style={[styles.duaCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index * 60, 600)).duration(350).springify()} style={[styles.duaCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
       {/* Arabic text */}
       <Text style={[styles.arabicText, { color: tc.text.primary }]}>{dua.arabicText}</Text>
 
@@ -244,6 +245,7 @@ export default function DuaCollectionScreen() {
       {!showBookmarked && categories.length > 0 && (
         <FlatList
           horizontal
+          inverted={isRTL}
           showsHorizontalScrollIndicator={false}
           data={[null, ...categories]}
           keyExtractor={(item) => item ?? 'all'}
@@ -283,7 +285,7 @@ export default function DuaCollectionScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top', 'bottom']}>
         <GlassHeader
           title={t('duas.title')}
           leftAction={{
@@ -305,9 +307,10 @@ export default function DuaCollectionScreen() {
         <FlatList
           data={duas}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
             <DuaCard
               dua={item}
+              index={index}
               language={locale}
               onBookmark={() => handleBookmark(item.id)}
               onShare={() => handleShare(item)}

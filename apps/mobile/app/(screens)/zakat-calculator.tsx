@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,8 +8,8 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  Dimensions,
   Share,
+  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -27,6 +27,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { rtlFlexRow } from '@/utils/rtl';
 import { islamicApi } from '@/services/islamicApi';
 
 // Dimensions.get('window') width removed — was unused dead code
@@ -124,6 +125,7 @@ function InputCard({
   delay?: number;
 }) {
   const tc = useThemeColors();
+  const { isRTL: inputIsRTL } = useTranslation();
   const styles = createStyles(tc);
   const [isFocused, setIsFocused] = useState(false);
 
@@ -136,7 +138,7 @@ function InputCard({
           isFocused && styles.inputCardFocused,
         ]}
       >
-        <View style={styles.inputRow}>
+        <View style={[styles.inputRow, { flexDirection: rtlFlexRow(inputIsRTL) }]}>
           <LinearGradient
             colors={['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']}
             style={styles.inputIconBg}
@@ -170,8 +172,9 @@ export default function ZakatCalculatorScreen() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const haptic = useContextualHaptic();
+  const isShareRef = useRef(false);
   const [refreshing, setRefreshing] = useState(false);
   const [currentStep, setCurrentStep] = useState<Step>(1);
 
@@ -256,12 +259,27 @@ export default function ZakatCalculatorScreen() {
 
   const reset = useCallback(() => {
     haptic.delete();
-    setCurrentStep(1);
-    setAssets({ cash: '', gold: '', investments: '', inventory: '', property: '' });
-    setDeductions({ debts: '', expenses: '' });
-  }, [haptic]);
+    Alert.alert(
+      t('screens.zakatCalculator.recalculate'),
+      t('screens.zakatCalculator.resetConfirm', 'This will clear all entered data. Continue?'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('screens.zakatCalculator.recalculate'),
+          style: 'destructive',
+          onPress: () => {
+            setCurrentStep(1);
+            setAssets({ cash: '', gold: '', investments: '', inventory: '', property: '' });
+            setDeductions({ debts: '', expenses: '' });
+          },
+        },
+      ],
+    );
+  }, [haptic, t]);
 
   const handleShare = useCallback(async () => {
+    if (isShareRef.current) return;
+    isShareRef.current = true;
     haptic.send();
     try {
       await Share.share({
@@ -272,6 +290,8 @@ export default function ZakatCalculatorScreen() {
       });
     } catch {
       // User cancelled share
+    } finally {
+      isShareRef.current = false;
     }
   }, [haptic, netWealth, zakatDue, t]);
 
@@ -300,7 +320,7 @@ export default function ZakatCalculatorScreen() {
             <Animated.View entering={FadeInUp.duration(400)}>
               <LinearGradient
                 colors={['rgba(10,123,79,0.15)', 'rgba(28,35,51,0.2)']}
-                style={styles.infoBanner}
+                style={[styles.infoBanner, { flexDirection: rtlFlexRow(isRTL) }]}
               >
                 <LinearGradient
                   colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
@@ -371,7 +391,12 @@ export default function ZakatCalculatorScreen() {
 
                 {/* Next Button */}
                 <Animated.View entering={FadeInUp.delay(400).duration(400)}>
-                  <Pressable accessibilityRole="button" onPress={goNext}>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={goNext}
+                    disabled={totalAssets === 0}
+                    style={({ pressed }) => [{ opacity: totalAssets === 0 ? 0.5 : pressed ? 0.8 : 1 }]}
+                  >
                     <LinearGradient
                       colors={[colors.emerald, colors.emeraldDark]}
                       style={styles.nextButton}
@@ -431,8 +456,8 @@ export default function ZakatCalculatorScreen() {
                 </Animated.View>
 
                 {/* Buttons */}
-                <View style={styles.buttonRow}>
-                  <Pressable accessibilityRole="button" onPress={goBack} style={styles.backButton}>
+                <View style={[styles.buttonRow, { flexDirection: rtlFlexRow(isRTL) }]}>
+                  <Pressable accessibilityRole="button" onPress={goBack} style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.8 }]}>
                     <LinearGradient
                       colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
                       style={styles.backButtonGradient}
@@ -442,7 +467,7 @@ export default function ZakatCalculatorScreen() {
                     </LinearGradient>
                   </Pressable>
 
-                  <Pressable accessibilityRole="button" onPress={goNext} style={styles.calculateButton}>
+                  <Pressable accessibilityRole="button" onPress={goNext} style={({ pressed }) => [styles.calculateButton, pressed && { opacity: 0.8 }]}>
                     <LinearGradient
                       colors={[colors.emerald, colors.emeraldDark]}
                       style={styles.calculateButtonGradient}
@@ -532,8 +557,8 @@ export default function ZakatCalculatorScreen() {
                 </Animated.View>
 
                 {/* Action Buttons */}
-                <View style={styles.buttonRow}>
-                  <Pressable accessibilityRole="button" onPress={reset} style={styles.actionButtonHalf}>
+                <View style={[styles.buttonRow, { flexDirection: rtlFlexRow(isRTL) }]}>
+                  <Pressable accessibilityRole="button" onPress={reset} style={({ pressed }) => [styles.actionButtonHalf, pressed && { opacity: 0.8 }]}>
                     <LinearGradient
                       colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
                       style={styles.actionButtonHalfGradient}
@@ -543,7 +568,7 @@ export default function ZakatCalculatorScreen() {
                     </LinearGradient>
                   </Pressable>
 
-                  <Pressable accessibilityRole="button" onPress={handleShare} style={styles.actionButtonHalf}>
+                  <Pressable accessibilityRole="button" onPress={handleShare} style={({ pressed }) => [styles.actionButtonHalf, pressed && { opacity: 0.8 }]}>
                     <LinearGradient
                       colors={[colors.emerald, colors.emeraldDark]}
                       style={styles.actionButtonHalfGradient}
@@ -579,7 +604,6 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingTop: 100,
   },
   infoBanner: {
-    flexDirection: 'row',
     alignItems: 'center',
     borderRadius: radius.lg,
     borderWidth: 1,
@@ -673,7 +697,6 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     shadowRadius: 8,
   },
   inputRow: {
-    flexDirection: 'row',
     alignItems: 'center',
   },
   inputIconBg: {

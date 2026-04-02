@@ -2277,7 +2277,8 @@
       "belowNisabMessage": "آپ کی خالص دولت نصاب سے کم ہے۔",
       "educationNote": "یہ کیلکولیٹر ایک اندازہ فراہم کرتا ہے۔",
       "recalculate": "دوبارہ حساب لگائیں",
-      "shareMessage": "میرا زکوٰۃ حساب:\nخالص دولت: {{netWealth}}\nزکوٰۃ: {{zakatDue}}\n\nمیزانلی سے حساب"
+      "shareMessage": "میرا زکوٰۃ حساب:\nخالص دولت: {{netWealth}}\nزکوٰۃ: {{zakatDue}}\n\nمیزانلی سے حساب",
+      "resetConfirm": "تمام درج شدہ ڈیٹا صاف ہو جائے گا۔ جاری رکھیں؟"
     }
   },
   "createReel": {

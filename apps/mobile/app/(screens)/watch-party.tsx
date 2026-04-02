@@ -14,7 +14,7 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { useTranslation } from '@/hooks/useTranslation';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { api, videosApi } from '@/services/api';
@@ -350,8 +350,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   partyHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
   liveBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: '#F85149' + '20', paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
   liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#F85149' },
-  liveText: { color: '#F85149', fontSize: fontSize.xs, fontWeight: '700' },
-  partyTitle: { color: tc.text.primary, fontSize: fontSize.md, fontWeight: '600', flex: 1 },
+  liveText: { color: '#F85149', fontSize: fontSize.xs, fontFamily: fonts.bodyBold },
+  partyTitle: { color: tc.text.primary, fontSize: fontSize.md, fontFamily: fonts.bodySemiBold, flex: 1 },
   partyInfo: { gap: spacing.sm, marginBottom: spacing.md },
   hostRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   hostName: { color: tc.text.secondary, fontSize: fontSize.sm },
@@ -360,14 +360,14 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   partyActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   joinBtn: { flex: 1, borderRadius: radius.md, overflow: 'hidden' },
   joinBtnGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, paddingVertical: spacing.md, borderRadius: radius.md },
-  joinBtnText: { color: '#FFF', fontSize: fontSize.base, fontWeight: '600' },
+  joinBtnText: { color: '#FFF', fontSize: fontSize.base, fontFamily: fonts.bodySemiBold },
   shareBtn: { width: 44, height: 44, borderRadius: radius.md, backgroundColor: tc.bgCard, borderWidth: 1, borderColor: tc.border, alignItems: 'center', justifyContent: 'center' },
   createForm: { padding: spacing.base, gap: spacing.md },
-  createTitle: { color: tc.text.primary, fontSize: fontSize.lg, fontWeight: '700' },
+  createTitle: { color: tc.text.primary, fontSize: fontSize.lg, fontFamily: fonts.bodyBold },
   createInput: { backgroundColor: tc.bgCard, borderRadius: radius.md, borderWidth: 1, borderColor: tc.border, padding: spacing.md, color: tc.text.primary, fontSize: fontSize.base },
   createBtn: { borderRadius: radius.md, overflow: 'hidden', marginTop: spacing.sm },
   createBtnGradient: { paddingVertical: spacing.md, alignItems: 'center', borderRadius: radius.md },
-  createBtnText: { color: '#FFF', fontSize: fontSize.md, fontWeight: '700' },
+  createBtnText: { color: '#FFF', fontSize: fontSize.md, fontFamily: fonts.bodyBold },
   selectVideoBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, backgroundColor: tc.bgCard, borderRadius: radius.md, borderWidth: 1, borderColor: tc.border, borderStyle: 'dashed', padding: spacing.lg },
   selectVideoText: { color: colors.emerald, fontSize: fontSize.base, fontWeight: '600' },
   selectedVideoCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: tc.bgCard, borderRadius: radius.md, borderWidth: 1, borderColor: tc.border, padding: spacing.md },

@@ -2277,7 +2277,8 @@
       "belowNisabMessage": "Your net wealth is below the Nisab threshold. Zakat is not obligatory on you at this time. May Allah increase your blessings.",
       "educationNote": "This calculator provides an estimate. Consult a scholar for specific rulings on your assets. Zakat is due on wealth held for one lunar year.",
       "recalculate": "Recalculate",
-      "shareMessage": "My Zakat Calculation:\nNet Wealth: {{netWealth}}\nZakat Due: {{zakatDue}}\n\nCalculated with Mizanly"
+      "shareMessage": "My Zakat Calculation:\nNet Wealth: {{netWealth}}\nZakat Due: {{zakatDue}}\n\nCalculated with Mizanly",
+      "resetConfirm": "This will clear all entered data. Continue?"
     }
   },
   "createReel": {

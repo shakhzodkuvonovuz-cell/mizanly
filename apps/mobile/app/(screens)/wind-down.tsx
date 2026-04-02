@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable, BackHandler, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -31,6 +31,7 @@ export default function WindDownScreen() {
   const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
   const [phase, setPhase] = useState<'breatheIn' | 'breatheOut'>('breatheIn');
+  const isExitingRef = useRef(false);
 
   // Breathing circle animation
   const breathScale = useSharedValue(0.6);
@@ -122,12 +123,15 @@ export default function WindDownScreen() {
             <GradientButton
               label={t('windDown.closeApp')}
               onPress={() => {
-                haptic.navigate();
+                if (isExitingRef.current) return;
+                isExitingRef.current = true;
+                haptic.delete();
                 if (Platform.OS === 'android') {
                   BackHandler.exitApp();
                 } else {
                   router.back();
                 }
+                setTimeout(() => { isExitingRef.current = false; }, 500);
               }}
               fullWidth
             />
@@ -136,8 +140,11 @@ export default function WindDownScreen() {
               accessibilityLabel={t('windDown.continueScrolling')}
               style={({ pressed }) => [styles.closeBtn, pressed && { opacity: 0.7 }]}
               onPress={() => {
+                if (isExitingRef.current) return;
+                isExitingRef.current = true;
                 haptic.navigate();
                 router.back();
+                setTimeout(() => { isExitingRef.current = false; }, 500);
               }}
             >
               <Text style={styles.closeBtnText}>{t('windDown.continueScrolling')}</Text>

@@ -2270,7 +2270,8 @@
       "belowNisabMessage": "Net servetiniz nisab eşiğinin altında.",
       "educationNote": "Bu hesaplayıcı bir tahmin sunar. Belirli hükümler için bir alime danışın.",
       "recalculate": "Yeniden Hesapla",
-      "shareMessage": "Zekat Hesabım:\nNet Servet: {{netWealth}}\nZekat: {{zakatDue}}\n\nMizanly ile hesaplandı"
+      "shareMessage": "Zekat Hesabım:\nNet Servet: {{netWealth}}\nZekat: {{zakatDue}}\n\nMizanly ile hesaplandı",
+      "resetConfirm": "Tüm girilen veriler silinecek. Devam edilsin mi?"
     }
   },
   "createReel": {

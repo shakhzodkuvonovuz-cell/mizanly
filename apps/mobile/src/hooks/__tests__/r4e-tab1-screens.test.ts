@@ -102,6 +102,11 @@ describe('downloads', () => {
     expect(src).not.toContain('viewOriginal');
   });
 
+  test('BottomSheet delete closes sheet before Alert (no stacked modals)', () => {
+    expect(src).toContain('setTimeout');
+    expect(src).toContain('handleSheetClose()');
+  });
+
   test('refresh uses query state, not manual useState', () => {
     expect(src).toContain('isRefreshing');
     expect(src).not.toContain("setRefreshing(true);\n    await");
@@ -160,6 +165,18 @@ describe('dua-collection', () => {
   test('bookmark debounce via bookmarkingRef', () => {
     expect(src).toContain('bookmarkingRef');
     expect(src).toContain('bookmarkingRef.current.has');
+  });
+
+  test('SafeAreaView includes bottom edge', () => {
+    expect(src).toContain("edges={['top', 'bottom']}");
+  });
+
+  test('horizontal FlatList inverted for RTL', () => {
+    expect(src).toContain('inverted={isRTL}');
+  });
+
+  test('DuaCard animation uses index-based delay', () => {
+    expect(src).toContain('Math.min(index * 60, 600)');
   });
 
   test('haptic on play audio is tick not navigate', () => {
@@ -292,6 +309,11 @@ describe('watch-party', () => {
     expect(styles).toContain('tc.text.secondary');
     expect(styles).toContain('tc.text.tertiary');
   });
+
+  test('uses font family tokens not inline fontWeight', () => {
+    expect(styles).toContain('fonts.bodySemiBold');
+    expect(styles).toContain('fonts.bodyBold');
+  });
 });
 
 // ── whats-new.tsx ──
@@ -381,6 +403,15 @@ describe('wind-down', () => {
     expect(src).toContain('pressed && { opacity: 0.7 }');
   });
 
+  test('double-tap guard on both buttons', () => {
+    expect(src).toContain('isExitingRef.current');
+  });
+
+  test('close app uses haptic.delete not haptic.navigate', () => {
+    const closeBlock = src.slice(src.indexOf('closeApp'), src.indexOf('closeApp') + 300);
+    expect(closeBlock).toContain('haptic.delete()');
+  });
+
   test('no fontWeight + fontFamily conflict on title', () => {
     expect(styles).not.toMatch(/title:[\s\S]*?fontWeight.*fontFamily.*fonts\.headingBold/);
   });
@@ -453,6 +484,28 @@ describe('zakat-calculator', () => {
     expect(styles).toContain('tc.text.primary');
     expect(styles).toContain('tc.text.secondary');
     expect(styles).not.toContain("color: colors.text.primary");
+  });
+
+  test('Next button disabled when total assets is 0', () => {
+    expect(src).toContain('disabled={totalAssets === 0}');
+  });
+
+  test('reset requires confirmation dialog', () => {
+    expect(src).toContain('Alert.alert');
+    expect(src).toContain('resetConfirm');
+  });
+
+  test('RTL support: rtlFlexRow imported and used', () => {
+    expect(src).toContain("import { rtlFlexRow }");
+    expect(src).toContain('rtlFlexRow(');
+  });
+
+  test('share double-tap guard', () => {
+    expect(src).toContain('isShareRef.current');
+  });
+
+  test('press feedback on buttons', () => {
+    expect(src).toContain('pressed && { opacity: 0.8 }');
   });
 
   test('zakat formula constants unchanged (Islamic data rule)', () => {

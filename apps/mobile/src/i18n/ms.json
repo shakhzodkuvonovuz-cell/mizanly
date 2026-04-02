@@ -2276,7 +2276,8 @@
       "belowNisabMessage": "Kekayaan bersih anda di bawah had nisab.",
       "educationNote": "Kalkulator ini menyediakan anggaran. Rujuk ulama untuk fatwa khusus.",
       "recalculate": "Kira Semula",
-      "shareMessage": "Kiraan Zakat Saya:\nKekayaan Bersih: {{netWealth}}\nZakat: {{zakatDue}}\n\nDikira dengan Mizanly"
+      "shareMessage": "Kiraan Zakat Saya:\nKekayaan Bersih: {{netWealth}}\nZakat: {{zakatDue}}\n\nDikira dengan Mizanly",
+      "resetConfirm": "Semua data yang dimasukkan akan dipadam. Teruskan?"
     }
   },
   "createReel": {

@@ -2277,7 +2277,8 @@
       "belowNisabMessage": "Votre richesse nette est inférieure au seuil de Nisab.",
       "educationNote": "Ce calculateur fournit une estimation. Consultez un savant pour des avis spécifiques.",
       "recalculate": "Recalculer",
-      "shareMessage": "Mon calcul de Zakat:\nRichesse nette: {{netWealth}}\nZakat due: {{zakatDue}}\n\nCalculé avec Mizanly"
+      "shareMessage": "Mon calcul de Zakat:\nRichesse nette: {{netWealth}}\nZakat due: {{zakatDue}}\n\nCalculé avec Mizanly",
+      "resetConfirm": "Toutes les données saisies seront effacées. Continuer ?"
     }
   },
   "createReel": {

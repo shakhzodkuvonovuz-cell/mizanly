@@ -2276,7 +2276,8 @@
       "belowNisabMessage": "আপনার নিট সম্পদ নিসাব সীমার নিচে।",
       "educationNote": "এই ক্যালকুলেটর একটি অনুমান প্রদান করে।",
       "recalculate": "পুনরায় গণনা",
-      "shareMessage": "আমার যাকাত গণনা:\nনিট সম্পদ: {{netWealth}}\nযাকাত: {{zakatDue}}\n\nমিজানলি দিয়ে গণনা"
+      "shareMessage": "আমার যাকাত গণনা:\nনিট সম্পদ: {{netWealth}}\nযাকাত: {{zakatDue}}\n\nমিজানলি দিয়ে গণনা",
+      "resetConfirm": "সমস্ত প্রবেশকৃত তথ্য মুছে যাবে। চালিয়ে যেতে চান?"
     }
   },
   "createReel": {
