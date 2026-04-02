@@ -100,7 +100,6 @@ const VIDEO_BACKGROUNDS = [
 export default function GreenScreenEditorScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [refreshing, setRefreshing] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<CategoryType>('solid');
   const [selectedBackground, setSelectedBackground] = useState<string>('emerald');
   const [selectedGradient, setSelectedGradient] = useState<string>('forest');
@@ -149,11 +148,6 @@ export default function GreenScreenEditorScreen() {
       recordingGuard.current = false;
     }
   };
-
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 500);
-  }, []);
 
   const categories: { id: CategoryType; label: string }[] = [
     { id: 'solid', label: t('screens.greenScreen.solidColors') },
@@ -409,7 +403,6 @@ export default function GreenScreenEditorScreen() {
 
         <ScrollView
           showsVerticalScrollIndicator={false}
-          refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
           {/* Camera Preview */}
           <Animated.View entering={FadeInUp.delay(50).duration(400)}>
@@ -669,11 +662,10 @@ const styles = StyleSheet.create({
   },
   categoryButtonText: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
   },
   categoryButtonTextActive: {
     color: colors.emerald,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   gridContainer: {
     marginHorizontal: spacing.base,
@@ -687,8 +679,7 @@ const styles = StyleSheet.create({
   },
   gridTitle: {
     fontSize: fontSize.base,
-    fontWeight: '600',
-    color: colors.text.primary,
+    fontFamily: fonts.bodySemiBold,
     marginBottom: spacing.md,
   },
   colorGrid: {
@@ -721,7 +712,6 @@ const styles = StyleSheet.create({
   },
   colorName: {
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
   },
   gradientGrid: {
     flexDirection: 'row',
@@ -761,7 +751,6 @@ const styles = StyleSheet.create({
   },
   gradientName: {
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
   },
   imageGrid: {
     flexDirection: 'row',
@@ -785,7 +774,6 @@ const styles = StyleSheet.create({
   },
   imageName: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
     marginTop: spacing.xs,
     textAlign: 'center',
   },
@@ -819,7 +807,6 @@ const styles = StyleSheet.create({
   },
   videoName: {
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
     marginTop: spacing.xs,
     textAlign: 'center',
   },
@@ -858,19 +845,16 @@ const styles = StyleSheet.create({
   },
   uploadButtonText: {
     fontSize: fontSize.base,
-    color: colors.text.primary,
-    fontWeight: '500',
+    fontFamily: fonts.bodyMedium,
   },
   uploadButtonSubtext: {
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
   },
   recentSection: {
     marginTop: spacing.sm,
   },
   recentTitle: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
     marginBottom: spacing.sm,
   },
   sliderCard: {
@@ -902,8 +886,7 @@ const styles = StyleSheet.create({
   },
   sliderTitle: {
     fontSize: fontSize.base,
-    fontWeight: '600',
-    color: colors.text.primary,
+    fontFamily: fonts.bodySemiBold,
   },
   sliderRow: {
     flexDirection: 'row',
@@ -915,7 +898,6 @@ const styles = StyleSheet.create({
   },
   sliderLabel: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
   },
   sliderValue: {
     fontSize: fontSize.sm,
@@ -945,7 +927,6 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     fontSize: fontSize.base,
-    color: colors.text.secondary,
   },
   applyButton: {
     borderRadius: radius.md,
@@ -959,6 +940,6 @@ const styles = StyleSheet.create({
   applyButtonText: {
     fontSize: fontSize.base,
     color: '#FFF',
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
 });

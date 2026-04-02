@@ -17,7 +17,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { halalApi } from '@/services/halalApi';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 
@@ -178,6 +178,7 @@ export default function HalalFinderScreen() {
           >
             <Text style={[
               styles.chipText,
+              { color: tc.text.secondary },
               selectedCuisine === item && styles.chipTextActive,
             ]}>
               {item}
@@ -256,9 +257,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.bgElevated,
     borderWidth: 1,
-    borderColor: colors.dark.border,
     marginEnd: spacing.sm,
   },
   chipActive: {
@@ -266,21 +265,18 @@ const styles = StyleSheet.create({
     borderColor: colors.emerald,
   },
   chipText: {
-    color: colors.text.secondary,
     fontSize: fontSize.sm,
   },
   chipTextActive: {
     color: '#fff',
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   card: {
     marginHorizontal: spacing.base,
     marginBottom: spacing.md,
     borderRadius: radius.lg,
-    backgroundColor: colors.dark.bgCard,
     overflow: 'hidden',
     borderWidth: 0.5,
-    borderColor: colors.dark.border,
   },
   cardImage: {
     width: '100%',
@@ -297,9 +293,8 @@ const styles = StyleSheet.create({
   },
   cardName: {
     flex: 1,
-    color: colors.text.primary,
     fontSize: fontSize.base,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
   },
   certBadge: {
     backgroundColor: colors.emerald,
@@ -310,7 +305,7 @@ const styles = StyleSheet.create({
   certBadgeText: {
     color: '#fff',
     fontSize: fontSize.xs,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
   },
   verifiedBadge: {
     backgroundColor: colors.active.emerald10,
@@ -321,10 +316,9 @@ const styles = StyleSheet.create({
   verifiedBadgeText: {
     color: colors.emerald,
     fontSize: fontSize.xs,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   cardAddress: {
-    color: colors.text.secondary,
     fontSize: fontSize.sm,
     marginBottom: spacing.sm,
   },
@@ -335,7 +329,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   metaText: {
-    color: colors.text.tertiary,
     fontSize: fontSize.xs,
   },
   ratingRow: {
@@ -346,10 +339,9 @@ const styles = StyleSheet.create({
   ratingText: {
     color: colors.gold,
     fontSize: fontSize.xs,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   distanceText: {
-    color: colors.text.tertiary,
     fontSize: fontSize.xs,
   },
 });

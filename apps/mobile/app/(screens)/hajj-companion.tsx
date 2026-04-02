@@ -66,11 +66,13 @@ function HajjCompanionContent() {
   const guideQuery = useQuery({
     queryKey: ['hajj-guide'],
     queryFn: () => islamicApi.getHajjGuide(),
+    staleTime: 5 * 60_000,
   });
 
   const progressQuery = useQuery({
     queryKey: ['hajj-progress'],
     queryFn: () => islamicApi.getHajjProgress(),
+    staleTime: 30_000,
   });
 
   const createMutation = useMutation({
@@ -427,13 +429,11 @@ const styles = StyleSheet.create({
   },
   startTitle: {
     fontSize: fontSize.xl,
-    fontWeight: '700',
-    color: colors.text.primary,
+    fontFamily: fonts.bodyBold,
     marginTop: spacing.sm,
   },
   startSubtitle: {
     fontSize: fontSize.base,
-    color: colors.text.secondary,
   },
   startButton: {
     marginTop: spacing.base,
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
   },
   startButtonText: {
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
     color: '#fff',
   },
   progressCard: {
@@ -463,19 +463,16 @@ const styles = StyleSheet.create({
   },
   progressDay: {
     fontSize: fontSize.lg,
-    fontWeight: '700',
-    color: colors.text.primary,
+    fontFamily: fonts.bodyBold,
   },
   progressYear: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
   },
   progressBarContainer: {
     gap: spacing.xs,
   },
   progressBarBg: {
     height: 8,
-    backgroundColor: colors.dark.surface,
     borderRadius: radius.full,
     overflow: 'hidden',
   },
@@ -486,7 +483,7 @@ const styles = StyleSheet.create({
   progressPercent: {
     fontSize: fontSize.xs,
     color: colors.gold,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
     textAlign: 'right',
   },
   timeline: {
@@ -509,11 +506,9 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.surface,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: colors.dark.border,
   },
   stepCircleCompleted: {
     backgroundColor: colors.emerald,
@@ -525,8 +520,7 @@ const styles = StyleSheet.create({
   },
   stepNumber: {
     fontSize: fontSize.base,
-    fontWeight: '700',
-    color: colors.text.secondary,
+    fontFamily: fonts.bodyBold,
   },
   stepNumberCurrent: {
     color: colors.gold,
@@ -538,18 +532,16 @@ const styles = StyleSheet.create({
   stepNameAr: {
     fontSize: fontSize.md,
     fontFamily: fonts.arabicBold,
-    color: colors.text.primary,
     textAlign: 'right',
     writingDirection: 'rtl',
   },
   stepName: {
     fontSize: fontSize.sm,
     color: colors.emerald,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   stepDesc: {
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
     lineHeight: 16,
   },
   actions: {
@@ -568,7 +560,7 @@ const styles = StyleSheet.create({
   },
   shareButtonText: {
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
     color: colors.emerald,
   },
   resetButton: {
@@ -577,6 +569,5 @@ const styles = StyleSheet.create({
   },
   resetButtonText: {
     fontSize: fontSize.sm,
-    color: colors.text.tertiary,
   },
 });

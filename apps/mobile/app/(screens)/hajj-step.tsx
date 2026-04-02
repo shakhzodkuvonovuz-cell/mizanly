@@ -267,7 +267,7 @@ function HajjStepContent() {
               <Text
                 style={[
                   styles.checkText,
-                  { color: tc.text.primary },
+                  { color: checklistState[idx] ? tc.text.tertiary : tc.text.primary },
                   checklistState[idx] && styles.checkTextDone,
                 ]}
               >
@@ -342,11 +342,9 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.surface,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: colors.dark.border,
   },
   headerCircleCompleted: {
     backgroundColor: colors.emerald,
@@ -358,8 +356,7 @@ const styles = StyleSheet.create({
   },
   headerCircleText: {
     fontSize: fontSize.lg,
-    fontWeight: '700',
-    color: colors.text.primary,
+    fontFamily: fonts.bodyBold,
   },
   headerText: {
     flex: 1,
@@ -367,19 +364,17 @@ const styles = StyleSheet.create({
   stepNameAr: {
     fontSize: fontSize.xl,
     fontFamily: fonts.arabicBold,
-    color: colors.text.primary,
     textAlign: 'right',
     writingDirection: 'rtl',
   },
   stepNameEn: {
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
     color: colors.emerald,
   },
   descriptionAr: {
     fontSize: fontSize.base,
     fontFamily: fonts.arabic,
-    color: colors.text.secondary,
     lineHeight: 24,
     textAlign: 'right',
     writingDirection: 'rtl',
@@ -387,23 +382,19 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: fontSize.sm,
-    color: colors.text.tertiary,
     lineHeight: 20,
   },
   sectionTitle: {
     fontSize: fontSize.md,
-    fontWeight: '700',
-    color: colors.text.primary,
+    fontFamily: fonts.bodyBold,
     marginBottom: spacing.md,
     marginTop: spacing.sm,
   },
   duaCard: {
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     padding: spacing.base,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: colors.dark.border,
   },
   duaArabic: {
     fontSize: fontSize.lg,
@@ -415,7 +406,6 @@ const styles = StyleSheet.create({
   },
   duaDivider: {
     height: 1,
-    backgroundColor: colors.dark.border,
     marginVertical: spacing.md,
   },
   duaTranslit: {
@@ -427,7 +417,6 @@ const styles = StyleSheet.create({
   },
   duaEnglish: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
     lineHeight: 20,
   },
   duaExpandHint: {
@@ -445,7 +434,6 @@ const styles = StyleSheet.create({
     height: 28,
     borderRadius: radius.sm,
     borderWidth: 2,
-    borderColor: colors.dark.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -456,10 +444,8 @@ const styles = StyleSheet.create({
   checkText: {
     flex: 1,
     fontSize: fontSize.base,
-    color: colors.text.primary,
   },
   checkTextDone: {
-    color: colors.text.tertiary,
     textDecorationLine: 'line-through',
   },
   completeButton: {
@@ -477,7 +463,7 @@ const styles = StyleSheet.create({
   },
   completeButtonText: {
     fontSize: fontSize.base,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     color: '#fff',
   },
 });

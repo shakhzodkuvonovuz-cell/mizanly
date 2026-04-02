@@ -456,7 +456,6 @@ const styles = StyleSheet.create({
   arabicText: {
     fontFamily: fonts.arabic,
     fontSize: fontSize.lg,
-    color: colors.text.primary,
     textAlign: 'right',
     lineHeight: 36,
     marginBottom: spacing.md,
@@ -465,7 +464,6 @@ const styles = StyleSheet.create({
   englishText: {
     fontFamily: fonts.body,
     fontSize: fontSize.base,
-    color: colors.text.primary,
     lineHeight: 24,
     marginBottom: spacing.md,
   },
@@ -475,13 +473,11 @@ const styles = StyleSheet.create({
   sourceText: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.sm,
-    color: colors.text.tertiary,
     marginBottom: spacing.xs,
   },
   narratorText: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
   },
   actionRow: {
     flexDirection: 'row',
@@ -503,7 +499,6 @@ const styles = StyleSheet.create({
   actionLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
   },
   sectionHeader: {
     marginBottom: spacing.md,
@@ -512,7 +507,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.md,
-    color: colors.text.primary,
   },
   previousCard: {
     borderRadius: radius.lg,
@@ -529,7 +523,6 @@ const styles = StyleSheet.create({
   previousEnglish: {
     fontFamily: fonts.body,
     fontSize: fontSize.base,
-    color: colors.text.primary,
     lineHeight: 22,
     marginBottom: spacing.sm,
   },
@@ -541,12 +534,10 @@ const styles = StyleSheet.create({
   previousSource: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
   },
   previousDate: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
   },
   bookmarkIndicator: {
     marginStart: spacing.sm,
@@ -567,7 +558,6 @@ const styles = StyleSheet.create({
   infoText: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
     flex: 1,
     lineHeight: 20,
   },
