@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { View, Text, StyleSheet, Share, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -13,23 +14,29 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { usersApi } from '@/services/api';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
+import { rtlFlexRow } from '@/utils/rtl';
 import * as Clipboard from 'expo-clipboard';
 
 function InviteContent() {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const tc = useThemeColors();
   const haptic = useContextualHaptic();
+  const sharingRef = useRef(false);
 
-  const { data: referralData } = useQuery({
+  const { data: referralData, isLoading, isError, refetch } = useQuery({
     queryKey: ['referral-code'],
     queryFn: () => usersApi.getReferralCode(),
+    staleTime: 300_000,
   });
 
+  const hasData = !!referralData;
   const shareUrl = (referralData as Record<string, unknown>)?.shareUrl as string ?? 'https://mizanly.app';
   const referralCode = (referralData as Record<string, unknown>)?.referralCode as string ?? '';
 
   const handleShare = async () => {
+    if (isLoading || sharingRef.current) return;
+    sharingRef.current = true;
     haptic.send();
     try {
       await Share.share({
@@ -37,7 +44,11 @@ function InviteContent() {
           defaultValue: `Join me on Mizanly - the social app for the Muslim community! Download now: ${shareUrl}`,
         }),
       });
-    } catch {}
+    } catch {
+      // User cancelled sharing — intentionally not showing error
+    } finally {
+      sharingRef.current = false;
+    }
   };
 
   const handleCopyLink = async () => {
@@ -71,7 +82,7 @@ function InviteContent() {
               {t('invite.yourCode', 'Your referral code')}
             </Text>
             <Text style={[styles.codeText, { color: colors.emerald }]}>{referralCode}</Text>
-            <Pressable onPress={handleCopyLink} style={styles.copyBtn} hitSlop={8}>
+            <Pressable onPress={handleCopyLink} hitSlop={8} accessibilityRole="button" style={({ pressed }) => [styles.copyBtn, { flexDirection: rtlFlexRow(isRTL) }, pressed && { opacity: 0.7 }]}>
               <Icon name="link" size="xs" color={tc.text.secondary} />
               <Text style={[styles.copyText, { color: tc.text.secondary }]}>{t('invite.copyLink', 'Copy link')}</Text>
             </Pressable>

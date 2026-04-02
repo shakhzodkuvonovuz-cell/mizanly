@@ -16,9 +16,10 @@ import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { colors, spacing, radius, fontSize } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get('window');
 
 type AspectRatio = 'free' | '1:1' | '4:5' | '16:9';
 type FilterType = 'normal' | 'warm' | 'cool' | 'vivid' | 'noir' | 'emerald' | 'gold' | 'fade' | 'sharp' | 'dreamy';
@@ -58,6 +59,7 @@ export default function ImageEditorScreen() {
   const imageScale = useSharedValue(1);
   const cropFrameScale = useSharedValue(1);
   const tc = useThemeColors();
+  const haptic = useContextualHaptic();
 
   const animatedImageStyle = useAnimatedStyle(() => ({
     transform: [{ scale: imageScale.value }],
@@ -79,7 +81,7 @@ export default function ImageEditorScreen() {
 
   const renderCropTab = () => (
     <View style={styles.tabContent}>
-      <Text style={styles.tabTitle}>{t('screens.imageEditor.aspectRatio')}</Text>
+      <Text style={[styles.tabTitle, { color: tc.text.secondary }]}>{t('screens.imageEditor.aspectRatio')}</Text>
       <View style={styles.aspectRow}>
         {ASPECT_RATIOS.map((ar) => (
           <Pressable
@@ -87,19 +89,19 @@ export default function ImageEditorScreen() {
             accessibilityLabel={t(`screens.imageEditor.aspectRatio.${ar.value}`)}
             key={ar.value}
             style={[styles.aspectButton, aspectRatio === ar.value && styles.aspectButtonActive]}
-            onPress={() => setAspectRatio(ar.value)}
+            onPress={() => { haptic.tick(); setAspectRatio(ar.value); }}
           >
             <View style={[styles.aspectPreview, { borderColor: tc.border }, { aspectRatio: ar.ratio || 1 }]}>
               <View style={[styles.aspectInner, aspectRatio === ar.value && styles.aspectInnerActive]} />
             </View>
-            <Text style={[styles.aspectLabel, aspectRatio === ar.value && styles.aspectLabelActive]}>
+            <Text style={[styles.aspectLabel, { color: tc.text.tertiary }, aspectRatio === ar.value && styles.aspectLabelActive]}>
               {t(`screens.imageEditor.aspectRatio.${ar.value}`)}
             </Text>
           </Pressable>
         ))}
       </View>
 
-      <Text style={styles.tabTitle}>{t('screens.imageEditor.cropFrame')}</Text>
+      <Text style={[styles.tabTitle, { color: tc.text.secondary }]}>{t('screens.imageEditor.cropFrame')}</Text>
       <View style={styles.cropFrameContainer}>
         <LinearGradient
           colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
@@ -130,7 +132,7 @@ export default function ImageEditorScreen() {
             accessibilityLabel={t(`screens.imageEditor.filter.${filter.id}`)}
             key={filter.id}
             style={[styles.filterItem, selectedFilter === filter.id && styles.filterItemActive]}
-            onPress={() => setSelectedFilter(filter.id)}
+            onPress={() => { haptic.tick(); setSelectedFilter(filter.id); }}
           >
             <LinearGradient
               colors={['#2D3548', '#1C2333']}
@@ -139,7 +141,7 @@ export default function ImageEditorScreen() {
               <View style={[styles.filterOverlay, { backgroundColor: filter.color }]} />
               <Text style={styles.filterPreviewText}>Aa</Text>
             </LinearGradient>
-            <Text style={[styles.filterName, selectedFilter === filter.id && styles.filterNameActive]}>
+            <Text style={[styles.filterName, { color: tc.text.tertiary }, selectedFilter === filter.id && styles.filterNameActive]}>
               {t(`screens.imageEditor.filter.${filter.id}`)}
             </Text>
           </Pressable>
@@ -163,7 +165,7 @@ export default function ImageEditorScreen() {
             >
               <Icon name={slider.icon } size="xs" color={colors.emerald} />
             </LinearGradient>
-            <Text style={styles.sliderLabel}>{slider.label}</Text>
+            <Text style={[styles.sliderLabel, { color: tc.text.secondary }]}>{slider.label}</Text>
             <Text style={styles.sliderValue}>{slider.value}%</Text>
           </View>
           <View style={styles.sliderTrack}>
@@ -178,7 +180,7 @@ export default function ImageEditorScreen() {
               />
             </View>
           </View>
-          <View style={[styles.sliderTrackBg, { backgroundColor: tc.border }]} />
+          <View style={[styles.sliderTrackBg, { backgroundColor: tc.surface }]} />
         </View>
       ))}
     </View>
@@ -251,7 +253,7 @@ export default function ImageEditorScreen() {
                 accessibilityLabel={t(`screens.imageEditor.tab.${tab}`)}
                 key={tab}
                 style={[styles.tab, activeTab === tab && styles.tabActive]}
-                onPress={() => setActiveTab(tab)}
+                onPress={() => { haptic.tick(); setActiveTab(tab); }}
               >
                 <LinearGradient
                   colors={activeTab === tab ? ['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)'] : ['transparent', 'transparent']}
@@ -259,7 +261,7 @@ export default function ImageEditorScreen() {
                 >
                   <Icon name={TAB_ICONS[tab] } size="sm" color={activeTab === tab ? colors.emerald : tc.text.tertiary} />
                 </LinearGradient>
-                <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
+                <Text style={[styles.tabText, { color: tc.text.tertiary }, activeTab === tab && styles.tabTextActive]}>
                   {t(`screens.imageEditor.tab.${tab}`)}
                 </Text>
               </Pressable>
@@ -292,7 +294,6 @@ export default function ImageEditorScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
 
   // Preview
@@ -318,7 +319,6 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.1)',
   },
   imagePlaceholderText: {
-    color: colors.text.tertiary,
     fontSize: fontSize.base,
     marginTop: spacing.sm,
   },
@@ -414,7 +414,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   tabText: {
-    color: colors.text.tertiary,
     fontSize: fontSize.xs,
   },
   tabTextActive: {
@@ -435,7 +434,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tabTitle: {
-    color: colors.text.secondary,
     fontSize: fontSize.sm,
     fontWeight: '600',
     marginBottom: spacing.md,
@@ -461,7 +459,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.dark.border,
     borderRadius: radius.sm,
     marginBottom: spacing.xs,
   },
@@ -469,7 +466,6 @@ const styles = StyleSheet.create({
     width: 36,
     height: 28,
     borderWidth: 1,
-    borderColor: colors.text.tertiary,
     borderRadius: 2,
   },
   aspectInnerActive: {
@@ -477,7 +473,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   aspectLabel: {
-    color: colors.text.tertiary,
     fontSize: fontSize.xs,
   },
   aspectLabelActive: {
@@ -539,7 +534,6 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 4,
   },
   cropHint: {
-    color: colors.text.tertiary,
     fontSize: fontSize.xs,
     marginTop: spacing.md,
   },
@@ -574,10 +568,8 @@ const styles = StyleSheet.create({
   filterPreviewText: {
     fontSize: fontSize.lg,
     fontWeight: '700',
-    color: colors.text.primary,
   },
   filterName: {
-    color: colors.text.tertiary,
     fontSize: fontSize.xs,
   },
   filterNameActive: {
@@ -603,7 +595,6 @@ const styles = StyleSheet.create({
     marginEnd: spacing.sm,
   },
   sliderLabel: {
-    color: colors.text.secondary,
     fontSize: fontSize.sm,
     flex: 1,
   },
@@ -620,7 +611,6 @@ const styles = StyleSheet.create({
   },
   sliderTrackBg: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.dark.border,
     zIndex: -1,
   },
   sliderFill: {
@@ -631,11 +621,10 @@ const styles = StyleSheet.create({
   },
   sliderThumb: {
     position: 'absolute',
-    marginLeft: -10,
+    marginStart: -10,
     width: 20,
     height: 20,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.bg,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
