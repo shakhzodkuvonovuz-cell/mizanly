@@ -189,4 +189,90 @@ describe('AdminController', () => {
       expect(featureFlags.deleteFlag).toHaveBeenCalledWith('dark_mode');
     });
   });
+
+  // ── T12 gap: syncSearchIndex endpoint ──
+  describe('syncSearchIndex', () => {
+    it('should delegate to meilisearchSync.syncAll after admin check', async () => {
+      const meilisearchSync = (controller as any).meilisearchSync;
+      meilisearchSync.syncAll = jest.fn().mockResolvedValue({});
+
+      const result = await controller.syncSearchIndex(adminId);
+
+      expect(adminService.verifyAdmin).toHaveBeenCalledWith(adminId);
+      expect(meilisearchSync.syncAll).toHaveBeenCalled();
+      expect(result).toEqual({ message: 'Full Meilisearch sync completed.' });
+    });
+  });
+
+  // ── T12 gap: reconcileCounters endpoint ──
+  describe('reconcileCounters', () => {
+    it('should delegate to counterReconciliation.reconcileAll after admin check', async () => {
+      const counterReconciliation = (controller as any).counterReconciliation;
+      counterReconciliation.reconcileAll = jest.fn().mockResolvedValue({ reconciled: { followCounts: 5 } });
+
+      const result = await controller.reconcileCounters(adminId);
+
+      expect(adminService.verifyAdmin).toHaveBeenCalledWith(adminId);
+      expect(counterReconciliation.reconcileAll).toHaveBeenCalled();
+      expect(result.message).toBe('Counter reconciliation completed.');
+      expect(result.reconciled).toBeDefined();
+    });
+  });
+
+  // ── T12 gap: setFlag validation ──
+  describe('setFlag validation', () => {
+    it('should reject invalid flag value', async () => {
+      const { BadRequestException } = require('@nestjs/common');
+
+      await expect(controller.setFlag(adminId, 'dark_mode', 'invalid')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject flag name longer than 50 chars', async () => {
+      const { BadRequestException } = require('@nestjs/common');
+      const longName = 'a'.repeat(51);
+
+      await expect(controller.setFlag(adminId, longName, 'true')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject empty flag value', async () => {
+      const { BadRequestException } = require('@nestjs/common');
+
+      await expect(controller.setFlag(adminId, 'flag', '')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should accept valid percentage value (50)', async () => {
+      featureFlags.setFlag.mockResolvedValue(undefined as any);
+
+      await controller.setFlag(adminId, 'rollout', '50');
+      expect(featureFlags.setFlag).toHaveBeenCalledWith('rollout', '50');
+    });
+
+    it('should accept "100" as valid value', async () => {
+      featureFlags.setFlag.mockResolvedValue(undefined as any);
+
+      await controller.setFlag(adminId, 'full', '100');
+      expect(featureFlags.setFlag).toHaveBeenCalledWith('full', '100');
+    });
+  });
+
+  // ── T12 gap: non-admin rejection for flag endpoints ──
+  describe('flag endpoints non-admin rejection', () => {
+    it('should reject non-admin for getFlags', async () => {
+      adminService.verifyAdmin.mockRejectedValue(new ForbiddenException('Admin access required'));
+
+      await expect(controller.getFlags('regular-user')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should reject non-admin for setFlag', async () => {
+      adminService.verifyAdmin.mockRejectedValue(new ForbiddenException('Admin access required'));
+
+      await expect(controller.setFlag('regular-user', 'flag', 'true')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should reject non-admin for deleteFlag', async () => {
+      adminService.verifyAdmin.mockRejectedValue(new ForbiddenException('Admin access required'));
+
+      await expect(controller.deleteFlag('regular-user', 'flag')).rejects.toThrow(ForbiddenException);
+    });
+  });
 });

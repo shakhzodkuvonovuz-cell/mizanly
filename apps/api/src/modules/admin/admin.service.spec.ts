@@ -553,6 +553,216 @@ describe('AdminService', () => {
     });
   });
 
+  // ── T12 gap: resolveReport TEMP_BAN path ──
+  describe('resolveReport (extended paths)', () => {
+    it('should trigger temp ban (72h) when action is TEMP_BAN', async () => {
+      prisma.user.findUnique
+        .mockResolvedValueOnce({ role: 'ADMIN' }) // verifyAdmin (resolveReport)
+        .mockResolvedValueOnce({ role: 'ADMIN' }) // verifyAdmin (banUser)
+        .mockResolvedValueOnce({ id: 'target-1', role: 'USER', clerkId: null });
+      prisma.report.findUnique.mockResolvedValue({
+        reportedPostId: null, reportedCommentId: null, reportedMessageId: null,
+        reportedUserId: 'target-1', reportedThreadId: null, reportedReelId: null, reportedVideoId: null,
+      });
+      prisma.report.update.mockResolvedValue({ id: 'r1', status: 'RESOLVED' });
+      prisma.user.update.mockResolvedValue({ id: 'target-1', username: 't', displayName: 'T', isBanned: true, banExpiresAt: new Date(), banReason: 'Temp' });
+      prisma.post.findMany = jest.fn().mockResolvedValue([]);
+      prisma.thread.findMany = jest.fn().mockResolvedValue([]);
+      prisma.reel.findMany = jest.fn().mockResolvedValue([]);
+      prisma.video.findMany = jest.fn().mockResolvedValue([]);
+
+      await service.resolveReport('admin-id', 'r1', 'TEMP_BAN', 'Temp');
+
+      expect(prisma.user.update).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ isBanned: true, banExpiresAt: expect.any(Date) }),
+      }));
+    });
+
+    it('should increment warningsCount when action is MUTE', async () => {
+      prisma.user.findUnique.mockResolvedValueOnce({ role: 'ADMIN' });
+      prisma.report.findUnique.mockResolvedValue({
+        reportedPostId: null, reportedCommentId: null, reportedMessageId: null,
+        reportedUserId: 'target-1', reportedThreadId: null, reportedReelId: null, reportedVideoId: null,
+      });
+      prisma.report.update.mockResolvedValue({ id: 'r1', status: 'RESOLVED' });
+      prisma.user.update = jest.fn().mockResolvedValue({});
+
+      await service.resolveReport('admin-id', 'r1', 'MUTE');
+
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'target-1' },
+        data: { warningsCount: { increment: 1 } },
+      });
+    });
+
+    it('should remove comment when REMOVE_CONTENT with reportedCommentId', async () => {
+      prisma.user.findUnique.mockResolvedValueOnce({ role: 'ADMIN' });
+      prisma.report.findUnique.mockResolvedValue({
+        reportedPostId: null, reportedCommentId: 'comment-1', reportedMessageId: null,
+        reportedUserId: null, reportedThreadId: null, reportedReelId: null, reportedVideoId: null,
+      });
+      prisma.report.update.mockResolvedValue({ id: 'r1', status: 'RESOLVED' });
+
+      await service.resolveReport('admin-id', 'r1', 'REMOVE_CONTENT');
+
+      expect(prisma.comment.update).toHaveBeenCalledWith({
+        where: { id: 'comment-1' },
+        data: { isRemoved: true },
+      });
+    });
+
+    it('should remove message when REMOVE_CONTENT with reportedMessageId', async () => {
+      prisma.user.findUnique.mockResolvedValueOnce({ role: 'ADMIN' });
+      prisma.report.findUnique.mockResolvedValue({
+        reportedPostId: null, reportedCommentId: null, reportedMessageId: 'msg-1',
+        reportedUserId: null, reportedThreadId: null, reportedReelId: null, reportedVideoId: null,
+      });
+      prisma.report.update.mockResolvedValue({ id: 'r1', status: 'RESOLVED' });
+
+      await service.resolveReport('admin-id', 'r1', 'REMOVE_CONTENT');
+
+      expect(prisma.message.update).toHaveBeenCalledWith({
+        where: { id: 'msg-1' },
+        data: { isDeleted: true },
+      });
+    });
+
+    it('should send WARNING notification to reported user', async () => {
+      prisma.user.findUnique.mockResolvedValueOnce({ role: 'ADMIN' });
+      prisma.report.findUnique.mockResolvedValue({
+        reportedPostId: null, reportedCommentId: null, reportedMessageId: null,
+        reportedUserId: 'warned-user', reportedThreadId: null, reportedReelId: null, reportedVideoId: null,
+      });
+      prisma.report.update.mockResolvedValue({ id: 'r1' });
+
+      const notificationsService = (service as any).notificationsService;
+
+      await service.resolveReport('admin-id', 'r1', 'WARN', 'First warning');
+
+      expect(notificationsService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'warned-user',
+          type: 'SYSTEM',
+          title: 'Content Warning',
+        }),
+      );
+    });
+
+    it('should create moderation log for non-DISMISS actions', async () => {
+      prisma.user.findUnique.mockResolvedValueOnce({ role: 'ADMIN' });
+      prisma.report.findUnique.mockResolvedValue({
+        reportedPostId: null, reportedCommentId: null, reportedMessageId: null,
+        reportedUserId: 'u1', reportedThreadId: null, reportedReelId: null, reportedVideoId: null,
+      });
+      prisma.report.update.mockResolvedValue({ id: 'r1' });
+
+      await service.resolveReport('admin-id', 'r1', 'WARN', 'note');
+
+      expect(prisma.moderationLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          moderatorId: 'admin-id',
+          action: 'WARNING',
+          reportId: 'r1',
+        }),
+      });
+    });
+
+    it('should create adminAuditLog', async () => {
+      prisma.user.findUnique.mockResolvedValueOnce({ role: 'ADMIN' });
+      prisma.report.findUnique.mockResolvedValue({
+        reportedPostId: null, reportedCommentId: null, reportedMessageId: null,
+        reportedUserId: null, reportedThreadId: null, reportedReelId: null, reportedVideoId: null,
+      });
+      prisma.report.update.mockResolvedValue({ id: 'r1' });
+
+      await service.resolveReport('admin-id', 'r1', 'DISMISS');
+
+      expect(prisma.adminAuditLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          adminId: 'admin-id',
+          action: 'RESOLVE_REPORT_DISMISS',
+          targetType: 'report',
+          targetId: 'r1',
+        }),
+      });
+    });
+
+    it('should throw BadRequestException for unknown action', async () => {
+      prisma.user.findUnique.mockResolvedValueOnce({ role: 'ADMIN' });
+      prisma.report.findUnique.mockResolvedValue({
+        reportedPostId: null, reportedCommentId: null, reportedMessageId: null,
+        reportedUserId: null, reportedThreadId: null, reportedReelId: null, reportedVideoId: null,
+      });
+
+      const { BadRequestException } = require('@nestjs/common');
+      await expect(service.resolveReport('admin-id', 'r1', 'INVALID_ACTION')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  // ── T12 gap: banUser auditLog + permanent ban ──
+  describe('banUser (extended)', () => {
+    it('should set banExpiresAt to null for permanent ban (no duration)', async () => {
+      prisma.user.findUnique
+        .mockResolvedValueOnce({ role: 'ADMIN' })
+        .mockResolvedValueOnce({ id: 'user-1', role: 'USER', clerkId: null });
+      prisma.user.update.mockResolvedValue({ id: 'user-1', username: 'u1', displayName: 'U1', isBanned: true, banExpiresAt: null, banReason: 'Perm' });
+      prisma.post.findMany = jest.fn().mockResolvedValue([]);
+      prisma.thread.findMany = jest.fn().mockResolvedValue([]);
+      prisma.reel.findMany = jest.fn().mockResolvedValue([]);
+      prisma.video.findMany = jest.fn().mockResolvedValue([]);
+
+      await service.banUser('admin-id', 'user-1', 'Perm');
+
+      expect(prisma.user.update).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ banExpiresAt: null }),
+      }));
+    });
+
+    it('should create adminAuditLog on ban', async () => {
+      prisma.user.findUnique
+        .mockResolvedValueOnce({ role: 'ADMIN' })
+        .mockResolvedValueOnce({ id: 'user-1', role: 'USER', clerkId: null });
+      prisma.user.update.mockResolvedValue({ id: 'user-1', username: 'u1', displayName: 'U1', isBanned: true, banExpiresAt: null, banReason: 'Bad' });
+      prisma.post.findMany = jest.fn().mockResolvedValue([]);
+      prisma.thread.findMany = jest.fn().mockResolvedValue([]);
+      prisma.reel.findMany = jest.fn().mockResolvedValue([]);
+      prisma.video.findMany = jest.fn().mockResolvedValue([]);
+
+      await service.banUser('admin-id', 'user-1', 'Bad');
+
+      expect(prisma.adminAuditLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          adminId: 'admin-id',
+          action: 'BAN_USER',
+          targetType: 'user',
+          targetId: 'user-1',
+        }),
+      });
+    });
+  });
+
+  // ── T12 gap: unbanUser publishWorkflow ──
+  describe('unbanUser (extended)', () => {
+    it('should re-index unbanned user via publishWorkflow.onPublish', async () => {
+      prisma.user.findUnique
+        .mockResolvedValueOnce({ role: 'ADMIN' })
+        .mockResolvedValueOnce({ clerkId: null });
+      prisma.user.update.mockResolvedValue({ id: 'user-1', username: 'u1', displayName: 'U1', bio: 'hi', isBanned: false });
+
+      const publishWorkflow = (service as any).publishWorkflow;
+
+      await service.unbanUser('admin-id', 'user-1');
+
+      expect(publishWorkflow.onPublish).toHaveBeenCalledWith(
+        expect.objectContaining({
+          contentType: 'user',
+          contentId: 'user-1',
+          userId: 'user-1',
+        }),
+      );
+    });
+  });
+
   describe('unbanUser', () => {
     it('should reactivate user and lift Clerk ban', async () => {
       prisma.user.findUnique
