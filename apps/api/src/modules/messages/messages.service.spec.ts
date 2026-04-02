@@ -28,6 +28,8 @@ describe('MessagesService', () => {
               updateMany: jest.fn(),
               createMany: jest.fn(),
               delete: jest.fn(),
+              count: jest.fn().mockResolvedValue(0),
+              aggregate: jest.fn().mockResolvedValue({ _sum: { unreadCount: 0 } }),
             },
             conversation: {
               findUnique: jest.fn(),
@@ -40,6 +42,7 @@ describe('MessagesService', () => {
               findUnique: jest.fn(),
               create: jest.fn(),
               update: jest.fn(),
+              updateMany: jest.fn().mockResolvedValue({ count: 0 }),
               delete: jest.fn(),
               count: jest.fn().mockResolvedValue(0),
             },
@@ -1520,4 +1523,482 @@ describe('MessagesService', () => {
     });
   });
 
+  // ═══════════════════════════════════════════════════════
+  // T06 Critical — Messages Service (28 C-severity gaps)
+  // ═══════════════════════════════════════════════════════
+
+  describe('getTotalUnreadCount (T06 #1)', () => {
+    it('should return aggregated unread count', async () => {
+      prisma.conversationMember.aggregate = jest.fn().mockResolvedValue({ _sum: { unreadCount: 15 } });
+      const result = await service.getTotalUnreadCount('user-1');
+      expect(result).toEqual({ unreadCount: 15 });
+    });
+
+    it('should return 0 when no unread messages', async () => {
+      prisma.conversationMember.aggregate = jest.fn().mockResolvedValue({ _sum: { unreadCount: null } });
+      const result = await service.getTotalUnreadCount('user-1');
+      expect(result).toEqual({ unreadCount: 0 });
+    });
+  });
+
+  describe('getArchivedConversations (T06 #2)', () => {
+    it('should return archived conversations with pagination', async () => {
+      prisma.conversationMember.findMany.mockResolvedValue([
+        { conversation: { id: 'c1' }, isMuted: false, isArchived: true, unreadCount: 0, lastReadAt: null, conversationId: 'c1' },
+      ]);
+      const result = await service.getArchivedConversations('user-1');
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.hasMore).toBe(false);
+    });
+  });
+
+  describe('scheduleMessage (T06 #9)', () => {
+    it('should create a scheduled message in the future', async () => {
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
+      prisma.conversation.findUnique.mockResolvedValue({ isE2E: false });
+      prisma.message.create.mockResolvedValue({ id: 'sched-1', isScheduled: true });
+
+      const futureDate = new Date(Date.now() + 60 * 60 * 1000);
+      const result = await service.scheduleMessage('conv-1', 'user-1', 'hello later', futureDate);
+      expect(result.id).toBe('sched-1');
+      expect(prisma.message.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ isScheduled: true, scheduledAt: futureDate, content: 'hello later' }),
+      }));
+    });
+
+    it('should reject past scheduled date', async () => {
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
+      const pastDate = new Date(Date.now() - 1000);
+      await expect(service.scheduleMessage('conv-1', 'user-1', 'late', pastDate)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject empty content', async () => {
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
+      const futureDate = new Date(Date.now() + 60 * 60 * 1000);
+      await expect(service.scheduleMessage('conv-1', 'user-1', '', futureDate)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject scheduling in E2E conversation', async () => {
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
+      prisma.conversation.findUnique.mockResolvedValue({ isE2E: true });
+      const futureDate = new Date(Date.now() + 60 * 60 * 1000);
+      await expect(service.scheduleMessage('conv-1', 'user-1', 'secret', futureDate)).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('starMessage / unstarMessage / getStarredMessages (T06 #10-12)', () => {
+    it('starMessage should upsert starred entry', async () => {
+      prisma.message.findUnique.mockResolvedValue({ id: 'msg-1' });
+      prisma.starredMessage.upsert.mockResolvedValue({ userId: 'user-1', messageId: 'msg-1' });
+      const result = await service.starMessage('user-1', 'msg-1');
+      expect(result.messageId).toBe('msg-1');
+    });
+
+    it('starMessage should throw when message not found', async () => {
+      prisma.message.findUnique.mockResolvedValue(null);
+      await expect(service.starMessage('user-1', 'bad')).rejects.toThrow(NotFoundException);
+    });
+
+    it('unstarMessage should deleteMany', async () => {
+      prisma.starredMessage.deleteMany.mockResolvedValue({ count: 1 });
+      await service.unstarMessage('user-1', 'msg-1');
+      expect(prisma.starredMessage.deleteMany).toHaveBeenCalledWith({ where: { userId: 'user-1', messageId: 'msg-1' } });
+    });
+
+    it('getStarredMessages should return paginated starred messages', async () => {
+      prisma.starredMessage.findMany.mockResolvedValue([
+        { id: 's1', messageId: 'msg-1', createdAt: new Date() },
+      ]);
+      prisma.message.findMany.mockResolvedValue([{ id: 'msg-1', content: 'hello' }]);
+      const result = await service.getStarredMessages('user-1');
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.hasMore).toBe(false);
+    });
+  });
+
+  describe('pinMessage / unpinMessage / getPinnedMessages (T06 #13-15)', () => {
+    it('pinMessage should pin when under max 3 limit', async () => {
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
+      prisma.message.findUnique.mockResolvedValue({ id: 'msg-1', conversationId: 'conv-1' });
+      prisma.message.count.mockResolvedValue(2);
+      prisma.message.update.mockResolvedValue({ id: 'msg-1', isPinned: true });
+
+      const result = await service.pinMessage('conv-1', 'msg-1', 'user-1');
+      expect(result.isPinned).toBe(true);
+    });
+
+    it('pinMessage should reject when max 3 pins reached', async () => {
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
+      prisma.message.findUnique.mockResolvedValue({ id: 'msg-1', conversationId: 'conv-1' });
+      prisma.message.count.mockResolvedValue(3);
+      await expect(service.pinMessage('conv-1', 'msg-1', 'user-1')).rejects.toThrow(BadRequestException);
+    });
+
+    it('pinMessage should reject cross-conversation message', async () => {
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
+      prisma.message.findUnique.mockResolvedValue({ id: 'msg-1', conversationId: 'conv-OTHER' });
+      await expect(service.pinMessage('conv-1', 'msg-1', 'user-1')).rejects.toThrow(BadRequestException);
+    });
+
+    it('unpinMessage should clear pin status', async () => {
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
+      prisma.message.findUnique.mockResolvedValue({ id: 'msg-1', conversationId: 'conv-1' });
+      prisma.message.update.mockResolvedValue({ isPinned: false, pinnedAt: null });
+      const result = await service.unpinMessage('conv-1', 'msg-1', 'user-1');
+      expect(result.isPinned).toBe(false);
+    });
+
+    it('getPinnedMessages should return pinned messages', async () => {
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
+      prisma.message.findMany.mockResolvedValue([{ id: 'msg-1', isPinned: true }]);
+      const result = await service.getPinnedMessages('conv-1', 'user-1');
+      expect(result).toHaveLength(1);
+    });
+  });
+
+  describe('setDisappearingTimer (T06 #19)', () => {
+    it('should set timer with valid duration', async () => {
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
+      prisma.conversation.update.mockResolvedValue({});
+      const result = await service.setDisappearingTimer('conv-1', 'user-1', 3600);
+      expect(result).toEqual({ success: true, duration: 3600 });
+    });
+
+    it('should clear timer with null', async () => {
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
+      prisma.conversation.update.mockResolvedValue({});
+      const result = await service.setDisappearingTimer('conv-1', 'user-1', null);
+      expect(result).toEqual({ success: true, duration: null });
+    });
+
+    it('should reject negative duration', async () => {
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
+      await expect(service.setDisappearingTimer('conv-1', 'user-1', -1)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject non-integer duration', async () => {
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
+      await expect(service.setDisappearingTimer('conv-1', 'user-1', 3.5)).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('archiveConversationForUser / unarchiveConversationForUser (T06 #20-21)', () => {
+    it('archiveConversationForUser should set isArchived true', async () => {
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
+      prisma.conversationMember.update.mockResolvedValue({ isArchived: true });
+      const result = await service.archiveConversationForUser('conv-1', 'user-1');
+      expect(result).toEqual({ archived: true });
+    });
+
+    it('unarchiveConversationForUser should set isArchived false', async () => {
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
+      prisma.conversationMember.update.mockResolvedValue({ isArchived: false });
+      const result = await service.unarchiveConversationForUser('conv-1', 'user-1');
+      expect(result).toEqual({ archived: false });
+    });
+  });
+
+  describe('generateGroupInviteLink / joinViaInviteLink (T06 #22-23)', () => {
+    it('should generate crypto invite code with Redis+DB', async () => {
+      prisma.conversation.findUnique.mockResolvedValue({ id: 'conv-g', isGroup: true, createdById: 'user-1' });
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'owner' });
+      prisma.conversation.update.mockResolvedValue({});
+      const result = await service.generateGroupInviteLink('conv-g', 'user-1');
+      expect(result.inviteCode).toBeDefined();
+      expect(result.inviteCode.length).toBeGreaterThan(10);
+      expect(result.expiresIn).toBe('7 days');
+    });
+
+    it('should reject non-admin from generating invite', async () => {
+      prisma.conversation.findUnique.mockResolvedValue({ id: 'conv-g', isGroup: true, createdById: 'other' });
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
+      await expect(service.generateGroupInviteLink('conv-g', 'user-1')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('joinViaInviteLink should join when valid invite in Redis', async () => {
+      const redis = (service as any).redis;
+      redis.get.mockResolvedValue('conv-g');
+      prisma.conversationMember.findUnique.mockResolvedValue(null);
+      prisma.conversationMember.create.mockResolvedValue({});
+      const result = await service.joinViaInviteLink('valid-code', 'user-2');
+      expect(result).toEqual({ joined: true, conversationId: 'conv-g' });
+    });
+
+    it('joinViaInviteLink should throw when invite not found', async () => {
+      const redis = (service as any).redis;
+      redis.get.mockResolvedValue(null);
+      prisma.conversation.findFirst.mockResolvedValue(null);
+      await expect(service.joinViaInviteLink('expired', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('joinViaInviteLink should reject banned user', async () => {
+      const redis = (service as any).redis;
+      redis.get.mockResolvedValue('conv-g');
+      prisma.conversationMember.findUnique.mockResolvedValue({ isBanned: true });
+      await expect(service.joinViaInviteLink('code', 'banned-user')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('joinViaInviteLink should reject existing member', async () => {
+      const redis = (service as any).redis;
+      redis.get.mockResolvedValue('conv-g');
+      prisma.conversationMember.findUnique.mockResolvedValue({ isBanned: false });
+      await expect(service.joinViaInviteLink('code', 'existing')).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('changeGroupRole (T06 #24)', () => {
+    it('should change member to admin', async () => {
+      prisma.conversation.findUnique.mockResolvedValue({ id: 'conv-g', isGroup: true, createdById: 'user-1' });
+      prisma.conversationMember.findUnique.mockResolvedValue({ role: 'member' });
+      prisma.conversationMember.update.mockResolvedValue({ role: 'admin' });
+      const result = await service.changeGroupRole('conv-g', 'user-1', 'user-2', 'admin');
+      expect(result.role).toBe('admin');
+    });
+
+    it('should reject invalid role', async () => {
+      await expect(service.changeGroupRole('c', 'u1', 'u2', 'superadmin' as any)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject self-role-change', async () => {
+      prisma.conversation.findUnique.mockResolvedValue({ id: 'c', isGroup: true, createdById: 'u1' });
+      await expect(service.changeGroupRole('c', 'u1', 'u1', 'admin')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject changing owner role', async () => {
+      prisma.conversation.findUnique.mockResolvedValue({ id: 'c', isGroup: true, createdById: 'u1' });
+      prisma.conversationMember.findUnique.mockResolvedValue({ role: 'owner' });
+      await expect(service.changeGroupRole('c', 'u1', 'u-owner', 'member')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should reject non-creator from changing roles', async () => {
+      prisma.conversation.findUnique.mockResolvedValue({ id: 'c', isGroup: true, createdById: 'other' });
+      await expect(service.changeGroupRole('c', 'u1', 'u2', 'admin')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('DM Notes (T06 #25-28)', () => {
+    it('createDMNote should upsert with expiry', async () => {
+      prisma.dMNote.upsert.mockResolvedValue({ userId: 'u1', content: 'note', expiresAt: expect.any(Date) });
+      const result = await service.createDMNote('u1', 'note', 24);
+      expect(result.content).toBe('note');
+      expect(prisma.dMNote.upsert).toHaveBeenCalledWith(expect.objectContaining({
+        where: { userId: 'u1' },
+        create: expect.objectContaining({ content: 'note' }),
+      }));
+    });
+
+    it('getDMNote should return null for expired note', async () => {
+      prisma.dMNote.findUnique.mockResolvedValue({ userId: 'u1', content: 'old', expiresAt: new Date(Date.now() - 1000) });
+      const result = await service.getDMNote('u1');
+      expect(result).toBeNull();
+    });
+
+    it('getDMNote should return valid note', async () => {
+      const note = { userId: 'u1', content: 'hello', expiresAt: new Date(Date.now() + 60000) };
+      prisma.dMNote.findUnique.mockResolvedValue(note);
+      const result = await service.getDMNote('u1');
+      expect(result).toEqual(note);
+    });
+
+    it('deleteDMNote should throw when note not found', async () => {
+      prisma.dMNote.findUnique.mockResolvedValue(null);
+      await expect(service.deleteDMNote('u1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('deleteDMNote should delete existing note', async () => {
+      prisma.dMNote.findUnique.mockResolvedValue({ userId: 'u1', content: 'x' });
+      prisma.dMNote.delete.mockResolvedValue({});
+      const result = await service.deleteDMNote('u1');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('getDMNotesForContacts should return non-expired notes from contacts', async () => {
+      prisma.conversationMember.findMany
+        .mockResolvedValueOnce([{ conversationId: 'c1' }])    // user's memberships
+        .mockResolvedValueOnce([{ userId: 'contact-1' }]);     // other members
+      prisma.block.findMany.mockResolvedValue([]);
+      prisma.dMNote.findMany.mockResolvedValue([{ userId: 'contact-1', content: 'hi' }]);
+      const result = await service.getDMNotesForContacts('u1');
+      expect(result).toHaveLength(1);
+    });
+  });
+
+  describe('promoteToAdmin / demoteFromAdmin / banMember (T06 #5-7)', () => {
+    it('promoteToAdmin should promote member to admin', async () => {
+      prisma.conversationMember.findUnique.mockResolvedValue({ role: 'owner' });
+      prisma.conversationMember.update.mockResolvedValue({ role: 'admin' });
+      const result = await service.promoteToAdmin('c1', 'owner-id', 'target-id');
+      expect(result.role).toBe('admin');
+    });
+
+    it('promoteToAdmin should reject non-owner', async () => {
+      prisma.conversationMember.findUnique.mockResolvedValue({ role: 'admin' });
+      await expect(service.promoteToAdmin('c1', 'admin-id', 'target-id')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('demoteFromAdmin should demote to member', async () => {
+      prisma.conversationMember.findUnique.mockResolvedValue({ role: 'owner' });
+      prisma.conversationMember.update.mockResolvedValue({ role: 'member' });
+      const result = await service.demoteFromAdmin('c1', 'owner-id', 'target-id');
+      expect(result.role).toBe('member');
+    });
+
+    it('banMember should ban target', async () => {
+      prisma.conversationMember.findUnique
+        .mockResolvedValueOnce({ role: 'admin' })  // actor check
+        .mockResolvedValueOnce({ role: 'member' }); // target check
+      prisma.conversationMember.update.mockResolvedValue({ isBanned: true });
+      const result = await service.banMember('c1', 'admin-id', 'target-id');
+      expect(result.isBanned).toBe(true);
+    });
+
+    it('banMember should reject banning the owner', async () => {
+      prisma.conversationMember.findUnique
+        .mockResolvedValueOnce({ role: 'owner' })  // actor
+        .mockResolvedValueOnce({ role: 'owner' }); // target
+      await expect(service.banMember('c1', 'owner-id', 'other-owner')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('banMember should reject non-admin actor', async () => {
+      prisma.conversationMember.findUnique.mockResolvedValue({ role: 'member' });
+      await expect(service.banMember('c1', 'member-id', 'target-id')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('setConversationWallpaper / pinConversation / setCustomTone (T06 #16-18)', () => {
+    it('setConversationWallpaper should update wallpaperUrl', async () => {
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
+      prisma.conversationMember.update.mockResolvedValue({ wallpaperUrl: 'https://img.com/bg.jpg' });
+      const result = await service.setConversationWallpaper('c1', 'u1', 'https://img.com/bg.jpg');
+      expect(result.wallpaperUrl).toBe('https://img.com/bg.jpg');
+    });
+
+    it('pinConversation should set isPinned', async () => {
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
+      prisma.conversationMember.update.mockResolvedValue({ isPinned: true });
+      const result = await service.pinConversation('c1', 'u1', true);
+      expect(result.isPinned).toBe(true);
+    });
+
+    it('setCustomTone should set tone', async () => {
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
+      prisma.conversationMember.update.mockResolvedValue({ customTone: 'chime' });
+      const result = await service.setCustomTone('c1', 'u1', 'chime');
+      expect(result.customTone).toBe('chime');
+    });
+  });
+
+  describe('publishScheduledMessages cron (T06 #8)', () => {
+    it('should publish overdue messages and update conversations', async () => {
+      const redis = (service as any).redis;
+      redis.set.mockResolvedValue('OK');
+      prisma.message.findMany.mockResolvedValue([
+        { id: 'm1', conversationId: 'c1', senderId: 'u1', content: 'scheduled msg', scheduledAt: new Date(Date.now() - 1000) },
+      ]);
+      prisma.message.updateMany.mockResolvedValue({ count: 1 });
+      prisma.conversation.update.mockResolvedValue({});
+      prisma.conversationMember.updateMany.mockResolvedValue({ count: 1 });
+
+      const result = await service.publishScheduledMessages();
+      expect(result).toBe(1);
+      expect(prisma.message.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+        data: { isScheduled: false, scheduledAt: null },
+      }));
+    });
+
+    it('should return 0 when no overdue messages', async () => {
+      const redis = (service as any).redis;
+      redis.set.mockResolvedValue('OK');
+      prisma.message.findMany.mockResolvedValue([]);
+      const result = await service.publishScheduledMessages();
+      expect(result).toBe(0);
+    });
+
+    it('should return 0 when lock not acquired', async () => {
+      const redis = (service as any).redis;
+      redis.set.mockResolvedValue(null);
+      const result = await service.publishScheduledMessages();
+      expect(result).toBe(0);
+    });
+  });
+
+  describe('markDelivered (T06 #78)', () => {
+    it('should set deliveredAt on first delivery', async () => {
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
+      prisma.message.findUnique.mockResolvedValue({ id: 'm1', conversationId: 'c1', deliveredAt: null });
+      prisma.message.update.mockResolvedValue({ id: 'm1', deliveredAt: expect.any(Date) });
+      const result = await service.markDelivered('m1', 'u1');
+      expect(prisma.message.update).toHaveBeenCalledWith({
+        where: { id: 'm1' },
+        data: { deliveredAt: expect.any(Date) },
+      });
+    });
+
+    it('should be idempotent — not re-set deliveredAt', async () => {
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
+      const deliveredAt = new Date('2026-04-01');
+      prisma.message.findUnique.mockResolvedValue({ id: 'm1', conversationId: 'c1', deliveredAt });
+      const result = await service.markDelivered('m1', 'u1');
+      expect(prisma.message.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw when message not found', async () => {
+      prisma.message.findUnique.mockResolvedValue(null);
+      await expect(service.markDelivered('bad', 'u1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getMediaGallery (T06 #79)', () => {
+    it('should return IMAGE/VIDEO messages with pagination', async () => {
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
+      prisma.message.findMany.mockResolvedValue([
+        { id: 'm1', mediaUrl: 'img.jpg', messageType: 'IMAGE', createdAt: new Date() },
+      ]);
+      const result = await service.getMediaGallery('c1', 'u1');
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.hasMore).toBe(false);
+    });
+  });
+
+  describe('searchAllMessages / searchMessages — empty query (T06 #76-77)', () => {
+    it('searchAllMessages should reject empty query', async () => {
+      await expect(service.searchAllMessages('u1', '')).rejects.toThrow(BadRequestException);
+      await expect(service.searchAllMessages('u1', '   ')).rejects.toThrow(BadRequestException);
+    });
+
+    it('searchMessages should reject empty query', async () => {
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
+      await expect(service.searchMessages('c1', 'u1', '')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('removeReaction — not found (T06 #75)', () => {
+    it('should throw NotFoundException when message not found', async () => {
+      prisma.message.findUnique.mockResolvedValue(null);
+      await expect(service.removeReaction('bad', 'u1', '👍')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('addGroupMembers — size limit (T06 #84)', () => {
+    it('should reject when adding would exceed 1024 members', async () => {
+      prisma.conversation.findUnique.mockResolvedValue({ id: 'c1', isGroup: true, createdById: 'u1' });
+      prisma.conversationMember.count.mockResolvedValue(1020);
+      await expect(service.addGroupMembers('c1', 'u1', ['u2', 'u3', 'u4', 'u5', 'u6'])).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject invalid user IDs', async () => {
+      prisma.conversation.findUnique.mockResolvedValue({ id: 'c1', isGroup: true, createdById: 'u1' });
+      prisma.conversationMember.count.mockResolvedValue(5);
+      prisma.user.findMany.mockResolvedValue([]); // no valid users
+      await expect(service.addGroupMembers('c1', 'u1', ['fake-id'])).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('leaveGroup — not found (T06 #86)', () => {
+    it('should throw when conversation not found', async () => {
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
+      prisma.conversation.findUnique.mockResolvedValue(null);
+      await expect(service.leaveGroup('c-bad', 'u1')).rejects.toThrow(NotFoundException);
+    });
+  });
 });

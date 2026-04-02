@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { StickersService } from './stickers.service';
 import { PrismaService } from '../../config/prisma.service';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('StickersService', () => {
@@ -154,10 +154,132 @@ describe('StickersService', () => {
       expect(result).toEqual({ deleted: true });
     });
 
-    it('should throw when non-owner non-admin tries to delete', async () => {
+    it('should throw when non-owner non-admin tries to delete (T06 #94)', async () => {
       prisma.stickerPack.findUnique.mockResolvedValue({ ownerId: 'other-user' });
       prisma.user.findUnique.mockResolvedValue({ role: 'USER' });
-      await expect(service.deletePack('p1', 'user-1')).rejects.toThrow();
+      await expect(service.deletePack('p1', 'user-1')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // T06 — AI Sticker Generation Tests (H65-68, M87-92)
+  // ═══════════════════════════════════════════════════════
+
+  describe('generateSticker (T06 #65)', () => {
+    beforeEach(() => {
+      prisma.generatedSticker = {
+        count: jest.fn().mockResolvedValue(0),
+        create: jest.fn().mockResolvedValue({ id: 'gs-1', imageUrl: 'data:image/svg+xml;base64,...', prompt: 'cat', style: 'cartoon' }),
+      };
+    });
+
+    it('should reject blocked terms (T06 #87)', async () => {
+      await expect(service.generateSticker('u1', 'nude content here')).rejects.toThrow(BadRequestException);
+      await expect(service.generateSticker('u1', 'a violent scene')).rejects.toThrow(BadRequestException);
+      await expect(service.generateSticker('u1', 'porn stuff')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject when daily limit reached (T06 #88)', async () => {
+      prisma.generatedSticker.count.mockResolvedValue(10);
+      await expect(service.generateSticker('u1', 'cute cat')).rejects.toThrow(BadRequestException);
+      await expect(service.generateSticker('u1', 'cute cat')).rejects.toThrow(/limit/i);
+    });
+
+    it('should generate fallback sticker when no API key (T06 #89)', async () => {
+      // Config returns null for ANTHROPIC_API_KEY (default in mock)
+      prisma.generatedSticker.count.mockResolvedValue(0);
+      const result = await service.generateSticker('u1', 'happy star');
+      expect(result.id).toBe('gs-1');
+      expect(result.imageUrl).toBeDefined();
+      expect(prisma.generatedSticker.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ userId: 'u1', prompt: 'happy star', style: 'cartoon' }),
+      }));
+    });
+  });
+
+  describe('saveGeneratedSticker (T06 #66)', () => {
+    beforeEach(() => {
+      prisma.generatedSticker = { findUnique: jest.fn() };
+      prisma.$transaction = jest.fn().mockResolvedValue(undefined);
+    });
+
+    it('should throw NotFoundException when sticker not found (T06 #91)', async () => {
+      prisma.generatedSticker.findUnique.mockResolvedValue(null);
+      await expect(service.saveGeneratedSticker('u1', 'bad')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException when sticker belongs to different user (T06 #91)', async () => {
+      prisma.generatedSticker.findUnique.mockResolvedValue({ id: 'gs-1', userId: 'other' });
+      await expect(service.saveGeneratedSticker('u1', 'gs-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should save sticker via transaction', async () => {
+      prisma.generatedSticker.findUnique.mockResolvedValue({ id: 'gs-1', userId: 'u1', imageUrl: 'url', prompt: 'cat' });
+      const result = await service.saveGeneratedSticker('u1', 'gs-1');
+      expect(result).toEqual({ saved: true });
+      expect(prisma.$transaction).toHaveBeenCalled();
+    });
+  });
+
+  describe('getMyGeneratedStickers (T06 #67)', () => {
+    beforeEach(() => {
+      prisma.generatedSticker = { findMany: jest.fn() };
+    });
+
+    it('should return paginated generated stickers', async () => {
+      prisma.generatedSticker.findMany.mockResolvedValue([
+        { id: 'gs-1', imageUrl: 'url1', prompt: 'cat', style: 'cartoon', createdAt: new Date() },
+      ]);
+      const result = await service.getMyGeneratedStickers('u1');
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.hasMore).toBe(false);
+    });
+
+    it('should set hasMore when more than 20 results', async () => {
+      const items = Array.from({ length: 21 }, (_, i) => ({
+        id: `gs-${i}`, imageUrl: `url${i}`, prompt: `p${i}`, style: 'cartoon', createdAt: new Date(),
+      }));
+      prisma.generatedSticker.findMany.mockResolvedValue(items);
+      const result = await service.getMyGeneratedStickers('u1');
+      expect(result.data).toHaveLength(20);
+      expect(result.meta.hasMore).toBe(true);
+    });
+  });
+
+  describe('getIslamicPresetStickers (T06 #68)', () => {
+    it('should return 20 preset stickers', () => {
+      const result = service.getIslamicPresetStickers();
+      expect(result).toHaveLength(20);
+      expect(result[0].id).toBe('islamic-1');
+      expect(result[0].text).toBe('Alhamdulillah');
+      expect(result[0].style).toBe('calligraphy');
+    });
+  });
+
+  describe('sanitizeSvg XSS prevention (T06 #92)', () => {
+    it('should strip script tags', () => {
+      const dirty = '<svg><script>alert("xss")</script><circle r="10"/></svg>';
+      const result = (service as any).sanitizeSvg(dirty);
+      expect(result).not.toContain('<script');
+      expect(result).toContain('<circle');
+    });
+
+    it('should strip event handlers', () => {
+      const dirty = '<svg><rect onload="alert(1)" width="10"/></svg>';
+      const result = (service as any).sanitizeSvg(dirty);
+      expect(result).not.toContain('onload');
+    });
+
+    it('should strip javascript: URIs', () => {
+      const dirty = '<svg><a href="javascript:alert(1)">link</a></svg>';
+      const result = (service as any).sanitizeSvg(dirty);
+      expect(result).not.toContain('javascript:');
+    });
+
+    it('should strip foreignObject elements', () => {
+      const dirty = '<svg><foreignObject><body xmlns="http://www.w3.org/1999/xhtml"><script>alert(1)</script></body></foreignObject></svg>';
+      const result = (service as any).sanitizeSvg(dirty);
+      expect(result).not.toContain('foreignObject');
     });
   });
 });
