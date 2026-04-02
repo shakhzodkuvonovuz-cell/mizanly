@@ -263,9 +263,12 @@ function ChallengesScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['challenges'] });
       haptic.success();
+      showToast({ message: t('gamification.challenges.joinedSuccess', 'Challenge joined!'), variant: 'success' });
       setJoiningId(null);
     },
     onError: () => {
+      haptic.error();
+      showToast({ message: t('gamification.challenges.joinFailed', 'Failed to join challenge'), variant: 'error' });
       setJoiningId(null);
     },
   });
@@ -352,10 +355,12 @@ function ChallengesScreen() {
               }}
               accessibilityRole="tab"
               accessibilityState={{ selected: selectedCategory === cat.key }}
+              style={({ pressed }) => pressed ? { opacity: 0.7 } : undefined}
             >
               <View
                 style={[
                   styles.categoryChip,
+                  { backgroundColor: tc.bgCard, borderColor: tc.borderLight },
                   selectedCategory === cat.key && styles.categoryChipActive,
                 ]}
               >
@@ -418,11 +423,21 @@ function ChallengesScreen() {
               />
             }
             ListEmptyComponent={
-              <EmptyState
-                icon="flag"
-                title={t('gamification.challenges.empty')}
-                subtitle={t('gamification.challenges.emptySubtitle')}
-              />
+              (activeTab === 'discover' ? discoverQuery.isError : myQuery.isError) ? (
+                <EmptyState
+                  icon="slash"
+                  title={t('common.error')}
+                  subtitle={t('errors.loadContentFailed', 'Could not load content. Check your connection.')}
+                  actionLabel={t('common.retry', 'Retry')}
+                  onAction={() => refetch()}
+                />
+              ) : (
+                <EmptyState
+                  icon="flag"
+                  title={t('gamification.challenges.empty')}
+                  subtitle={t('gamification.challenges.emptySubtitle')}
+                />
+              )
             }
           />
         )}
@@ -430,7 +445,7 @@ function ChallengesScreen() {
 
       {/* FAB */}
       <Pressable
-        style={styles.fab}
+        style={({ pressed }) => [styles.fab, pressed && { opacity: 0.8, transform: [{ scale: 0.95 }] }]}
         onPress={() => {
           haptic.navigate();
           showToast({ message: t('gamification.challenges.createComingSoon'), variant: 'info' });
@@ -472,7 +487,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: spacing.base,
-    paddingBottom: spacing['3xl'],
+    paddingBottom: 120,
   },
   // Tabs
   tabRow: {
@@ -491,7 +506,7 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   tabTextActive: {
-    color: '#FFFFFF',
+    color: colors.text.primary,
     fontFamily: fonts.bodySemiBold,
   },
   // Category chips
@@ -506,9 +521,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.bgCard,
     borderWidth: 0.5,
-    borderColor: colors.dark.borderLight,
   },
   categoryChipActive: {
     backgroundColor: colors.active.emerald10,
@@ -528,7 +541,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     overflow: 'hidden',
     borderWidth: 0.5,
-    borderColor: colors.dark.borderLight,
     marginBottom: spacing.md,
   },
   coverWrap: {
@@ -581,7 +593,6 @@ const styles = StyleSheet.create({
   },
   progressTrack: {
     height: 6,
-    backgroundColor: colors.dark.surface,
     borderRadius: radius.full,
     overflow: 'hidden',
   },
@@ -650,7 +661,6 @@ const styles = StyleSheet.create({
   },
   skeletonCard: {
     borderRadius: radius.lg,
-    backgroundColor: colors.dark.bgCard,
     overflow: 'hidden',
   },
 });

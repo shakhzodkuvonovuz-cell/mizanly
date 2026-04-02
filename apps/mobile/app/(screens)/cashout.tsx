@@ -26,7 +26,11 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { formatCount } from '@/utils/formatCount';
+import { rtlFlexRow } from '@/utils/rtl';
 import { api } from '@/services/api';
+
+// Feature gate: wallet/cashout backend is NOT implemented yet
+const CASHOUT_ENABLED = false;
 
 // ── Local types ──
 
@@ -82,8 +86,33 @@ const INSTANT_FEE_PERCENT = 2;
 function CashoutContent() {
   const router = useRouter();
   const tc = useThemeColors();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const haptic = useContextualHaptic();
+
+  // CS-5/CS-15: Feature gate — backend not implemented yet
+  if (!CASHOUT_ENABLED) {
+    return (
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
+        <GlassHeader
+          title={t('cashout.title', 'Cash Out')}
+          leftAction={{
+            icon: 'arrow-left',
+            onPress: () => router.back(),
+            accessibilityLabel: t('common.back', 'Go back'),
+          }}
+        />
+        <View style={styles.successContainer}>
+          <EmptyState
+            icon="clock"
+            title={t('cashout.comingSoon', 'Cash Out Coming Soon')}
+            subtitle={t('cashout.comingSoonDesc', 'The monetization system is under development. You\'ll be able to cash out your diamonds here once it\'s ready.')}
+            actionLabel={t('common.back', 'Go Back')}
+            onAction={() => router.back()}
+          />
+        </View>
+      </View>
+    );
+  }
 
   const [loading, setLoading] = useState(true);
   const [balance, setBalance] = useState<WalletBalance | null>(null);
@@ -117,7 +146,7 @@ function CashoutContent() {
           if (defaultMethod) setSelectedMethodId(defaultMethod.id);
         }
       } catch {
-        // Use defaults on error
+        showToast({ message: t('cashout.loadError', 'Could not load wallet data'), variant: 'error' });
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -130,7 +159,7 @@ function CashoutContent() {
           setPayoutHistory(history);
         }
       } catch {
-        // Payout history not available yet — show empty state
+        showToast({ message: t('cashout.historyError', 'Could not load payout history'), variant: 'error' });
       } finally {
         if (!cancelled) setHistoryLoading(false);
       }
@@ -201,10 +230,10 @@ function CashoutContent() {
               <Icon name="check" size="xl" color={tc.text.primary} />
             </LinearGradient>
           </Animated.View>
-          <Animated.Text entering={FadeInUp.delay(300).duration(400)} style={styles.successTitle}>
+          <Animated.Text entering={FadeInUp.delay(300).duration(400)} style={[styles.successTitle, { color: tc.text.primary }]}>
             {t('cashout.successTitle', 'Cashout Requested')}
           </Animated.Text>
-          <Animated.Text entering={FadeInUp.delay(400).duration(400)} style={styles.successSubtitle}>
+          <Animated.Text entering={FadeInUp.delay(400).duration(400)} style={[styles.successSubtitle, { color: tc.text.secondary }]}>
             {payoutSpeed === 'instant'
               ? t('cashout.successInstant', 'Your funds will arrive shortly')
               : t('cashout.successStandard', 'Your funds will arrive in 3-5 business days')}
@@ -305,7 +334,7 @@ function CashoutContent() {
           </Text>
           <View style={styles.inputRow}>
             <TextInput
-              style={styles.amountInput}
+              style={[styles.amountInput, { color: tc.text.primary }]}
               value={amountText}
               onChangeText={setAmountText}
               keyboardType="numeric"
@@ -317,9 +346,11 @@ function CashoutContent() {
             <Pressable
               accessibilityRole="button"
               onPress={handleMax}
+              disabled={!balance}
               style={({ pressed }) => [
                 styles.maxButton,
                 pressed && { opacity: 0.7 },
+                !balance && { opacity: 0.4 },
               ]}
             >
               <Text style={styles.maxText}>
@@ -349,6 +380,7 @@ function CashoutContent() {
             onPress={() => setPayoutSpeed('instant')}
             style={({ pressed }) => [
               styles.speedOption,
+              { backgroundColor: tc.bgCard, borderColor: tc.border },
               payoutSpeed === 'instant' && styles.speedOptionSelected,
               pressed && { opacity: 0.8 },
             ]}
@@ -376,6 +408,7 @@ function CashoutContent() {
             onPress={() => setPayoutSpeed('standard')}
             style={({ pressed }) => [
               styles.speedOption,
+              { backgroundColor: tc.bgCard, borderColor: tc.border },
               payoutSpeed === 'standard' && styles.speedOptionSelected,
               pressed && { opacity: 0.8 },
             ]}
@@ -414,6 +447,7 @@ function CashoutContent() {
                 onPress={() => setSelectedMethodId(method.id)}
                 style={({ pressed }) => [
                   styles.methodRow,
+                  { backgroundColor: tc.bgCard, borderColor: tc.border },
                   selectedMethodId === method.id && styles.methodRowSelected,
                   pressed && { opacity: 0.8 },
                 ]}
@@ -499,6 +533,11 @@ function CashoutContent() {
 
       {/* Confirm Button */}
       <View style={[styles.bottomBar, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
+        {(amount > 0 && !selectedMethodId) && (
+          <Text style={[styles.disabledHint, { color: tc.text.tertiary }]}>
+            {t('cashout.selectMethodHint', 'Select a payment method to continue')}
+          </Text>
+        )}
         <GradientButton
           label={
             netAmount > 0
@@ -564,21 +603,17 @@ const styles = StyleSheet.create({
   successTitle: {
     fontFamily: fonts.headingBold,
     fontSize: fontSize.xl,
-    color: colors.text.primary,
     textAlign: 'center',
   },
   successSubtitle: {
     fontFamily: fonts.body,
     fontSize: fontSize.base,
-    color: colors.text.secondary,
     textAlign: 'center',
     marginTop: spacing.sm,
   },
   successAmountCard: {
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
     padding: spacing.lg,
     alignItems: 'center',
     marginTop: spacing.xl,
@@ -587,7 +622,6 @@ const styles = StyleSheet.create({
   successAmountLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
   },
   successAmount: {
     fontFamily: fonts.headingBold,
@@ -600,7 +634,6 @@ const styles = StyleSheet.create({
   balanceCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
     padding: spacing.xl,
     alignItems: 'center',
     marginTop: spacing.base,
@@ -608,7 +641,6 @@ const styles = StyleSheet.create({
   balanceLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
   },
   balanceRow: {
     flexDirection: 'row',
@@ -619,7 +651,6 @@ const styles = StyleSheet.create({
   balanceDiamonds: {
     fontFamily: fonts.headingBold,
     fontSize: fontSize['3xl'],
-    color: colors.text.primary,
   },
   balanceUsd: {
     fontFamily: fonts.bodySemiBold,
@@ -636,17 +667,14 @@ const styles = StyleSheet.create({
 
   // Amount input
   inputCard: {
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
     padding: spacing.base,
     marginTop: spacing.base,
   },
   inputLabel: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
     marginBottom: spacing.sm,
   },
   inputRow: {
@@ -658,7 +686,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: fonts.headingBold,
     fontSize: fontSize['2xl'],
-    color: colors.text.primary,
     paddingVertical: spacing.sm,
   },
   maxButton: {
@@ -694,16 +721,13 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
     marginBottom: spacing.md,
   },
   speedOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
     padding: spacing.base,
     marginBottom: spacing.sm,
   },
@@ -722,7 +746,6 @@ const styles = StyleSheet.create({
   speedTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
   },
   feeBadge: {
     backgroundColor: colors.active.gold10,
@@ -752,10 +775,8 @@ const styles = StyleSheet.create({
   methodRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
     padding: spacing.base,
     marginBottom: spacing.sm,
   },
@@ -766,7 +787,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.surface,
     alignItems: 'center',
     justifyContent: 'center',
     marginEnd: spacing.md,
@@ -777,12 +797,10 @@ const styles = StyleSheet.create({
   methodLabel: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
   },
   methodLast4: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
     marginTop: 2,
   },
 
@@ -792,7 +810,7 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: radius.full,
     borderWidth: 2,
-    borderColor: colors.dark.borderLight,
+    borderColor: colors.active.white6,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -845,6 +863,11 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
   },
 
+  disabledHint: {
+    fontSize: fontSize.xs,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
   // Bottom bar
   bottomBar: {
     position: 'absolute',
@@ -854,8 +877,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingBottom: spacing['2xl'],
     paddingTop: spacing.base,
-    backgroundColor: colors.dark.bg,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.dark.border,
   },
 });

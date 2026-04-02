@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions, TextInput, FlatList } from 'react-native';
+import { useState, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, FlatList, useWindowDimensions, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -19,8 +19,6 @@ import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { showToast } from '@/components/ui/Toast';
 import { formatTime } from '@/utils/formatTime';
-
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 type FontOption = 'Default' | 'Bold' | 'Handwritten';
 type SizeOption = 'S' | 'M' | 'L';
@@ -63,10 +61,12 @@ export default function CaptionEditorScreen() {
   const queryClient = useQueryClient();
   const { videoId } = useLocalSearchParams<{ videoId: string }>();
   const haptic = useContextualHaptic();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const scrollRef = useRef<ScrollView>(null);
 
   const [localCaptions, setLocalCaptions] = useState<Caption[]>([]);
   const [hasLocalEdits, setHasLocalEdits] = useState(false);
-  const [currentTime, setCurrentTime] = useState(12);
+  const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
 
   // Style states
@@ -80,6 +80,7 @@ export default function CaptionEditorScreen() {
   const {
     data: tracksData,
     isLoading,
+    isError,
     isRefetching,
     refetch,
   } = useQuery({
@@ -154,9 +155,22 @@ export default function CaptionEditorScreen() {
   };
 
   const handleDeleteCaption = (id: string) => {
-    haptic.delete();
-    setHasLocalEdits(true);
-    setLocalCaptions(captions.filter(c => c.id !== id));
+    Alert.alert(
+      t('captionEditor.deleteCaption', 'Delete Caption'),
+      t('captionEditor.deleteCaptionConfirm', 'Are you sure you want to delete this caption?'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: () => {
+            haptic.delete();
+            setHasLocalEdits(true);
+            setLocalCaptions(captions.filter(c => c.id !== id));
+          },
+        },
+      ],
+    );
   };
 
   const handleCaptionTextChange = (id: string, newText: string) => {
@@ -219,7 +233,7 @@ export default function CaptionEditorScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t('common.delete')}
-              style={styles.deleteButton}
+              style={({ pressed }) => [styles.deleteButton, pressed && { opacity: 0.6 }]}
               onPress={() => handleDeleteCaption(item.id)}
             >
               <View style={styles.deleteButtonInner}>
@@ -228,7 +242,7 @@ export default function CaptionEditorScreen() {
             </Pressable>
           </View>
           <TextInput
-            style={styles.captionInput}
+            style={[styles.captionInput, { color: tc.text.primary }]}
             value={item.text}
             onChangeText={(text) => handleCaptionTextChange(item.id, text)}
             multiline
@@ -284,19 +298,21 @@ export default function CaptionEditorScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top', 'bottom']}>
         <GlassHeader title={t('captionEditor.title')} showBackButton />
 
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
+          ref={scrollRef}
           showsVerticalScrollIndicator={false}
-          refreshControl={<BrandedRefreshControl refreshing={isRefetching} onRefresh={() => refetch()} />}
+          refreshControl={<BrandedRefreshControl refreshing={isRefetching} onRefresh={() => { setHasLocalEdits(false); refetch(); }} />}
         >
           {/* Video Preview */}
           <Animated.View entering={FadeInUp.delay(50).duration(400)}>
             <View style={styles.previewContainer}>
               <LinearGradient
                 colors={['rgba(28,35,51,0.8)', 'rgba(13,17,23,0.9)']}
-                style={styles.previewGradient}
+                style={[styles.previewGradient, { height: screenHeight * 0.28 }]}
               >
                 {/* Video Placeholder */}
                 <View style={styles.videoPlaceholder}>
@@ -355,7 +371,7 @@ export default function CaptionEditorScreen() {
                     colors={['rgba(45,53,72,0.8)', 'rgba(28,35,51,0.6)']}
                     style={styles.timestampGradient}
                   >
-                    <Text style={styles.timestampText}>
+                    <Text style={[styles.timestampText, { color: tc.text.primary }]}>
                       {formatTime(currentTime)} / 01:30
                     </Text>
                   </LinearGradient>
@@ -366,7 +382,7 @@ export default function CaptionEditorScreen() {
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={t('accessibility.rewind5Seconds')}
-                    style={styles.controlCircle}
+                    style={({ pressed }) => [styles.controlCircle, pressed && { opacity: 0.7 }]}
                     onPress={() => { haptic.tick(); setCurrentTime(Math.max(0, currentTime - 5)); }}
                   >
                     <LinearGradient
@@ -380,21 +396,21 @@ export default function CaptionEditorScreen() {
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={isPlaying ? t('common.pause') : t('common.play')}
-                    style={[styles.controlCircle, styles.playCircle]}
+                    style={({ pressed }) => [styles.controlCircle, styles.playCircle, pressed && { opacity: 0.7 }]}
                     onPress={() => { haptic.tick(); setIsPlaying(!isPlaying); }}
                   >
                     <LinearGradient
                       colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
                       style={styles.controlGradient}
                     >
-                      <Icon name="play" size="md" color="#FFF" />
+                      <Icon name={isPlaying ? "pause" : "play"} size="md" color={tc.text.primary} />
                     </LinearGradient>
                   </Pressable>
 
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={t('accessibility.forward5Seconds')}
-                    style={styles.controlCircle}
+                    style={({ pressed }) => [styles.controlCircle, pressed && { opacity: 0.7 }]}
                     onPress={() => { haptic.tick(); setCurrentTime(Math.min(90, currentTime + 5)); }}
                   >
                     <LinearGradient
@@ -412,7 +428,7 @@ export default function CaptionEditorScreen() {
           {/* Caption List */}
           <Animated.View entering={FadeInUp.delay(100).duration(400)}>
             <View style={styles.listHeader}>
-              <Text style={styles.listTitle}>{t('captionEditor.captions', { count: captions.length })}</Text>
+              <Text style={[styles.listTitle, { color: tc.text.primary }]}>{t('captionEditor.captions', { count: captions.length })}</Text>
               <Pressable accessibilityRole="button" accessibilityLabel={t('common.add')} style={styles.addCaptionButton} onPress={handleAddCaption}>
                 <LinearGradient
                   colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
@@ -424,7 +440,15 @@ export default function CaptionEditorScreen() {
               </Pressable>
             </View>
 
-            {captions.length === 0 ? (
+            {isError ? (
+              <EmptyState
+                icon="slash"
+                title={t('common.error')}
+                subtitle={t('errors.loadContentFailed', 'Could not load captions. Check your connection.')}
+                actionLabel={t('common.retry', 'Retry')}
+                onAction={() => refetch()}
+              />
+            ) : captions.length === 0 ? (
               <EmptyState
                 icon="type"
                 title={t('captionEditor.noCaptions')}
@@ -460,11 +484,11 @@ export default function CaptionEditorScreen() {
                       <Icon name="type" size="sm" color={colors.emerald} />
                     </LinearGradient>
                   </View>
-                  <Text style={styles.styleTitle}>{t('captionEditor.style')}</Text>
+                  <Text style={[styles.styleTitle, { color: tc.text.primary }]}>{t('captionEditor.style')}</Text>
                 </View>
 
                 {/* Font Selector */}
-                <Text style={styles.styleLabel}>{t('captionEditor.font')}</Text>
+                <Text style={[styles.styleLabel, { color: tc.text.secondary }]}>{t('captionEditor.font')}</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.selectorScroll}>
                   {FONT_OPTIONS.map((font) => (
                     <Pressable
@@ -482,7 +506,7 @@ export default function CaptionEditorScreen() {
                         style={styles.selectorButtonGradient}
                       >
                         <Text style={[
-                          styles.selectorButtonText,
+                          styles.selectorButtonText, { color: tc.text.secondary },
                           selectedFont === font && styles.selectorButtonTextActive
                         ]}>
                           {t(`captionEditor.fontOption.${font.toLowerCase()}`)}
@@ -493,7 +517,7 @@ export default function CaptionEditorScreen() {
                 </ScrollView>
 
                 {/* Size Selector */}
-                <Text style={styles.styleLabel}>{t('captionEditor.size')}</Text>
+                <Text style={[styles.styleLabel, { color: tc.text.secondary }]}>{t('captionEditor.size')}</Text>
                 <View style={styles.selectorRow}>
                   {SIZE_OPTIONS.map((size) => (
                     <Pressable
@@ -511,7 +535,7 @@ export default function CaptionEditorScreen() {
                         style={styles.selectorButtonGradient}
                       >
                         <Text style={[
-                          styles.selectorButtonText,
+                          styles.selectorButtonText, { color: tc.text.secondary },
                           selectedSize === size && styles.selectorButtonTextActive
                         ]}>
                           {t(`captionEditor.sizeOption.${size.toLowerCase()}`)}
@@ -522,7 +546,7 @@ export default function CaptionEditorScreen() {
                 </View>
 
                 {/* Position Selector */}
-                <Text style={styles.styleLabel}>{t('captionEditor.position')}</Text>
+                <Text style={[styles.styleLabel, { color: tc.text.secondary }]}>{t('captionEditor.position')}</Text>
                 <View style={styles.selectorRow}>
                   {POSITION_OPTIONS.map((position) => (
                     <Pressable
@@ -540,7 +564,7 @@ export default function CaptionEditorScreen() {
                         style={styles.selectorButtonGradient}
                       >
                         <Text style={[
-                          styles.selectorButtonText,
+                          styles.selectorButtonText, { color: tc.text.secondary },
                           selectedPosition === position && styles.selectorButtonTextActive
                         ]}>
                           {t(`captionEditor.positionOption.${position.toLowerCase()}`)}
@@ -551,7 +575,7 @@ export default function CaptionEditorScreen() {
                 </View>
 
                 {/* Background Selector */}
-                <Text style={styles.styleLabel}>{t('captionEditor.background')}</Text>
+                <Text style={[styles.styleLabel, { color: tc.text.secondary }]}>{t('captionEditor.background')}</Text>
                 <View style={styles.selectorRow}>
                   {BACKGROUND_OPTIONS.map((bg) => (
                     <Pressable
@@ -569,7 +593,7 @@ export default function CaptionEditorScreen() {
                         style={styles.selectorButtonGradient}
                       >
                         <Text style={[
-                          styles.selectorButtonText,
+                          styles.selectorButtonText, { color: tc.text.secondary },
                           selectedBackground === bg && styles.selectorButtonTextActive
                         ]}>
                           {t(`captionEditor.backgroundOption.${bg.toLowerCase().replace(/\s+/g, '')}`)}
@@ -580,7 +604,7 @@ export default function CaptionEditorScreen() {
                 </View>
 
                 {/* Color Picker */}
-                <Text style={styles.styleLabel}>{t('captionEditor.color')}</Text>
+                <Text style={[styles.styleLabel, { color: tc.text.secondary }]}>{t('captionEditor.color')}</Text>
                 <View style={styles.colorRow}>
                   {TEXT_COLORS.map((color) => (
                     <Pressable
@@ -603,11 +627,11 @@ export default function CaptionEditorScreen() {
           {/* Bottom Spacing */}
           <View style={styles.bottomSpacing} />
         </ScrollView>
+        </KeyboardAvoidingView>
 
         {/* Bottom Action Bar */}
-        <View style={styles.bottomBar}>
-          <LinearGradient
-            colors={['rgba(13,17,23,0.95)', 'rgba(13,17,23,1)']}
+        <View style={[styles.bottomBar, { backgroundColor: tc.bg }]}>
+          <View
             style={styles.bottomBarGradient}
           >
             <Pressable
@@ -623,13 +647,13 @@ export default function CaptionEditorScreen() {
               >
                 {generateMutation.isPending ? (
                   <>
-                    <Skeleton.Circle size={16} />
-                    <Text style={styles.autoGenText}>{t('captionEditor.processing')}</Text>
+                    <ActivityIndicator size="small" color={tc.text.secondary} />
+                    <Text style={[styles.autoGenText, { color: tc.text.secondary }]}>{t('captionEditor.processing')}</Text>
                   </>
                 ) : (
                   <>
                     <Icon name="mic" size="sm" color={tc.text.secondary} />
-                    <Text style={styles.autoGenText}>{t('captionEditor.autoGenerate')}</Text>
+                    <Text style={[styles.autoGenText, { color: tc.text.secondary }]}>{t('captionEditor.autoGenerate')}</Text>
                   </>
                 )}
               </LinearGradient>
@@ -647,17 +671,17 @@ export default function CaptionEditorScreen() {
                 style={styles.saveGradient}
               >
                 {saveMutation.isPending ? (
-                  <Skeleton.Circle size={16} />
+                  <ActivityIndicator size="small" color={tc.text.primary} />
                 ) : (
-                  <Icon name="check" size="sm" color="#FFF" />
+                  <Icon name="check" size="sm" color={tc.text.primary} />
                 )}
-                <Text style={styles.saveText}>{t('common.save')}</Text>
+                <Text style={[styles.saveText, { color: tc.text.primary }]}>{t('common.save')}</Text>
               </LinearGradient>
             </Pressable>
-          </LinearGradient>
+          </View>
         </View>
       </SafeAreaView>
-  
+
     </ScreenErrorBoundary>
   );
 }
@@ -674,7 +698,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   previewGradient: {
-    height: screenHeight * 0.28,
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.active.white6,
@@ -698,7 +721,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
   },
   captionOverlayText: {
-    color: colors.text.primary,
     textAlign: 'center',
   },
   captionOutline: {
@@ -719,7 +741,6 @@ const styles = StyleSheet.create({
   },
   timestampText: {
     fontSize: fontSize.xs,
-    color: colors.text.primary,
     fontFamily: fonts.mono,
   },
   playbackControls: {
@@ -754,7 +775,6 @@ const styles = StyleSheet.create({
   listTitle: {
     fontSize: fontSize.base,
     fontWeight: '600',
-    color: colors.text.primary,
   },
   addCaptionButton: {
     borderRadius: radius.full,
@@ -816,7 +836,6 @@ const styles = StyleSheet.create({
   },
   captionInput: {
     fontSize: fontSize.base,
-    color: colors.text.primary,
     minHeight: 40,
     textAlignVertical: 'top',
   },
@@ -850,11 +869,9 @@ const styles = StyleSheet.create({
   styleTitle: {
     fontSize: fontSize.base,
     fontWeight: '600',
-    color: colors.text.primary,
   },
   styleLabel: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
     marginTop: spacing.sm,
     marginBottom: spacing.xs,
   },
@@ -877,7 +894,6 @@ const styles = StyleSheet.create({
   },
   selectorButtonText: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
   },
   selectorButtonTextActive: {
     color: colors.emerald,
@@ -932,7 +948,6 @@ const styles = StyleSheet.create({
   },
   autoGenText: {
     fontSize: fontSize.base,
-    color: colors.text.secondary,
   },
   saveButton: {
     flex: 1,
@@ -949,7 +964,6 @@ const styles = StyleSheet.create({
   },
   saveText: {
     fontSize: fontSize.base,
-    color: '#FFF',
     fontWeight: '600',
   },
 });

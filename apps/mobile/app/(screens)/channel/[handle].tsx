@@ -68,7 +68,7 @@ function VideoCard({ video }: { video: Video }) {
   };
 
   return (
-    <Pressable style={styles.videoCard} onPress={handlePress}>
+    <Pressable style={({ pressed }) => [styles.videoCard, pressed && { opacity: 0.8 }]} onPress={handlePress}>
       {/* Thumbnail */}
       <View style={[styles.thumbnailContainer, { backgroundColor: tc.surface }]}>
         {video.thumbnailUrl ? (
@@ -100,7 +100,13 @@ function VideoCard({ video }: { video: Video }) {
             {formatCount(video.viewsCount)} {t('minbar.viewCount')} • {formatDistanceToNowStrict(new Date(video.publishedAt || video.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
           </Text>
         </View>
-        <Pressable style={styles.moreButton} hitSlop={8} onPress={() => {/* Video options: handled by parent channel menu */}}>
+        <Pressable
+          style={({ pressed }) => [styles.moreButton, pressed && { opacity: 0.6 }]}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={t('common.moreOptions', 'More options')}
+          onPress={() => showToast({ message: t('common.comingSoon', 'Coming soon'), variant: 'info' })}
+        >
           <Icon name="more-horizontal" size="sm" color={tc.text.secondary} />
         </Pressable>
       </View>
@@ -118,7 +124,7 @@ function VideoCard({ video }: { video: Video }) {
 
     return (
       <Animated.View entering={FadeInUp.delay(100)} style={styles.featuredContainer}>
-        <Pressable style={[styles.featuredCard, { backgroundColor: tc.surface }]} onPress={onPress}>
+        <Pressable style={({ pressed }) => [styles.featuredCard, { backgroundColor: tc.surface }, pressed && { opacity: 0.8 }]} onPress={onPress}>
           <ProgressiveImage uri={video.thumbnailUrl || ''} width="100%" height={FEATURED_HEIGHT} contentFit="cover" />
           <LinearGradient
             colors={['transparent', 'rgba(13,17,23,0.8)', 'rgba(13,17,23,0.98)']}
@@ -158,7 +164,7 @@ function VideoCard({ video }: { video: Video }) {
   };
 
   return (
-    <Pressable style={[styles.playlistCard, { backgroundColor: tc.surface }]} onPress={handlePress}>
+    <Pressable style={({ pressed }) => [styles.playlistCard, { backgroundColor: tc.surface }, pressed && { opacity: 0.8 }]} onPress={handlePress}>
       {playlist.thumbnailUrl ? (
         <ProgressiveImage uri={playlist.thumbnailUrl} width={120} height={68} borderRadius={radius.sm} contentFit="cover" />
       ) : (
@@ -226,6 +232,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
   const subscribeMutation = useMutation({
     mutationFn: () => channel?.isSubscribed ? channelsApi.unsubscribe(handle) : channelsApi.subscribe(handle),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['channel', handle] }),
+    onError: () => showToast({ message: t('channel.subscribeError', 'Could not update subscription'), variant: 'error' }),
   });
 
   const setTrailerMutation = useMutation({
@@ -234,11 +241,13 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
       queryClient.invalidateQueries({ queryKey: ['channel', handle] });
       setShowTrailerPicker(false);
     },
+    onError: () => showToast({ message: t('channelTrailer.setError', 'Could not set trailer'), variant: 'error' }),
   });
 
   const removeTrailerMutation = useMutation({
     mutationFn: () => channelsApi.removeTrailer(handle),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['channel', handle] }),
+    onError: () => showToast({ message: t('channelTrailer.removeError', 'Could not remove trailer'), variant: 'error' }),
   });
 
   const isOwner = !!user && !!channel && user.id === channel.userId;
@@ -259,6 +268,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
   };
 
   const handleSubscribe = () => {
+    if (subscribeMutation.isPending) return;
     haptic.follow();
     subscribeMutation.mutate();
   };
@@ -269,8 +279,9 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
   };
 
   const handleReport = () => {
+    if (!channel?.id) return;
     haptic.delete();
-    router.push(`/(screens)/report?type=channel&id=${channel?.id}`);
+    router.push(`/(screens)/report?type=channel&id=${channel.id}`);
   };
 
   const handleCopyLink = async () => {
@@ -513,15 +524,15 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         {/* Header */}
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
+          <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn} accessibilityRole="button" accessibilityLabel={t('common.back')}>
             <Icon name="arrow-left" size="md" color={tc.text.primary} />
           </Pressable>
           <Text style={[styles.headerTitle, { color: tc.text.primary }]}>@{handle}</Text>
           <View style={styles.headerRight}>
-            <Pressable hitSlop={8} onPress={handleShare} style={styles.headerAction}>
+            <Pressable hitSlop={8} onPress={handleShare} style={styles.headerAction} accessibilityRole="button" accessibilityLabel={t('channel.shareChannel')}>
               <Icon name="share" size="sm" color={tc.text.primary} />
             </Pressable>
-            <Pressable hitSlop={8} onPress={() => setShowMenu(true)} style={styles.headerAction}>
+            <Pressable hitSlop={8} onPress={() => setShowMenu(true)} style={styles.headerAction} accessibilityRole="button" accessibilityLabel={t('channel.options', 'Channel options')}>
               <Icon name="more-horizontal" size="sm" color={tc.text.primary} />
             </Pressable>
           </View>
@@ -530,6 +541,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
         <FlatList<Video | Playlist>
           data={activeTab === 'videos' ? regularVideos : activeTab === 'playlists' ? playlists : []}
           keyExtractor={(item) => item.id}
+          contentContainerStyle={{ paddingBottom: spacing['3xl'] }}
           renderItem={({ item }) => {
             if (activeTab === 'videos') return <VideoCard video={item as Video} />;
             if (activeTab === 'playlists') return <PlaylistCard playlist={item as Playlist} />;
@@ -798,10 +810,8 @@ const styles = StyleSheet.create({
   banner: {
     width: '100%',
     height: BANNER_HEIGHT,
-    backgroundColor: colors.dark.bgElevated,
   },
   bannerPlaceholder: {
-    backgroundColor: colors.dark.surface,
   },
   avatarRow: {
     flexDirection: 'row',
@@ -857,7 +867,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: colors.dark.border,
     marginBottom: spacing.md,
   },
   statItem: {
@@ -912,7 +921,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
   },
   aboutMetaLabel: {
     color: colors.text.secondary,
@@ -932,7 +940,6 @@ const styles = StyleSheet.create({
     position: 'relative',
     borderRadius: radius.md,
     overflow: 'hidden',
-    backgroundColor: colors.dark.surface,
     aspectRatio: 16 / 9,
   },
   thumbnail: {
@@ -946,7 +953,7 @@ const styles = StyleSheet.create({
   durationBadge: {
     position: 'absolute',
     bottom: spacing.sm,
-    right: spacing.sm,
+    end: spacing.sm,
     backgroundColor: 'rgba(0,0,0,0.8)',
     borderRadius: radius.sm,
     paddingHorizontal: spacing.xs,
@@ -993,7 +1000,6 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.base,
     marginBottom: spacing.lg,
     padding: spacing.sm,
-    backgroundColor: colors.dark.surface,
     borderRadius: radius.md,
   },
   playlistThumbnail: {
@@ -1008,7 +1014,7 @@ const styles = StyleSheet.create({
   },
   playlistInfo: {
     flex: 1,
-    marginLeft: spacing.sm,
+    marginStart: spacing.sm,
   },
   playlistTitle: {
     color: colors.text.primary,
@@ -1024,7 +1030,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
   },
   sheetTitle: {
     color: colors.text.secondary,
@@ -1039,15 +1044,15 @@ const styles = StyleSheet.create({
   bannerGradient: {
     position: 'absolute',
     top: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     bottom: 0,
   },
   bannerPattern: {
     position: 'absolute',
     top: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     bottom: 0,
     justifyContent: 'space-evenly',
   },
@@ -1064,8 +1069,7 @@ const styles = StyleSheet.create({
   verifiedBadgeFloating: {
     position: 'absolute',
     bottom: 0,
-    right: -4,
-    backgroundColor: colors.dark.bg,
+    end: -4,
     borderRadius: radius.full,
     padding: 2,
   },
@@ -1077,7 +1081,7 @@ const styles = StyleSheet.create({
   nameAccentLine: {
     width: 40,
     height: 3,
-    borderRadius: 1.5,
+    borderRadius: radius.sm,
   },
 
   // Enhanced stats
@@ -1086,7 +1090,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
-    backgroundColor: colors.dark.surface,
     borderRadius: radius.lg,
     marginHorizontal: spacing.base,
     marginBottom: spacing.md,
@@ -1109,7 +1112,6 @@ const styles = StyleSheet.create({
   },
   statDividerEnhanced: {
     width: 1,
-    backgroundColor: colors.dark.border,
   },
 
   // Description card
@@ -1139,7 +1141,6 @@ const styles = StyleSheet.create({
   featuredCard: {
     borderRadius: radius.lg,
     overflow: 'hidden',
-    backgroundColor: colors.dark.surface,
   },
   featuredThumbnail: {
     width: '100%',
@@ -1148,8 +1149,8 @@ const styles = StyleSheet.create({
   featuredGradient: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     height: FEATURED_HEIGHT * 0.6,
     justifyContent: 'flex-end',
     padding: spacing.md,
@@ -1194,7 +1195,7 @@ const styles = StyleSheet.create({
   featuredDurationBadge: {
     position: 'absolute',
     top: spacing.sm,
-    right: spacing.sm,
+    end: spacing.sm,
     backgroundColor: 'rgba(0,0,0,0.8)',
     borderRadius: radius.sm,
     paddingHorizontal: spacing.xs,
@@ -1215,7 +1216,6 @@ const styles = StyleSheet.create({
   trailerCard: {
     borderRadius: radius.lg,
     overflow: 'hidden',
-    backgroundColor: colors.dark.surface,
     position: 'relative',
   },
   trailerThumbnail: {
@@ -1230,8 +1230,8 @@ const styles = StyleSheet.create({
   trailerGradient: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     height: FEATURED_HEIGHT * 0.7,
     justifyContent: 'flex-end',
     padding: spacing.md,
@@ -1264,7 +1264,7 @@ const styles = StyleSheet.create({
   trailerDurationBadge: {
     position: 'absolute',
     top: spacing.sm,
-    right: spacing.sm,
+    end: spacing.sm,
     backgroundColor: 'rgba(0,0,0,0.8)',
     borderRadius: radius.sm,
     paddingHorizontal: spacing.xs,

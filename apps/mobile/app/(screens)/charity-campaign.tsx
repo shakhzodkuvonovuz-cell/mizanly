@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
@@ -15,17 +16,21 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
-import { colors, spacing, radius, fontSize } from '@/theme';
+import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { showToast } from '@/components/ui/Toast';
+import { rtlFlexRow } from '@/utils/rtl';
 import { islamicApi } from '@/services/islamicApi';
 import type { CharityCampaign } from '@/types/islamic';
 
 function CampaignScreenContent() {
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const tc = useThemeColors();
   const router = useRouter();
+  const haptic = useContextualHaptic();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const campaignQuery = useQuery({
@@ -39,6 +44,7 @@ function CampaignScreenContent() {
   }, [campaignQuery]);
 
   const handleDonate = () => {
+    haptic.navigate();
     router.push({
       pathname: '/(screens)/donate' as never,
       params: { campaignId: id },
@@ -48,6 +54,7 @@ function CampaignScreenContent() {
   const handleShare = async () => {
     const campaign = campaignQuery.data as CharityCampaign | undefined;
     if (!campaign) return;
+    haptic.navigate();
     try {
       await Share.share({
         message: `${campaign.title} - Support this campaign on Mizanly!\nhttps://mizanly.app/charity/${campaign.id}`,
@@ -58,7 +65,7 @@ function CampaignScreenContent() {
   };
 
   const campaign = campaignQuery.data as CharityCampaign | undefined;
-  const progressPercent = campaign
+  const progressPercent = campaign && campaign.goalAmount > 0
     ? Math.min((campaign.raisedAmount / campaign.goalAmount) * 100, 100)
     : 0;
 
@@ -85,12 +92,20 @@ function CampaignScreenContent() {
     );
   }
 
-  if (!campaign) {
+  if (campaignQuery.isError || !campaign) {
     return (
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader title={t('charity.campaign')} showBack />
         <View style={styles.emptyContainer}>
-          <EmptyState icon="slash" title={t('common.error')} />
+          <EmptyState
+            icon="slash"
+            title={t('common.error')}
+            subtitle={campaignQuery.isError
+              ? t('errors.loadContentFailed', 'Could not load campaign. Check your connection and try again.')
+              : t('charity.campaignNotFound', 'Campaign not found')}
+            actionLabel={t('common.retry', 'Retry')}
+            onAction={() => campaignQuery.refetch()}
+          />
         </View>
       </View>
     );
@@ -113,54 +128,64 @@ function CampaignScreenContent() {
         }
       >
         {/* Campaign image */}
-        {campaign.imageUrl ? (
-          <ProgressiveImage uri={campaign.imageUrl} width="100%" height={200} borderRadius={radius.lg} style={styles.campaignImageMargin} />
-        ) : (
-          <View style={[styles.imagePlaceholder, { backgroundColor: tc.bgCard }]}>
-            <Icon name="heart" size="xl" color={colors.emerald} />
-          </View>
-        )}
+        <Animated.View entering={FadeInUp.delay(50).duration(400)}>
+          {campaign.imageUrl ? (
+            <ProgressiveImage uri={campaign.imageUrl} width="100%" height={200} borderRadius={radius.lg} style={styles.campaignImageMargin} />
+          ) : (
+            <View style={[styles.imagePlaceholder, { backgroundColor: tc.bgCard }]}>
+              <Icon name="heart" size="xl" color={colors.emerald} />
+            </View>
+          )}
+        </Animated.View>
 
         {/* Title & description */}
-        <Text style={[styles.title, { color: tc.text.primary }]}>{campaign.title}</Text>
-        {campaign.description && (
-          <Text style={[styles.description, { color: tc.text.secondary }]}>{campaign.description}</Text>
-        )}
+        <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+          <Text style={[styles.title, { color: tc.text.primary }]}>{campaign.title}</Text>
+          {campaign.description && (
+            <Text style={[styles.description, { color: tc.text.secondary }]}>{campaign.description}</Text>
+          )}
+        </Animated.View>
 
         {/* Progress section */}
-        <View style={styles.progressSection}>
-          <View style={[styles.progressBarBg, { backgroundColor: tc.surface }]}>
-            <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
+        <Animated.View entering={FadeInUp.delay(150).duration(400)}>
+          <View style={styles.progressSection}>
+            <View style={[styles.progressBarBg, { backgroundColor: tc.surface }]}>
+              <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
+            </View>
+            <View style={[styles.progressStats, { flexDirection: rtlFlexRow(isRTL) }]}>
+              <Text style={[styles.raisedText, { color: tc.text.secondary }]}>
+                {t('charity.raised', {
+                  amount: formatAmount(campaign.raisedAmount),
+                  goal: formatAmount(campaign.goalAmount),
+                })}
+              </Text>
+              <Text style={styles.percentText}>{Math.round(progressPercent)}%</Text>
+            </View>
           </View>
-          <View style={styles.progressStats}>
-            <Text style={[styles.raisedText, { color: tc.text.secondary }]}>
-              {t('charity.raised', {
-                amount: formatAmount(campaign.raisedAmount),
-                goal: formatAmount(campaign.goalAmount),
-              })}
-            </Text>
-            <Text style={styles.percentText}>{Math.round(progressPercent)}%</Text>
-          </View>
-        </View>
+        </Animated.View>
 
         {/* Donor count */}
-        <View style={[styles.donorBadge, { backgroundColor: tc.bgCard }]}>
-          <Icon name="users" size="sm" color={colors.gold} />
-          <Text style={styles.donorText}>
-            {t('charity.donors', { count: campaign.donorCount })}
-          </Text>
-        </View>
+        <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+          <View style={[styles.donorBadge, { backgroundColor: tc.bgCard, flexDirection: rtlFlexRow(isRTL) }]}>
+            <Icon name="users" size="sm" color={colors.gold} />
+            <Text style={styles.donorText}>
+              {t('charity.donors', { count: campaign.donorCount })}
+            </Text>
+          </View>
+        </Animated.View>
 
         {/* CTA */}
-        <View style={styles.ctaContainer}>
-          <GradientButton
-            label={t('charity.donateNow')}
-            onPress={handleDonate}
-            fullWidth
-            accessibilityLabel={t('charity.donateNow')}
-            accessibilityRole="button"
-          />
-        </View>
+        <Animated.View entering={FadeInUp.delay(250).duration(400)}>
+          <View style={styles.ctaContainer}>
+            <GradientButton
+              label={t('charity.donateNow')}
+              onPress={handleDonate}
+              fullWidth
+              accessibilityLabel={t('charity.donateNow')}
+              accessibilityRole="button"
+            />
+          </View>
+        </Animated.View>
       </ScrollView>
     </View>
   );
@@ -181,7 +206,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.base,
-    paddingBottom: spacing['2xl'],
+    paddingBottom: spacing['3xl'],
   },
   skeletonContainer: {
     padding: spacing.base,
@@ -193,7 +218,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   errorText: {
-    color: colors.text.secondary,
     fontSize: fontSize.base,
   },
   // Image
@@ -204,19 +228,16 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 200,
     borderRadius: radius.lg,
-    backgroundColor: colors.dark.bgCard,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.base,
   },
   // Title & description
   title: {
-    color: colors.text.primary,
     fontSize: fontSize.xl,
-    fontWeight: '700',
+    fontFamily: fonts.headingBold,
   },
   description: {
-    color: colors.text.secondary,
     fontSize: fontSize.base,
     marginTop: spacing.sm,
     lineHeight: 22,
@@ -227,7 +248,6 @@ const styles = StyleSheet.create({
   },
   progressBarBg: {
     height: 8,
-    backgroundColor: colors.dark.surface,
     borderRadius: radius.full,
     overflow: 'hidden',
   },
@@ -237,12 +257,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
   },
   progressStats: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: spacing.xs,
   },
   raisedText: {
-    color: colors.text.secondary,
     fontSize: fontSize.sm,
   },
   percentText: {
@@ -252,10 +270,8 @@ const styles = StyleSheet.create({
   },
   // Donor badge
   donorBadge: {
-    flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    backgroundColor: colors.dark.bgCard,
     alignSelf: 'flex-start',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
