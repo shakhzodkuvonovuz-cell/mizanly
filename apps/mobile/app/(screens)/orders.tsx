@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { rtlFlexRow } from '@/utils/rtl';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { commerceApi } from '@/services/api';
 import { navigate } from '@/utils/navigation';
@@ -57,10 +58,11 @@ const STATUS_CONFIG: Record<OrderStatus, { color: string; bgColor: string; label
 function OrdersContent() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
+  const doubleTapRef = React.useRef(false);
 
   const ordersQuery = useInfiniteQuery<OrdersResponse>({
     queryKey: ['my-orders'],
@@ -69,6 +71,7 @@ function OrdersContent() {
     getNextPageParam: (lastPage) =>
       lastPage.meta.hasMore ? lastPage.meta.cursor ?? undefined : undefined,
     initialPageParam: undefined as string | undefined,
+    staleTime: 30_000,
   });
 
   const allOrders = ordersQuery.data?.pages.flatMap((p) => p.data) ?? [];
@@ -84,6 +87,9 @@ function OrdersContent() {
   };
 
   const handleOrderPress = (order: OrderItem) => {
+    if (doubleTapRef.current) return;
+    doubleTapRef.current = true;
+    setTimeout(() => { doubleTapRef.current = false; }, 500);
     haptic.navigate();
     navigate('/(screens)/product-detail', { id: order.productId });
   };
@@ -96,14 +102,14 @@ function OrdersContent() {
     const statusConf = getStatusConfig(item.status);
 
     return (
-      <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
+      <Animated.View entering={FadeInUp.delay(Math.min(index, 10) * 60).duration(300)}>
         <Pressable
           style={styles.orderCard}
           onPress={() => handleOrderPress(item)}
           accessibilityRole="button"
           accessibilityLabel={`Order ${item.id}, ${item.product.title}`}
         >
-          <View style={styles.orderRow}>
+          <View style={[styles.orderRow, { flexDirection: rtlFlexRow(isRTL) }]}>
             {/* Thumbnail */}
             <View style={styles.thumbnailWrap}>
               {item.product.imageUrls?.[0] ? (
@@ -162,7 +168,7 @@ function OrdersContent() {
     <View style={styles.skeletonWrap}>
       {Array.from({ length: 5 }).map((_, i) => (
         <View key={`skel-${i}`} style={styles.orderCard}>
-          <View style={styles.orderRow}>
+          <View style={[styles.orderRow, { flexDirection: rtlFlexRow(isRTL) }]}>
             <Skeleton.Rect width={72} height={72} borderRadius={radius.md} />
             <View style={{ flex: 1, gap: spacing.sm }}>
               <Skeleton.Text width="70%" />
@@ -189,6 +195,14 @@ function OrdersContent() {
       <View style={[styles.content, { paddingTop: insets.top + 52 }]}>
         {ordersQuery.isLoading ? (
           renderSkeleton()
+        ) : ordersQuery.isError ? (
+          <EmptyState
+            icon="slash"
+            title={t('orders.errorTitle', 'Failed to load orders')}
+            subtitle={t('orders.errorSubtitle', 'Please try again')}
+            actionLabel={t('common.retry', 'Retry')}
+            onAction={() => ordersQuery.refetch()}
+          />
         ) : (
           <FlatList
             data={allOrders}
@@ -281,7 +295,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: spacing.xs,
   },
   orderTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     fontFamily: fonts.bodySemiBold,
   },
@@ -291,7 +305,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     fontFamily: fonts.bodyBold,
   },
   orderQty: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.sm,
     fontFamily: fonts.body,
   },
@@ -301,12 +315,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: spacing.sm,
   },
   orderDate: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.xs,
     fontFamily: fonts.body,
   },
   orderId: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.xs,
     fontFamily: fonts.mono,
   },

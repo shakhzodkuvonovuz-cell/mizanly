@@ -7,6 +7,8 @@ import {
   Pressable,
   TextInput,
   Dimensions,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,6 +22,7 @@ import { colors, spacing, radius, fontSize, fonts, fontSizeExt } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 import { monetizationApi } from '@/services/monetizationApi';
 import { usersApi } from '@/services/api';
 import type { MembershipTier, MembershipSubscription } from '@/types/monetization';
@@ -64,9 +67,9 @@ function TierCard({
   onToggle: () => void;
 }) {
   const haptic = useContextualHaptic();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const tc = useThemeColors();
-  const tierColors = TIER_COLORS[tier.level];
+  const tierColors = TIER_COLORS[tier.level] ?? TIER_COLORS.bronze;
 
   return (
     <Animated.View entering={FadeInUp.delay(index * 100).duration(400)}>
@@ -86,7 +89,7 @@ function TierCard({
             <View>
               <Text style={[styles.tierName, { color: tc.text.primary }]}>{tier.name}</Text>
               <Text style={[styles.tierPrice, { color: tierColors.color }]}>
-                ${tier.price.toFixed(2)}/month
+                ${tier.price.toFixed(2)}/{t('monetization.perMonth', 'month')}
               </Text>
             </View>
           </View>
@@ -107,6 +110,7 @@ function TierCard({
               <View
                 style={[
                   styles.toggleThumb,
+                  { backgroundColor: tier.isActive ? colors.text.onColor : tc.border },
                   tier.isActive && styles.toggleThumbActive,
                 ]}
               />
@@ -120,7 +124,7 @@ function TierCard({
           style={styles.membersBadge}
         >
           <Icon name="users" size="xs" color={tc.text.tertiary} />
-          <Text style={styles.membersText}>{t('monetization.members', { count: tier._count?.subscriptions ?? 0 })}</Text>
+          <Text style={[styles.membersText, { color: tc.text.secondary }]}>{t('monetization.members', { count: tier._count?.subscriptions ?? 0 })}</Text>
         </LinearGradient>
 
         {/* Benefits */}
@@ -128,7 +132,7 @@ function TierCard({
           {tier.benefits.map((benefit, i) => (
             <View key={i} style={styles.benefitRow}>
               <Icon name="check" size="xs" color={colors.emerald} />
-              <Text style={styles.benefitText}>{benefit}</Text>
+              <Text style={[styles.benefitText, { color: tc.text.secondary }]}>{benefit}</Text>
             </View>
           ))}
         </View>
@@ -136,16 +140,19 @@ function TierCard({
         {/* Edit Button */}
         <Pressable
           accessibilityRole="button"
-          onPress={() => haptic.tick()}
-         
+          onPress={() => {
+            haptic.tick();
+            showToast({ message: t('common.comingSoon', 'Coming soon'), variant: 'info' });
+          }}
+
           style={styles.editButton}
         >
           <LinearGradient
             colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
-            style={styles.editButtonGradient}
+            style={[styles.editButtonGradient, { flexDirection: rtlFlexRow(isRTL) }]}
           >
             <Icon name="pencil" size="xs" color={tc.text.secondary} />
-            <Text style={styles.editButtonText}>{t('monetization.editTier')}</Text>
+            <Text style={[styles.editButtonText, { color: tc.text.secondary }]}>{t('monetization.editTier')}</Text>
           </LinearGradient>
         </Pressable>
       </LinearGradient>
@@ -156,7 +163,7 @@ function TierCard({
 export default function MembershipTiersScreen() {
   const router = useRouter();
   const haptic = useContextualHaptic();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [tiers, setTiers] = useState<MembershipTier[]>([]);
   const [loading, setLoading] = useState(true);
@@ -183,7 +190,7 @@ export default function MembershipTiersScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchData();
@@ -251,8 +258,7 @@ export default function MembershipTiersScreen() {
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('monetization.membershipTiers')}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
-          rightActions={[{ icon: 'star', onPress: () => {}, accessibilityLabel: 'Tiers' }]}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back', 'Back') }}
         />
 
         {loading ? (
@@ -264,9 +270,11 @@ export default function MembershipTiersScreen() {
         ) : error ? (
           <EmptyState icon="slash" title={t('monetization.errors.unableToLoadTiers')} subtitle={error} actionLabel={t('common.retry')} onAction={fetchData} />
         ) : (
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
           <FlatList
             data={tiers}
             keyExtractor={item => item.id}
+            keyboardShouldPersistTaps="handled"
             refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             contentContainerStyle={styles.scrollContent}
             ListHeaderComponent={
@@ -316,7 +324,7 @@ export default function MembershipTiersScreen() {
                         style={styles.createButton}
                       >
                         <Icon name="circle-plus" size="lg" color={tc.text.tertiary} />
-                        <Text style={styles.createButtonText}>{t('monetization.addMembershipTier')}</Text>
+                        <Text style={[styles.createButtonText, { color: tc.text.tertiary }]}>{t('monetization.addMembershipTier')}</Text>
                       </LinearGradient>
                     </Pressable>
                   </Animated.View>
@@ -333,12 +341,12 @@ export default function MembershipTiersScreen() {
                         colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
                         style={styles.formInputContainer}
                       >
-                        <Text style={styles.formInputLabel}>{t('monetization.tierName')}</Text>
+                        <Text style={[styles.formInputLabel, { color: tc.text.tertiary }]}>{t('monetization.tierName')}</Text>
                         <TextInput
-                          style={styles.formInput}
+                          style={[styles.formInput, { color: tc.text.primary }]}
                           value={newTierName}
                           onChangeText={setNewTierName}
-                          placeholder="e.g., Premium Supporter"
+                          placeholder={t('monetization.tierNamePlaceholder', 'e.g., Premium Supporter')}
                           placeholderTextColor={tc.text.tertiary}
                         />
                       </LinearGradient>
@@ -348,18 +356,18 @@ export default function MembershipTiersScreen() {
                         colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
                         style={styles.formInputContainer}
                       >
-                        <Text style={styles.formInputLabel}>{t('monetization.monthlyPrice')}</Text>
-                        <View style={styles.priceInputWrapper}>
-                          <Text style={styles.pricePrefix}>$</Text>
+                        <Text style={[styles.formInputLabel, { color: tc.text.tertiary }]}>{t('monetization.monthlyPrice')}</Text>
+                        <View style={[styles.priceInputWrapper, { flexDirection: rtlFlexRow(isRTL) }]}>
+                          <Text style={[styles.pricePrefix, { color: tc.text.tertiary }]}>$</Text>
                           <TextInput
-                            style={styles.formInput}
+                            style={[styles.formInput, { color: tc.text.primary }]}
                             value={newTierPrice}
                             onChangeText={setNewTierPrice}
                             placeholder="9.99"
                             placeholderTextColor={tc.text.tertiary}
                             keyboardType="decimal-pad"
                           />
-                          <Text style={styles.priceSuffix}>/month</Text>
+                          <Text style={[styles.priceSuffix, { color: tc.text.tertiary }]}>/{t('monetization.perMonth', 'month')}</Text>
                         </View>
                       </LinearGradient>
 
@@ -368,9 +376,9 @@ export default function MembershipTiersScreen() {
                         colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
                         style={styles.formInputContainer}
                       >
-                        <Text style={styles.formInputLabel}>Benefits (one per line)</Text>
+                        <Text style={[styles.formInputLabel, { color: tc.text.tertiary }]}>{t('monetization.benefitsPerLine', 'Benefits (one per line)')}</Text>
                         <TextInput
-                          style={[styles.formInput, styles.multilineInput]}
+                          style={[styles.formInput, styles.multilineInput, { color: tc.text.primary }]}
                           value={newTierBenefits}
                           onChangeText={setNewTierBenefits}
                           placeholder="• Exclusive content&#10;• Early access&#10;• Monthly Q&A"
@@ -393,21 +401,21 @@ export default function MembershipTiersScreen() {
                             colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
                             style={styles.cancelButtonGradient}
                           >
-                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                            <Text style={[styles.cancelButtonText, { color: tc.text.secondary }]}>{t('common.cancel', 'Cancel')}</Text>
                           </LinearGradient>
                         </Pressable>
 
                         <Pressable
                           accessibilityRole="button"
                           onPress={handleCreateTier}
-                         
-                          style={styles.createTierButton}
+                          disabled={!newTierName.trim() || !newTierPrice.trim()}
+                          style={[styles.createTierButton, (!newTierName.trim() || !newTierPrice.trim()) && { opacity: 0.5 }]}
                         >
                           <LinearGradient
                             colors={[colors.emerald, colors.emeraldDark]}
                             style={styles.createTierButtonGradient}
                           >
-                            <Text style={styles.createTierButtonText}>Create</Text>
+                            <Text style={[styles.createTierButtonText, { color: tc.text.primary }]}>{t('monetization.create', 'Create')}</Text>
                           </LinearGradient>
                         </Pressable>
                       </View>
@@ -419,7 +427,7 @@ export default function MembershipTiersScreen() {
                 <Animated.View entering={FadeInUp.delay(500).duration(400)}>
                   <LinearGradient
                     colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
-                    style={[styles.revenueCard, { borderLeftWidth: 3, borderLeftColor: colors.gold }]}
+                    style={[styles.revenueCard, { borderStartWidth: 3, borderStartColor: colors.gold }]}
                   >
                     <View style={styles.revenueHeader}>
                       <LinearGradient
@@ -428,16 +436,16 @@ export default function MembershipTiersScreen() {
                       >
                         <Icon name="bar-chart-2" size="sm" color={colors.gold} />
                       </LinearGradient>
-                      <Text style={[styles.revenueTitle, { color: tc.text.primary }]}>Monthly Revenue</Text>
+                      <Text style={[styles.revenueTitle, { color: tc.text.primary }]}>{t('monetization.monthlyRevenue', 'Monthly Revenue')}</Text>
                     </View>
 
                     <Text style={styles.revenueAmount}>
                       ${monthlyRevenue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}/month
                     </Text>
 
-                    <View style={styles.revenueStats}>
-                      <Text style={styles.revenueStat}>{totalMembers} active members</Text>
-                      <Text style={styles.revenuePayout}>Payout: 15th of each month</Text>
+                    <View style={[styles.revenueStats, { flexDirection: rtlFlexRow(isRTL) }]}>
+                      <Text style={[styles.revenueStat, { color: tc.text.secondary }]}>{totalMembers} {t('monetization.activeMembers', 'active members')}</Text>
+                      <Text style={[styles.revenuePayout, { color: tc.text.tertiary }]}>{t('monetization.payoutSchedule', 'Payout: 15th of each month')}</Text>
                     </View>
                   </LinearGradient>
                 </Animated.View>
@@ -447,6 +455,7 @@ export default function MembershipTiersScreen() {
               </>
             }
           />
+          </KeyboardAvoidingView>
         )}
       </SafeAreaView>
   
@@ -457,7 +466,6 @@ export default function MembershipTiersScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   scrollContent: {
     padding: spacing.base,
@@ -541,7 +549,6 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: radius.full,
-    backgroundColor: colors.text.primary,
   },
   toggleThumbActive: {
     transform: [{ translateX: 20 }],
