@@ -28,7 +28,7 @@ import { ActionButton } from '@/components/ui/ActionButton';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { reelsApi, followsApi, messagesApi } from '@/services/api';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -538,7 +538,7 @@ export default function ReelDetailScreen() {
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
           rightActions={[
             { icon: 'layers', onPress: () => navigate('/(screens)/duet-create', { reelId: id }), accessibilityLabel: t('bakra.duet') },
-            { icon: 'repeat', onPress: () => navigate('/(screens)/reel-remix', { reelId: id }), accessibilityLabel: t('bakra.remix') },
+            { icon: 'repeat', onPress: () => navigate('/(screens)/reel-remix', { originalReelId: id }), accessibilityLabel: t('bakra.remix') },
             { icon: 'share', onPress: () => navigate('/(screens)/stitch-create', { reelId: id }), accessibilityLabel: t('bakra.stitch') },
             { icon: 'flag', onPress: () => router.push(`/(screens)/report?type=reel&id=${id}` as never), accessibilityLabel: t('common.report') },
           ]}
@@ -740,7 +740,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   reelUserInfo: {
     flex: 1,
-    marginLeft: spacing.sm,
+    marginStart: spacing.sm,
   },
   reelUsername: {
     color: colors.text.primary,
@@ -776,7 +776,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   audioText: {
     color: colors.text.secondary,
     fontSize: fontSize.sm,
-    marginLeft: spacing.xs,
+    marginStart: spacing.xs,
   },
   actionButtons: {
     flexDirection: 'row',
@@ -792,9 +792,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderTopColor: tc.border,
   },
   commentsTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
   },
   commentRow: {
     flexDirection: 'row',
@@ -810,13 +810,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingVertical: spacing.sm,
   },
   commentUser: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.sm,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     marginBottom: 2,
   },
   commentText: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.sm,
     lineHeight: 19,
   },
@@ -832,16 +832,16 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingHorizontal: spacing.xs,
   },
   commentTime: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.xs,
   },
   commentLikesLabel: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.xs,
     fontWeight: '600',
   },
   commentAction: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.xs,
     fontWeight: '700',
   },
@@ -866,7 +866,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: tc.bgElevated,
   },
   replyBannerText: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.xs,
   },
   inputRow: {
@@ -878,7 +878,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   input: {
     flex: 1,
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     maxHeight: 100,
     paddingVertical: 6,
@@ -889,12 +889,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     fontWeight: '700',
   },
   sendBtnDisabled: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
   },
   shareSheetTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.md,
   },
@@ -911,8 +911,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   shareSheetName: {
     flex: 1,
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
 });

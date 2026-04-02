@@ -16,10 +16,11 @@ import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { CharCountRing } from '@/components/ui/CharCountRing';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { reportsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { showToast } from '@/components/ui/Toast';
 
@@ -40,6 +41,7 @@ export default function ReportScreen() {
   const params = useLocalSearchParams<{ type: string; id: string }>();
   const router = useRouter();
   const { t } = useTranslation();
+  const haptic = useContextualHaptic();
   const [selectedReason, setSelectedReason] = useState<string>('');
   const [details, setDetails] = useState('');
 
@@ -244,9 +246,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.xl,
   },
   prompt: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.lg,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     flex: 1,
   },
   reasonList: {
@@ -281,7 +283,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.full,
   },
   reasonLabel: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     flex: 1,
   },
@@ -304,9 +306,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.xl,
   },
   detailsLabel: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
     marginBottom: spacing.sm,
   },
   detailsInput: {
@@ -314,7 +316,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: tc.border,
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,

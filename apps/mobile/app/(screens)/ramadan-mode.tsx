@@ -23,6 +23,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 import { islamicApi } from '@/services/islamicApi';
 import { formatHijriDate } from '@/utils/hijri';
 import { navigate } from '@/utils/navigation';
@@ -319,12 +320,18 @@ export default function RamadanModeScreen() {
   }, [ramadanQuery, prayerTimesQuery]);
 
   const toggleGoal = useCallback((id: string) => {
+    haptic.tick();
     setGoals(prev =>
       prev.map(g => (g.id === id ? { ...g, completed: !g.completed } : g))
     );
-    // Persist goal completion via API
-    islamicApi.completeDailyTask(id).catch(() => {});
-  }, []);
+    // Persist goal completion via API — rollback on failure
+    islamicApi.completeDailyTask(id).catch(() => {
+      setGoals(prev =>
+        prev.map(g => (g.id === id ? { ...g, completed: !g.completed } : g))
+      );
+      showToast({ message: t('common.error'), variant: 'error' });
+    });
+  }, [haptic, t]);
 
   const handleDhikrPress = useCallback(() => {
     haptic.tick();
@@ -518,7 +525,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   heroTitle: {
     fontFamily: fonts.heading,
     fontSize: fontSize.xl,
-    color: colors.text.primary,
+    color: tc.text.primary,
     marginBottom: spacing.md,
   },
   dayCounter: {
@@ -528,7 +535,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   dayText: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     marginBottom: spacing.sm,
     textAlign: 'center',
   },
@@ -588,13 +595,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   countdownLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     marginBottom: spacing.xs,
   },
   countdownTime: {
     fontFamily: fonts.heading,
     fontSize: fontSize.lg,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   countdownTimeUrgent: {
     color: colors.gold,
@@ -614,7 +621,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   sectionTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.md,
-    color: colors.text.primary,
+    color: tc.text.primary,
     marginBottom: spacing.md,
     marginTop: spacing.sm,
   },
@@ -650,11 +657,11 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   scheduleName: {
     fontFamily: fonts.body,
     fontSize: fontSize.base,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   scheduleNameHighlighted: {
     fontFamily: fonts.bodySemiBold,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   scheduleNameCurrent: {
     color: colors.emerald,
@@ -662,7 +669,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   scheduleTime: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
   },
   scheduleTimeCurrent: {
     fontFamily: fonts.bodySemiBold,
@@ -677,7 +684,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   currentBadgeText: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.xs,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   trackerCard: {
     borderRadius: radius.lg,
@@ -710,10 +717,10 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   dayNumber: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   dayNumberCompleted: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontFamily: fonts.bodySemiBold,
   },
   dayNumberToday: {
@@ -733,7 +740,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   trackerRemaining: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
   },
   goalsCard: {
     borderRadius: radius.lg,
@@ -764,12 +771,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   goalLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
     flex: 1,
   },
   goalLabelCompleted: {
     textDecorationLine: 'line-through',
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
   },
   checkContainer: {
     marginStart: spacing.sm,

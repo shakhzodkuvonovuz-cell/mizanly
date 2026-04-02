@@ -423,9 +423,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     padding: spacing.sm,
   },
   cardName: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.sm,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     marginBottom: spacing.xs,
   },
   cardMeta: {
@@ -434,7 +434,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: spacing.xs,
   },
   cardUseCount: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.xs,
     flex: 1,
   },
@@ -453,7 +453,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.sm,
   },
   timelineLabel: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.xs,
     marginBottom: spacing.xs,
   },
@@ -488,12 +488,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: colors.emerald,
   },
   segmentTime: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.xs,
     fontFamily: fonts.mono,
   },
   segmentText: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.xs,
     flex: 1,
   },

@@ -916,8 +916,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   layoutBtnText: {
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
-    fontWeight: '600',
+    color: tc.text.secondary,
+    fontFamily: fonts.bodySemiBold,
   },
   layoutBtnTextActive: {
     color: colors.emerald,
@@ -942,12 +942,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flex: 1,
   },
   originalCreatorName: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   originalCaption: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     marginTop: spacing.xs,
   },
@@ -1013,7 +1013,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   timerText: {
     fontSize: fontSize.lg,
     fontFamily: fonts.mono,
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontWeight: '600',
   },
   timerTextWarning: {
@@ -1087,7 +1087,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: 2,
   },
   sectionLabel: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     fontWeight: '500',
   },
@@ -1098,7 +1098,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderColor: 'rgba(45,53,72,0.3)',
   },
   captionInput: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     minHeight: 80,
   },
