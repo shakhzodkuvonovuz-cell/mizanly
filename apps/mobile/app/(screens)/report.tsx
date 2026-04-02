@@ -228,6 +228,11 @@ export default function ReportScreen() {
               fullWidth
               size="lg"
             />
+            {!selectedReason && (
+              <Text style={styles.disabledHint}>
+                {t('screens.report.selectReasonHint', { defaultValue: 'Please select a reason above to submit' })}
+              </Text>
+            )}
           </Animated.View>
         </ScrollView>
         </KeyboardAvoidingView>
@@ -340,5 +345,11 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   charCountWrap: {
     alignItems: 'flex-end',
+  },
+  disabledHint: {
+    color: tc.text.tertiary,
+    fontSize: fontSize.xs,
+    textAlign: 'center',
+    marginTop: spacing.sm,
   },
 });

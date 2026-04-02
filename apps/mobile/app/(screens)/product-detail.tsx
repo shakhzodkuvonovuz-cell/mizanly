@@ -310,7 +310,8 @@ function ProductDetailContent() {
         {/* Seller Card */}
         <Animated.View entering={FadeInUp.delay(200).duration(300)} style={styles.sellerCard}>
           <Pressable
-            style={styles.sellerInner}
+            style={({ pressed }) => [styles.sellerInner, pressed && { opacity: 0.7 }]}
+            android_ripple={{ color: 'rgba(255,255,255,0.1)' }}
             onPress={() => {
               if (isNavigatingRef.current) return;
               isNavigatingRef.current = true;
@@ -429,7 +430,7 @@ function ProductDetailContent() {
               contentContainerStyle={styles.relatedRow}
               renderItem={({ item }) => (
                 <Pressable
-                  style={styles.relatedCard}
+                  style={({ pressed }) => [styles.relatedCard, pressed && { opacity: 0.7 }]}
                   onPress={() => handleRelatedPress(item.id)}
                   accessibilityRole="button"
                   accessibilityLabel={`${item.title}, $${(item.price / 100).toFixed(2)}`}

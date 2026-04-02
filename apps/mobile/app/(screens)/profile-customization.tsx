@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -180,6 +181,7 @@ function ProfileCustomizationScreen() {
   const [showStreak, setShowStreak] = useState(true);
   const [musicUrl, setMusicUrl] = useState('');
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string | undefined>();
+  const isDirtyRef = useRef(false);
 
   useEffect(() => {
     if (data) {
@@ -235,8 +237,25 @@ function ProfileCustomizationScreen() {
     }
   }, [haptic, t]);
 
+  const handleBack = useCallback(() => {
+    if (isDirtyRef.current) {
+      haptic.delete();
+      Alert.alert(
+        t('common.unsavedChanges', { defaultValue: 'Unsaved Changes' }),
+        t('common.unsavedChangesMessage', { defaultValue: 'You have unsaved changes. Discard them?' }),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('common.discard', { defaultValue: 'Discard' }), style: 'destructive', onPress: () => router.back() },
+        ],
+      );
+    } else {
+      router.back();
+    }
+  }, [haptic, t, router]);
+
   const handleSave = useCallback(() => {
     haptic.save();
+    isDirtyRef.current = false;
     saveMutation.mutate({
       accentColor,
       layoutStyle,
@@ -259,7 +278,7 @@ function ProfileCustomizationScreen() {
         title={t('gamification.profileCustomization.title')}
         leftAction={{
           icon: 'arrow-left',
-          onPress: () => router.back(),
+          onPress: handleBack,
           accessibilityLabel: t('common.back'),
         }}
       />
@@ -293,6 +312,7 @@ function ProfileCustomizationScreen() {
                   key={color}
                   onPress={() => {
                     haptic.tick();
+                    isDirtyRef.current = true;
                     setAccentColor(color);
                   }}
                   accessibilityRole="radio"
@@ -318,6 +338,7 @@ function ProfileCustomizationScreen() {
                   key={layout.key}
                   onPress={() => {
                     haptic.tick();
+                    isDirtyRef.current = true;
                     setLayoutStyle(layout.key);
                   }}
                   accessibilityRole="radio"
@@ -362,6 +383,7 @@ function ProfileCustomizationScreen() {
                   key={font.key}
                   onPress={() => {
                     haptic.tick();
+                    isDirtyRef.current = true;
                     setBioFont(font.key);
                   }}
                   accessibilityRole="radio"
@@ -406,21 +428,21 @@ function ProfileCustomizationScreen() {
                 <ToggleRow
                   label={t('gamification.profileCustomization.showBadges')}
                   value={showBadges}
-                  onToggle={setShowBadges}
+                  onToggle={(v: boolean) => { isDirtyRef.current = true; setShowBadges(v); }}
                   isRTL={isRTL}
                 />
                 <View style={styles.divider} />
                 <ToggleRow
                   label={t('gamification.profileCustomization.showLevel')}
                   value={showLevel}
-                  onToggle={setShowLevel}
+                  onToggle={(v: boolean) => { isDirtyRef.current = true; setShowLevel(v); }}
                   isRTL={isRTL}
                 />
                 <View style={styles.divider} />
                 <ToggleRow
                   label={t('gamification.profileCustomization.showStreak')}
                   value={showStreak}
-                  onToggle={setShowStreak}
+                  onToggle={(v: boolean) => { isDirtyRef.current = true; setShowStreak(v); }}
                   isRTL={isRTL}
                 />
               </LinearGradient>
