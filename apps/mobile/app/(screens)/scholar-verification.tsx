@@ -6,6 +6,8 @@ import {
   ScrollView,
   Pressable,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter } from 'expo-router';
@@ -309,6 +311,7 @@ function ScholarVerificationContent() {
 
   // Application form
   return (
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
@@ -435,6 +438,7 @@ function ScholarVerificationContent() {
         ))}
       </BottomSheet>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

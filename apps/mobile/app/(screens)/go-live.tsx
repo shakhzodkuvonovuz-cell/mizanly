@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput, ScrollView,
-  Switch,
+  Switch, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
@@ -116,7 +116,7 @@ export default function GoLiveScreen() {
   });
 
   const handleGoLive = () => {
-    if (!canGoLive) return;
+    if (!canGoLive || createMutation.isPending) return;
     haptic.send();
     createMutation.mutate();
   };
@@ -137,6 +137,7 @@ export default function GoLiveScreen() {
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
 
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
           style={styles.body}
           keyboardShouldPersistTaps="handled"
@@ -282,6 +283,7 @@ export default function GoLiveScreen() {
             </Pressable>
           </Animated.View>
         </ScrollView>
+        </KeyboardAvoidingView>
 
         {/* Live type picker bottom sheet */}
         <BottomSheet visible={showLiveTypePicker} onClose={() => setShowLiveTypePicker(false)}>

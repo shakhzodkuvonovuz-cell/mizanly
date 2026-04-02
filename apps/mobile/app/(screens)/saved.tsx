@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   FlatList, Dimensions,
@@ -13,7 +13,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { TabSelector } from '@/components/ui/TabSelector';
 import { GlassHeader } from '@/components/ui/GlassHeader';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { usersApi } from '@/services/api';
 import { ThreadCard } from '@/components/majlis/ThreadCard';
 import { useUser } from '@clerk/clerk-expo';
@@ -141,6 +141,14 @@ export default function SavedScreen() {
   const router = useRouter();
   const { user } = useUser();
   const [activeTab, setActiveTab] = useState<Tab>('posts');
+  const lastNavRef = useRef(0);
+  const navigateOnce = (path: string) => {
+    const now = Date.now();
+    if (now - lastNavRef.current < 500) return;
+    lastNavRef.current = now;
+    haptic.tick();
+    router.push(path as never);
+  };
   const params = useLocalSearchParams<{ folder?: string; collection?: string }>();
   const folderId = params.folder;
   const collectionName = params.collection;
@@ -303,7 +311,7 @@ export default function SavedScreen() {
             }
             renderItem={({ item, index }) => (
               <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
-                <PostGrid post={item} onPress={() => router.push(`/(screens)/post/${item.id}`)} />
+                <PostGrid post={item} onPress={() => navigateOnce(`/(screens)/post/${item.id}`)} />
               </Animated.View>
             )}
             ListEmptyComponent={() =>
@@ -394,7 +402,7 @@ export default function SavedScreen() {
             }
             renderItem={({ item, index }) => (
               <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
-                <ReelGrid reel={item} onPress={() => router.push(`/(screens)/reel/${item.id}`)} />
+                <ReelGrid reel={item} onPress={() => navigateOnce(`/(screens)/reel/${item.id}`)} />
               </Animated.View>
             )}
             ListEmptyComponent={() =>
@@ -433,7 +441,7 @@ export default function SavedScreen() {
             }
             renderItem={({ item, index }) => (
               <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
-                <VideoRow video={item} onPress={() => router.push(`/(screens)/video/${item.id}`)} />
+                <VideoRow video={item} onPress={() => navigateOnce(`/(screens)/video/${item.id}`)} />
               </Animated.View>
             )}
             ListEmptyComponent={() =>
@@ -495,7 +503,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   videoThumbnail: { width: 120, height: 68, borderRadius: radius.sm },
   videoInfo: { flex: 1, marginStart: spacing.base, justifyContent: 'center' },
-  videoTitle: { color: tc.text.primary, fontSize: fontSize.base, fontWeight: '600', marginBottom: 2 },
+  videoTitle: { color: tc.text.primary, fontSize: fontSize.base, fontFamily: fonts.bodySemiBold, marginBottom: 2 },
   videoChannel: { color: tc.text.secondary, fontSize: fontSize.sm, marginBottom: 2 },
   videoDuration: { color: tc.text.tertiary, fontSize: fontSize.xs },
 

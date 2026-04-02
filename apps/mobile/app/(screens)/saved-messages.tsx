@@ -17,6 +17,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -32,6 +33,7 @@ async function fetchSavedMessages(cursor?: string) {
 
 export default function SavedMessagesScreen() {
   const tc = useThemeColors();
+  const insets = useSafeAreaInsets();
   const styles = createStyles(tc);
   const router = useRouter();
   const haptic = useContextualHaptic();
@@ -211,7 +213,7 @@ export default function SavedMessagesScreen() {
         />
 
         {/* Compose bar */}
-        <View style={styles.composeBar}>
+        <View style={[styles.composeBar, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
           <TextInput
             style={[styles.composeInput, isRTL && { textAlign: 'right' }]}
             value={newMessage}
@@ -279,7 +281,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   messageCard: { backgroundColor: tc.bgCard, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: tc.border, marginBottom: spacing.sm },
   messageCardPinned: { borderColor: colors.gold + '40', backgroundColor: colors.gold + '05' },
   pinBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.xs },
-  pinText: { color: colors.gold, fontSize: fontSize.xs, fontWeight: '600' },
+  pinText: { color: colors.gold, fontSize: fontSize.xs, fontFamily: fonts.bodySemiBold },
   forwardBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.xs },
   forwardText: { color: tc.text.tertiary, fontSize: fontSize.xs },
   mediaPreview: { borderRadius: radius.md, overflow: 'hidden', marginBottom: spacing.sm, position: 'relative' },

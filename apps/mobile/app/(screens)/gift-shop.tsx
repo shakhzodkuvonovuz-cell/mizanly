@@ -313,7 +313,20 @@ function GiftShopContent() {
     </Animated.View>
   );
 
-  const renderShopTab = () => (
+  const renderShopTab = () => {
+    if (balanceError || catalogError) {
+      return (
+        <EmptyState
+          icon="alert-circle"
+          title={t('giftShop.loadError', 'Could not load shop')}
+          subtitle={t('common.networkError', 'Check your connection and try again')}
+          actionLabel={t('common.retry', 'Retry')}
+          onAction={() => { refetchBalance(); refetchCatalog(); }}
+        />
+      );
+    }
+
+    return (
     <ScrollView
       showsVerticalScrollIndicator={false}
       contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + spacing.xl }]}
@@ -389,7 +402,8 @@ function GiftShopContent() {
         </LinearGradient>
       </Pressable>
     </ScrollView>
-  );
+    );
+  };
 
   const renderHistoryTab = () => {
     if (historyError) {

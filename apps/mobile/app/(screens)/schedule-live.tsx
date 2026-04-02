@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput, ScrollView,
-  Platform, Image as RNImage,
+  Platform, Image as RNImage, KeyboardAvoidingView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
@@ -185,6 +185,7 @@ export default function ScheduleLiveScreen() {
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
         />
 
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
           style={styles.body}
           keyboardShouldPersistTaps="handled"
@@ -299,6 +300,7 @@ export default function ScheduleLiveScreen() {
             />
           </Animated.View>
         </ScrollView>
+        </KeyboardAvoidingView>
 
         {/* Date picker bottom sheet */}
         <BottomSheet visible={showDatePicker} onClose={() => setShowDatePicker(false)} snapPoint={0.6}>

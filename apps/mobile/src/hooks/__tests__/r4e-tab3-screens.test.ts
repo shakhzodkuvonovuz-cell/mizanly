@@ -54,6 +54,12 @@ describe('gift-shop', () => {
     expect(src).toContain('Could not load history');
   });
 
+  test('has error state for balance/catalog queries', () => {
+    expect(src).toContain('balanceError');
+    expect(src).toContain('catalogError');
+    expect(src).toContain('Could not load shop');
+  });
+
   test('no unused shadow/animation imports', () => {
     expect(src).not.toMatch(/import.*shadow.*animation.*from/);
   });
@@ -216,8 +222,15 @@ describe('go-live', () => {
   });
 
   test('go live works for non-scheduled streams', () => {
-    // Should NOT have the "liveNotAvailable" early return for non-scheduled
     expect(src).not.toContain('liveNotAvailable');
+  });
+
+  test('double-tap guard on go live', () => {
+    expect(src).toContain('createMutation.isPending) return');
+  });
+
+  test('has KeyboardAvoidingView', () => {
+    expect(src).toContain('KeyboardAvoidingView');
   });
 
   test('no dead useEffect import', () => {
@@ -226,9 +239,8 @@ describe('go-live', () => {
     expect(importSection).not.toMatch(/\buseEffect\b/);
   });
 
-  test('no dead Platform import', () => {
-    const importSection = src.slice(0, src.indexOf('export'));
-    expect(importSection).not.toContain('Platform');
+  test('Platform import used for KeyboardAvoidingView', () => {
+    expect(src).toContain('Platform.OS');
   });
 
   test('no dead EmptyState import', () => {
@@ -268,12 +280,16 @@ describe('saved', () => {
   });
 
   test('no dead isRTL variable', () => {
-    // isRTL should not be destructured since we removed it
     expect(src).not.toMatch(/\bisRTL\b/);
   });
 
   test('uses useContextualHaptic', () => {
     expect(src).toContain('useContextualHaptic');
+  });
+
+  test('has double-tap navigation guard', () => {
+    expect(src).toContain('navigateOnce');
+    expect(src).toContain('lastNavRef');
   });
 
   test('error container uses stylesheet not inline', () => {
@@ -325,6 +341,11 @@ describe('saved-messages', () => {
     expect(errorHandlerCount).toBeGreaterThanOrEqual(2);
   });
 
+  test('compose bar has bottom safe area padding', () => {
+    expect(src).toContain('insets.bottom');
+    expect(src).toContain('useSafeAreaInsets');
+  });
+
   test('header actions have accessibility labels', () => {
     expect(src).toContain("accessibilityLabel: t('accessibility.goBack')");
     expect(src).toContain("accessibilityLabel: t('common.search')");
@@ -358,6 +379,10 @@ describe('schedule-live', () => {
 
   test('uses tc.text.primary in styles', () => {
     expect(styles).toContain('tc.text.primary');
+  });
+
+  test('has KeyboardAvoidingView', () => {
+    expect(src).toContain('KeyboardAvoidingView');
   });
 });
 
@@ -450,5 +475,9 @@ describe('scholar-verification', () => {
 
   test('has error state UI for load failures', () => {
     expect(src).toContain('loadError');
+  });
+
+  test('has KeyboardAvoidingView', () => {
+    expect(src).toContain('KeyboardAvoidingView');
   });
 });
