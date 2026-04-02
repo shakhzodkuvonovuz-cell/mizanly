@@ -961,7 +961,7 @@ export default function CreateReelScreen() {
                   colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.05)']}
                   style={styles.toolbarBtnGradient}
                 >
-                  <Icon name="volume-x" size="md" color={colors.gold} />
+                  <Icon name="music" size="md" color={colors.gold} />
                 </LinearGradient>
                 <Text style={styles.toolbarLabel}>{t('createReel.audioLibrary')}</Text>
               </Pressable>
@@ -971,7 +971,7 @@ export default function CreateReelScreen() {
           {/* Selected track indicator */}
           {selectedTrack && (
             <Animated.View entering={FadeIn} style={[styles.selectedTrackBar, { backgroundColor: tc.bgCard }]}>
-              <Icon name="volume-x" size="sm" color={colors.emerald} />
+              <Icon name="music" size="sm" color={colors.emerald} />
               <Text style={styles.selectedTrackText} numberOfLines={1}>
                 {selectedTrack.title} — {selectedTrack.artist}
               </Text>
