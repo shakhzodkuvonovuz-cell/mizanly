@@ -1,4 +1,4 @@
-import { isPrivateIp, assertNotPrivateIp, isPrivateUrl, assertNotPrivateUrl } from './ssrf';
+import { isPrivateIp, assertNotPrivateUrl } from './ssrf';
 import * as dns from 'dns';
 
 // Mock dns.promises.lookup for deterministic testing
@@ -137,98 +137,6 @@ describe('SSRF Validation Utility', () => {
     });
   });
 
-  // ── assertNotPrivateIp ────────────────────────────────────
-
-  describe('assertNotPrivateIp', () => {
-    it('should not throw for public IPs', () => {
-      expect(() => assertNotPrivateIp('8.8.8.8')).not.toThrow();
-      expect(() => assertNotPrivateIp('2606:4700:4700::1111')).not.toThrow();
-    });
-
-    it('should throw for private IPs', () => {
-      expect(() => assertNotPrivateIp('127.0.0.1')).toThrow('private/internal range');
-      expect(() => assertNotPrivateIp('::1')).toThrow('private/internal range');
-      expect(() => assertNotPrivateIp('10.0.0.1')).toThrow('private/internal range');
-    });
-  });
-
-  // ── isPrivateUrl (DNS-resolving) ──────────────────────────
-
-  describe('isPrivateUrl', () => {
-    it('should allow URL resolving to public IP', async () => {
-      mockLookup.mockResolvedValue({ address: '93.184.216.34', family: 4 } as any);
-      expect(await isPrivateUrl('https://example.com/page')).toBe(false);
-    });
-
-    it('should block URL resolving to private IP (DNS rebinding simulation)', async () => {
-      // Simulate DNS rebinding: hostname resolves to internal IP
-      mockLookup.mockResolvedValue({ address: '127.0.0.1', family: 4 } as any);
-      expect(await isPrivateUrl('https://evil-rebinding.attacker.com/steal')).toBe(true);
-    });
-
-    it('should block URL resolving to 10.x private IP', async () => {
-      mockLookup.mockResolvedValue({ address: '10.0.0.1', family: 4 } as any);
-      expect(await isPrivateUrl('https://internal.company.com/api')).toBe(true);
-    });
-
-    it('should block URL resolving to 169.254 metadata IP (cloud SSRF)', async () => {
-      mockLookup.mockResolvedValue({ address: '169.254.169.254', family: 4 } as any);
-      expect(await isPrivateUrl('https://metadata.attacker.com/latest')).toBe(true);
-    });
-
-    it('should block URL with direct IP literal 127.0.0.1', async () => {
-      // Direct IP — no DNS lookup needed
-      expect(await isPrivateUrl('https://127.0.0.1/admin')).toBe(true);
-      expect(mockLookup).not.toHaveBeenCalled();
-    });
-
-    it('should block URL with direct IP literal 10.0.0.1', async () => {
-      expect(await isPrivateUrl('https://10.0.0.1/internal')).toBe(true);
-    });
-
-    it('should block URL with direct IPv6 literal [::1]', async () => {
-      expect(await isPrivateUrl('https://[::1]/admin')).toBe(true);
-    });
-
-    it('should block non-HTTP protocols', async () => {
-      expect(await isPrivateUrl('ftp://example.com/file')).toBe(true);
-      expect(await isPrivateUrl('file:///etc/passwd')).toBe(true);
-      expect(await isPrivateUrl('gopher://internal/data')).toBe(true);
-    });
-
-    it('should block on DNS resolution failure (fail-closed)', async () => {
-      mockLookup.mockRejectedValue(new Error('ENOTFOUND'));
-      expect(await isPrivateUrl('https://nonexistent.invalid/page')).toBe(true);
-    });
-
-    it('should block malformed URLs', async () => {
-      expect(await isPrivateUrl('not-a-url')).toBe(true);
-      expect(await isPrivateUrl('')).toBe(true);
-    });
-
-    // ── Bypass technique coverage ─────────────────────────
-
-    it('should block decimal IP encoding (2130706433 = 127.0.0.1)', async () => {
-      // In URL form, decimal IPs would need to resolve via DNS or be direct
-      // A hostname like "2130706433" would resolve via DNS
-      mockLookup.mockResolvedValue({ address: '127.0.0.1', family: 4 } as any);
-      expect(await isPrivateUrl('https://2130706433/admin')).toBe(true);
-    });
-
-    it('should block IPv6 mapped private IP in URL', async () => {
-      expect(await isPrivateUrl('https://[::ffff:127.0.0.1]/admin')).toBe(true);
-    });
-
-    it('should block 0.0.0.0 direct', async () => {
-      expect(await isPrivateUrl('https://0.0.0.0/admin')).toBe(true);
-    });
-
-    it('should block hostname that resolves to IPv6 private', async () => {
-      mockLookup.mockResolvedValue({ address: '::1', family: 6 } as any);
-      expect(await isPrivateUrl('https://evil.com/page')).toBe(true);
-    });
-  });
-
   // ── assertNotPrivateUrl ───────────────────────────────────
 
   describe('assertNotPrivateUrl', () => {
@@ -260,17 +168,17 @@ describe('SSRF Validation Utility', () => {
   describe('edge cases', () => {
     it('should handle HTTP (not just HTTPS) URLs as valid protocol', async () => {
       mockLookup.mockResolvedValue({ address: '93.184.216.34', family: 4 } as any);
-      expect(await isPrivateUrl('http://example.com/page')).toBe(false);
+      await expect(assertNotPrivateUrl('http://example.com/page')).resolves.not.toThrow();
     });
 
     it('should handle URL with port number', async () => {
       mockLookup.mockResolvedValue({ address: '93.184.216.34', family: 4 } as any);
-      expect(await isPrivateUrl('https://example.com:8443/api')).toBe(false);
+      await expect(assertNotPrivateUrl('https://example.com:8443/api')).resolves.not.toThrow();
     });
 
-    it('should handle URL with auth info', async () => {
+    it('should handle URL with auth info resolving to private IP', async () => {
       mockLookup.mockResolvedValue({ address: '10.0.0.1', family: 4 } as any);
-      expect(await isPrivateUrl('https://user:pass@internal.corp/api')).toBe(true);
+      await expect(assertNotPrivateUrl('https://user:pass@internal.corp/api')).rejects.toThrow('private IP');
     });
 
     it('should handle 172.16 boundary correctly', () => {

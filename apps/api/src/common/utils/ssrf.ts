@@ -193,7 +193,7 @@ function isPrivateIpV6(ip: string): boolean {
  * Check if a resolved IP address is in a private/internal range.
  * Works with both IPv4 and IPv6 addresses.
  */
-function isPrivateIp(ip: string): boolean {
+export function isPrivateIp(ip: string): boolean {
   if (net.isIPv4(ip)) {
     return isPrivateIpV4(ip);
   }
