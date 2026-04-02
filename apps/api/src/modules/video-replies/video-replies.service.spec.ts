@@ -104,4 +104,59 @@ describe('VideoRepliesService', () => {
       await expect(service.delete('vr1', 'u1')).rejects.toThrow(ForbiddenException);
     });
   });
+
+  // ── T05 gap: delete already-deleted reply ──
+
+  describe('delete (already deleted)', () => {
+    it('should throw NotFoundException when reply already deleted', async () => {
+      prisma.videoReply.findUnique.mockResolvedValue({ id: 'vr1', userId: 'u1', isDeleted: true });
+      await expect(service.delete('vr1', 'u1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ── T05 gap: create REEL comment not found ──
+
+  describe('create (REEL comment not found)', () => {
+    it('should throw NotFoundException when reel comment does not exist', async () => {
+      prisma.reelComment.findUnique.mockResolvedValue(null);
+      await expect(service.create('u1', {
+        commentId: 'missing-reel-comment',
+        commentType: 'REEL',
+        mediaUrl: 'https://cdn.test/v.mp4',
+      })).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ── T05 gap: getByComment hasMore=true ──
+
+  describe('getByComment (hasMore=true)', () => {
+    it('should return hasMore=true when more items available', async () => {
+      const items = Array.from({ length: 21 }, (_, i) => ({ id: `vr${i}`, userId: 'u1' }));
+      prisma.videoReply.findMany.mockResolvedValue(items);
+
+      const result = await service.getByComment('c1');
+      expect(result.meta.hasMore).toBe(true);
+      expect(result.data.length).toBe(20);
+      expect(result.meta.cursor).toBe('vr19');
+    });
+  });
+
+  // ── T05 gap: getByComment user enrichment ──
+
+  describe('getByComment (user enrichment)', () => {
+    it('should enrich video replies with user data', async () => {
+      prisma.videoReply.findMany.mockResolvedValue([
+        { id: 'vr1', userId: 'u1' },
+        { id: 'vr2', userId: 'u2' },
+      ]);
+      prisma.user.findMany.mockResolvedValue([
+        { id: 'u1', username: 'alice', displayName: 'Alice', avatarUrl: null },
+        { id: 'u2', username: 'bob', displayName: 'Bob', avatarUrl: null },
+      ]);
+
+      const result = await service.getByComment('c1');
+      expect(result.data[0].user).toEqual(expect.objectContaining({ username: 'alice' }));
+      expect(result.data[1].user).toEqual(expect.objectContaining({ username: 'bob' }));
+    });
+  });
 });

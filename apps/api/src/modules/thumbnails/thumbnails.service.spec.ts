@@ -169,4 +169,22 @@ describe('ThumbnailsService', () => {
       expect(result!.variants[0].ctr).toBe(0);
     });
   });
+
+  // ── T05 gap: trackImpression non-existent variantId ──
+
+  describe('trackImpression (non-existent variant)', () => {
+    it('should propagate error for non-existent variantId', async () => {
+      mockPrisma.thumbnailVariant.update.mockRejectedValue(new Error('Record not found'));
+      await expect(service.trackImpression('non-existent')).rejects.toThrow();
+    });
+  });
+
+  // ── T05 gap: trackClick non-existent variantId ──
+
+  describe('trackClick (non-existent variant)', () => {
+    it('should propagate error for non-existent variantId', async () => {
+      mockPrisma.thumbnailVariant.update.mockRejectedValue(new Error('Record not found'));
+      await expect(service.trackClick('non-existent')).rejects.toThrow();
+    });
+  });
 });

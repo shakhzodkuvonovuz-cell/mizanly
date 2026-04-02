@@ -1070,4 +1070,110 @@ describe('VideosService', () => {
       await expect(service.getCommentReplies('nonexistent')).rejects.toThrow(NotFoundException);
     });
   });
+
+  // ── T05 gap: getRecommended ──
+
+  describe('getRecommended', () => {
+    it('should return recommended videos by tags/category/channel', async () => {
+      prisma.video.findUnique.mockResolvedValue({
+        channelId: 'ch1', category: 'EDUCATION', tags: ['islam', 'quran'],
+      });
+      prisma.video.findMany.mockResolvedValue([
+        { id: 'rec-1', userId: 'u2', title: 'Related', user: { id: 'u2' } },
+      ]);
+      // enhanceVideos needs block/subscription/reaction mocks
+      prisma.block.findMany.mockResolvedValue([]);
+      prisma.videoReaction.findMany.mockResolvedValue([]);
+      prisma.videoBookmark.findMany.mockResolvedValue([]);
+      prisma.subscription.findMany.mockResolvedValue([]);
+
+      const result = await service.getRecommended('video-1', 10, 'u1');
+      expect(result.length).toBe(1);
+    });
+
+    it('should throw NotFoundException when video not found', async () => {
+      prisma.video.findUnique.mockResolvedValue(null);
+      await expect(service.getRecommended('missing')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ── T05 gap: deleteComment ──
+
+  describe('deleteComment', () => {
+    it('should allow comment author to delete', async () => {
+      prisma.videoComment.findUnique.mockResolvedValue({ id: 'c1', videoId: 'v1', userId: 'author' });
+      prisma.videoComment.update = jest.fn().mockResolvedValue({});
+      prisma.$transaction.mockResolvedValue([{}, {}]);
+
+      const result = await service.deleteComment('v1', 'c1', 'author');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('should allow video owner to delete others comment', async () => {
+      prisma.videoComment.findUnique.mockResolvedValue({ id: 'c1', videoId: 'v1', userId: 'commenter' });
+      prisma.video.findUnique.mockResolvedValue({ userId: 'video-owner' });
+      prisma.videoComment.update = jest.fn().mockResolvedValue({});
+      prisma.$transaction.mockResolvedValue([{}, {}]);
+
+      const result = await service.deleteComment('v1', 'c1', 'video-owner');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('should throw NotFoundException when comment not found', async () => {
+      prisma.videoComment.findUnique.mockResolvedValue(null);
+      await expect(service.deleteComment('v1', 'missing', 'u1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException when comment belongs to different video', async () => {
+      prisma.videoComment.findUnique.mockResolvedValue({ id: 'c1', videoId: 'other-video', userId: 'u1' });
+      await expect(service.deleteComment('v1', 'c1', 'u1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException when user is not author or video owner', async () => {
+      prisma.videoComment.findUnique.mockResolvedValue({ id: 'c1', videoId: 'v1', userId: 'commenter' });
+      prisma.video.findUnique.mockResolvedValue({ userId: 'video-owner' });
+      await expect(service.deleteComment('v1', 'c1', 'stranger')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  // ── T05 gap: incrementPremiereViewerCount ──
+
+  describe('incrementPremiereViewerCount', () => {
+    it('should increment viewer count', async () => {
+      prisma.videoPremiere.update.mockResolvedValue({ videoId: 'v1', viewerCount: 6 });
+      const result = await service.incrementPremiereViewerCount('v1');
+      expect(result.viewerCount).toBe(6);
+      expect(prisma.videoPremiere.update).toHaveBeenCalledWith({
+        where: { videoId: 'v1' },
+        data: { viewerCount: { increment: 1 } },
+      });
+    });
+  });
+
+  // ── T05 gap: bookmark — scheduledAt guard ──
+
+  describe('bookmark (scheduled video)', () => {
+    it('should reject bookmarking a future-scheduled video by non-owner', async () => {
+      const future = new Date(Date.now() + 86400000);
+      prisma.video.findUnique.mockResolvedValue({
+        id: 'v1', status: 'PUBLISHED', isRemoved: false,
+        scheduledAt: future, userId: 'owner',
+      });
+
+      await expect(service.bookmark('v1', 'non-owner')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ── T05 gap: report duplicate idempotency ──
+
+  describe('report (duplicate)', () => {
+    it('should return {reported: true} for duplicate report', async () => {
+      prisma.video.findUnique.mockResolvedValue({ id: 'v1', isRemoved: false, status: 'PUBLISHED' });
+      prisma.report.findFirst.mockResolvedValue({ id: 'existing-report' });
+
+      const result = await service.report('v1', 'u1', 'SPAM');
+      expect(result).toEqual({ reported: true });
+      expect(prisma.report.create).not.toHaveBeenCalled();
+    });
+  });
 });
