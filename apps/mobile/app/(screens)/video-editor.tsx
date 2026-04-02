@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions, TextInput, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withTiming, runOnJS } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -22,7 +22,8 @@ import * as Speech from 'expo-speech';
 import { EmojiPicker } from '@/components/ui/EmojiPicker';
 import { formatTime } from '@/utils/formatTime';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+// Fallback dimensions for createStyles (overridden by hook values in component)
+const { width: fallbackScreenWidth, height: fallbackScreenHeight } = Dimensions.get('window');
 
 type ToolTab = 'trim' | 'speed' | 'filters' | 'adjust' | 'text' | 'music' | 'volume' | 'voiceover' | 'effects';
 type SpeedOption = 0.25 | 0.5 | 1 | 1.5 | 2 | 3;
@@ -68,11 +69,13 @@ type EditSnapshot = {
 
 export default function VideoEditorScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const styles = createStyles(tc, screenWidth, screenHeight);
   const router = useRouter();
   const params = useLocalSearchParams<{ videoUri?: string; uri?: string; returnTo?: string }>();
-  const { t, language: currentLanguage } = useTranslation();
+  const { t, language: currentLanguage, isRTL } = useTranslation();
   const haptic = useContextualHaptic();
+  const insets = useSafeAreaInsets();
   const videoRef = useRef<Video>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -357,6 +360,7 @@ export default function VideoEditorScreen() {
 
   // FFmpeg export pipeline — uses ffmpegEngine.ts for command building + execution
   const handleExport = useCallback(async () => {
+    if (isExporting) return;
     if (!videoUri) {
       showToast({ message: t('videoEditor.noVideo'), variant: 'error' });
       return;
@@ -610,7 +614,7 @@ export default function VideoEditorScreen() {
                   accessibilityLabel={`${speed}x ${t('videoEditor.speed')}`}
                   key={speed}
                   style={styles.speedButton}
-                  onPress={() => { pushUndo(); setPlaybackSpeed(speed); }}
+                  onPress={() => { pushUndo(); setPlaybackSpeed(speed); haptic.tick(); }}
                 >
                   <LinearGradient
                     colors={playbackSpeed === speed
@@ -837,7 +841,7 @@ export default function VideoEditorScreen() {
                   accessibilityLabel={t(`videoEditor.font.${font}`)}
                   key={font}
                   style={styles.fontButton}
-                  onPress={() => setSelectedFont(font)}
+                  onPress={() => { pushUndo(); setSelectedFont(font); haptic.tick(); }}
                 >
                   <LinearGradient
                     colors={selectedFont === font
@@ -1227,7 +1231,7 @@ export default function VideoEditorScreen() {
                 style={[styles.effectToggleItem, flipH && styles.effectToggleActive]}
                 onPress={() => { pushUndo(); setFlipH(!flipH); haptic.tick(); }}
               >
-                <Icon name="arrow-left" size="sm" color={flipH ? colors.emerald : tc.text.secondary} style={{ transform: [{ scaleX: -1 }] }} />
+                <Icon name="arrow-left" size="sm" color={flipH ? colors.emerald : tc.text.secondary} style={{ transform: [{ scaleX: isRTL ? 1 : -1 }] }} />
                 <Text style={[styles.effectToggleText, flipH && styles.effectToggleTextActive]}>{t('videoEditor.flipH')}</Text>
               </Pressable>
               <Pressable
@@ -1296,7 +1300,7 @@ export default function VideoEditorScreen() {
                         showToast({ message: t('videoEditor.voiceoverSaved'), variant: 'success' });
                       }
                     } catch {
-                      showToast({ message: t('videoEditor.exportFailed'), variant: 'error' });
+                      showToast({ message: t('videoEditor.voiceoverFailed', 'Voiceover save failed'), variant: 'error' });
                     }
                   }
                 } else {
@@ -1317,7 +1321,7 @@ export default function VideoEditorScreen() {
                       await videoRef.current.playAsync();
                     }
                   } catch {
-                    showToast({ message: t('videoEditor.exportFailed'), variant: 'error' });
+                    showToast({ message: t('videoEditor.recordingFailed', 'Recording failed to start'), variant: 'error' });
                   }
                 }
               }}
@@ -1367,11 +1371,11 @@ export default function VideoEditorScreen() {
 
       {/* Quick action bar — undo/redo, reverse, aspect ratio, captions */}
       <View style={styles.quickActions}>
-        <Pressable accessibilityRole="button" accessibilityLabel={t('videoEditor.undo')} onPress={handleUndo} style={[styles.quickActionBtn, undoStack.length === 0 && styles.quickActionDisabled]}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('videoEditor.undo')} onPress={handleUndo} disabled={undoStack.length === 0} accessibilityState={{ disabled: undoStack.length === 0 }} style={[styles.quickActionBtn, undoStack.length === 0 && styles.quickActionDisabled]}>
           <Icon name="arrow-left" size="sm" color={undoStack.length > 0 ? tc.text.primary : tc.text.tertiary} />
         </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel={t('videoEditor.redo')} onPress={handleRedo} style={[styles.quickActionBtn, redoStack.length === 0 && styles.quickActionDisabled]}>
-          <View style={{ transform: [{ scaleX: -1 }] }}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('videoEditor.redo')} onPress={handleRedo} disabled={redoStack.length === 0} accessibilityState={{ disabled: redoStack.length === 0 }} style={[styles.quickActionBtn, redoStack.length === 0 && styles.quickActionDisabled]}>
+          <View style={{ transform: [{ scaleX: isRTL ? 1 : -1 }] }}>
             <Icon name="arrow-left" size="sm" color={redoStack.length > 0 ? tc.text.primary : tc.text.tertiary} />
           </View>
         </Pressable>
@@ -1414,6 +1418,8 @@ export default function VideoEditorScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
         {/* Video Preview Area */}
         <View style={styles.previewContainer}>
@@ -1465,7 +1471,7 @@ export default function VideoEditorScreen() {
             {/* Play/Pause Button */}
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={isPlaying ? t('videoEditor.preview') : t('videoEditor.preview')}
+              accessibilityLabel={isPlaying ? t('videoEditor.pause', 'Pause') : t('videoEditor.play', 'Play')}
               style={styles.playButton}
               onPress={togglePlayback}
             >
@@ -1643,12 +1649,12 @@ export default function VideoEditorScreen() {
       </ScrollView>
 
       {/* Bottom Action Bar */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom }]}>
         <LinearGradient
           colors={['rgba(13,17,23,0.95)', 'rgba(13,17,23,1)']}
           style={styles.bottomBarGradient}
         >
-          <Pressable accessibilityRole="button" accessibilityLabel={t('common.cancel')} style={styles.cancelButton} onPress={() => router.back()}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('common.cancel')} style={styles.cancelButton} onPress={() => router.back()} hitSlop={8}>
             <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
           </Pressable>
           {isExporting ? (
@@ -1702,7 +1708,7 @@ export default function VideoEditorScreen() {
   );
 }
 
-const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>, screenWidth = fallbackScreenWidth, screenHeight = fallbackScreenHeight) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: tc.bg,

@@ -385,9 +385,9 @@ export default function VideoDetailScreen() {
   }, []);
 
   const handleQualityChange = useCallback((q: VideoQuality) => {
-    setQuality(q);
-    // Quality switching requires multiple stream URLs from Cloudflare Stream
-  }, []);
+    // Quality switching requires multiple stream URLs from Cloudflare Stream — not yet implemented
+    showToast({ message: t('video.qualityUnavailable', 'Quality selection coming soon'), variant: 'info' });
+  }, [t]);
 
   const handleSpeedChange = useCallback((s: PlaybackSpeed) => {
     setSpeed(s);

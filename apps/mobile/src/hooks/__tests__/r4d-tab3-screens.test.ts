@@ -348,6 +348,10 @@ describe('video/[id]', () => {
   test('save-to-playlist uses bookmark icon', () => {
     expect(src).toContain('name="bookmark" size="sm"');
   });
+
+  test('quality selector shows toast instead of silently failing', () => {
+    expect(src).toContain('qualityUnavailable');
+  });
 });
 
 // ── video-editor.tsx ──
@@ -383,5 +387,53 @@ describe('video-editor', () => {
 
   test('Speech cleanup on unmount', () => {
     expect(src).toContain('Speech.stop()');
+  });
+
+  test('font selection has haptic feedback', () => {
+    expect(src).toContain('setSelectedFont(font); haptic.tick()');
+  });
+
+  test('speed selection has haptic feedback', () => {
+    expect(src).toContain('setPlaybackSpeed(speed); haptic.tick()');
+  });
+
+  test('export has double-tap guard (isExporting check)', () => {
+    expect(src).toContain('if (isExporting) return');
+  });
+
+  test('undo/redo buttons have disabled prop and accessibilityState', () => {
+    expect(src).toContain('disabled={undoStack.length === 0}');
+    expect(src).toContain('disabled={redoStack.length === 0}');
+    expect(src).toContain('accessibilityState={{ disabled: undoStack.length === 0 }}');
+  });
+
+  test('bottom bar has safe area inset', () => {
+    expect(src).toContain('paddingBottom: insets.bottom');
+  });
+
+  test('uses useWindowDimensions instead of module-scope Dimensions', () => {
+    expect(src).toContain('useWindowDimensions()');
+  });
+
+  test('RTL-aware scaleX on redo icon', () => {
+    expect(src).toContain('isRTL ? 1 : -1');
+  });
+
+  test('ScrollView has keyboard handling', () => {
+    expect(src).toContain('keyboardShouldPersistTaps');
+  });
+
+  test('voiceover error uses recording-specific message (not exportFailed)', () => {
+    // The recording start catch should NOT use exportFailed
+    const recordingStartSection = src.slice(
+      src.indexOf('// Start recording'),
+      src.indexOf('// Start recording') + 1000
+    );
+    expect(recordingStartSection).toContain('recordingFailed');
+    expect(recordingStartSection).not.toContain('exportFailed');
+  });
+
+  test('play/pause accessibility label differentiates states', () => {
+    expect(src).toContain("isPlaying ? t('videoEditor.pause'");
   });
 });
