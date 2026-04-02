@@ -53,17 +53,20 @@ export default function WaqfScreen() {
     showToast({ message: t('community.waqfProcessing', 'Processing contribution...'), variant: 'info' });
 
     try {
-      // Step 1: Create Stripe PaymentIntent to collect payment
-      // The receiverId is the fund creator. In production, the client-side Stripe SDK
-      // would confirm the payment using the returned clientSecret before recording.
+      // Step 1: Create Stripe PaymentIntent and get clientSecret
       const creatorId = (selectedFund.creator as Record<string, unknown> | undefined)?.id as string | undefined;
-      await paymentsApi.createPaymentIntent({
+      const paymentResult = await paymentsApi.createPaymentIntent({
         amount: contributionAmount,
         currency: 'USD',
         receiverId: creatorId ?? 'platform',
       });
 
-      // Step 2: Record the waqf contribution on backend
+      // Guard: only record contribution AFTER payment confirmation
+      if (!paymentResult) {
+        throw new Error(t('community.waqfPaymentFailed', 'Payment could not be processed'));
+      }
+
+      // Step 2: Record the waqf contribution on backend AFTER payment succeeds
       await api.post(`/waqf/funds/${selectedFund.id}/contribute`, { amount: contributionAmount });
 
       haptic.success();
@@ -175,6 +178,8 @@ export default function WaqfScreen() {
               <View style={styles.skeletons}>
                 {[1, 2, 3].map(i => <Skeleton.Rect key={i} width="100%" height={180} borderRadius={radius.lg} />)}
               </View>
+            ) : fundsQuery.isError ? (
+              <EmptyState icon="alert-circle" title={t('common.error')} subtitle={t('common.tryAgain')} actionLabel={t('common.retry')} onAction={() => fundsQuery.refetch()} />
             ) : (
               <EmptyState icon="heart" title={t('community.noWaqfFunds')} subtitle={t('community.waqfHint')} />
             )
@@ -258,35 +263,35 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   container: { flex: 1, backgroundColor: tc.bg },
   infoCard: { marginHorizontal: spacing.base, marginBottom: spacing.md, borderRadius: radius.lg, overflow: 'hidden', borderWidth: 1, borderColor: colors.gold + '20' },
   infoGradient: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md, padding: spacing.base, borderRadius: radius.lg },
-  infoText: { color: colors.text.secondary, fontSize: fontSize.sm, flex: 1, lineHeight: 20 },
+  infoText: { color: tc.text.secondary, fontSize: fontSize.sm, flex: 1, lineHeight: 20 },
   list: { paddingHorizontal: spacing.base, paddingBottom: spacing['2xl'] },
   skeletons: { gap: spacing.md },
   fundCard: { backgroundColor: tc.bgCard, borderRadius: radius.lg, padding: spacing.base, borderWidth: 1, borderColor: tc.border, marginBottom: spacing.md },
   fundHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.sm },
   fundIconWrap: { width: 44, height: 44, borderRadius: radius.full, backgroundColor: colors.gold + '15', justifyContent: 'center', alignItems: 'center' },
-  fundTitle: { color: colors.text.primary, fontSize: fontSize.md, fontWeight: '600' },
+  fundTitle: { color: tc.text.primary, fontSize: fontSize.md, fontFamily: fonts.bodySemiBold },
   creatorRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: 2 },
-  creatorName: { color: colors.text.secondary, fontSize: fontSize.xs },
-  fundDesc: { color: colors.text.secondary, fontSize: fontSize.sm, marginBottom: spacing.md, lineHeight: 20 },
+  creatorName: { color: tc.text.secondary, fontSize: fontSize.xs },
+  fundDesc: { color: tc.text.secondary, fontSize: fontSize.sm, marginBottom: spacing.md, lineHeight: 20 },
   progressTrack: { height: 6, backgroundColor: tc.surface, borderRadius: 3, marginBottom: spacing.sm, overflow: 'hidden' },
   progressFill: { height: 6, borderRadius: 3 },
   amountRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.xs, marginBottom: spacing.md },
-  raisedAmount: { color: colors.gold, fontSize: fontSize.md, fontWeight: '700' },
-  goalAmount: { color: colors.text.tertiary, fontSize: fontSize.sm },
-  percentText: { color: colors.text.secondary, fontSize: fontSize.xs, marginStart: 'auto' },
+  raisedAmount: { color: colors.gold, fontSize: fontSize.md, fontFamily: fonts.bodyBold },
+  goalAmount: { color: tc.text.tertiary, fontSize: fontSize.sm },
+  percentText: { color: tc.text.secondary, fontSize: fontSize.xs, marginStart: 'auto' },
   contributeBtn: { borderRadius: radius.md, overflow: 'hidden' },
   contributeBtnGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, paddingVertical: spacing.md, borderRadius: radius.md },
   contributeBtnText: { color: '#FFF', fontSize: fontSize.base, fontWeight: '700' },
   // Contribution sheet styles
-  sheetTitle: { fontFamily: fonts.bodySemiBold, fontSize: fontSize.lg, color: colors.text.primary, textAlign: 'center', marginBottom: spacing.sm },
-  sheetFundName: { fontFamily: fonts.body, fontSize: fontSize.base, color: colors.text.secondary, textAlign: 'center', marginBottom: spacing.lg },
+  sheetTitle: { fontFamily: fonts.bodySemiBold, fontSize: fontSize.lg, color: tc.text.primary, textAlign: 'center', marginBottom: spacing.sm },
+  sheetFundName: { fontFamily: fonts.body, fontSize: fontSize.base, color: tc.text.secondary, textAlign: 'center', marginBottom: spacing.lg },
   sheetAmountGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
   sheetAmountChip: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md, borderRadius: radius.md, backgroundColor: tc.bgCard, borderWidth: 1, borderColor: tc.border },
   sheetAmountChipActive: { borderColor: colors.gold, backgroundColor: colors.gold + '15' },
-  sheetAmountText: { fontFamily: fonts.bodySemiBold, fontSize: fontSize.base, color: colors.text.secondary },
+  sheetAmountText: { fontFamily: fonts.bodySemiBold, fontSize: fontSize.base, color: tc.text.secondary },
   sheetAmountTextActive: { color: colors.gold },
   sheetCustomRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: tc.bgCard, borderRadius: radius.md, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: tc.border, marginBottom: spacing.lg },
-  sheetCurrencyPrefix: { fontFamily: fonts.bodySemiBold, fontSize: fontSize.md, color: colors.text.tertiary, marginEnd: spacing.xs },
-  sheetCustomInput: { flex: 1, fontFamily: fonts.body, fontSize: fontSize.base, color: colors.text.primary, paddingVertical: spacing.md },
+  sheetCurrencyPrefix: { fontFamily: fonts.bodySemiBold, fontSize: fontSize.md, color: tc.text.tertiary, marginEnd: spacing.xs },
+  sheetCustomInput: { flex: 1, fontFamily: fonts.body, fontSize: fontSize.base, color: tc.text.primary, paddingVertical: spacing.md },
   sheetActions: { paddingVertical: spacing.md },
 });

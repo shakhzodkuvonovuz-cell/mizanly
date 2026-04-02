@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, Pressable, Alert,
   FlatList,
@@ -20,6 +20,7 @@ import { usersApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 
 // Local type for watch history items (matches Step 4's WatchHistoryItem)
 interface WatchHistoryItem {
@@ -110,8 +111,9 @@ function VideoCard({ item, onPress, index }: { item: WatchHistoryItem; onPress: 
 export default function WatchHistoryScreen() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
-  const { t, isRTL } = useTranslation();
+  const { t } = useTranslation();
   const router = useRouter();
+  const haptic = useContextualHaptic();
   const [refreshing, setRefreshing] = useState(false);
 
   const watchHistoryQuery = useInfiniteQuery({
@@ -147,8 +149,11 @@ export default function WatchHistoryScreen() {
           onPress: async () => {
             try {
               await usersApi.clearWatchHistory();
-              watchHistoryQuery.refetch();
-            } catch (error) {
+              haptic.success();
+              showToast({ message: t('screens.watch-history.cleared', 'History cleared'), variant: 'success' });
+              await watchHistoryQuery.refetch();
+            } catch {
+              haptic.error();
               showToast({ message: t('common.checkConnection'), variant: 'error' });
             }
           },
@@ -157,8 +162,13 @@ export default function WatchHistoryScreen() {
     );
   }, [watchHistoryQuery]);
 
+  const isNavigatingRef = useRef(false);
   const handleVideoPress = (item: WatchHistoryItem) => {
+    if (isNavigatingRef.current) return;
+    isNavigatingRef.current = true;
+    haptic.tick();
     router.push(`/(screens)/video/${item.id}`);
+    setTimeout(() => { isNavigatingRef.current = false; }, 500);
   };
 
   if (watchHistoryQuery.isError) {
@@ -274,7 +284,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingVertical: 2,
   },
   durationText: {
-    color: colors.text.primary,
+    color: '#FFFFFF',
     fontSize: fontSize.xs,
     fontWeight: '600',
   },
@@ -303,18 +313,18 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flex: 1,
   },
   videoTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     fontWeight: '600',
     marginBottom: 2,
   },
   channelName: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     marginBottom: 2,
   },
   videoStats: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.sm,
   },
   skeletonContainer: {

@@ -195,6 +195,8 @@ export default function WatchPartyScreen() {
               <View style={styles.skeletons}>
                 {[1, 2, 3].map(i => <Skeleton.Rect key={i} width="100%" height={160} borderRadius={radius.lg} />)}
               </View>
+            ) : partiesQuery.isError ? (
+              <EmptyState icon="alert-circle" title={t('common.error')} subtitle={t('common.tryAgain')} actionLabel={t('common.retry')} onAction={() => partiesQuery.refetch()} />
             ) : (
               <EmptyState icon="video" title={t('community.noWatchParties')} subtitle={t('community.watchPartyHint')} actionLabel={t('community.startParty')} onAction={() => setCreateSheetOpen(true)} />
             )
@@ -349,20 +351,20 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   liveBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: '#F85149' + '20', paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
   liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#F85149' },
   liveText: { color: '#F85149', fontSize: fontSize.xs, fontWeight: '700' },
-  partyTitle: { color: colors.text.primary, fontSize: fontSize.md, fontWeight: '600', flex: 1 },
+  partyTitle: { color: tc.text.primary, fontSize: fontSize.md, fontWeight: '600', flex: 1 },
   partyInfo: { gap: spacing.sm, marginBottom: spacing.md },
   hostRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  hostName: { color: colors.text.secondary, fontSize: fontSize.sm },
+  hostName: { color: tc.text.secondary, fontSize: fontSize.sm },
   viewerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  viewerCount: { color: colors.text.tertiary, fontSize: fontSize.sm },
+  viewerCount: { color: tc.text.tertiary, fontSize: fontSize.sm },
   partyActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   joinBtn: { flex: 1, borderRadius: radius.md, overflow: 'hidden' },
   joinBtnGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, paddingVertical: spacing.md, borderRadius: radius.md },
   joinBtnText: { color: '#FFF', fontSize: fontSize.base, fontWeight: '600' },
   shareBtn: { width: 44, height: 44, borderRadius: radius.md, backgroundColor: tc.bgCard, borderWidth: 1, borderColor: tc.border, alignItems: 'center', justifyContent: 'center' },
   createForm: { padding: spacing.base, gap: spacing.md },
-  createTitle: { color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700' },
-  createInput: { backgroundColor: tc.bgCard, borderRadius: radius.md, borderWidth: 1, borderColor: tc.border, padding: spacing.md, color: colors.text.primary, fontSize: fontSize.base },
+  createTitle: { color: tc.text.primary, fontSize: fontSize.lg, fontWeight: '700' },
+  createInput: { backgroundColor: tc.bgCard, borderRadius: radius.md, borderWidth: 1, borderColor: tc.border, padding: spacing.md, color: tc.text.primary, fontSize: fontSize.base },
   createBtn: { borderRadius: radius.md, overflow: 'hidden', marginTop: spacing.sm },
   createBtnGradient: { paddingVertical: spacing.md, alignItems: 'center', borderRadius: radius.md },
   createBtnText: { color: '#FFF', fontSize: fontSize.md, fontWeight: '700' },

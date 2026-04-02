@@ -9,11 +9,13 @@ import { Icon } from '@/components/ui/Icon';
 import type { IconName } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { feedApi, postsApi } from '@/services/api';
 import { showToast } from '@/components/ui/Toast';
+import { useQueryClient } from '@tanstack/react-query';
 import type { Post } from '@/types';
 
 interface ReasonItem {
@@ -28,13 +30,16 @@ function WhyShowingContent() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const haptic = useContextualHaptic();
+  const queryClient = useQueryClient();
   const params = useLocalSearchParams<{ postId: string; postType: string }>();
+  const [isActioning, setIsActioning] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [post, setPost] = useState<Post | null>(null);
   const [reasons, setReasons] = useState<ReasonItem[]>([]);
 
-  // Map backend reason keys to icons
+  // Map backend reason keys to icons — defined at module scope for perf
   const reasonIconMap: Record<string, IconName> = {
     follow: 'user',
     trending: 'trending-up',
@@ -108,28 +113,44 @@ function WhyShowingContent() {
   }, [params.postId, t]);
 
   const handleNotInterested = useCallback(async () => {
+    if (isActioning) return;
+    setIsActioning(true);
+    haptic.send();
     try {
       if (params.postId) {
         await feedApi.reportNotInterested(params.postId, params.postType ?? 'post');
       }
+      haptic.success();
+      queryClient.invalidateQueries({ queryKey: ['feed'] });
       showToast({ message: t('whyShowing.notInterestedMsg', "We'll show less content like this"), variant: 'success' });
       router.back();
     } catch {
+      haptic.error();
       showToast({ message: t('whyShowing.errorMsg', 'Something went wrong. Please try again.'), variant: 'error' });
+    } finally {
+      setIsActioning(false);
     }
-  }, [params.postId, params.postType, router, t]);
+  }, [params.postId, params.postType, router, t, haptic, queryClient, isActioning]);
 
   const handleSeeLess = useCallback(async () => {
+    if (isActioning) return;
+    setIsActioning(true);
+    haptic.send();
     try {
       if (params.postId) {
         await feedApi.dismiss(params.postType ?? 'post', params.postId);
       }
+      haptic.success();
+      queryClient.invalidateQueries({ queryKey: ['feed'] });
       showToast({ message: t('whyShowing.seeLessMsg', "You'll see less content like this"), variant: 'success' });
       router.back();
     } catch {
+      haptic.error();
       showToast({ message: t('whyShowing.errorMsg', 'Something went wrong. Please try again.'), variant: 'error' });
+    } finally {
+      setIsActioning(false);
     }
-  }, [params.postId, router, t]);
+  }, [params.postId, params.postType, router, t, haptic, queryClient, isActioning]);
 
   if (loading) {
     return (
@@ -214,8 +235,9 @@ function WhyShowingContent() {
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
           <Pressable
-            style={styles.actionButton}
+            style={[styles.actionButton, isActioning && { opacity: 0.5 }]}
             onPress={handleNotInterested}
+            disabled={isActioning}
             accessibilityRole="button"
           >
             <Icon name="x" size="sm" color={colors.error} />
@@ -225,8 +247,9 @@ function WhyShowingContent() {
           </Pressable>
 
           <Pressable
-            style={styles.actionButtonSecondary}
+            style={[styles.actionButtonSecondary, isActioning && { opacity: 0.5 }]}
             onPress={handleSeeLess}
+            disabled={isActioning}
             accessibilityRole="button"
           >
             <Icon name="eye-off" size="sm" color={tc.text.secondary} />
@@ -288,13 +311,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   postContent: {
     fontFamily: fonts.body,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
     lineHeight: 22,
   },
   sectionTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.md,
-    color: colors.text.primary,
+    color: tc.text.primary,
     marginBottom: spacing.base,
   },
   reasonCard: {
@@ -323,12 +346,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   reasonLabel: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   reasonDetail: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     lineHeight: 20,
   },
   actionsContainer: {
@@ -363,6 +386,6 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   actionButtonSecondaryText: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
 });

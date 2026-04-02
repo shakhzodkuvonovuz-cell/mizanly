@@ -38,7 +38,7 @@ function ChangelogContent() {
         title={t('settings.whatsNew', "What's New")}
         leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
       />
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {CHANGELOG.map((release, ri) => (
           <Animated.View key={release.version} entering={FadeInUp.delay(ri * 100).duration(300)}>
             <View style={[styles.versionHeader, { borderBottomColor: tc.border }]}>
@@ -51,7 +51,7 @@ function ChangelogContent() {
                 entering={FadeInUp.delay(ri * 100 + ii * 50).duration(250)}
                 style={[styles.itemRow, { borderBottomColor: tc.border }]}
               >
-                <View style={[styles.iconWrap, { backgroundColor: `${colors.emerald}12` }]}>
+                <View style={[styles.iconWrap, { backgroundColor: `${colors.emerald}1F` }]}>
                   <Icon name={item.icon} size="sm" color={colors.emerald} />
                 </View>
                 <View style={styles.itemText}>
