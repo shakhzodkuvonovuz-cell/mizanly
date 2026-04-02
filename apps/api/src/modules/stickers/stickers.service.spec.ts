@@ -281,6 +281,7 @@ describe('StickersService', () => {
       const dirty = '<svg><foreignObject><body xmlns="http://www.w3.org/1999/xhtml"><script>alert(1)</script></body></foreignObject></svg>';
       const result = (service as any).sanitizeSvg(dirty);
       expect(result).not.toContain('foreignObject');
+<<<<<<< HEAD
     });
   });
 
