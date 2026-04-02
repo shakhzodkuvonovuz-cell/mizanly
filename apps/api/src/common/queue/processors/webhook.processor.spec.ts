@@ -111,4 +111,51 @@ describe('WebhookProcessor', () => {
       global.fetch = originalFetch;
     });
   });
+
+  // T13 row 10: Successful delivery — updates lastUsedAt
+  describe('successful delivery', () => {
+    it('should update webhook lastUsedAt on successful delivery', async () => {
+      const originalFetch = global.fetch;
+      global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200 }) as any;
+
+      const prismaService = (processor as any).prisma;
+      const job = {
+        data: { url: 'https://example.com/hook', signature: 'abc'.repeat(22), timestamp: '12345', event: 'test', payload: {}, webhookId: 'wh1' },
+        attemptsMade: 0, opts: { attempts: 5 }, id: 'j1', updateProgress: jest.fn(),
+      };
+      await (processor as any).deliverWebhook(job);
+      expect(prismaService.webhook.update).toHaveBeenCalledWith({
+        where: { id: 'wh1' },
+        data: { lastUsedAt: expect.any(Date) },
+      });
+
+      global.fetch = originalFetch;
+    });
+
+    it('should throw on non-2xx response', async () => {
+      const originalFetch = global.fetch;
+      global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 500, statusText: 'Internal Server Error' }) as any;
+
+      const job = {
+        data: { url: 'https://example.com/hook', signature: 'abc'.repeat(22), timestamp: '12345', event: 'test', payload: {}, webhookId: 'wh1' },
+        attemptsMade: 0, opts: { attempts: 5 }, id: 'j1', updateProgress: jest.fn(),
+      };
+      await expect((processor as any).deliverWebhook(job)).rejects.toThrow(/Webhook delivery failed/);
+
+      global.fetch = originalFetch;
+    });
+  });
+
+  // T13 row 11: lifecycle tests
+  describe('lifecycle', () => {
+    it('should not create worker when REDIS_URL is not set', () => {
+      processor.onModuleInit();
+      expect((processor as any).worker).toBeNull();
+    });
+
+    it('should not throw on destroy when worker is null', async () => {
+      processor.onModuleInit();
+      await expect(processor.onModuleDestroy()).resolves.not.toThrow();
+    });
+  });
 });

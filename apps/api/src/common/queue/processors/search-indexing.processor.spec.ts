@@ -80,5 +80,25 @@ describe('SearchIndexingProcessor', () => {
       await (processor as any).processSearchIndex(job);
       expect(meilisearch.addDocuments).not.toHaveBeenCalled();
     });
+
+    // T13 row 20: update action test
+    it('should call addDocuments for update action (same as index)', async () => {
+      const job = {
+        data: { action: 'update', indexName: 'posts', documentId: 'p1', document: { content: 'updated' } },
+        updateProgress: jest.fn(),
+      };
+      await (processor as any).processSearchIndex(job);
+      expect(meilisearch.addDocuments).toHaveBeenCalledWith('posts', [{ id: 'p1', type: 'posts', content: 'updated' }]);
+      expect(job.updateProgress).toHaveBeenCalledWith(100);
+    });
+
+    // T13 row 21: unknown action default throw
+    it('should throw for unknown action', async () => {
+      const job = {
+        data: { action: 'purge', indexName: 'posts', documentId: 'p1' },
+        updateProgress: jest.fn(),
+      };
+      await expect((processor as any).processSearchIndex(job)).rejects.toThrow(/Unknown search index action/);
+    });
   });
 });

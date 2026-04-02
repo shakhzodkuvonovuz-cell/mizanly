@@ -99,5 +99,44 @@ describe('AiTasksProcessor', () => {
       // Should not throw — logs and continues
       await expect((processor as any).processModeration(job)).resolves.not.toThrow();
     });
+
+    // T13 row 19: thread, reel, video content types
+    it('should look up reportedUserId for thread content type', async () => {
+      ai.moderateContent.mockResolvedValue({ safe: false, flags: ['harassment'], confidence: 0.9 });
+      const job = { data: { content: 'Bad thread', contentType: 'thread', contentId: 't1' }, updateProgress: jest.fn() };
+      await (processor as any).processModeration(job);
+      expect(prisma.thread.findUnique).toHaveBeenCalledWith({ where: { id: 't1' }, select: { userId: true } });
+      expect(prisma.report.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ reportedUserId: 'author-1' }),
+      });
+    });
+
+    it('should look up reportedUserId for reel content type', async () => {
+      ai.moderateContent.mockResolvedValue({ safe: false, flags: ['nudity'], confidence: 0.95 });
+      const job = { data: { content: 'Bad reel', contentType: 'reel', contentId: 'r1' }, updateProgress: jest.fn() };
+      await (processor as any).processModeration(job);
+      expect(prisma.reel.findUnique).toHaveBeenCalledWith({ where: { id: 'r1' }, select: { userId: true } });
+      expect(prisma.report.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ reportedUserId: 'author-1' }),
+      });
+    });
+  });
+
+  // T13 row 24: unknown job type
+  describe('mapFlagsToReason (via reflection)', () => {
+    it('should map known flags to correct ReportReason', async () => {
+      const result = (processor as any).mapFlagsToReason(['hate_speech']);
+      expect(result).toBe('HATE_SPEECH');
+    });
+
+    it('should return OTHER for unknown flags', async () => {
+      const result = (processor as any).mapFlagsToReason(['some_unknown_flag']);
+      expect(result).toBe('OTHER');
+    });
+
+    it('should return first matching flag from array', async () => {
+      const result = (processor as any).mapFlagsToReason(['unknown', 'spam', 'nudity']);
+      expect(result).toBe('SPAM');
+    });
   });
 });
