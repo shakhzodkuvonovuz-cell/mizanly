@@ -58,6 +58,7 @@ export default function CreateReelScreen() {
   const queryClient = useQueryClient();
   const haptic = useContextualHaptic();
   const { t } = useTranslation();
+  const styles = createStyles(tc);
 
   const [caption, setCaption] = useState('');
   const [video, setVideo] = useState<PickedVideo | null>(null);
@@ -137,7 +138,8 @@ export default function CreateReelScreen() {
           haptic.tick();
         }
       } catch (_err: unknown) {
-        // Recording was cancelled or failed
+        haptic.error();
+        showToast({ message: t('createReel.recordingFailed', 'Recording failed'), variant: 'error' });
       } finally {
         setIsRecording(false);
       }
@@ -189,6 +191,7 @@ export default function CreateReelScreen() {
     } catch {
       setVideo({ uri: clips[0].uri, type: 'video', duration: clips[0].duration });
       generateFrames(clips[0].uri, clips[0].duration * 1000);
+      showToast({ message: t('createReel.mergeFailed'), variant: 'error' });
     }
     setShowCamera(false);
   }, [clips, totalClipsDuration, t]);
@@ -462,6 +465,7 @@ export default function CreateReelScreen() {
   });
 
   const handleUpload = () => {
+    if (uploadMutation.isPending) return;
     if (!video) {
       showToast({ message: t('createReel.selectVideoFirst'), variant: 'error' });
       return;
@@ -499,7 +503,7 @@ export default function CreateReelScreen() {
           rightActions={[{ icon: 'send', onPress: handleUpload, accessibilityLabel: t('common.share') }]}
         />
 
-        <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 52 }]}>
+        <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 52 }]} keyboardShouldPersistTaps="handled">
           {/* Countdown Overlay */}
           {countdown !== null && (
             <View style={styles.countdownOverlay}>
@@ -896,12 +900,12 @@ export default function CreateReelScreen() {
                 <Text style={styles.toolbarLabel}>{t('createReel.mention')}</Text>
               </Pressable>
 
-              <Pressable style={styles.toolbarButton} onPress={() => setShowMusicPicker(true)}>
+              <Pressable accessibilityRole="button" style={styles.toolbarButton} onPress={() => setShowMusicPicker(true)}>
                 <LinearGradient
                   colors={selectedTrack ? ['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.05)'] : ['rgba(110,119,129,0.15)', 'rgba(110,119,129,0.05)']}
                   style={styles.toolbarBtnGradient}
                 >
-                  <Icon name="volume-x" size="md" color={selectedTrack ? colors.emerald : tc.text.primary} />
+                  <Icon name="music" size="md" color={selectedTrack ? colors.emerald : tc.text.primary} />
                 </LinearGradient>
                 <Text style={styles.toolbarLabel}>{t('createReel.music')}</Text>
               </Pressable>
@@ -1073,8 +1077,8 @@ export default function CreateReelScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   scroll: {
     flex: 1,
   },
@@ -1089,7 +1093,7 @@ const styles = StyleSheet.create({
     width: VIDEO_PREVIEW_WIDTH,
     height: VIDEO_PREVIEW_HEIGHT,
     borderRadius: radius.md,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
   },
   editVideoButton: {
     position: 'absolute',
@@ -1126,22 +1130,22 @@ const styles = StyleSheet.create({
     width: VIDEO_PREVIEW_WIDTH,
     height: VIDEO_PREVIEW_HEIGHT,
     borderRadius: radius.md,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     borderStyle: 'dashed',
     marginBottom: spacing.lg,
   },
   uploadText: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     fontWeight: '600',
     marginTop: spacing.sm,
   },
   uploadSubtext: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     marginTop: spacing.xs,
   },
@@ -1149,18 +1153,18 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   sectionLabel: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     fontWeight: '500',
     marginBottom: spacing.sm,
   },
   captionContainer: {
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.md,
     padding: spacing.md,
   },
   captionInput: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     minHeight: 100,
   },
@@ -1179,7 +1183,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   toolbarLabel: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.xs,
   },
   tagsSection: {
@@ -1223,7 +1227,7 @@ const styles = StyleSheet.create({
   transitionBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: spacing.xs,
     backgroundColor: 'rgba(0,0,0,0.6)',
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
@@ -1425,14 +1429,14 @@ const styles = StyleSheet.create({
     height: '100%' as const,
   },
   uploadThumbnailButton: {
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
     borderStyle: 'dashed' as const,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
   },
   uploadThumbnailText: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.xs,
     marginTop: 2,
   },
@@ -1444,15 +1448,15 @@ const styles = StyleSheet.create({
     alignItems: 'center' as const,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
+    borderBottomColor: tc.border,
   },
   toggleLabel: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     fontWeight: '500' as const,
   },
   toggleSubtitle: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.xs,
     marginTop: 2,
   },
@@ -1460,7 +1464,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 28,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     justifyContent: 'center' as const,
     padding: 2,
   },
@@ -1471,7 +1475,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: radius.full,
-    backgroundColor: colors.text.primary,
+    backgroundColor: tc.text.primary,
   },
   toggleThumbActive: {
     alignSelf: 'flex-end' as const,
@@ -1500,10 +1504,10 @@ const styles = StyleSheet.create({
   modeText: {
     fontSize: fontSize.sm,
     fontWeight: '600' as const,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   modeTextActive: {
-    color: '#FFF',
+    color: colors.text.onColor,
   },
 
   // Camera section
@@ -1544,7 +1548,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.error,
   },
   cameraTimerText: {
-    color: '#FFF',
+    color: colors.text.onColor,
     fontSize: fontSize.sm,
     fontWeight: '600' as const,
   },
@@ -1599,7 +1603,7 @@ const styles = StyleSheet.create({
   selectedTrackBar: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.md,
@@ -1608,7 +1612,7 @@ const styles = StyleSheet.create({
   },
   selectedTrackText: {
     flex: 1,
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.sm,
   },
 });

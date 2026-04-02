@@ -89,6 +89,7 @@ function ThreadPart({
 }: ThreadPartProps) {
   const { t } = useTranslation();
   const tc = useThemeColors();
+  const styles = createStyles(tc);
   return (
     <Animated.View entering={FadeInUp.delay(index * 100)} style={styles.part}>
       <View style={styles.partLeft}>
@@ -264,6 +265,7 @@ export default function CreateThreadScreen() {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const tc = useThemeColors();
+  const styles = createStyles(tc);
   const haptic = useContextualHaptic();
 
   const [parts, setParts] = useState<ChainPart[]>([{ content: '', media: [] }]);
@@ -459,7 +461,7 @@ export default function CreateThreadScreen() {
           <GradientButton
             label={t('common.post')}
             size="sm"
-            onPress={() => canPost && createMutation.mutate()}
+            onPress={() => canPost && !createMutation.isPending && createMutation.mutate()}
             loading={createMutation.isPending}
             disabled={!canPost}
           />
@@ -749,15 +751,15 @@ export default function CreateThreadScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.dark.border,
-    backgroundColor: 'rgba(13, 17, 23, 0.92)',
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: tc.border,
+    backgroundColor: tc.bgElevated,
   },
-  headerTitle: { color: colors.text.primary, fontSize: fontSize.md, fontWeight: '700', letterSpacing: 0.2 },
+  headerTitle: { color: tc.text.primary, fontSize: fontSize.md, fontWeight: '700', letterSpacing: 0.2 },
 
   body: { flex: 1 },
 
@@ -768,15 +770,15 @@ const styles = StyleSheet.create({
   partLeft: { alignItems: 'center', marginEnd: spacing.sm, width: 42 },
   chainLine: { width: 2, flex: 1, backgroundColor: colors.active.emerald20, marginTop: spacing.xs, borderRadius: 1 },
   partRight: { flex: 1, paddingBottom: spacing.md },
-  partUser: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700', marginBottom: spacing.xs },
+  partUser: { color: tc.text.primary, fontSize: fontSize.base, fontWeight: '700', marginBottom: spacing.xs },
   partInput: {
-    color: colors.text.primary, fontSize: fontSize.base, lineHeight: 23,
+    color: tc.text.primary, fontSize: fontSize.base, lineHeight: 23,
     minHeight: 60, textAlignVertical: 'top',
   },
   mediaRow: { marginTop: spacing.xs },
   thumb: {
     width: 80, height: 80, borderRadius: radius.sm, overflow: 'hidden',
-    backgroundColor: colors.dark.bgElevated,
+    backgroundColor: tc.bgElevated,
   },
   thumbImg: { width: '100%', height: '100%' },
   removeThumb: {
@@ -791,17 +793,17 @@ const styles = StyleSheet.create({
   // Visibility
   visBar: {
     paddingHorizontal: spacing.base, paddingVertical: spacing.xs,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+    borderBottomWidth: 0.5, borderBottomColor: tc.border,
   },
   visPill: {
     alignSelf: 'flex-start',
-    backgroundColor: colors.dark.bgElevated, borderRadius: radius.full,
+    backgroundColor: tc.bgElevated, borderRadius: radius.full,
     paddingHorizontal: spacing.sm, paddingVertical: 3,
   },
-  visPillText: { color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '600' },
+  visPillText: { color: tc.text.secondary, fontSize: fontSize.xs, fontWeight: '600' },
   visMenu: {
-    backgroundColor: colors.dark.bgSheet, borderRadius: radius.md,
-    borderWidth: 1, borderColor: colors.dark.border,
+    backgroundColor: tc.bgSheet, borderRadius: radius.md,
+    borderWidth: 1, borderColor: tc.border,
     marginHorizontal: spacing.base, marginBottom: spacing.sm, overflow: 'hidden',
   },
   visOption: {
@@ -809,12 +811,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
   },
   visOptionActive: { backgroundColor: colors.active.emerald10 },
-  visOptionText: { flex: 1, color: colors.text.secondary, fontSize: fontSize.base },
-  visOptionTextActive: { color: colors.text.primary, fontWeight: '600' },
+  visOptionText: { flex: 1, color: tc.text.secondary, fontSize: fontSize.base },
+  visOptionTextActive: { color: tc.text.primary, fontWeight: '600' },
 
   // Circle picker sheet
   sheetTitle: {
-    color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700',
+    color: tc.text.primary, fontSize: fontSize.base, fontWeight: '700',
     paddingHorizontal: spacing.xl, paddingBottom: spacing.sm,
   },
   skeletonList: { paddingHorizontal: spacing.xl, gap: spacing.md, paddingBottom: spacing.md },
@@ -822,7 +824,7 @@ const styles = StyleSheet.create({
   circleIconWrap: { width: 36, height: 36, borderRadius: radius.full, backgroundColor: colors.active.emerald10, alignItems: 'center', justifyContent: 'center' },
   circleEmoji: { fontSize: 18 },
   emptyCircles: { alignItems: 'center', paddingVertical: spacing.xl, paddingHorizontal: spacing.xl, gap: spacing.sm },
-  emptyCirclesText: { color: colors.text.secondary, fontSize: fontSize.base },
+  emptyCirclesText: { color: tc.text.secondary, fontSize: fontSize.base },
   emptyCirclesLink: { color: colors.emerald, fontSize: fontSize.base, fontWeight: '600' },
 
   // Premium thread part styling
@@ -903,7 +905,7 @@ const styles = StyleSheet.create({
   },
   pollFormTitle: {
     flex: 1,
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     fontWeight: '700',
   },
@@ -915,14 +917,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pollQuestion: {
-    color: colors.text.primary, fontSize: fontSize.base,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+    color: tc.text.primary, fontSize: fontSize.base,
+    borderBottomWidth: 0.5, borderBottomColor: tc.border,
     paddingVertical: spacing.sm, marginBottom: spacing.sm,
   },
   pollOptionRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.xs },
   pollOptionInput: {
-    flex: 1, color: colors.text.primary, fontSize: fontSize.sm,
-    borderWidth: 1, borderColor: colors.dark.border, borderRadius: radius.sm,
+    flex: 1, color: tc.text.primary, fontSize: fontSize.sm,
+    borderWidth: 1, borderColor: tc.border, borderRadius: radius.sm,
     paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2,
   },
   pollAddOption: { paddingVertical: spacing.sm },
@@ -930,11 +932,11 @@ const styles = StyleSheet.create({
   pollAllowMultiple: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.sm },
   pollCheckbox: {
     width: 20, height: 20, borderRadius: radius.sm,
-    borderWidth: 1.5, borderColor: colors.dark.border,
+    borderWidth: 1.5, borderColor: tc.border,
     alignItems: 'center', justifyContent: 'center',
   },
   pollCheckboxOn: { backgroundColor: colors.emerald, borderColor: colors.emerald },
-  pollAllowMultipleText: { color: colors.text.secondary, fontSize: fontSize.sm },
+  pollAllowMultipleText: { color: tc.text.secondary, fontSize: fontSize.sm },
 
   // Premium Add part
   addPartBtn: {

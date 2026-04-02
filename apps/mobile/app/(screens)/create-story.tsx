@@ -4,7 +4,6 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
-import { Image } from 'expo-image';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -101,7 +100,7 @@ const STICKER_TRAY_ITEMS: Array<{ type: StickerType; icon: IconName; labelKey: s
   { type: 'link', icon: 'link', labelKey: 'stories.link', color: colors.extended.blue },
   { type: 'addYours', icon: 'circle-plus', labelKey: 'stories.addYours', color: colors.emerald },
   { type: 'gif', icon: 'image', labelKey: 'stories.gif', color: colors.extended.purple },
-  { type: 'music', icon: 'volume-x', labelKey: 'stories.musicSticker', color: colors.extended.orangeLight },
+  { type: 'music', icon: 'music', labelKey: 'stories.musicSticker', color: colors.extended.orangeLight },
   { type: 'mention', icon: 'at-sign', labelKey: 'stories.mention', color: colors.emeraldLight },
   { type: 'hashtag', icon: 'hash', labelKey: 'stories.hashtag', color: colors.gold },
 ];
@@ -187,6 +186,9 @@ function DraggableSticker({
 export default function CreateStoryScreen() {
   const router = useRouter();
   const tc = useThemeColors();
+  const toolBtnStyle = getToolBtnStyle(tc);
+  const editorTitle = getEditorTitle(tc);
+  const editorInput = getEditorInput(tc);
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const { eidFrame: eidFrameParam } = useLocalSearchParams<{ eidFrame?: string }>();
@@ -304,8 +306,13 @@ export default function CreateStoryScreen() {
 
   // ── Media picker ──
   const pickMedia = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      showToast({ message: t('stories.mediaPermissionRequired', 'Media library permission required'), variant: 'error' });
+      return;
+    }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      mediaTypes: ['images', 'videos'],
       allowsEditing: true,
       aspect: [9, 16],
       quality: 0.9,
@@ -321,7 +328,7 @@ export default function CreateStoryScreen() {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) return;
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      mediaTypes: ['images', 'videos'],
       allowsEditing: true,
       aspect: [9, 16],
       quality: 0.9,
@@ -694,7 +701,7 @@ export default function CreateStoryScreen() {
       case 'music':
         return (
           <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(10,123,79,0.85)', paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.full, gap: spacing.sm }}>
-            <Icon name="volume-x" size="sm" color="#fff" />
+            <Icon name="music" size="sm" color="#fff" />
             <View style={{ flex: 1 }}>
               <Text style={{ color: '#fff', fontSize: fontSize.sm, fontWeight: '700' }} numberOfLines={1}>
                 {String(sticker.data.title)}
@@ -725,7 +732,7 @@ export default function CreateStoryScreen() {
     <ScreenErrorBoundary>
     <SafeAreaView style={{ flex: 1, backgroundColor: tc.bg }}>
       {/* ── Header ── */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.base, paddingVertical: spacing.sm, backgroundColor: 'rgba(13, 17, 23, 0.92)', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: tc.border }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.base, paddingVertical: spacing.sm, backgroundColor: tc.bgElevated, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: tc.border }}>
         <Pressable onPress={handleClose} hitSlop={8} accessibilityLabel={t('common.close')} accessibilityRole="button">
           <Icon name="x" size="md" color={tc.text.primary} />
         </Pressable>
@@ -786,7 +793,7 @@ export default function CreateStoryScreen() {
             }}>{t('stories.filter')}</Text>
           </Pressable>
           <Pressable accessibilityRole="button" accessibilityLabel={t('story.music')} style={{ alignItems: 'center', padding: spacing.xs }} onPress={() => setShowMusicPicker(true)}>
-            <Icon name="volume-x" size="sm" color={selectedTrack ? colors.emerald : tc.text.primary} />
+            <Icon name="music" size="sm" color={selectedTrack ? colors.emerald : tc.text.primary} />
             <Text style={{ fontSize: fontSize.xs, color: tc.text.secondary, marginTop: 2 }}>{t('story.music')}</Text>
           </Pressable>
           <Pressable accessibilityRole="button" accessibilityLabel={t('story.draw')} style={{ alignItems: 'center', padding: spacing.xs }} onPress={() => setShowDrawing(true)}>
@@ -931,7 +938,7 @@ export default function CreateStoryScreen() {
           marginTop: spacing.sm,
           gap: spacing.sm,
         }}>
-          <Icon name="volume-x" size="sm" color={colors.emerald} />
+          <Icon name="music" size="sm" color={colors.emerald} />
           <Text style={{ flex: 1, color: tc.text.primary, fontSize: fontSize.sm }} numberOfLines={1}>
             {selectedTrack.title} — {selectedTrack.artist}
           </Text>
@@ -942,7 +949,7 @@ export default function CreateStoryScreen() {
       )}
 
       {/* ── Tool Panels ── */}
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: spacing.base }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: spacing.base }} keyboardShouldPersistTaps="handled">
 
         {/* No media: pick or shoot */}
         {!mediaUri && activeTool === null && (
@@ -963,7 +970,7 @@ export default function CreateStoryScreen() {
                 <Text style={{ color: tc.text.primary, fontSize: fontSize.sm, marginStart: spacing.sm }}>{t('stories.disposable')}</Text>
               </Pressable>
               <Pressable onPress={() => navigate('/(screens)/photo-music')} style={[toolBtnStyle, { flex: 1 }]} accessibilityLabel={t('stories.photoMusic')} accessibilityRole="button">
-                <Icon name="volume-x" size="sm" color={colors.gold} />
+                <Icon name="music" size="sm" color={colors.gold} />
                 <Text style={{ color: tc.text.primary, fontSize: fontSize.sm, marginStart: spacing.sm }}>{t('stories.photoMusic')}</Text>
               </Pressable>
             </View>
@@ -1248,10 +1255,10 @@ export default function CreateStoryScreen() {
             <TextInput value={questionPrompt} onChangeText={setQuestionPrompt} placeholder={t('stories.yourQuestion')}
               placeholderTextColor={tc.text.tertiary} maxLength={100} style={editorInput} />
             <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.md }}>
-              <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: tc.surface }]}>
+              <Pressable accessibilityRole="button" onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: tc.surface }]}>
                 <Text style={{ color: tc.text.primary}}>{t('common.cancel')}</Text>
               </Pressable>
-              <Pressable onPress={submitQuestion} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
+              <Pressable accessibilityRole="button" onPress={submitQuestion} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
                 <Text style={{ color: '#fff', fontWeight: '600' }}>{t('stories.addQuestion')}</Text>
               </Pressable>
             </View>
@@ -1266,10 +1273,10 @@ export default function CreateStoryScreen() {
             <TextInput value={countdownDate} onChangeText={setCountdownDate} placeholder={t('stories.endDate')}
               placeholderTextColor={tc.text.tertiary} style={[editorInput, { marginTop: spacing.sm }]} />
             <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.md }}>
-              <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: tc.surface }]}>
+              <Pressable accessibilityRole="button" onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: tc.surface }]}>
                 <Text style={{ color: tc.text.primary}}>{t('common.cancel')}</Text>
               </Pressable>
-              <Pressable onPress={submitCountdown} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
+              <Pressable accessibilityRole="button" onPress={submitCountdown} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
                 <Text style={{ color: '#fff', fontWeight: '600' }}>{t('stories.addCountdown')}</Text>
               </Pressable>
             </View>
@@ -1301,10 +1308,10 @@ export default function CreateStoryScreen() {
               {t('stories.tapToMarkCorrect')}
             </Text>
             <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.md }}>
-              <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: tc.surface }]}>
+              <Pressable accessibilityRole="button" onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: tc.surface }]}>
                 <Text style={{ color: tc.text.primary}}>{t('common.cancel')}</Text>
               </Pressable>
-              <Pressable onPress={submitQuiz} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
+              <Pressable accessibilityRole="button" onPress={submitQuiz} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
                 <Text style={{ color: '#fff', fontWeight: '600' }}>{t('stories.addQuiz')}</Text>
               </Pressable>
             </View>
@@ -1317,10 +1324,10 @@ export default function CreateStoryScreen() {
             <TextInput value={mentionUsername} onChangeText={setMentionUsername} placeholder="@username"
               placeholderTextColor={tc.text.tertiary} autoCapitalize="none" style={editorInput} />
             <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.md }}>
-              <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: tc.surface }]}>
+              <Pressable accessibilityRole="button" onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: tc.surface }]}>
                 <Text style={{ color: tc.text.primary}}>{t('common.cancel')}</Text>
               </Pressable>
-              <Pressable onPress={submitMention} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
+              <Pressable accessibilityRole="button" onPress={submitMention} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
                 <Text style={{ color: '#fff', fontWeight: '600' }}>{t('stories.addMention')}</Text>
               </Pressable>
             </View>
@@ -1333,10 +1340,10 @@ export default function CreateStoryScreen() {
             <TextInput value={hashtagText} onChangeText={setHashtagText} placeholder="#hashtag"
               placeholderTextColor={tc.text.tertiary} autoCapitalize="none" style={editorInput} />
             <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.md }}>
-              <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: tc.surface }]}>
+              <Pressable accessibilityRole="button" onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: tc.surface }]}>
                 <Text style={{ color: tc.text.primary}}>{t('common.cancel')}</Text>
               </Pressable>
-              <Pressable onPress={submitHashtag} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
+              <Pressable accessibilityRole="button" onPress={submitHashtag} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
                 <Text style={{ color: '#fff', fontWeight: '600' }}>{t('stories.addHashtag')}</Text>
               </Pressable>
             </View>
@@ -1446,7 +1453,7 @@ export default function CreateStoryScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={t('stories.pickATrack')}
               >
-                <Icon name="volume-x" size="lg" color={colors.emerald} />
+                <Icon name="music" size="lg" color={colors.emerald} />
                 <Text style={{ color: tc.text.secondary, fontSize: fontSize.sm, marginTop: spacing.sm }}>
                   {t('stories.pickATrack')}
                 </Text>
@@ -1547,9 +1554,9 @@ export default function CreateStoryScreen() {
           {/* Publish button */}
           <GradientButton
             label={t('stories.shareStory')}
-            onPress={() => publishMutation.mutate()}
+            onPress={() => { if (!publishMutation.isPending) publishMutation.mutate(); }}
             loading={publishMutation.isPending}
-            disabled={!mediaUri && !text.trim()}
+            disabled={publishMutation.isPending || (!mediaUri && !text.trim())}
             fullWidth
           />
         </View>
@@ -1622,23 +1629,23 @@ export default function CreateStoryScreen() {
   );
 }
 
-// ── Shared styles ──
-const toolBtnStyle: ViewStyle = {
+// ── Shared style factories ──
+const getToolBtnStyle = (tc: ReturnType<typeof useThemeColors>): ViewStyle => ({
   flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-  backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
+  backgroundColor: tc.bgElevated, borderRadius: radius.md,
   paddingVertical: spacing.md, paddingHorizontal: spacing.base,
   marginBottom: spacing.md,
-};
+});
 
-const editorTitle: TextStyle = {
-  color: colors.text.primary, fontSize: fontSize.md, fontWeight: '700', marginBottom: spacing.md,
-};
+const getEditorTitle = (tc: ReturnType<typeof useThemeColors>): TextStyle => ({
+  color: tc.text.primary, fontSize: fontSize.md, fontWeight: '700', marginBottom: spacing.md,
+});
 
-const editorInput: TextStyle = {
-  color: colors.text.primary, fontSize: fontSize.sm,
-  backgroundColor: colors.dark.bgElevated, borderRadius: radius.sm,
+const getEditorInput = (tc: ReturnType<typeof useThemeColors>): TextStyle => ({
+  color: tc.text.primary, fontSize: fontSize.sm,
+  backgroundColor: tc.bgElevated, borderRadius: radius.sm,
   paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
-};
+});
 
 const editorBtn: ViewStyle = {
   borderRadius: radius.md, paddingVertical: spacing.sm,

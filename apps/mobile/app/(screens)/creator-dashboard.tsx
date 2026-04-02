@@ -24,6 +24,7 @@ import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { creatorApi } from '@/services/creatorApi';
 import { commerceApi } from '@/services/api';
 import { navigate } from '@/utils/navigation';
@@ -32,11 +33,7 @@ import { formatCount } from '@/utils/formatCount';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH * 0.4;
 
-const formatNumber = (n: number): string => {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return String(n);
-};
+const formatNumber = formatCount;
 
 const formatChange = (n: number): string => {
   if (n > 0) return `+${n.toFixed(1)}%`;
@@ -95,6 +92,8 @@ const TABS = [
 function CreatorDashboardContent() {
   const router = useRouter();
   const tc = useThemeColors();
+  const styles = createStyles(tc);
+  const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
 
@@ -283,10 +282,11 @@ function CreatorDashboardContent() {
                   entering={FadeInDown.delay(index * 60).duration(300)}
                 >
                   <Pressable
-                    style={styles.postGridItem}
-                    onPress={() =>
-                      navigate('/(screens)/post-insights', { postId: post.id, postType: post.postType })
-                    }
+                    style={({ pressed }) => [styles.postGridItem, pressed && { opacity: 0.7 }]}
+                    onPress={() => {
+                      haptic.tick();
+                      navigate('/(screens)/post-insights', { postId: post.id, postType: post.postType });
+                    }}
                     accessibilityRole="button"
                     accessibilityLabel={`${t('creatorDashboard.postInsights', 'Post insights')}: ${formatNumber(post.views)} ${t('creatorDashboard.views', 'views')}`}
                   >
@@ -680,10 +680,10 @@ export default function CreatorDashboardScreen() {
 const GRID_GAP = spacing.sm;
 const GRID_ITEM_WIDTH = (SCREEN_WIDTH - spacing.base * 2 - GRID_GAP * 2) / 3;
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   skeletonContainer: {
     gap: spacing.lg,
@@ -692,7 +692,7 @@ const styles = StyleSheet.create({
   skeletonCard: {
     width: CARD_WIDTH,
     height: 120,
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.md,
     padding: spacing.base,
     marginEnd: spacing.md,
@@ -707,7 +707,7 @@ const styles = StyleSheet.create({
   },
   overviewCard: {
     width: CARD_WIDTH,
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.md,
     borderWidth: 0.5,
     borderColor: colors.glass.border,
@@ -725,12 +725,12 @@ const styles = StyleSheet.create({
   overviewValue: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.lg,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   overviewLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   overviewChange: {
     fontFamily: fonts.bodyMedium,
@@ -760,7 +760,7 @@ const styles = StyleSheet.create({
   subsectionTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
     marginTop: spacing.lg,
     marginBottom: spacing.md,
   },
@@ -780,7 +780,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   postPlaceholder: {
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -804,7 +804,7 @@ const styles = StyleSheet.create({
   postStatText: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.xs,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   bestTimesContainer: {
     gap: spacing.sm,
@@ -827,17 +827,17 @@ const styles = StyleSheet.create({
   bestTimeDay: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.sm,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   bestTimeHour: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   bestTimeBar: {
     flex: 1,
     height: 6,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.full,
     overflow: 'hidden',
   },
@@ -849,7 +849,7 @@ const styles = StyleSheet.create({
   bestTimePercent: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     width: 36,
     textAlign: 'right',
   },
@@ -867,7 +867,7 @@ const styles = StyleSheet.create({
   genderBarTrack: {
     width: 32,
     height: 80,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.sm,
     overflow: 'hidden',
     justifyContent: 'flex-end',
@@ -879,12 +879,12 @@ const styles = StyleSheet.create({
   genderPercent: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.sm,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   genderLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   ageRow: {
     flexDirection: 'row',
@@ -895,13 +895,13 @@ const styles = StyleSheet.create({
   ageLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     width: 48,
   },
   ageBarTrack: {
     flex: 1,
     height: 8,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.full,
     overflow: 'hidden',
   },
@@ -913,7 +913,7 @@ const styles = StyleSheet.create({
   agePercent: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     width: 36,
     textAlign: 'right',
   },
@@ -923,21 +923,21 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingVertical: spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.dark.border,
+    borderBottomColor: tc.border,
   },
   countryName: {
     fontFamily: fonts.body,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
     flex: 1,
   },
   countryPercent: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   revenueSummary: {
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.md,
     borderWidth: 0.5,
     borderColor: colors.glass.border,
@@ -948,7 +948,7 @@ const styles = StyleSheet.create({
   revenueTotalLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   revenueTotalValue: {
     fontFamily: fonts.bodySemiBold,
@@ -962,10 +962,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.md,
     borderWidth: 0.5,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     padding: spacing.base,
   },
   revenueItemIcon: {
@@ -982,12 +982,12 @@ const styles = StyleSheet.create({
   revenueItemLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   revenueItemValue: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.md,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   historyRow: {
     flexDirection: 'row',
@@ -998,13 +998,13 @@ const styles = StyleSheet.create({
   historyMonth: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     width: 48,
   },
   historyBarTrack: {
     flex: 1,
     height: 8,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.full,
     overflow: 'hidden',
   },
@@ -1016,7 +1016,7 @@ const styles = StyleSheet.create({
   historyAmount: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.sm,
-    color: colors.text.primary,
+    color: tc.text.primary,
     width: 50,
     textAlign: 'right',
   },
@@ -1035,12 +1035,12 @@ const styles = StyleSheet.create({
   salesSummaryValue: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.lg,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   salesSummaryLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   topProductRow: {
     flexDirection: 'row',
@@ -1069,12 +1069,12 @@ const styles = StyleSheet.create({
   topProductTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   topProductMeta: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   topProductRevenue: {
     fontFamily: fonts.bodySemiBold,

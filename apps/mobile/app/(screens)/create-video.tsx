@@ -48,6 +48,7 @@ interface PickedVideo {
 export default function CreateVideoScreen() {
   const router = useRouter();
   const tc = useThemeColors();
+  const styles = createStyles(tc);
   const insets = useSafeAreaInsets();
   const { user } = useUser();
   const queryClient = useQueryClient();
@@ -322,6 +323,7 @@ export default function CreateVideoScreen() {
   };
 
   const handleSubmit = () => {
+    if (uploadMutation.isPending) return;
     if (!video) {
       showToast({ message: t('createVideo.selectVideoToUpload'), variant: 'error' });
       return;
@@ -348,7 +350,7 @@ export default function CreateVideoScreen() {
           rightActions={[{ icon: 'send', onPress: handleSubmit, accessibilityLabel: t('createVideo.upload') }]}
         />
 
-        <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: insets.top + 52 }}>
+        <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: insets.top + 52 }} keyboardShouldPersistTaps="handled">
           {/* Video picker */}
           <Animated.View entering={FadeInUp.duration(300)}>
           <Pressable accessibilityRole="button" accessibilityLabel={t('createVideo.selectVideo')} style={({ pressed }) => [styles.videoPicker, { backgroundColor: tc.surface, transform: [{ scale: pressed ? 0.97 : 1 }] }]} onPress={() => { haptic.tick(); pickVideo(); }}>
@@ -692,14 +694,14 @@ export default function CreateVideoScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   scroll: {
     flex: 1,
   },
   videoPicker: {
     margin: spacing.base,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.md,
     aspectRatio: 16 / 9,
     overflow: 'hidden',
@@ -731,12 +733,12 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   videoPlaceholderText: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     fontWeight: '600',
   },
   videoPlaceholderSub: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
   },
   thumbnailSection: {
@@ -744,13 +746,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   sectionLabel: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     fontWeight: '600',
     marginBottom: spacing.sm,
   },
   thumbnailPicker: {
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.md,
     aspectRatio: 16 / 9,
     overflow: 'hidden',
@@ -766,11 +768,11 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   thumbnailPlaceholderText: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
   },
   thumbnailHint: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.xs,
     marginTop: spacing.xs,
   },
@@ -779,16 +781,16 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   fieldLabel: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     fontWeight: '600',
     marginBottom: spacing.xs,
   },
   titleInput: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.lg,
     fontWeight: '700',
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -799,9 +801,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   descriptionInput: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -809,7 +811,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   charCount: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.xs,
     textAlign: 'right',
     marginTop: spacing.xs,
@@ -818,13 +820,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
   pickerText: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
   },
   tagInputRow: {
@@ -833,9 +835,9 @@ const styles = StyleSheet.create({
   },
   tagInput: {
     flex: 1,
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -856,26 +858,26 @@ const styles = StyleSheet.create({
   tagChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dark.bgElevated,
+    backgroundColor: tc.bgElevated,
     borderRadius: radius.full,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     gap: spacing.xs,
   },
   tagText: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
   },
   progressContainer: {
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.dark.border,
-    backgroundColor: colors.dark.bg,
+    borderTopColor: tc.border,
+    backgroundColor: tc.bg,
   },
   progressBar: {
     height: 4,
-    backgroundColor: colors.dark.border,
+    backgroundColor: tc.border,
     borderRadius: radius.sm,
     overflow: 'hidden',
   },
@@ -884,7 +886,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.emerald,
   },
   progressText: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.xs,
     marginTop: spacing.xs,
     textAlign: 'center',
@@ -893,10 +895,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
+    borderBottomColor: tc.border,
   },
   sheetTitle: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     fontWeight: '700',
   },
@@ -920,14 +922,14 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   uploadThumbnailButton: {
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
     borderStyle: 'dashed' as const,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
   },
   uploadThumbnailText: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.xs,
     marginTop: 2,
   },
@@ -937,15 +939,15 @@ const styles = StyleSheet.create({
     alignItems: 'center' as const,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
+    borderBottomColor: tc.border,
   },
   toggleLabel: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     fontWeight: '500' as const,
   },
   toggleSubtitle: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.xs,
     marginTop: 2,
   },
@@ -953,7 +955,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 28,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     justifyContent: 'center' as const,
     padding: 2,
   },
