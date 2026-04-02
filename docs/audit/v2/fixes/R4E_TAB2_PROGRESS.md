@@ -5,7 +5,7 @@
 - **D22:** 59 findings (location-picker, maintenance, majlis-list/[id], majlis-lists, manage-broadcast)
 - **Total:** 116 findings
 
-## Final Accounting (after 2 honesty passes)
+## Final Accounting (after 3 honesty passes)
 | Status | Count |
 |--------|-------|
 | FIXED | 80 |
@@ -16,6 +16,10 @@
 
 **Equation: 80 + 6 + 24 + 6 = 116 ✓**
 **Deferral rate: 6/116 = 5.2% (under 15% cap)**
+
+### Honesty pass 3 — unoverridden colors.text.* (light mode invisible text)
+- event-detail: 6 Text elements had colors.text.* in StyleSheet with NO inline tc.* override (infoSub, descriptionText, rsvpButtonText, countBadge, moreText, seeAllText) — all would show dark-mode-only colors in light theme. Fixed.
+- location-picker: coordInput TextInput had hardcoded color: colors.text.primary (#fff) with no inline override — invisible white text on light bg. Fixed. Also fixed missing tc override on second coordLabel.
 
 ### Self-audit corrections (6 items reclassified → FIXED)
 - D17 #24: Calendar day tap — was lazy NOT_A_BUG, now FIXED (islamicApi.logFast accepts any date)
