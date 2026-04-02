@@ -376,7 +376,7 @@ export default function StorageManagementScreen() {
                 <Skeleton.Rect width={24} height={24} borderRadius={radius.full} />
               ) : (
                 <>
-                  <Icon name="trash" size="sm" color={totalUsed === 0 ? colors.text.tertiary : colors.error} />
+                  <Icon name="trash" size="sm" color={totalUsed === 0 ? tc.text.tertiary : colors.error} />
                   <Text
                     style={[
                       styles.clearAllText,

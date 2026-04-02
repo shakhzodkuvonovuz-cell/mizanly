@@ -138,12 +138,13 @@ function CalendarDay({
   index: number;
   onPress?: () => void;
 }) {
+  const tc = useThemeColors();
   if (day === null) {
     return <View style={styles.dayCell} />;
   }
 
   const content = (
-    <Animated.View entering={FadeInUp.delay(index * 20).duration(300)} style={styles.dayCell}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index * 20, 500)).duration(300)} style={styles.dayCell}>
       <View style={[
         styles.dayContent,
         isToday && styles.dayToday,
@@ -161,6 +162,7 @@ function CalendarDay({
           <>
             <Text style={[
               styles.dayText,
+              { color: tc.text.primary },
               hasEvent && styles.dayTextEvent,
               eventType === 'eid' && styles.dayTextEid,
             ]}>{day}</Text>
@@ -444,7 +446,7 @@ export default function IslamicCalendarScreen() {
 
                 <View style={styles.monthTitleContainer}>
                   <Text style={styles.monthTitleArabic}>{HIJRI_MONTHS_AR[currentMonth]}</Text>
-                  <Text style={[styles.monthTitle, { color: tc.text.secondary }]}>{HIJRI_MONTHS_EN[currentMonth]} {currentYear}</Text>
+                  <Text style={[styles.monthTitle, { color: tc.text.tertiary }]}>{HIJRI_MONTHS_EN[currentMonth]} {currentYear}</Text>
                 </View>
 
                 <Pressable accessibilityRole="button" accessibilityLabel={t('accessibility.nextMonth')} onPress={handleNextMonth} style={styles.monthNavButton} hitSlop={8}>
@@ -611,6 +613,7 @@ export default function IslamicCalendarScreen() {
               </LinearGradient>
               <Text style={[
                 styles.eventSheetTitle,
+                { color: tc.text.primary },
                 selectedEvent.type === 'eid' && { color: colors.gold },
               ]}>
                 {t(selectedEvent.name)}
@@ -735,9 +738,9 @@ const styles = StyleSheet.create({
     fontFamily: fonts.arabicBold,
   },
   monthTitle: {
-    color: colors.text.secondary,
     fontSize: fontSize.sm,
     marginTop: 2,
+    fontFamily: fonts.body,
   },
   weekdayHeader: {
     flexDirection: 'row',
@@ -788,8 +791,8 @@ const styles = StyleSheet.create({
     borderColor: colors.active.gold50,
   },
   dayText: {
-    color: colors.text.primary,
     fontSize: fontSize.base,
+    fontFamily: fonts.body,
   },
   dayTextToday: {
     color: '#fff',
@@ -840,11 +843,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
   },
   legendText: {
-    color: colors.text.secondary,
     fontSize: fontSize.xs,
+    fontFamily: fonts.body,
   },
   disclaimerText: {
-    color: colors.text.tertiary,
     fontSize: fontSize.xs,
     textAlign: 'center',
     paddingHorizontal: spacing.md,
@@ -969,21 +971,20 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   eventSheetTitle: {
-    color: colors.text.primary,
     fontSize: fontSize.lg,
     fontFamily: fonts.bodyBold,
     textAlign: 'center',
     marginBottom: spacing.xs,
   },
   eventSheetDate: {
-    color: colors.text.secondary,
     fontSize: fontSize.sm,
     marginBottom: spacing.md,
+    fontFamily: fonts.body,
   },
   eventSheetDescription: {
-    color: colors.text.secondary,
     fontSize: fontSize.base,
     textAlign: 'center',
     lineHeight: 22,
+    fontFamily: fonts.body,
   },
 });
