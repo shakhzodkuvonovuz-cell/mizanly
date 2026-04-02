@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TextInput, Alert,
+  View, Text, StyleSheet, TextInput,
   KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { showToast } from '@/components/ui/Toast';
@@ -18,10 +18,11 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { messagesApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import type { DMNote } from '@/types';
 
 const MAX_LENGTH = 60;
@@ -39,10 +40,12 @@ export default function DMNoteEditorScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const haptic = useContextualHaptic();
 
   const [content, setContent] = useState('');
   const [expiryHours, setExpiryHours] = useState(24);
   const [expirySheetVisible, setExpirySheetVisible] = useState(false);
+  const [deleteSheetVisible, setDeleteSheetVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const tc = useThemeColors();
 
@@ -53,6 +56,7 @@ export default function DMNoteEditorScreen() {
   } = useQuery<DMNote | null>({
     queryKey: ['dm-note', 'me'],
     queryFn: () => messagesApi.getMyDMNote(),
+    staleTime: 30_000,
   });
 
   // Hydrate content from existing note on initial load
@@ -84,20 +88,20 @@ export default function DMNoteEditorScreen() {
   });
 
   const handlePost = useCallback(() => {
-    if (!content.trim()) return;
+    if (!content.trim() || createMutation.isPending) return;
+    haptic.send();
     createMutation.mutate();
-  }, [content, createMutation]);
+  }, [content, createMutation, haptic]);
 
   const handleDelete = useCallback(() => {
-    Alert.alert(
-      t('dmNotes.delete'),
-      t('dmNotes.deleteConfirm'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        { text: t('common.delete'), style: 'destructive', onPress: () => deleteMutation.mutate() },
-      ],
-    );
-  }, [deleteMutation, t]);
+    haptic.delete();
+    setDeleteSheetVisible(true);
+  }, [haptic]);
+
+  const confirmDelete = useCallback(() => {
+    setDeleteSheetVisible(false);
+    deleteMutation.mutate();
+  }, [deleteMutation]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -123,7 +127,7 @@ export default function DMNoteEditorScreen() {
 
         <KeyboardAvoidingView
           style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           <ScrollView
             contentContainerStyle={styles.scrollContent}
@@ -263,11 +267,30 @@ export default function DMNoteEditorScreen() {
               label={t(`dmNotes.expiryOptions.${option.key}`)}
               icon={option.hours === expiryHours ? 'check-circle' : 'clock'}
               onPress={() => {
+                haptic.tick();
                 setExpiryHours(option.hours);
                 setExpirySheetVisible(false);
               }}
             />
           ))}
+        </BottomSheet>
+
+        {/* Delete confirmation BottomSheet (#44 — replaces Alert.alert) */}
+        <BottomSheet
+          visible={deleteSheetVisible}
+          onClose={() => setDeleteSheetVisible(false)}
+        >
+          <BottomSheetItem
+            label={t('dmNotes.deleteConfirm')}
+            icon="trash"
+            destructive
+            onPress={confirmDelete}
+          />
+          <BottomSheetItem
+            label={t('common.cancel')}
+            icon="x"
+            onPress={() => setDeleteSheetVisible(false)}
+          />
         </BottomSheet>
       </SafeAreaView>
     </ScreenErrorBoundary>
@@ -302,10 +325,12 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     flex: 1,
+    fontFamily: fonts.body,
     color: colors.text.secondary,
     fontSize: fontSize.sm,
   },
   textInput: {
+    fontFamily: fonts.body,
     color: colors.text.primary,
     fontSize: fontSize.lg,
     minHeight: 60,
@@ -323,9 +348,9 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   expiryLabel: {
+    fontFamily: fonts.bodySemiBold,
     color: colors.text.primary,
     fontSize: fontSize.base,
-    fontWeight: '600',
   },
   previewCard: {
     borderRadius: radius.lg,
@@ -334,9 +359,9 @@ const styles = StyleSheet.create({
     borderColor: colors.active.emerald20,
   },
   previewTitle: {
+    fontFamily: fonts.bodySemiBold,
     color: colors.text.secondary,
     fontSize: fontSize.xs,
-    fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: spacing.sm,
@@ -348,6 +373,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   previewText: {
+    fontFamily: fonts.body,
     color: colors.text.primary,
     fontSize: fontSize.base,
   },
@@ -364,6 +390,7 @@ const styles = StyleSheet.create({
     borderColor: colors.active.white6,
   },
   currentNoteText: {
+    fontFamily: fonts.body,
     color: colors.text.secondary,
     fontSize: fontSize.sm,
   },

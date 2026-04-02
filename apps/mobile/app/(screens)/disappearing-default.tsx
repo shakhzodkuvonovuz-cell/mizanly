@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { showToast } from '@/components/ui/Toast';
 // settingsApi not used — disappearingMessageTimer is local-only (no backend field)
 
@@ -26,6 +27,7 @@ const TIMER_VALUES: { key: TimerOption; seconds: number }[] = [
 function DisappearingDefaultContent() {
   const router = useRouter();
   const { t } = useTranslation();
+  const haptic = useContextualHaptic();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -47,7 +49,7 @@ function DisappearingDefaultContent() {
           }
         }
       } catch {
-        // Use default on error
+        showToast({ message: t('disappearingDefault.errorLoad', 'Could not load timer setting'), variant: 'error' });
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -58,20 +60,22 @@ function DisappearingDefaultContent() {
 
   const handleSelect = useCallback(async (option: TimerOption) => {
     if (saving) return;
+    haptic.tick();
     const prev = selected;
     setSelected(option);
     setSaving(true);
     try {
       const timer = TIMER_VALUES.find((v) => v.key === option);
-      // Persisted locally — backend schema does not have disappearingMessageTimer field
       await AsyncStorage.setItem('disappearing-message-timer', String(timer?.seconds ?? 0));
+      haptic.success();
     } catch {
       setSelected(prev);
+      haptic.error();
       showToast({ message: t('disappearingDefault.errorSave', 'Failed to save timer setting'), variant: 'error' });
     } finally {
       setSaving(false);
     }
-  }, [saving, selected, t]);
+  }, [saving, selected, t, haptic]);
 
   const timerOptions: { key: TimerOption; label: string; subtitle: string }[] = [
     {

@@ -86,8 +86,9 @@ function DisappearingSettingsContent() {
       router.back();
       return;
     }
+    if (!conversationId || mutation.isPending) return;
     mutation.mutate(selectedDuration);
-  }, [selectedDuration, initialDuration, mutation, router]);
+  }, [selectedDuration, initialDuration, mutation, router, conversationId]);
 
   return (
     <View style={[styles.container, { backgroundColor: tc.bg }]}>
@@ -119,7 +120,7 @@ function DisappearingSettingsContent() {
                 <Icon name="clock" size="xl" color={colors.emerald} />
               </View>
             </View>
-            <View style={[styles.lockBadge, { borderColor: tc.bg }]}>
+            <View style={[styles.lockBadge, { borderColor: tc.bg, backgroundColor: colors.emerald }]}>
               <Icon name="lock" size="xs" color={tc.text.primary} />
             </View>
           </Animated.View>
