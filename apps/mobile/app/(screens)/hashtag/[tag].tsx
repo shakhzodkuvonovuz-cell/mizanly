@@ -23,6 +23,7 @@ import { formatCount } from '@/utils/formatCount';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 
 type HashtagPostsPage = {
@@ -37,10 +38,11 @@ const GRID_ITEM = (SCREEN_W - 2) / 3;
 function GridItem({ post, onPress }: { post: Post; onPress: () => void }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
+  const haptic = useContextualHaptic();
   return (
     <Pressable
       accessibilityRole="button"
-      onPress={onPress}
+      onPress={() => { haptic.navigate(); onPress(); }}
       style={({ pressed }) => [styles.gridItem, pressed && { opacity: 0.85 }]}
     >
       {post.mediaUrls.length > 0 ? (
@@ -76,6 +78,7 @@ export default function HashtagScreen() {
       searchApi.hashtagPosts(tag, pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last: HashtagPostsPage) => last.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
+    staleTime: 30_000,
   });
 
   const posts: Post[] = postsQuery.data?.pages.flatMap((p: HashtagPostsPage) => p.data ?? []) ?? [];
@@ -104,7 +107,8 @@ export default function HashtagScreen() {
       : [...followedHashtags, tag];
     setFollowedHashtags(newFollowed);
     AsyncStorage.setItem('followed-hashtags', JSON.stringify(newFollowed));
-  }, [isFollowing, followedHashtags, tag, haptic]);
+    showToast({ message: isFollowing ? t('common.unfollowed') : t('common.followed'), variant: 'success' });
+  }, [isFollowing, followedHashtags, tag, haptic, t]);
 
   const onEndReached = useCallback(() => {
     if (postsQuery.hasNextPage && !postsQuery.isFetchingNextPage) postsQuery.fetchNextPage();
@@ -184,7 +188,7 @@ export default function HashtagScreen() {
             />
           }
           renderItem={({ item, index }) => (
-            <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+            <Animated.View entering={FadeInUp.delay(Math.min(index, 10) * 50).duration(400)}>
               <GridItem
                 post={item}
                 onPress={() => router.push(`/(screens)/post/${item.id}`)}
@@ -227,8 +231,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   container: { flex: 1, backgroundColor: tc.bg },
   headerSpacer: { height: 100 },
   headerInfo: { alignItems: 'center' },
-  tagName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
-  postCount: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 1 },
+  tagName: { color: tc.text.primary, fontSize: fontSize.base, fontWeight: '700' },
+  postCount: { color: tc.text.secondary, fontSize: fontSize.xs, marginTop: 1 },
   followBar: {
     alignItems: 'center', paddingVertical: spacing.sm,
     borderBottomWidth: 0.5, borderBottomColor: tc.border,
@@ -256,7 +260,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.md,
   },
   tagNameLarge: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.xl,
     fontWeight: '700',
   },
@@ -281,7 +285,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flex: 1, padding: spacing.sm, backgroundColor: tc.bgElevated,
     justifyContent: 'center',
   },
-  gridText: { color: colors.text.primary, fontSize: fontSize.xs },
+  gridText: { color: tc.text.primary, fontSize: fontSize.xs },
   carouselBadge: {
     position: 'absolute', top: 6, end: 6,
     backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: radius.sm, padding: 3,

@@ -224,6 +224,10 @@ export default function HifzTrackerScreen() {
       queryClient.invalidateQueries({ queryKey: ['hifz-review'] });
       setStatusSheet({ visible: false, surahNum: 0 });
     },
+    onError: (err: Error) => {
+      haptic.error();
+      showToast({ message: err.message || t('common.somethingWentWrong'), variant: 'error' });
+    },
   });
 
   const progressList: SurahProgress[] = (progressQuery.data as SurahProgress[] | undefined) ?? SURAHS.map(s => ({ surahNum: s.num, status: 'not_started', lastReviewedAt: null }));
@@ -242,16 +246,16 @@ export default function HifzTrackerScreen() {
       {/* Stats */}
       {stats ? (
         <View style={styles.statsRow}>
-          <View style={[styles.statCard, { backgroundColor: tc.bgCard }, { borderLeftColor: colors.emerald }]}>
-            <Text style={[styles.statValue, { color: colors.emerald }, { color: tc.text.primary }]}>{stats.memorized}</Text>
+          <View style={[styles.statCard, { backgroundColor: tc.bgCard, borderStartColor: colors.emerald }]}>
+            <Text style={[styles.statValue, { color: tc.text.primary }]}>{stats.memorized}</Text>
             <Text style={[styles.statLabel, { color: tc.text.secondary }]}>{t('hifz.memorized')}</Text>
           </View>
-          <View style={[styles.statCard, { backgroundColor: tc.bgCard }, { borderLeftColor: colors.gold }]}>
-            <Text style={[styles.statValue, { color: colors.gold }, { color: tc.text.primary }]}>{stats.inProgress}</Text>
+          <View style={[styles.statCard, { backgroundColor: tc.bgCard, borderStartColor: colors.gold }]}>
+            <Text style={[styles.statValue, { color: tc.text.primary }]}>{stats.inProgress}</Text>
             <Text style={[styles.statLabel, { color: tc.text.secondary }]}>{t('hifz.inProgress')}</Text>
           </View>
-          <View style={[styles.statCard, { backgroundColor: tc.bgCard }, { borderLeftColor: colors.extended.orange }]}>
-            <Text style={[styles.statValue, { color: colors.extended.orange }, { color: tc.text.primary }]}>{stats.needsReview}</Text>
+          <View style={[styles.statCard, { backgroundColor: tc.bgCard, borderStartColor: colors.extended.orange }]}>
+            <Text style={[styles.statValue, { color: tc.text.primary }]}>{stats.needsReview}</Text>
             <Text style={[styles.statLabel, { color: tc.text.secondary }]}>{t('hifz.needsReview')}</Text>
           </View>
         </View>
@@ -269,7 +273,7 @@ export default function HifzTrackerScreen() {
           <Text style={[styles.progressText, { color: tc.text.secondary }]}>
             {t('hifz.totalMemorized', { count: stats.memorized })} ({stats.percentage}%)
           </Text>
-          <View style={[styles.progressBar, { backgroundColor: tc.surface }]}>
+          <View style={[styles.progressBar, { backgroundColor: tc.border }]}>
             <View style={[styles.progressFill, { width: `${stats.percentage}%` }]} />
           </View>
         </View>
@@ -285,7 +289,7 @@ export default function HifzTrackerScreen() {
             const surah = SURAHS[r.surahNum - 1];
             return surah ? (
               <View key={r.surahNum} style={styles.reviewItem}>
-                <Icon name="clock" size={14} color="#F59E0B" />
+                <Icon name="clock" size={14} color={colors.extended.orange} />
                 <Text style={[styles.reviewText, { color: tc.text.secondary }]}>{surah.num}. {surah.name} ({surah.arabic})</Text>
               </View>
             ) : null;
@@ -297,7 +301,7 @@ export default function HifzTrackerScreen() {
         {t('hifz.surahView')}
       </Text>
     </View>
-  ), [stats, reviewList, isRTL, t]);
+  ), [stats, reviewList, isRTL, t, tc]);
 
   return (
     <ScreenErrorBoundary>
@@ -363,7 +367,7 @@ export default function HifzTrackerScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
   listContent: { paddingBottom: spacing['2xl'] },
   statsRow: {
     flexDirection: 'row',
@@ -373,19 +377,16 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.md,
     padding: spacing.md,
     alignItems: 'center',
-    borderLeftWidth: 3,
+    borderStartWidth: 3,
   },
   statValue: {
-    color: colors.text.primary,
     fontSize: fontSize.xl,
     fontWeight: '700',
   },
   statLabel: {
-    color: colors.text.secondary,
     fontSize: fontSize.xs,
     marginTop: spacing.xs,
   },
@@ -394,13 +395,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.base,
   },
   progressText: {
-    color: colors.text.secondary,
     fontSize: fontSize.sm,
     marginBottom: spacing.sm,
   },
   progressBar: {
     height: 8,
-    backgroundColor: colors.dark.surface,
     borderRadius: radius.full,
     overflow: 'hidden',
   },
@@ -413,13 +412,11 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.base,
     marginBottom: spacing.base,
     padding: spacing.base,
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.extended.orange,
   },
   sectionTitle: {
-    color: colors.text.primary,
     fontSize: fontSize.base,
     fontWeight: '700',
     marginBottom: spacing.sm,
@@ -431,7 +428,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   reviewText: {
-    color: colors.text.secondary,
     fontSize: fontSize.sm,
   },
   surahRow: {
@@ -441,7 +437,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     gap: spacing.md,
     borderBottomWidth: 0.5,
-    borderBottomColor: colors.dark.border,
+    borderBottomColor: 'transparent',
   },
   statusDot: {
     width: 10,
@@ -457,24 +453,20 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   surahNum: {
-    color: colors.text.tertiary,
     fontSize: fontSize.sm,
     fontWeight: '600',
     width: 28,
   },
   surahName: {
-    color: colors.text.primary,
     fontSize: fontSize.sm,
     fontWeight: '600',
     flex: 1,
   },
   surahArabic: {
-    color: colors.text.secondary,
     fontSize: fontSize.sm,
     fontFamily: fonts.arabic,
   },
   surahMeta: {
-    color: colors.text.tertiary,
     fontSize: fontSize.xs,
     marginTop: 2,
     marginStart: 28,

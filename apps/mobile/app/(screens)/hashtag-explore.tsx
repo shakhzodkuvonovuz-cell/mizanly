@@ -64,15 +64,15 @@ export default function HashtagExploreScreen() {
   const isError = debouncedQuery.length === 0 && isTrendingError;
 
   const renderItem = ({ item, index }: { item: HashtagInfo; index: number }) => (
-    <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 8) * 80).duration(400)}>
       <LinearGradient
         colors={colors.gradient.cardDark}
         style={styles.row}
       >
         <Pressable
           accessibilityRole="button"
-          style={styles.rowInner}
-          onPress={() => navigate('/(screens)/search-results', { query: '#' + item.name })}
+          style={({ pressed }) => [styles.rowInner, pressed && { opacity: 0.7 }]}
+          onPress={() => { haptic.tick(); navigate('/(screens)/hashtag/' + item.name); }}
         >
           <LinearGradient
             colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
@@ -140,6 +140,8 @@ export default function HashtagExploreScreen() {
               onChangeText={setSearchQuery}
               autoCapitalize="none"
               autoCorrect={false}
+              returnKeyType="search"
+              onSubmitEditing={() => { /* keyboard dismissed automatically */ }}
             />
             {searchQuery.length > 0 && (
               <Pressable accessibilityRole="button" accessibilityLabel={t('common.clear')} hitSlop={8} onPress={() => setSearchQuery('')}>
@@ -186,7 +188,6 @@ export default function HashtagExploreScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg
   },
   searchWrap: {
     paddingHorizontal: spacing.base,
@@ -209,7 +210,6 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    color: colors.text.primary,
     fontSize: fontSize.base,
     height: 40,
   },
@@ -247,11 +247,9 @@ const styles = StyleSheet.create({
   name: {
     fontSize: fontSize.base,
     fontWeight: '600',
-    color: colors.text.primary,
   },
   count: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
   },
   countGold: {
     color: colors.gold,
