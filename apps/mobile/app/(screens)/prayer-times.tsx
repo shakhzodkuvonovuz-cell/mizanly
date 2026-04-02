@@ -312,7 +312,7 @@ export default function PrayerTimesScreen() {
         const isAvailable = await Magnetometer.isAvailableAsync();
         if (!isAvailable) return;
         Magnetometer.setUpdateInterval(100);
-        subscription = Magnetometer.addListener(({ x, y }) => {
+        subscription = Magnetometer.addListener(({ x, y }: { x: number; y: number }) => {
           // Calculate heading from magnetometer x/y
           const heading = Math.atan2(y, x) * (180 / Math.PI);
           const normalizedHeading = (heading + 360) % 360;

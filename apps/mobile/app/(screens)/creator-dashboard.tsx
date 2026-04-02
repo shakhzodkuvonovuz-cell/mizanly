@@ -292,8 +292,9 @@ function CreatorDashboardContent() {
                   >
                     {post.thumbnailUrl ? (
                       <ProgressiveImage
-                        source={{ uri: post.thumbnailUrl }}
-                        style={styles.postThumbnail}
+                        uri={post.thumbnailUrl}
+                        width="100%"
+                        height={120}
                         contentFit="cover"
                       />
                     ) : (

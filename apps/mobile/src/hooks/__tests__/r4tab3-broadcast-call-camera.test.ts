@@ -335,7 +335,7 @@ describe('R4 Tab3: Permission Request Guard (camera.tsx)', () => {
 
 describe('R4 Tab3: Deleted User Fallback (call-history.tsx)', () => {
   test('displays fallback name when otherUser is null', () => {
-    const otherUser = null;
+    const otherUser = null as any;
     const fallbackName = 'Deleted User';
     const displayName = otherUser?.displayName || otherUser?.username || fallbackName;
     expect(displayName).toBe('Deleted User');

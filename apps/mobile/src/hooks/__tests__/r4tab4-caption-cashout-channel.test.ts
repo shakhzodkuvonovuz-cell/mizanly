@@ -72,7 +72,7 @@ describe('R4-Tab4: Charity campaign division by zero guard', () => {
   });
 
   test('progressPercent is 0 when campaign is null', () => {
-    const campaign = null;
+    const campaign = null as any;
     const progressPercent = campaign && campaign.goalAmount > 0
       ? Math.min((campaign.raisedAmount / campaign.goalAmount) * 100, 100)
       : 0;
@@ -379,7 +379,7 @@ describe('R4-Tab4: Cashout amount validation', () => {
 describe('R4-Tab4: Report navigation guard', () => {
   test('handleReport skips when channel id is undefined', () => {
     let navigated = false;
-    const channel = null;
+    const channel = null as any;
     if (channel?.id) {
       navigated = true;
     }

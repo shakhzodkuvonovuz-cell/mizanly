@@ -290,12 +290,12 @@ describe('R4-Tab1: AsyncStorage error handling', () => {
     let error: Error | null = null;
 
     // With .catch(), no unhandled rejection
-    await failingStorage.getItem().catch((e) => { error = e; });
-    expect(error?.message).toBe('Corrupted');
+    await failingStorage.getItem().catch((e) => { error = e as any; });
+    expect((error as any)?.message).toBe('Corrupted');
 
     error = null;
-    await failingStorage.setItem().catch((e) => { error = e; });
-    expect(error?.message).toBe('Full');
+    await failingStorage.setItem().catch((e) => { error = e as any; });
+    expect((error as any)?.message).toBe('Full');
   });
 });
 

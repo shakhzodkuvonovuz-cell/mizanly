@@ -1674,8 +1674,8 @@ export default function ConversationScreen() {
       const mediaPayload = JSON.stringify({
         type: 'IMAGE',
         mediaUrl,
-        mediaKey: toBase64(encResult.mediaKey),
-        mediaSha256: toBase64(encResult.mediaSha256),
+        mediaKey: encResult.mediaKey ? toBase64(encResult.mediaKey) : '',
+        mediaSha256: encResult.mediaSha256 ? toBase64(encResult.mediaSha256) : '',
         totalChunks: encResult.totalChunks,
         fileSize: encResult.fileSize,
         mimeType: `image/${ext}`,
@@ -1828,8 +1828,8 @@ export default function ConversationScreen() {
       const voicePayload = JSON.stringify({
         type: 'VOICE',
         mediaUrl,
-        mediaKey: toBase64(encResult.mediaKey),
-        mediaSha256: toBase64(encResult.mediaSha256),
+        mediaKey: encResult.mediaKey ? toBase64(encResult.mediaKey) : '',
+        mediaSha256: encResult.mediaSha256 ? toBase64(encResult.mediaSha256) : '',
         totalChunks: encResult.totalChunks,
         fileSize: encResult.fileSize,
         mimeType: 'audio/m4a',
