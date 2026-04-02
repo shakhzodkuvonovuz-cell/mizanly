@@ -550,7 +550,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingVertical: spacing.md,
     gap: spacing.sm,
   },
-  rowUnread: { backgroundColor: colors.active.emerald10 },
+  rowUnread: { backgroundColor: tc.isDark ? colors.active.emerald10 : 'rgba(10,123,79,0.06)' },
   rowPressed: { opacity: 0.7 },
   unreadBar: {
     position: 'absolute',

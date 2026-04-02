@@ -175,7 +175,7 @@ export default function AccountSwitcherScreen() {
         >
           {/* Loading State */}
           {isLoading && (
-            <View style={{ padding: spacing.base, gap: spacing.md }}>
+            <View style={{ padding: spacing.base, paddingTop: spacing.xl, gap: spacing.md }}>
               <Skeleton.Rect width="100%" height={140} borderRadius={radius.lg} />
               <Skeleton.Rect width="100%" height={80} borderRadius={radius.lg} />
               <Skeleton.Rect width="100%" height={80} borderRadius={radius.lg} />
@@ -260,7 +260,7 @@ export default function AccountSwitcherScreen() {
                 >
                   <LinearGradient
                     colors={colors.gradient.cardDark}
-                    style={styles.accountGradient}
+                    style={[styles.accountGradient, { borderColor: tc.border }]}
                   >
                     {/* Avatar and Info */}
                     <View style={styles.accountRow}>

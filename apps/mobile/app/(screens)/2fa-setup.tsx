@@ -10,6 +10,7 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import * as ScreenCapture from 'expo-screen-capture';
@@ -307,8 +308,16 @@ export default function TwoFactorSetupScreen() {
                       <View style={styles.qrMock}>
                         {loading ? (
                           <>
-                            <Icon name="loader" size="lg" color={tc.text.tertiary} />
+                            <ActivityIndicator size="large" color={colors.emerald} />
                             <Text style={styles.qrMockSubtext}>{t('auth.generatingQRCode')}</Text>
+                          </>
+                        ) : error ? (
+                          <>
+                            <Icon name="flag" size="lg" color={colors.error} />
+                            <Text style={styles.qrMockSubtext}>{error}</Text>
+                            <Pressable onPress={fetchSetup} style={{ marginTop: spacing.sm }}>
+                              <Text style={{ color: colors.emerald, fontWeight: '600' }}>{t('common.retry')}</Text>
+                            </Pressable>
                           </>
                         ) : (
                           <>

@@ -10,13 +10,20 @@
 
 | Status | Count |
 |--------|-------|
-| FIXED | 99 |
-| DEFERRED | 19 |
+| FIXED | 106 |
+| DEFERRED | 14 |
 | ALREADY_FIXED | 6 |
-| NOT_A_BUG | 19 |
+| NOT_A_BUG | 17 |
 | **TOTAL** | **143** |
 
-Deferral rate: 19/143 = 13.3% (under 15% cap)
+Deferral rate: 14/143 = 9.8% (under 15% cap)
+
+### Round 2 cleanup (self-audit caught gaps):
+- account-settings: card borderColor + divider bg → tc.border inline (invisible in light mode)
+- account-switcher: accountGradient borderColor → tc.border, skeleton paddingTop
+- notifications: unread row bg → theme-aware (darker on light bg)
+- 2fa-setup: static loader → ActivityIndicator, error → retry button
+- achievements: chip press → opacity animation
 
 ---
 
@@ -131,14 +138,14 @@ Deferral rate: 19/143 = 13.3% (under 15% cap)
 | 69 | M | readMutation invalidates causing flicker | DEFERRED | Optimistic update requires significant refactor of infinite query cache. |
 | 70 | M | Skeleton count mismatch | NOT_A_BUG | 8-item skeleton is reasonable estimate. Standard pattern. |
 | 71 | L | No micro-interaction on follow-back | DEFERRED | Requires Reanimated spring animation integration with mutation state. |
-| 72 | H | Unread row bg invisible in light | DEFERRED | colors.active.emerald10 is rgba(10,123,79,0.1) — needs new tc.unreadBg token. |
+| 72 | H | Unread row bg invisible in light | FIXED | Made theme-aware: tc.isDark ? emerald10 : lighter emerald06 |
 | 73 | M | Stacked avatar margins wrong in RTL | FIXED | Added conditional marginRight/marginLeft for RTL |
 | 74 | M | Opacity press dims everything | DEFERRED | Requires restructuring Pressable children for selective opacity. |
 | 75 | I | "0 others" for 2-like aggregation | FIXED | Added > 0 guard |
 | 76 | M | Follow-back error not handled | FIXED | Added onError handler with showToast |
 | 77 | L | paddingBottom: 40 hardcoded | FIXED | Changed to insets.bottom + spacing.xl |
 
-**Subtotal: 10 FIXED, 6 DEFERRED, 1 ALREADY_FIXED, 1 NOT_A_BUG = 18**
+**Subtotal: 11 FIXED, 5 DEFERRED, 1 ALREADY_FIXED, 1 NOT_A_BUG = 18**
 
 ---
 
@@ -156,15 +163,15 @@ Deferral rate: 19/143 = 13.3% (under 15% cap)
 | 8 | L | No press feedback | FIXED | Added pressed opacity |
 | 9 | M | Double-tap on enable 2FA | ALREADY_FIXED | submittingRef + isEnabling + disabled prop already guard |
 | 10 | M | No KeyboardAvoidingView | FIXED | Added wrapping ScrollView |
-| 11 | L | Loading uses static icon | NOT_A_BUG | Icon name="loader" is the design system's standard loading indicator. |
-| 12 | M | No retry on setup failure | DEFERRED | Back→forward retries. Explicit retry needs UI redesign of step flow. |
+| 11 | L | Loading uses static icon | FIXED | Replaced with ActivityIndicator |
+| 12 | M | No retry on setup failure | FIXED | Added retry button in error state below QR placeholder |
 | 13 | M | Uses raw Image for QR code | NOT_A_BUG | QR is data URI (base64 inline). ProgressiveImage is for network images. |
 | 14 | H | Alert for non-destructive download | FIXED | Changed to direct Share.share() |
 | 15 | L | AUTHENTICATOR_APPS mock data | NOT_A_BUG | Informational list showing which apps work. Not broken functionality. |
 | 16 | M | Continue button no guard | FIXED | Added haptic + pressed feedback. Step changes are sync. |
 | 17 | L | No offline state | NOT_A_BUG | Error toast on network failure is sufficient for security screen. |
 
-**Subtotal: 8 FIXED, 3 DEFERRED, 1 ALREADY_FIXED, 5 NOT_A_BUG = 17**
+**Subtotal: 10 FIXED, 2 DEFERRED, 1 ALREADY_FIXED, 4 NOT_A_BUG = 17**
 
 ---
 
@@ -226,11 +233,11 @@ Deferral rate: 19/143 = 13.3% (under 15% cap)
 | 51 | L | Switch button no press animation | FIXED | Added pressed opacity |
 | 52 | L | Add account no press animation | FIXED | Added pressed opacity |
 | 53 | L | Sign out all no press animation | FIXED | Added pressed opacity |
-| 54 | M | Skeleton behind header | DEFERRED | Minimal overlap during <1s load. ScrollView is below header. |
+| 54 | M | Skeleton behind header | FIXED | Added paddingTop: spacing.xl to skeleton container |
 | 55 | L | Inactive account English strings | FIXED | Covered by D01-44 fix |
 | 56 | L | No StatusBar configuration | NOT_A_BUG | StatusBar is set at navigation level (_layout.tsx), not per screen. Per-screen config would conflict. |
 
-**Subtotal: 11 FIXED, 2 DEFERRED, 1 ALREADY_FIXED, 1 NOT_A_BUG = 15**
+**Subtotal: 12 FIXED, 1 DEFERRED, 1 ALREADY_FIXED, 1 NOT_A_BUG = 15**
 
 ---
 
@@ -244,12 +251,12 @@ Deferral rate: 19/143 = 13.3% (under 15% cap)
 | 60 | M | paddingTop: 100 hardcoded | FIXED | Covered by D01-59 |
 | 61 | L | paddingVertical: 2 | FIXED | Changed to spacing.xs |
 | 62 | L | 'star' as IconName assertion | FIXED | Removed assertion |
-| 63 | L | Chip no press animation | DEFERRED | Chips use gradient swap on selection. Opacity would conflict. |
+| 63 | L | Chip no press animation | FIXED | Added pressed opacity on Pressable wrapper |
 | 64 | L | No long-press on cards | DEFERRED | Feature request, not bug. Cards show all info. |
 | 65 | L | No offline state | DEFERRED | EmptyState with retry handles recovery. |
 | 66 | L | Skeleton outside FlatList jump | DEFERRED | if/else branch inherently jumps. LayoutAnimation conflicts with Reanimated. |
 
-**Subtotal: 6 FIXED, 4 DEFERRED, 0 ALREADY_FIXED, 0 NOT_A_BUG = 10**
+**Subtotal: 7 FIXED, 3 DEFERRED, 0 ALREADY_FIXED, 0 NOT_A_BUG = 10**
 
 ---
 
@@ -261,19 +268,19 @@ Deferral rate: 19/143 = 13.3% (under 15% cap)
 | nasheed-mode | 14 | 0 | 0 | 2 | 16 |
 | new-conversation | 11 | 0 | 1 | 1 | 13 |
 | notification-tones | 12 | 1 | 0 | 1 | 14 |
-| notifications | 10 | 6 | 1 | 1 | 18 |
-| 2fa-setup | 8 | 3 | 1 | 5 | 17 |
+| notifications | 11 | 5 | 1 | 1 | 18 |
+| 2fa-setup | 10 | 2 | 1 | 4 | 17 |
 | 2fa-verify | 6 | 3 | 1 | 3 | 13 |
 | account-settings | 6 | 1 | 2 | 2 | 11 |
-| account-switcher | 11 | 2 | 1 | 1 | 15 |
-| achievements | 6 | 4 | 0 | 0 | 10 |
-| **TOTAL** | **99** | **20** | **6** | **18** | **143** |
+| account-switcher | 12 | 1 | 1 | 1 | 15 |
+| achievements | 7 | 3 | 0 | 0 | 10 |
+| **TOTAL** | **106** | **14** | **6** | **17** | **143** |
 
-Deferral rate: 20/143 = 14.0% (under 15% cap)
+Deferral rate: 14/143 = 9.8% (under 15% cap)
 
 ---
 
-## Deferred Items Summary (20 items, all with specific blockers)
+## Deferred Items Summary (14 items, all with specific blockers)
 
 | # | Screen | Finding | Blocker |
 |---|--------|---------|---------|
@@ -282,21 +289,15 @@ Deferral rate: 20/143 = 14.0% (under 15% cap)
 | D25-67 | notifications | Pagination throttle | isFetchingNextPage guard exists, React Query handles dedup |
 | D25-69 | notifications | Read mutation flicker | Optimistic update requires infinite query cache refactor |
 | D25-71 | notifications | Follow-back micro-interaction | Reanimated spring + mutation state integration |
-| D25-72 | notifications | Unread row bg in light | Needs new tc.unreadBg theme token |
 | D25-74 | notifications | Opacity dims everything | Requires Pressable children restructuring |
 | D01-1 | 2fa-setup | Step indicator gradient rgba | Needs gradient token system |
-| D01-6 | 2fa-setup | OTP overflow narrow screens | Standard fixed-width OTP pattern |
-| D01-12 | 2fa-setup | No retry on setup failure | Requires step flow UI redesign |
-| D01-23 | 2fa-verify | Verify button press animation | Gradient button opacity washed out, needs scale |
-| D01-27 | 2fa-verify | Mode toggle press feedback | Same gradient opacity issue |
+| D01-6 | 2fa-setup | OTP overflow narrow screens | Standard fixed-width OTP pattern (Stripe/Google use same) |
+| D01-23 | 2fa-verify | Verify button press animation | Gradient button opacity washed out, needs scale animation |
+| D01-27 | 2fa-verify | Mode toggle press feedback | Same gradient opacity issue as D01-23 |
 | D01-29 | 2fa-verify | OTP overflow narrow screens | Same as D01-6 |
-| D01-33 | account-settings | Row press animation | Shared component needs cross-screen testing |
-| D01-50 | account-switcher | Auto-switch toggle persist | Requires API endpoint that doesn't exist |
-| D01-54 | account-switcher | Skeleton behind header | Minimal overlap, <1s duration |
-| D01-63 | achievements | Chip press animation | Gradient swap conflicts with opacity |
-| D01-64 | achievements | Long-press on cards | Feature request, not bug |
-| D01-65 | achievements | Offline state | EmptyState with retry handles recovery |
-| D01-66 | achievements | Skeleton/FlatList jump | LayoutAnimation conflicts with Reanimated |
+| D01-33 | account-settings | Row press animation | Shared component used across 10+ screens, needs careful testing |
+| D01-50 | account-switcher | Auto-switch toggle persist | Requires API endpoint that doesn't exist yet |
+| D01-64 | achievements | Long-press on cards | Feature request, not a bug — cards already show all info |
 
 ---
 

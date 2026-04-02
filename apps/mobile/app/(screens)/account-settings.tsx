@@ -356,18 +356,18 @@ export default function AccountSettingsScreen() {
           <Animated.View entering={FadeInUp.delay(50).duration(400)}>
             <LinearGradient
               colors={colors.gradient.cardDark}
-              style={styles.card}
+              style={[styles.card, { borderColor: tc.border }]}
             >
               <Row
                 label={t('auth.email')}
                 value={maskedEmail || t('accountSettings.notSet')}
               />
-              <View style={styles.divider} />
+              <View style={[styles.divider, { backgroundColor: tc.border }]} />
               <Row
                 label={t('auth.phone')}
                 value={maskedPhone || t('accountSettings.notSet')}
               />
-              <View style={styles.divider} />
+              <View style={[styles.divider, { backgroundColor: tc.border }]} />
               <Row
                 label={t('accountSettings.joined')}
                 value={joinedDate}
@@ -380,14 +380,14 @@ export default function AccountSettingsScreen() {
           <Animated.View entering={FadeInUp.delay(150).duration(400)}>
             <LinearGradient
               colors={colors.gradient.cardDark}
-              style={styles.card}
+              style={[styles.card, { borderColor: tc.border }]}
             >
               <Row
                 label={t('accountSettings.downloadMyData')}
                 hint={t('accountSettings.exportDataHint')}
                 onPress={handleExportData}
               />
-              <View style={styles.divider} />
+              <View style={[styles.divider, { backgroundColor: tc.border }]} />
               <Row
                 label={t('accountSettings.storage')}
                 hint={cacheSize ? `${t('accountSettings.cacheSize')}: ${cacheSize}` : t('accountSettings.manageDataHint')}
@@ -401,7 +401,7 @@ export default function AccountSettingsScreen() {
           <Animated.View entering={FadeInUp.delay(250).duration(400)}>
             <LinearGradient
               colors={colors.gradient.cardDark}
-              style={styles.card}
+              style={[styles.card, { borderColor: tc.border }]}
             >
               <Row
                 label={t('accountSettings.deactivateAccount')}
@@ -409,7 +409,7 @@ export default function AccountSettingsScreen() {
                 onPress={deactivateMutation.isPending ? undefined : handleDeactivate}
                 destructive
               />
-              <View style={styles.divider} />
+              <View style={[styles.divider, { backgroundColor: tc.border }]} />
               <Row
                 label={t('accountSettings.deleteAccount')}
                 hint={t('accountSettings.deleteHint')}

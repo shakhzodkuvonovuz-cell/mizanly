@@ -244,6 +244,7 @@ function AchievementsScreen() {
         renderItem={({ item: cat }) => (
           <Pressable
             onPress={() => handleCategoryChange(cat.key)}
+            style={({ pressed }) => pressed && { opacity: 0.7 }}
             accessibilityRole="tab"
             accessibilityState={{ selected: selectedCategory === cat.key }}
             accessibilityLabel={cat.label}
