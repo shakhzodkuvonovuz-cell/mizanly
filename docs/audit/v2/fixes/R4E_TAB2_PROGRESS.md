@@ -5,7 +5,7 @@
 - **D22:** 59 findings (location-picker, maintenance, majlis-list/[id], majlis-lists, manage-broadcast)
 - **Total:** 116 findings
 
-## Final Accounting (after 3 honesty passes)
+## Final Accounting (after 4 honesty passes)
 | Status | Count |
 |--------|-------|
 | FIXED | 80 |
@@ -16,6 +16,10 @@
 
 **Equation: 80 + 6 + 24 + 6 = 116 ✓**
 **Deferral rate: 6/116 = 5.2% (under 15% cap)**
+
+### Honesty pass 4 — complete RTL + missing i18n keys
+- RTL: Added rtlFlexRow(isRTL) to ALL remaining flexDirection:'row' across 8 screens (event-detail: infoCard x2, attendeesHeader, avatarRow; fasting-tracker: statsRow x2, sunnahItem x2; fatwa-qa: questionHeader, statusBadge, answerCard, madhabSelector; flipside: actionRow, editActions; follow-requests: skeletonRow; location-picker: searchBar, coordsRow, coordInputRow; manage-broadcast: row; majlis-lists: card, titleRow, membersBadge, toggleRow)
+- i18n: Added 7 missing keys to ALL 8 language files — events.rsvpUpdated, fasting.logged, community.questionSubmitted, flipside.deleteConfirm, flipside.removePersonConfirm, screens.followRequests.accepted, screens.followRequests.declined
 
 ### Honesty pass 3 — unoverridden colors.text.* (light mode invisible text)
 - event-detail: 6 Text elements had colors.text.* in StyleSheet with NO inline tc.* override (infoSub, descriptionText, rsvpButtonText, countBadge, moreText, seeAllText) — all would show dark-mode-only colors in light theme. Fixed.
