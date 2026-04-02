@@ -496,7 +496,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   sectionLabel: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginTop: spacing.xl,
@@ -550,7 +550,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   layoutLabel: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   layoutLabelActive: {
     color: colors.emerald,
@@ -581,12 +581,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   fontPreview: {
     fontSize: fontSize['2xl'],
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   fontLabel: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   fontLabelActive: {
     color: colors.emerald,
@@ -609,7 +609,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   toggleLabel: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
     flex: 1,
   },
   toggleTrack: {
@@ -634,7 +634,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(45,53,72,0.5)',
+    backgroundColor: tc.border,
     marginStart: spacing.base,
   },
   // Upload
@@ -656,7 +656,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   uploadText: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.base,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   // Music input
   inputContainer: {
@@ -674,7 +674,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flex: 1,
     fontFamily: fonts.body,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
     paddingVertical: spacing.sm,
   },
   // Save

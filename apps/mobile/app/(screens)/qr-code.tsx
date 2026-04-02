@@ -8,7 +8,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import QRCode from 'react-native-qrcode-svg';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { showToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -23,12 +23,7 @@ export default function QrCodeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const haptic = useContextualHaptic();
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 300);
-    return () => clearTimeout(timer);
-  }, []);
+  const [isLoading, setIsLoading] = useState(false);
 
   const qrValue = `https://mizanly.app/@${username}`;
 
@@ -143,13 +138,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingHorizontal: spacing.xl,
   },
   title: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.xl,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     marginBottom: spacing.xs,
   },
   subtitle: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.base,
     textAlign: 'center',
     marginBottom: spacing['2xl'],
@@ -167,7 +162,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     padding: spacing.xl,
   },
   hint: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.sm,
     textAlign: 'center',
     marginBottom: spacing['2xl'],
@@ -206,9 +201,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     elevation: 8,
   },
   buttonText: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   saveButtonText: {
     color: '#fff',

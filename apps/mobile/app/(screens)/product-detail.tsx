@@ -401,6 +401,10 @@ function ProductDetailContent() {
               style={styles.viewAllBtn}
               accessibilityRole="button"
               accessibilityLabel={t('product.viewAllReviews', 'View All Reviews')}
+              onPress={() => {
+                haptic.navigate();
+                navigate('/(screens)/product-reviews', { productId: params.id! });
+              }}
             >
               <Text style={styles.viewAllText}>
                 {t('product.viewAllReviews', 'View All Reviews')}
@@ -527,7 +531,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: spacing.xs,
   },
   ratingText: {
     color: tc.text.secondary,

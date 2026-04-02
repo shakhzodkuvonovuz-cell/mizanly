@@ -15,7 +15,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-import { colors, spacing, radius, fontSize } from '@/theme';
+import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -270,7 +270,7 @@ export default function QiblaCompassScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container} accessibilityLabel={t('qibla.title')}>
+      <SafeAreaView style={styles.container} edges={['top']} accessibilityLabel={t('qibla.title')}>
         <GlassHeader
           title={t('qibla.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -366,7 +366,7 @@ export default function QiblaCompassScreen() {
             <Text style={styles.calibrateText}>{t('qibla.calibrate')}</Text>
           </Animated.View>
         </View>
-      </View>
+      </SafeAreaView>
     </ScreenErrorBoundary>
   );
 }
@@ -420,9 +420,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   cardinalLabel: {
     position: 'absolute',
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.base,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
   },
   cardinalN: { top: 20, color: colors.emerald },
   cardinalE: { right: 20 },
@@ -487,10 +487,10 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   bearingText: {
     color: colors.gold,
     fontSize: fontSize.xl,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
   },
   distanceText: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.base,
     marginTop: spacing.xs,
   },
@@ -512,7 +512,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   alignedText: {
     color: colors.emerald,
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
 
   // Calibrate
@@ -524,7 +524,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingHorizontal: spacing.md,
   },
   calibrateText: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.sm,
     textAlign: 'center',
   },
