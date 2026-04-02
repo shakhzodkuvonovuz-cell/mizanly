@@ -31,20 +31,9 @@ import type { ScholarVerification } from '@/types/islamic';
 type Specialization = 'fiqh' | 'hadith' | 'tafsir' | 'aqeedah' | 'general';
 type Madhab = 'hanafi' | 'maliki' | 'shafii' | 'hanbali';
 
-const SPECIALIZATIONS: { key: Specialization; label: string }[] = [
-  { key: 'fiqh', label: 'Fiqh' },
-  { key: 'hadith', label: 'Hadith' },
-  { key: 'tafsir', label: 'Tafsir' },
-  { key: 'aqeedah', label: 'Aqeedah' },
-  { key: 'general', label: 'General' },
-];
-
-const MADHABS: { key: Madhab; label: string }[] = [
-  { key: 'hanafi', label: 'Hanafi' },
-  { key: 'maliki', label: 'Maliki' },
-  { key: 'shafii', label: 'Shafii' },
-  { key: 'hanbali', label: 'Hanbali' },
-];
+// These are proper nouns (Islamic jurisprudence terms) — same in all languages
+const SPECIALIZATION_KEYS: Specialization[] = ['fiqh', 'hadith', 'tafsir', 'aqeedah', 'general'];
+const MADHAB_KEYS: Madhab[] = ['hanafi', 'maliki', 'shafii', 'hanbali'];
 
 function StatusTracker({ status }: { status: string }) {
   const tc = useThemeColors();
@@ -137,6 +126,7 @@ function ScholarVerificationContent() {
   const haptic = useContextualHaptic();
 
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [verification, setVerification] = useState<ScholarVerification | null>(null);
@@ -151,10 +141,15 @@ function ScholarVerificationContent() {
 
   const fetchStatus = useCallback(async () => {
     try {
+      setLoadError(false);
       const res = await islamicApi.getScholarVerificationStatus();
       setVerification(res ?? null);
-    } catch {
-      // no existing application
+    } catch (err: unknown) {
+      // 404 = no existing application, other errors = real failure
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status !== 404) {
+        setLoadError(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -204,12 +199,29 @@ function ScholarVerificationContent() {
       });
       setVerification(res ?? null);
       haptic.success();
-    } catch {
-      showToast({ message: t('scholar.alreadyApplied'), variant: 'error' });
+    } catch (err: unknown) {
+      haptic.error();
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      const message = status === 409
+        ? t('scholar.alreadyApplied')
+        : (err instanceof Error ? err.message : t('common.somethingWentWrong'));
+      showToast({ message, variant: 'error' });
     } finally {
       setSubmitting(false);
     }
   }, [institution, specialization, madhab, documentUrls, t, haptic]);
+
+  if (!loading && loadError) {
+    return (
+      <EmptyState
+        icon="alert-circle"
+        title={t('common.error', 'Something went wrong')}
+        subtitle={t('common.networkError', 'Check your connection and try again')}
+        actionLabel={t('common.retry', 'Retry')}
+        onAction={fetchStatus}
+      />
+    );
+  }
 
   if (loading) {
     return (
@@ -300,6 +312,7 @@ function ScholarVerificationContent() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
+      keyboardShouldPersistTaps="handled"
       refreshControl={
         <BrandedRefreshControl
           refreshing={refreshing}
@@ -331,7 +344,7 @@ function ScholarVerificationContent() {
         >
           <Text style={[styles.pickerText, !specialization && styles.pickerPlaceholder]}>
             {specialization
-              ? SPECIALIZATIONS.find(s => s.key === specialization)?.label
+              ? t(`scholar.spec.${specialization}`, specialization)
               : t('scholar.specialization')}
           </Text>
           <Icon name="chevron-down" size={18} color={tc.text.secondary} />
@@ -349,7 +362,7 @@ function ScholarVerificationContent() {
         >
           <Text style={[styles.pickerText, !madhab && styles.pickerPlaceholder]}>
             {madhab
-              ? MADHABS.find(m => m.key === madhab)?.label
+              ? t(`scholar.madhab.${madhab}`, madhab)
               : t('scholar.madhab')}
           </Text>
           <Icon name="chevron-down" size={18} color={tc.text.secondary} />
@@ -366,13 +379,13 @@ function ScholarVerificationContent() {
             <Text style={styles.documentText} numberOfLines={1}>
               {url.split('/').pop()}
             </Text>
-            <Pressable onPress={() => handleRemoveDocument(index)}>
+            <Pressable onPress={() => handleRemoveDocument(index)} accessibilityRole="button" accessibilityLabel={t('common.remove')}>
               <Icon name="x" size={16} color={colors.error} />
             </Pressable>
           </View>
         ))}
 
-        <Pressable style={styles.addDocButton} onPress={handleAddDocument}>
+        <Pressable style={styles.addDocButton} onPress={handleAddDocument} accessibilityRole="button" accessibilityLabel={t('scholar.addDocument')}>
           <Icon name="plus" size={18} color={colors.emerald} />
           <Text style={styles.addDocText}>{t('scholar.addDocument')}</Text>
         </Pressable>
@@ -392,13 +405,13 @@ function ScholarVerificationContent() {
 
       {/* Specialization BottomSheet */}
       <BottomSheet visible={specSheetVisible} onClose={() => setSpecSheetVisible(false)}>
-        {SPECIALIZATIONS.map(spec => (
+        {SPECIALIZATION_KEYS.map(specKey => (
           <BottomSheetItem
-            key={spec.key}
-            label={spec.label}
+            key={specKey}
+            label={t(`scholar.spec.${specKey}`, specKey)}
             icon={<Icon name="book-open" size="sm" color={tc.text.primary} />}
             onPress={() => {
-              setSpecialization(spec.key);
+              setSpecialization(specKey);
               setSpecSheetVisible(false);
               haptic.tick();
             }}
@@ -408,13 +421,13 @@ function ScholarVerificationContent() {
 
       {/* Madhab BottomSheet */}
       <BottomSheet visible={madhabSheetVisible} onClose={() => setMadhabSheetVisible(false)}>
-        {MADHABS.map(m => (
+        {MADHAB_KEYS.map(madhabKey => (
           <BottomSheetItem
-            key={m.key}
-            label={m.label}
+            key={madhabKey}
+            label={t(`scholar.madhab.${madhabKey}`, madhabKey)}
             icon={<Icon name="book-open" size="sm" color={tc.text.primary} />}
             onPress={() => {
-              setMadhab(m.key);
+              setMadhab(madhabKey);
               setMadhabSheetVisible(false);
               haptic.tick();
             }}
@@ -461,7 +474,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   fieldLabel: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     marginBottom: spacing.sm,
   },
   textInput: {
@@ -470,7 +483,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderColor: tc.border,
     borderRadius: radius.md,
     padding: spacing.md,
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontFamily: fonts.body,
     fontSize: fontSize.base,
   },
@@ -487,10 +500,10 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   pickerText: {
     fontFamily: fonts.body,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   pickerPlaceholder: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
   },
   documentRow: {
     flexDirection: 'row',
@@ -505,7 +518,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flex: 1,
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   addDocButton: {
     flexDirection: 'row',
@@ -543,7 +556,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   sectionTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.lg,
-    color: colors.text.primary,
+    color: tc.text.primary,
     marginBottom: spacing.lg,
   },
   statusTracker: {
@@ -596,7 +609,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   statusLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     textAlign: 'center',
   },
   infoRow: {
@@ -609,12 +622,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   infoLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   infoValue: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.sm,
-    color: colors.text.primary,
+    color: tc.text.primary,
     textTransform: 'capitalize',
   },
   // Badge preview
@@ -639,7 +652,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   badgePreviewDesc: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     marginEnd: spacing.xs,
   },
   badgeInline: {

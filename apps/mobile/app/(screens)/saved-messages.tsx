@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, Pressable,
-  TextInput, Keyboard,
+  TextInput, Keyboard, Alert,
 } from 'react-native';
 import Animated, { FadeInUp, FadeIn, FadeOut, SlideOutRight } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -16,7 +16,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -59,6 +59,10 @@ export default function SavedMessagesScreen() {
       queryClient.invalidateQueries({ queryKey: ['saved-messages'] });
       haptic.success();
     },
+    onError: () => {
+      haptic.error();
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+    },
   });
 
   const deleteMutation = useMutation({
@@ -79,6 +83,10 @@ export default function SavedMessagesScreen() {
       haptic.save();
       showToast({ message: t('risalah.pinned'), variant: 'success' });
     },
+    onError: () => {
+      haptic.error();
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+    },
   });
 
   const allMessages = messagesQuery.data?.pages.flatMap((p) => ((p as Record<string, unknown>).data as Array<Record<string, unknown>>) || []) || [];
@@ -96,7 +104,7 @@ export default function SavedMessagesScreen() {
     const timeAgo = formatDistanceToNowStrict(new Date(item.createdAt as string), { addSuffix: true, locale: getDateFnsLocale() });
 
     return (
-      <Animated.View entering={FadeInUp.delay(index * 40).duration(250)} exiting={SlideOutRight.duration(200)}>
+      <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(250)} exiting={SlideOutRight.duration(200)}>
         <Pressable
           accessibilityRole="button"
           style={[styles.messageCard, isPinned && styles.messageCardPinned]}
@@ -142,8 +150,8 @@ export default function SavedMessagesScreen() {
       <View style={styles.container}>
         <GlassHeader
           title={t('risalah.savedMessages')}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
-          rightAction={{ icon: 'search', onPress: () => setSearchMode(!searchMode) }}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
+          rightAction={{ icon: 'search', onPress: () => setSearchMode(!searchMode), accessibilityLabel: t('common.search') }}
         />
 
         {/* Cloud notepad info */}
@@ -161,7 +169,7 @@ export default function SavedMessagesScreen() {
           <Animated.View entering={FadeIn.duration(200)} style={styles.searchWrap}>
             <Icon name="search" size="sm" color={tc.text.tertiary} />
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, isRTL && { textAlign: 'right' }]}
               value={searchQuery}
               onChangeText={setSearchQuery}
               placeholder={t('risalah.searchSavedMessages')}
@@ -180,11 +188,12 @@ export default function SavedMessagesScreen() {
           renderItem={renderMessage}
           keyExtractor={(item) => item.id as string}
           contentContainerStyle={styles.list}
+          keyboardShouldPersistTaps="handled"
           inverted={false}
           refreshControl={
             <BrandedRefreshControl refreshing={messagesQuery.isRefetching} onRefresh={() => messagesQuery.refetch()} />
           }
-          onEndReached={() => messagesQuery.hasNextPage && messagesQuery.fetchNextPage()}
+          onEndReached={() => messagesQuery.hasNextPage && !messagesQuery.isFetchingNextPage && messagesQuery.fetchNextPage()}
           onEndReachedThreshold={0.3}
           ListEmptyComponent={
             messagesQuery.isLoading ? (
@@ -235,7 +244,22 @@ export default function SavedMessagesScreen() {
             label={t('common.delete')}
             icon={<Icon name="trash" size="sm" color={colors.error} />}
             destructive
-            onPress={() => menuItem && deleteMutation.mutate(menuItem.id as string)}
+            onPress={() => {
+              if (!menuItem) return;
+              setMenuItem(null);
+              Alert.alert(
+                t('common.delete'),
+                t('risalah.confirmDeleteMessage', 'Delete this saved message? This cannot be undone.'),
+                [
+                  { text: t('common.cancel'), style: 'cancel' },
+                  {
+                    text: t('common.delete'),
+                    style: 'destructive',
+                    onPress: () => deleteMutation.mutate(menuItem.id as string),
+                  },
+                ],
+              );
+            }}
           />
         </BottomSheet>
       </View>
@@ -247,9 +271,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   container: { flex: 1, backgroundColor: tc.bg },
   infoBar: { marginHorizontal: spacing.base, marginBottom: spacing.sm, borderRadius: radius.md, overflow: 'hidden' },
   infoGradient: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md, borderRadius: radius.md },
-  infoText: { color: colors.text.secondary, fontSize: fontSize.xs, flex: 1, lineHeight: 18 },
+  infoText: { color: tc.text.secondary, fontSize: fontSize.xs, flex: 1, lineHeight: 18 },
   searchWrap: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginHorizontal: spacing.base, marginBottom: spacing.sm, backgroundColor: tc.bgCard, borderRadius: radius.md, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: tc.border },
-  searchInput: { flex: 1, color: colors.text.primary, fontSize: fontSize.base, paddingVertical: spacing.sm },
+  searchInput: { flex: 1, color: tc.text.primary, fontSize: fontSize.base, paddingVertical: spacing.sm },
   list: { paddingHorizontal: spacing.base, paddingBottom: spacing.sm },
   skeletons: { gap: spacing.sm },
   messageCard: { backgroundColor: tc.bgCard, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: tc.border, marginBottom: spacing.sm },
@@ -257,14 +281,14 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   pinBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.xs },
   pinText: { color: colors.gold, fontSize: fontSize.xs, fontWeight: '600' },
   forwardBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.xs },
-  forwardText: { color: colors.text.tertiary, fontSize: fontSize.xs },
+  forwardText: { color: tc.text.tertiary, fontSize: fontSize.xs },
   mediaPreview: { borderRadius: radius.md, overflow: 'hidden', marginBottom: spacing.sm, position: 'relative' },
   mediaImage: { width: '100%', height: 160, borderRadius: radius.md },
   playOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)' },
-  messageText: { color: colors.text.primary, fontSize: fontSize.base, lineHeight: 22 },
-  timeText: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: spacing.xs, alignSelf: 'flex-end' },
+  messageText: { color: tc.text.primary, fontSize: fontSize.base, lineHeight: 22 },
+  timeText: { color: tc.text.tertiary, fontSize: fontSize.xs, marginTop: spacing.xs, alignSelf: 'flex-end' },
   composeBar: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: spacing.base, paddingVertical: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: tc.border, backgroundColor: tc.bgElevated, gap: spacing.sm },
-  composeInput: { flex: 1, backgroundColor: tc.bgCard, borderRadius: radius.lg, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, color: colors.text.primary, fontSize: fontSize.base, maxHeight: 100, borderWidth: 1, borderColor: tc.border },
+  composeInput: { flex: 1, backgroundColor: tc.bgCard, borderRadius: radius.lg, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, color: tc.text.primary, fontSize: fontSize.base, maxHeight: 100, borderWidth: 1, borderColor: tc.border },
   sendBtn: { borderRadius: radius.full, overflow: 'hidden' },
   sendGradient: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: radius.full },
 });

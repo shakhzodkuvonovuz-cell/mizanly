@@ -24,6 +24,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { showToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 
 interface Thumbnail {
   uri: string;
@@ -53,10 +54,11 @@ const MINUTES = [0, 15, 30, 45];
 export default function ScheduleLiveScreen() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
-  const { t, isRTL } = useTranslation();
+  const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useUser();
+  const haptic = useContextualHaptic();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -143,13 +145,13 @@ export default function ScheduleLiveScreen() {
       });
     },
     onSuccess: (live) => {
+      haptic.success();
       showToast({ message: t('live.scheduled'), variant: 'success' });
-      router.back();
-      // Navigate to live session detail
-      router.push(`/(screens)/live/${live.id}`);
+      router.replace(`/(screens)/live/${live.id}`);
     },
     onError: (err: Error) => {
       setUploading(false);
+      haptic.error();
       showToast({ message: err.message || t('common.somethingWentWrong'), variant: 'error' });
     },
   });
@@ -403,11 +405,11 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     padding: spacing.md,
   },
   inputLabel: {
-    color: colors.text.primary, fontSize: fontSize.base, fontFamily: fonts.bodySemiBold,
+    color: tc.text.primary, fontSize: fontSize.base, fontFamily: fonts.bodySemiBold,
     marginBottom: spacing.sm,
   },
   input: {
-    color: colors.text.primary, fontSize: fontSize.base,
+    color: tc.text.primary, fontSize: fontSize.base,
     backgroundColor: tc.bgElevated, borderRadius: radius.md,
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
     borderWidth: 1, borderColor: tc.border,
@@ -444,10 +446,10 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     justifyContent: 'center',
   },
   thumbnailPlaceholderText: {
-    color: colors.text.primary, fontSize: fontSize.base, fontFamily: fonts.bodySemiBold,
+    color: tc.text.primary, fontSize: fontSize.base, fontFamily: fonts.bodySemiBold,
   },
   thumbnailHint: {
-    color: colors.text.tertiary, fontSize: fontSize.sm,
+    color: tc.text.tertiary, fontSize: fontSize.sm,
   },
   // Date selector
   dateSelector: {
@@ -466,12 +468,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   dateSelectorText: { flex: 1, color: colors.emerald, fontSize: fontSize.sm, fontFamily: fonts.bodySemiBold },
   // Picker sheet
   sheetTitle: {
-    color: colors.text.primary, fontSize: fontSize.base, fontFamily: fonts.bodyBold,
+    color: tc.text.primary, fontSize: fontSize.base, fontFamily: fonts.bodyBold,
     paddingHorizontal: spacing.xl, paddingBottom: spacing.sm,
   },
   pickerSection: { marginBottom: spacing.lg, paddingHorizontal: spacing.xl },
   pickerLabel: {
-    color: colors.text.secondary, fontSize: fontSize.sm, fontFamily: fonts.bodySemiBold,
+    color: tc.text.secondary, fontSize: fontSize.sm, fontFamily: fonts.bodySemiBold,
     marginBottom: spacing.sm,
   },
   pickerRow: { flexDirection: 'row' },
@@ -484,13 +486,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   pickerChipActive: {
     backgroundColor: colors.active.emerald10, borderColor: colors.emerald,
   },
-  pickerChipText: { color: colors.text.secondary, fontSize: fontSize.sm, fontFamily: fonts.bodySemiBold },
+  pickerChipText: { color: tc.text.secondary, fontSize: fontSize.sm, fontFamily: fonts.bodySemiBold },
   pickerChipTextActive: { color: colors.emerald },
   pickerPreview: {
     alignItems: 'center', marginTop: spacing.lg, marginBottom: spacing.lg,
   },
   pickerPreviewText: {
-    color: colors.text.primary, fontSize: fontSize.lg, fontFamily: fonts.bodyBold,
+    color: tc.text.primary, fontSize: fontSize.lg, fontFamily: fonts.bodyBold,
   },
   // Upload overlay
   uploadOverlay: {
@@ -498,5 +500,5 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: 'rgba(13,17,23,0.85)',
     alignItems: 'center', justifyContent: 'center', gap: spacing.md,
   },
-  uploadText: { color: colors.text.primary, fontSize: fontSize.base },
+  uploadText: { color: tc.text.primary, fontSize: fontSize.base },
 });

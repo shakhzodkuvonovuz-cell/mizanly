@@ -20,6 +20,7 @@ import { useUser } from '@clerk/clerk-expo';
 import type { Post, Thread, Reel, Video } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { navigate } from '@/utils/navigation';
@@ -135,7 +136,8 @@ function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
 export default function SavedScreen() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
-  const { t, isRTL } = useTranslation();
+  const { t } = useTranslation();
+  const haptic = useContextualHaptic();
   const router = useRouter();
   const { user } = useUser();
   const [activeTab, setActiveTab] = useState<Tab>('posts');
@@ -146,7 +148,7 @@ export default function SavedScreen() {
   const activeCollection = collectionName || undefined;
 
   const savedPostsQuery = useInfiniteQuery({
-    queryKey: ['saved-posts'],
+    queryKey: ['saved-posts', activeCollection],
     queryFn: ({ pageParam }) => usersApi.getSavedPosts(pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
@@ -154,7 +156,7 @@ export default function SavedScreen() {
   });
 
   const savedThreadsQuery = useInfiniteQuery({
-    queryKey: ['saved-threads'],
+    queryKey: ['saved-threads', activeCollection],
     queryFn: ({ pageParam }) => usersApi.getSavedThreads(pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
@@ -162,7 +164,7 @@ export default function SavedScreen() {
   });
 
   const savedReelsQuery = useInfiniteQuery({
-    queryKey: ['saved-reels'],
+    queryKey: ['saved-reels', activeCollection],
     queryFn: ({ pageParam }) => usersApi.getSavedReels(pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
@@ -170,7 +172,7 @@ export default function SavedScreen() {
   });
 
   const savedVideosQuery = useInfiniteQuery({
-    queryKey: ['saved-videos'],
+    queryKey: ['saved-videos', activeCollection],
     queryFn: ({ pageParam }) => usersApi.getSavedVideos(pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
@@ -245,7 +247,7 @@ export default function SavedScreen() {
           onTabChange={(key) => setActiveTab(key as typeof activeTab)}
           variant="underline"
         />
-        <View style={{ flex: 1, justifyContent: 'center' }}>
+        <View style={styles.errorContainer}>
           <EmptyState
             icon="flag"
             title={t('screens.saved.errorTitle')}
@@ -469,13 +471,14 @@ export default function SavedScreen() {
 const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: { flex: 1, backgroundColor: tc.bg },
   headerSpacer: { height: 100 },
+  errorContainer: { flex: 1, justifyContent: 'center' as const },
 
   gridContainer: { paddingBottom: 100 },
   gridRow: { gap: 1 },
   gridItem: { width: GRID_ITEM, height: GRID_ITEM, backgroundColor: tc.bgElevated, marginBottom: 1 },
   gridImage: { width: '100%', height: '100%' },
   gridTextPost: { flex: 1, padding: spacing.xs, backgroundColor: tc.bgCard, justifyContent: 'center' },
-  gridText: { color: colors.text.primary, fontSize: fontSize.xs },
+  gridText: { color: tc.text.primary, fontSize: fontSize.xs },
   carouselBadge: { position: 'absolute', top: 6, end: 6, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: radius.sm, padding: 3 },
   playOverlay: {
     position: 'absolute', top: 0, start: 0, end: 0, bottom: 0,
@@ -492,9 +495,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   videoThumbnail: { width: 120, height: 68, borderRadius: radius.sm },
   videoInfo: { flex: 1, marginStart: spacing.base, justifyContent: 'center' },
-  videoTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600', marginBottom: 2 },
-  videoChannel: { color: colors.text.secondary, fontSize: fontSize.sm, marginBottom: 2 },
-  videoDuration: { color: colors.text.tertiary, fontSize: fontSize.xs },
+  videoTitle: { color: tc.text.primary, fontSize: fontSize.base, fontWeight: '600', marginBottom: 2 },
+  videoChannel: { color: tc.text.secondary, fontSize: fontSize.sm, marginBottom: 2 },
+  videoDuration: { color: tc.text.tertiary, fontSize: fontSize.xs },
 
   // Premium loading states
   gridLoadingContainer: {

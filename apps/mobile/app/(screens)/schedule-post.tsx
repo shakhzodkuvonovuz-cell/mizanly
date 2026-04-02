@@ -23,14 +23,16 @@ type AmPm = 'AM' | 'PM';
 export default function SchedulePostScreen() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
-  const { t, isRTL } = useTranslation();
+  const { t } = useTranslation();
   const router = useRouter();
   const haptic = useContextualHaptic();
   const params = useLocalSearchParams<{ space?: string; content?: string; mediaUrls?: string }>();
   const now = new Date();
-  const [selectedDate, setSelectedDate] = useState(now.getDate() + 2);
-  const [currentMonth, setCurrentMonth] = useState(now.getMonth());
-  const [currentYear, setCurrentYear] = useState(now.getFullYear());
+  const defaultDate = new Date(now.getTime() + 2 * 86400000);
+  const [selectedDate, setSelectedDate] = useState(defaultDate.getDate());
+  // If default date wraps to next month, adjust the calendar month/year
+  const [currentMonth, setCurrentMonth] = useState(defaultDate.getMonth());
+  const [currentYear, setCurrentYear] = useState(defaultDate.getFullYear());
   const [selectedHour, setSelectedHour] = useState(6);
   const [selectedMinute, setSelectedMinute] = useState(0);
   const [selectedAmPm, setSelectedAmPm] = useState<AmPm>('PM');
@@ -68,21 +70,30 @@ export default function SchedulePostScreen() {
     });
   };
 
-  const getNextWeekend = () => {
+  const selectQuickDate = (targetDate: Date) => {
+    setCurrentMonth(targetDate.getMonth());
+    setCurrentYear(targetDate.getFullYear());
+    setSelectedDate(targetDate.getDate());
+  };
+
+  const getNextWeekendDate = () => {
     const d = new Date();
     const daysUntilSat = (6 - d.getDay() + 7) % 7 || 7;
     d.setDate(d.getDate() + daysUntilSat);
-    return d.getDate();
+    return d;
   };
-  const getNextWeek = () => {
+  const getNextWeekDate = () => {
     const d = new Date();
     d.setDate(d.getDate() + 7);
-    return d.getDate();
+    return d;
   };
+  const tomorrowDate = new Date(now.getTime() + 86400000);
+  const nextWeekendDate = getNextWeekendDate();
+  const nextWeekDate = getNextWeekDate();
   const quickDates = [
-    { label: t('common.tomorrow'), day: new Date(now.getTime() + 86400000).getDate() },
-    { label: t('screens.schedule-post.thisWeekend'), day: getNextWeekend() },
-    { label: t('screens.schedule-post.nextWeek'), day: getNextWeek() },
+    { label: t('common.tomorrow'), date: tomorrowDate, day: tomorrowDate.getDate() },
+    { label: t('screens.schedule-post.thisWeekend'), date: nextWeekendDate, day: nextWeekendDate.getDate() },
+    { label: t('screens.schedule-post.nextWeek'), date: nextWeekDate, day: nextWeekDate.getDate() },
   ];
 
   const hours = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -108,7 +119,11 @@ export default function SchedulePostScreen() {
       }
 
       let mediaUrls: string[] = [];
-      try { mediaUrls = params.mediaUrls ? JSON.parse(params.mediaUrls) : []; } catch { /* malformed param */ }
+      try {
+        mediaUrls = params.mediaUrls ? JSON.parse(params.mediaUrls) : [];
+      } catch {
+        showToast({ message: t('screens.schedule-post.mediaParseError', 'Could not load media attachments'), variant: 'error' });
+      }
       const space = postData.space;
 
       // Call the appropriate API based on the content space
@@ -302,7 +317,7 @@ export default function SchedulePostScreen() {
                     accessibilityLabel={quick.label}
                     key={quick.label}
                     style={styles.quickDateButton}
-                    onPress={() => setSelectedDate(quick.day)}
+                    onPress={() => selectQuickDate(quick.date)}
                   >
                     <LinearGradient
                       colors={selectedDate === quick.day
@@ -499,7 +514,7 @@ export default function SchedulePostScreen() {
           <Pressable accessibilityRole="button" accessibilityLabel={t('common.cancel')} style={styles.cancelButton} onPress={() => router.back()}>
             <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel={t('screens.schedule-post.schedule')} style={styles.scheduleButton} onPress={handleSchedule} disabled={isScheduling}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('screens.schedule-post.schedule')} style={[styles.scheduleButton, isScheduling && { opacity: 0.5 }]} onPress={handleSchedule} disabled={isScheduling}>
             <LinearGradient
               colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
               style={styles.scheduleButtonGradient}
@@ -555,11 +570,11 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   userName: {
     fontSize: fontSize.base,
     fontFamily: fonts.bodySemiBold,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   userHandle: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   draftBadge: {
     borderRadius: radius.full,
@@ -578,7 +593,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   postContent: {
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
     marginTop: spacing.md,
     lineHeight: 22,
   },
@@ -606,7 +621,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   spaceBadgeText: {
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   dateCard: {
     marginHorizontal: spacing.base,
@@ -644,7 +659,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   monthText: {
     fontSize: fontSize.md,
     fontFamily: fonts.bodySemiBold,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   weekdayRow: {
     flexDirection: 'row',
@@ -654,7 +669,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flex: 1,
     textAlign: 'center',
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontFamily: fonts.bodyMedium,
   },
   calendarGrid: {
@@ -669,10 +684,10 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   dayText: {
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   pastDayText: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     opacity: 0.5,
   },
   todayDay: {
@@ -717,7 +732,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   quickDateText: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   quickDateTextActive: {
     color: colors.emerald,
@@ -753,11 +768,11 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   timeTitle: {
     fontSize: fontSize.base,
     fontFamily: fonts.bodySemiBold,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   timeLabel: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     marginTop: spacing.sm,
     marginBottom: spacing.xs,
   },
@@ -781,7 +796,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   timeOptionText: {
     fontSize: fontSize.base,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontFamily: fonts.body, // TODO [cross-scope]: fonts.mono maps to DMSans (not monospace) — fix in theme/index.ts
   },
   timeOptionTextActive: {
@@ -805,7 +820,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   ampmText: {
     fontSize: fontSize.base,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   ampmTextActive: {
     color: colors.emerald,
@@ -848,11 +863,11 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   timezoneLabel: {
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
   },
   timezoneValue: {
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   summaryCard: {
     marginHorizontal: spacing.base,
@@ -879,7 +894,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   summaryLabel: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     marginBottom: spacing.xs,
   },
   summaryValue: {
@@ -896,7 +911,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   summaryDetail: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   bottomSpacing: {
     height: 100,
@@ -920,7 +935,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   cancelButtonText: {
     fontSize: fontSize.base,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   scheduleButton: {
     borderRadius: radius.md,
