@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList,
   TextInput,
@@ -15,7 +15,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { searchApi, parentalApi } from '@/services/api';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
@@ -33,16 +33,28 @@ export default function LinkChildAccountScreen() {
   const queryClient = useQueryClient();
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [pinStep, setPinStep] = useState<'search' | 'confirm' | 'pin' | 'confirmPin'>('search');
   const tc = useThemeColors();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, []);
+
+  const handleSearchChange = (text: string) => {
+    setSearchQuery(text);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setDebouncedSearch(text), 400);
+  };
 
   const searchResults = useQuery({
-    queryKey: ['user-search-link', searchQuery],
-    queryFn: () => searchApi.search(searchQuery, 'users'),
-    enabled: searchQuery.length >= 2,
+    queryKey: ['user-search-link', debouncedSearch],
+    queryFn: () => searchApi.search(debouncedSearch, 'users'),
+    enabled: debouncedSearch.length >= 2,
   });
 
   const results = searchResults.data as { people?: User[] } | undefined;
@@ -68,6 +80,7 @@ export default function LinkChildAccountScreen() {
   };
 
   const handleConfirm = () => {
+    haptic.tick();
     setPinStep('pin');
   };
 
@@ -245,12 +258,12 @@ export default function LinkChildAccountScreen() {
               placeholder={t('parentalControls.searchPlaceholder')}
               placeholderTextColor={tc.text.tertiary}
               value={searchQuery}
-              onChangeText={setSearchQuery}
+              onChangeText={handleSearchChange}
               autoCapitalize="none"
               autoCorrect={false}
             />
             {searchQuery.length > 0 && (
-              <Pressable accessibilityRole="button" accessibilityLabel={t('common.clear')} onPress={() => setSearchQuery('')} hitSlop={8}>
+              <Pressable accessibilityRole="button" accessibilityLabel={t('common.clear')} onPress={() => { setSearchQuery(''); setDebouncedSearch(''); }} hitSlop={8}>
                 <Icon name="x" size="sm" color={tc.text.tertiary} />
               </Pressable>
             )}
@@ -296,6 +309,14 @@ export default function LinkChildAccountScreen() {
                     <Skeleton.ConversationItem key={i} />
                   ))}
                 </View>
+              ) : searchResults.isError ? (
+                <EmptyState
+                  icon="alert-circle"
+                  title={t('common.error')}
+                  subtitle={t('common.tryAgain')}
+                  actionLabel={t('common.retry')}
+                  onAction={() => searchResults.refetch()}
+                />
               ) : searchQuery.length >= 2 ? (
                 <EmptyState
                   icon="search"
@@ -318,58 +339,58 @@ export default function LinkChildAccountScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
   body: { flex: 1 },
   listContent: { paddingHorizontal: spacing.base, paddingBottom: 60 },
   pinGate: { flex: 1, alignItems: 'center' },
 
   // Search
   searchContainer: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
-    backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
+    alignItems: 'center', gap: spacing.sm,
+    borderRadius: radius.md,
     paddingHorizontal: spacing.md, marginHorizontal: spacing.base,
-    marginBottom: spacing.md, borderWidth: 1, borderColor: colors.dark.border,
+    marginBottom: spacing.md, borderWidth: 1,
   },
   searchInput: {
-    flex: 1, color: colors.text.primary, fontSize: fontSize.base,
-    paddingVertical: spacing.md,
+    flex: 1, fontSize: fontSize.base,
+    paddingVertical: spacing.md, fontFamily: fonts.body,
   },
 
   // User row
   userRow: {
-    flexDirection: 'row', alignItems: 'center',
+    alignItems: 'center',
     paddingVertical: spacing.md, paddingHorizontal: spacing.sm,
-    borderBottomWidth: 1, borderBottomColor: colors.dark.border,
+    borderBottomWidth: 1,
   },
   userInfo: { flex: 1, marginStart: spacing.md },
-  userName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
-  userHandle: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 2 },
+  userName: { fontSize: fontSize.base, fontFamily: fonts.bodySemiBold },
+  userHandle: { fontSize: fontSize.sm, marginTop: 2, fontFamily: fonts.body },
 
   // Confirm
   confirmContainer: { flex: 1, alignItems: 'center', paddingHorizontal: spacing.base },
   confirmCard: {
-    borderRadius: radius.lg, borderWidth: 1, borderColor: colors.dark.border,
+    borderRadius: radius.lg, borderWidth: 1,
     padding: spacing.xl, alignItems: 'center', width: '100%',
   },
   confirmName: {
-    color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700',
+    fontSize: fontSize.lg, fontFamily: fonts.bodyBold,
     marginTop: spacing.md,
   },
-  confirmUsername: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: spacing.xs },
+  confirmUsername: { fontSize: fontSize.sm, marginTop: spacing.xs, fontFamily: fonts.body },
   confirmHint: {
-    color: colors.text.tertiary, fontSize: fontSize.sm, textAlign: 'center',
-    marginTop: spacing.lg, lineHeight: 20,
+    fontSize: fontSize.sm, textAlign: 'center',
+    marginTop: spacing.lg, lineHeight: 20, fontFamily: fonts.body,
   },
   confirmActions: { marginTop: spacing.xl, width: '100%' },
 
   // PIN Pad
   pinContainer: { alignItems: 'center', gap: spacing.base },
-  pinTitle: { color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700', marginTop: spacing.md },
-  pinSubtitle: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: spacing.xs },
+  pinTitle: { fontSize: fontSize.lg, fontFamily: fonts.bodyBold, marginTop: spacing.md },
+  pinSubtitle: { fontSize: fontSize.sm, marginTop: spacing.xs, fontFamily: fonts.body },
   pinDots: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.xl },
   pinDot: {
     width: 16, height: 16, borderRadius: radius.full,
-    borderWidth: 2, borderColor: colors.dark.border,
+    borderWidth: 2,
   },
   pinDotFilled: { backgroundColor: colors.emerald, borderColor: colors.emerald },
   numPad: {
@@ -379,8 +400,7 @@ const styles = StyleSheet.create({
   numKey: {
     width: 72, height: 72, borderRadius: radius.full,
     alignItems: 'center', justifyContent: 'center', margin: spacing.xs,
-    backgroundColor: colors.dark.bgElevated,
   },
   numKeyEmpty: { backgroundColor: 'transparent' },
-  numKeyText: { color: colors.text.primary, fontSize: fontSize.xl, fontWeight: '600' },
+  numKeyText: { fontSize: fontSize.xl, fontFamily: fonts.bodySemiBold },
 });

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, Share,
 } from 'react-native';
@@ -15,18 +15,24 @@ import { islamicApi } from '@/services/islamicApi';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { rtlFlexRow } from '@/utils/rtl';
 import type { TafsirEntry } from '@/types/islamic';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TafsirViewerScreen() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const router = useRouter();
-  const { t, language } = useTranslation();
+  const { t, language, isRTL } = useTranslation();
+  const haptic = useContextualHaptic();
+  const insets = useSafeAreaInsets();
   const { surah, verse } = useLocalSearchParams<{ surah: string; verse: string }>();
   const [showSourceFilter, setShowSourceFilter] = useState(false);
   const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set());
+  const shareGuardRef = useRef(false);
 
   const surahNumber = parseInt(surah || '1', 10);
   const verseNumber = parseInt(verse || '1', 10);
@@ -44,7 +50,8 @@ export default function TafsirViewerScreen() {
       const res = await islamicApi.getTafsir(surahNumber, verseNumber);
       return res as TafsirEntry;
     },
-    enabled: !!surah && !!verse,
+    enabled: !!surah,
+    staleTime: 1000 * 60 * 60, // 1 hour — tafsir is classical scholarship, rarely changes
   });
 
   // Fetch available sources
@@ -75,7 +82,9 @@ export default function TafsirViewerScreen() {
   }, []);
 
   const handleShare = useCallback(async () => {
-    if (!tafsirData) return;
+    if (!tafsirData || shareGuardRef.current) return;
+    shareGuardRef.current = true;
+    haptic.tick();
     const sourceTexts = filteredSources
       .map((s) => {
         const text = language === 'ar' ? s.textAr : s.textEn;
@@ -88,8 +97,10 @@ export default function TafsirViewerScreen() {
       await Share.share({ message });
     } catch {
       // user cancelled
+    } finally {
+      setTimeout(() => { shareGuardRef.current = false; }, 500);
     }
-  }, [tafsirData, filteredSources, language, surahNumber, verseNumber]);
+  }, [tafsirData, filteredSources, language, surahNumber, verseNumber, haptic]);
 
   const handleRefresh = useCallback(() => {
     refetch();
@@ -152,7 +163,7 @@ export default function TafsirViewerScreen() {
 
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 60, paddingBottom: insets.bottom + spacing['3xl'] }]}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <BrandedRefreshControl refreshing={isRefetching} onRefresh={handleRefresh} />
@@ -188,7 +199,7 @@ export default function TafsirViewerScreen() {
           </Animated.View>
 
           {/* Filter Bar */}
-          <Animated.View entering={FadeInUp.delay(100).duration(500)} style={styles.filterBar}>
+          <Animated.View entering={FadeInUp.delay(100).duration(500)} style={[styles.filterBar, { flexDirection: rtlFlexRow(isRTL) }]}>
             <Text style={styles.sourcesTitle}>
               {t('tafsir.source')} ({filteredSources.length})
             </Text>
@@ -196,7 +207,7 @@ export default function TafsirViewerScreen() {
               accessibilityRole="button"
               accessibilityLabel={t('tafsir.filterSources')}
               style={styles.filterButton}
-              onPress={() => setShowSourceFilter(true)}
+              onPress={() => { haptic.tick(); setShowSourceFilter(true); }}
             >
               <Icon name="filter" size="sm" color={colors.emerald} />
               <Text style={styles.filterButtonText}>{t('tafsir.filterSources')}</Text>
@@ -290,7 +301,6 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 100,
     paddingHorizontal: spacing.base,
     paddingBottom: spacing['3xl'],
   },
@@ -329,9 +339,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.full,
   },
   referenceText: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.sm,
-    fontWeight: '500',
+    fontFamily: fonts.bodyMedium,
   },
 
   // Filter Bar
@@ -343,9 +353,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.md,
   },
   sourcesTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.md,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   filterButton: {
     flexDirection: 'row',
@@ -360,7 +370,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   filterButtonText: {
     color: colors.emerald,
     fontSize: fontSize.sm,
-    fontWeight: '500',
+    fontFamily: fonts.bodyMedium,
   },
 
   // Tafsir Card
@@ -385,7 +395,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   sourceBadgeText: {
     color: '#fff',
     fontSize: fontSize.sm,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   madhabBadge: {
     paddingHorizontal: spacing.md,
@@ -395,13 +405,14 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   madhabBadgeText: {
     color: colors.gold,
     fontSize: fontSize.xs,
-    fontWeight: '500',
+    fontFamily: fonts.bodyMedium,
     textTransform: 'capitalize',
   },
   tafsirText: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     lineHeight: 24,
+    fontFamily: fonts.body,
   },
 
   // Share
@@ -423,17 +434,17 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   shareButtonText: {
     color: '#fff',
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
 
   // Filter Sheet
   filterSheetTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.md,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
     textAlign: 'center',
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.active.white6,
+    borderBottomColor: tc.border,
   },
 });

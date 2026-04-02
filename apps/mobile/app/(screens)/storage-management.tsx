@@ -104,7 +104,7 @@ function StorageCategoryRow({
   const { t } = useTranslation();
 
   const handleClear = () => {
-    haptic.tick();
+    haptic.delete();
     onClear();
   };
 
@@ -127,9 +127,10 @@ function StorageCategoryRow({
       <Pressable
         onPress={handleClear}
         disabled={isClearing || size === 0}
-        style={[
+        style={({ pressed }) => [
           styles.clearButton,
           (isClearing || size === 0) && styles.clearButtonDisabled,
+          pressed && { opacity: 0.7 },
         ]}
         accessibilityRole="button"
         accessibilityLabel={t('storage.clearCategory', { category: label })}
@@ -203,7 +204,7 @@ export default function StorageManagementScreen() {
       }
       setSizes(results);
     } catch {
-      // Sizes stay at 0 on error
+      showToast({ message: t('storage.loadError', 'Failed to read storage sizes'), variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -420,19 +421,19 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   summaryLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     marginBottom: spacing.xs,
   },
   summarySize: {
     fontFamily: fonts.headingBold,
     fontSize: fontSize['3xl'],
-    color: colors.text.primary,
+    color: tc.text.primary,
     marginBottom: spacing.xs,
   },
   summaryLimit: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     marginBottom: spacing.base,
   },
   // Progress Bar
@@ -464,7 +465,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   sectionTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
     marginBottom: spacing.md,
   },
   // Categories Card
@@ -497,12 +498,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   categoryLabel: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   categorySize: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     marginTop: 2,
   },
   clearButton: {
@@ -522,7 +523,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     color: colors.emerald,
   },
   clearButtonTextDisabled: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
   },
   // Clear All
   clearAllButton: {
@@ -545,7 +546,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     color: colors.error,
   },
   clearAllTextDisabled: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
   },
   // Skeleton
   skeletonContainer: {
