@@ -322,4 +322,112 @@ describe('PollsService', () => {
       expect(txArg).toHaveLength(3);
     });
   });
+
+  // ── T02 gap: multi-choice vote (allowMultiple) ──
+
+  describe('vote (multi-choice)', () => {
+    it('should allow voting on a different option when allowMultiple=true', async () => {
+      const mockPoll = {
+        id: 'poll-mc',
+        allowMultiple: true,
+        options: [{ id: 'opt2' }],
+      };
+      prisma.poll.findUnique.mockResolvedValue(mockPoll);
+      // User already voted on opt1 but now voting on opt2
+      prisma.pollVote.findFirst.mockResolvedValue({ optionId: 'opt1' });
+      prisma.pollVote.findUnique.mockResolvedValue(null); // Not voted on opt2 yet
+      prisma.$transaction.mockResolvedValue([{}, {}, {}]);
+
+      const result = await service.vote('poll-mc', 'opt2', 'user1');
+      expect(result.success).toBe(true);
+    });
+
+    it('should throw ConflictException when voting same option twice in multi-choice', async () => {
+      const mockPoll = {
+        id: 'poll-mc',
+        allowMultiple: true,
+        options: [{ id: 'opt1' }],
+      };
+      prisma.poll.findUnique.mockResolvedValue(mockPoll);
+      prisma.pollVote.findFirst.mockResolvedValue({ optionId: 'opt1' });
+      prisma.pollVote.findUnique.mockResolvedValue({ userId: 'user1', optionId: 'opt1' }); // Already voted on this option
+
+      await expect(service.vote('poll-mc', 'opt1', 'user1')).rejects.toThrow(ConflictException);
+    });
+  });
+
+  // ── T02 gap: vote P2002 race condition ──
+
+  describe('vote (P2002 race condition)', () => {
+    it('should throw ConflictException on P2002 race', async () => {
+      const { PrismaClientKnownRequestError } = require('@prisma/client/runtime/library');
+      const mockPoll = {
+        id: 'poll-race',
+        options: [{ id: 'opt1' }],
+      };
+      prisma.poll.findUnique.mockResolvedValue(mockPoll);
+      prisma.pollVote.findFirst.mockResolvedValue(null);
+      prisma.$transaction.mockRejectedValue(
+        new PrismaClientKnownRequestError('Unique', { code: 'P2002', clientVersion: '0' }),
+      );
+
+      await expect(service.vote('poll-race', 'opt1', 'user1')).rejects.toThrow(ConflictException);
+    });
+  });
+
+  // ── T02 gap: getPoll isExpired check ──
+
+  describe('getPoll (isExpired)', () => {
+    it('should return isExpired=true when poll has passed endsAt', async () => {
+      const mockPoll = {
+        id: 'poll-exp',
+        totalVotes: 10,
+        endsAt: new Date('2020-01-01'), // Past date
+        options: [{ id: 'opt1', text: 'A', votesCount: 10, position: 0 }],
+        thread: { id: 't1', content: 'T', userId: 'u1' },
+      };
+      prisma.poll.findUnique.mockResolvedValue(mockPoll);
+
+      const result = await service.getPoll('poll-exp');
+      expect(result.isExpired).toBe(true);
+    });
+
+    it('should return isExpired=false when no endsAt set', async () => {
+      const mockPoll = {
+        id: 'poll-no-exp',
+        totalVotes: 5,
+        endsAt: null,
+        options: [{ id: 'opt1', text: 'A', votesCount: 5, position: 0 }],
+        thread: { id: 't1', content: 'T', userId: 'u1' },
+      };
+      prisma.poll.findUnique.mockResolvedValue(mockPoll);
+
+      const result = await service.getPoll('poll-no-exp');
+      expect(result.isExpired).toBe(false);
+    });
+
+    it('should return isExpired=false when endsAt is in the future', async () => {
+      const futureDate = new Date(Date.now() + 86400000); // Tomorrow
+      const mockPoll = {
+        id: 'poll-future',
+        totalVotes: 3,
+        endsAt: futureDate,
+        options: [{ id: 'opt1', text: 'A', votesCount: 3, position: 0 }],
+        thread: { id: 't1', content: 'T', userId: 'u1' },
+      };
+      prisma.poll.findUnique.mockResolvedValue(mockPoll);
+
+      const result = await service.getPoll('poll-future');
+      expect(result.isExpired).toBe(false);
+    });
+  });
+
+  // ── T02 gap: retractVote poll not found ──
+
+  describe('retractVote (not found)', () => {
+    it('should throw NotFoundException when poll does not exist', async () => {
+      prisma.poll.findUnique.mockResolvedValue(null);
+      await expect(service.retractVote('missing', 'user1')).rejects.toThrow(NotFoundException);
+    });
+  });
 });

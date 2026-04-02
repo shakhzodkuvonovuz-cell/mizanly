@@ -110,4 +110,71 @@ describe('CollabsService', () => {
       expect(result.data[0].id).toBe('c1');
     });
   });
+
+  // ── T02 gap: accept non-PENDING status ──
+
+  describe('accept (non-PENDING)', () => {
+    it('should throw BadRequestException if collab is not PENDING', async () => {
+      prisma.postCollab.findUnique.mockResolvedValue({ id: 'c1', userId: 'user2', status: 'ACCEPTED' });
+      await expect(service.accept('c1', 'user2')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  // ── T02 gap: decline wrong user ──
+
+  describe('decline (wrong user)', () => {
+    it('should throw ForbiddenException if user is not the invited user', async () => {
+      prisma.postCollab.findUnique.mockResolvedValue({ id: 'c1', userId: 'user2', status: 'PENDING' });
+      await expect(service.decline('c1', 'wrong-user')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  // ── T02 gap: remove by post owner ──
+
+  describe('remove (by post owner)', () => {
+    it('should allow post owner to remove collab', async () => {
+      prisma.postCollab.findUnique.mockResolvedValue({ id: 'c1', userId: 'user2', status: 'PENDING', postId: 'post1' });
+      prisma.post.findUnique.mockResolvedValue({ id: 'post1', userId: 'owner1' });
+      prisma.postCollab.delete.mockResolvedValue({ id: 'c1' });
+
+      const result = await service.remove('c1', 'owner1');
+      expect(result).toEqual({ removed: true });
+      expect(prisma.postCollab.delete).toHaveBeenCalledWith({ where: { id: 'c1' } });
+    });
+  });
+
+  // ── T02 gap: remove by third party (forbidden) ──
+
+  describe('remove (third party)', () => {
+    it('should throw ForbiddenException for non-owner non-invited user', async () => {
+      prisma.postCollab.findUnique.mockResolvedValue({ id: 'c1', userId: 'user2', status: 'PENDING', postId: 'post1' });
+      prisma.post.findUnique.mockResolvedValue({ id: 'post1', userId: 'owner1' });
+
+      await expect(service.remove('c1', 'stranger')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  // ── T02 gap: remove collab not found ──
+
+  describe('remove (not found)', () => {
+    it('should throw NotFoundException when collab does not exist', async () => {
+      prisma.postCollab.findUnique.mockResolvedValue(null);
+      await expect(service.remove('missing', 'user1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ── T02 gap: getMyPending ──
+
+  describe('getMyPending', () => {
+    it('should return pending collabs for the user', async () => {
+      prisma.postCollab.findMany.mockResolvedValue([
+        { id: 'c1', status: 'PENDING', post: { id: 'p1' } },
+      ]);
+      const result = await service.getMyPending('user2');
+      expect(result).toHaveLength(1);
+      expect(prisma.postCollab.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: { userId: 'user2', status: 'PENDING' },
+      }));
+    });
+  });
 });

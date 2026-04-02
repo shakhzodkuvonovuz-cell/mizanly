@@ -312,4 +312,106 @@ describe('BookmarksService', () => {
       expect(result.saved).toBe(false);
     });
   });
+
+  // ── T02 gap: isThreadSaved ──
+
+  describe('isThreadSaved', () => {
+    it('should return saved true if thread is bookmarked', async () => {
+      prisma.threadBookmark.findUnique.mockResolvedValue({ createdAt: new Date() });
+      const result = await service.isThreadSaved('user1', 'thread1');
+      expect(result).toEqual({ saved: true });
+    });
+
+    it('should return saved false if not bookmarked', async () => {
+      prisma.threadBookmark.findUnique.mockResolvedValue(null);
+      const result = await service.isThreadSaved('user1', 'thread1');
+      expect(result).toEqual({ saved: false });
+    });
+  });
+
+  // ── T02 gap: isVideoSaved ──
+
+  describe('isVideoSaved', () => {
+    it('should return saved true if video is bookmarked', async () => {
+      prisma.videoBookmark.findUnique.mockResolvedValue({ createdAt: new Date() });
+      const result = await service.isVideoSaved('user1', 'video1');
+      expect(result).toEqual({ saved: true });
+    });
+
+    it('should return saved false if not bookmarked', async () => {
+      prisma.videoBookmark.findUnique.mockResolvedValue(null);
+      const result = await service.isVideoSaved('user1', 'video1');
+      expect(result).toEqual({ saved: false });
+    });
+  });
+
+  // ── T02 gap: unsaveThread P2025 ──
+
+  describe('unsaveThread (error path)', () => {
+    it('should throw NotFoundException on P2025 (not saved)', async () => {
+      const { PrismaClientKnownRequestError } = require('@prisma/client/runtime/library');
+      (prisma.$transaction as jest.Mock).mockRejectedValue(
+        new PrismaClientKnownRequestError('Not found', { code: 'P2025', clientVersion: '0' }),
+      );
+
+      await expect(service.unsaveThread('user1', 'thread1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ── T02 gap: unsaveVideo P2025 ──
+
+  describe('unsaveVideo (error path)', () => {
+    it('should throw NotFoundException on P2025 (not saved)', async () => {
+      const { PrismaClientKnownRequestError } = require('@prisma/client/runtime/library');
+      (prisma.$transaction as jest.Mock).mockRejectedValue(
+        new PrismaClientKnownRequestError('Not found', { code: 'P2025', clientVersion: '0' }),
+      );
+
+      await expect(service.unsaveVideo('user1', 'video1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ── T02 gap: getSavedPosts cursor pagination ──
+
+  describe('getSavedPosts (cursor)', () => {
+    it('should pass cursor to findMany and return hasMore=true', async () => {
+      const items = Array.from({ length: 21 }, (_, i) => ({
+        postId: `p${i}`, post: { id: `p${i}` },
+      }));
+      prisma.savedPost.findMany.mockResolvedValue(items);
+
+      const result = await service.getSavedPosts('user1', undefined, 'prev-cursor', 20);
+      expect(result.meta.hasMore).toBe(true);
+      expect(result.data.length).toBe(20);
+      expect(result.meta.cursor).toBe('p19');
+      expect(prisma.savedPost.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cursor: { userId_postId: { userId: 'user1', postId: 'prev-cursor' } },
+          skip: 1,
+        }),
+      );
+    });
+  });
+
+  // ── T02 gap: getSavedThreads ──
+
+  describe('getSavedThreads', () => {
+    it('should return empty for no saved threads', async () => {
+      prisma.threadBookmark.findMany.mockResolvedValue([]);
+      const result = await service.getSavedThreads('user1');
+      expect(result.data).toEqual([]);
+      expect(result.meta.hasMore).toBe(false);
+    });
+  });
+
+  // ── T02 gap: getSavedVideos ──
+
+  describe('getSavedVideos', () => {
+    it('should return empty for no saved videos', async () => {
+      prisma.videoBookmark.findMany.mockResolvedValue([]);
+      const result = await service.getSavedVideos('user1');
+      expect(result.data).toEqual([]);
+      expect(result.meta.hasMore).toBe(false);
+    });
+  });
 });

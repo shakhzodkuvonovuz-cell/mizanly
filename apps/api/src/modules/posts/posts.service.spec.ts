@@ -1491,4 +1491,221 @@ describe('PostsService', () => {
     });
   });
 
+  // ── T02 gap: crossPost ──
+
+  describe('crossPost', () => {
+    it('should cross-post to valid target spaces', async () => {
+      prisma.post.findFirst.mockResolvedValue({
+        id: 'post-1', userId: 'u1', isRemoved: false, content: 'Hello',
+        mediaUrls: [], mediaTypes: [], thumbnailUrl: null, mediaWidth: null,
+        mediaHeight: null, postType: 'TEXT', space: 'SAF', hashtags: [], mentions: [],
+      });
+      const mockTx = {
+        post: { create: jest.fn().mockResolvedValue({ id: 'new-1' }) },
+        $executeRaw: jest.fn().mockResolvedValue(1),
+      };
+      prisma.$transaction.mockImplementation((fn: any) => fn(mockTx));
+
+      const result = await service.crossPost('u1', 'post-1', { targetSpaces: ['MAJLIS', 'BAKRA'] });
+      expect(mockTx.post.create).toHaveBeenCalledTimes(2);
+    });
+
+    it('should throw NotFoundException if post not found', async () => {
+      prisma.post.findFirst.mockResolvedValue(null);
+      await expect(service.crossPost('u1', 'missing', { targetSpaces: ['MAJLIS'] })).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException if post is removed', async () => {
+      prisma.post.findFirst.mockResolvedValue({ id: 'p1', userId: 'u1', isRemoved: true });
+      await expect(service.crossPost('u1', 'p1', { targetSpaces: ['MAJLIS'] })).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for no valid target spaces', async () => {
+      prisma.post.findFirst.mockResolvedValue({
+        id: 'p1', userId: 'u1', isRemoved: false, space: 'SAF',
+      });
+      await expect(service.crossPost('u1', 'p1', { targetSpaces: ['INVALID'] })).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  // ── T02 gap: getRelatedPosts ──
+
+  describe('getRelatedPosts', () => {
+    it('should return related posts by hashtags', async () => {
+      prisma.post.findUnique.mockResolvedValue({ hashtags: ['ramadan', 'fasting'], userId: 'u1' });
+      prisma.post.findMany.mockResolvedValue([{ id: 'related-1' }]);
+
+      const result = await service.getRelatedPosts('post-1');
+      expect(result).toHaveLength(1);
+      expect(prisma.post.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.objectContaining({
+          id: { not: 'post-1' },
+          hashtags: { hasSome: ['ramadan', 'fasting'] },
+        }),
+      }));
+    });
+
+    it('should return empty array when post has no hashtags', async () => {
+      prisma.post.findUnique.mockResolvedValue({ hashtags: [], userId: 'u1' });
+      const result = await service.getRelatedPosts('post-1');
+      expect(result).toEqual([]);
+    });
+
+    it('should return empty array when post not found', async () => {
+      prisma.post.findUnique.mockResolvedValue(null);
+      const result = await service.getRelatedPosts('missing');
+      expect(result).toEqual([]);
+    });
+  });
+
+  // ── T02 gap: pinPost ──
+
+  describe('pinPost', () => {
+    it('should unpin previous and pin new post', async () => {
+      prisma.post.findUnique.mockResolvedValue({ id: 'p1', userId: 'u1' });
+      prisma.post.updateMany = jest.fn().mockResolvedValue({ count: 1 });
+      prisma.post.update.mockResolvedValue({ id: 'p1', isPinned: true });
+
+      const result = await service.pinPost('p1', 'u1', true);
+      expect(prisma.post.updateMany).toHaveBeenCalledWith({
+        where: { userId: 'u1', isPinned: true },
+        data: { isPinned: false },
+      });
+      expect(result.isPinned).toBe(true);
+    });
+
+    it('should throw NotFoundException if post not found', async () => {
+      prisma.post.findUnique.mockResolvedValue(null);
+      await expect(service.pinPost('missing', 'u1', true)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException if not owner', async () => {
+      prisma.post.findUnique.mockResolvedValue({ id: 'p1', userId: 'other-user' });
+      await expect(service.pinPost('p1', 'u1', true)).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  // ── T02 gap: respondToTag ──
+
+  describe('respondToTag', () => {
+    it('should update post tag status when postTaggedUser found', async () => {
+      prisma.postTaggedUser = {
+        findUnique: jest.fn().mockResolvedValue({ id: 'tag-1', userId: 'u1' }),
+        update: jest.fn().mockResolvedValue({ id: 'tag-1', status: 'APPROVED' }),
+      };
+      prisma.reelTaggedUser = {
+        findUnique: jest.fn().mockResolvedValue(null),
+        update: jest.fn(),
+      };
+
+      const result = await service.respondToTag('tag-1', 'u1', 'APPROVED');
+      expect(prisma.postTaggedUser.update).toHaveBeenCalledWith({
+        where: { id: 'tag-1' },
+        data: { status: 'APPROVED' },
+      });
+    });
+
+    it('should fall back to reelTaggedUser', async () => {
+      prisma.postTaggedUser = {
+        findUnique: jest.fn().mockResolvedValue(null),
+        update: jest.fn(),
+      };
+      prisma.reelTaggedUser = {
+        findUnique: jest.fn().mockResolvedValue({ id: 'tag-2', userId: 'u1' }),
+        update: jest.fn().mockResolvedValue({ id: 'tag-2', status: 'DECLINED' }),
+      };
+
+      const result = await service.respondToTag('tag-2', 'u1', 'DECLINED');
+      expect(prisma.reelTaggedUser.update).toHaveBeenCalledWith({
+        where: { id: 'tag-2' },
+        data: { status: 'DECLINED' },
+      });
+    });
+
+    it('should throw NotFoundException when tag not found in either', async () => {
+      prisma.postTaggedUser = { findUnique: jest.fn().mockResolvedValue(null), update: jest.fn() };
+      prisma.reelTaggedUser = { findUnique: jest.fn().mockResolvedValue(null), update: jest.fn() };
+
+      await expect(service.respondToTag('missing', 'u1', 'APPROVED')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException if user is not the tagged user', async () => {
+      prisma.postTaggedUser = {
+        findUnique: jest.fn().mockResolvedValue({ id: 'tag-1', userId: 'other-user' }),
+        update: jest.fn(),
+      };
+
+      await expect(service.respondToTag('tag-1', 'u1', 'APPROVED')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  // ── T02 gap: predictEngagement ──
+
+  describe('predictEngagement', () => {
+    it('should return tips when fewer than 3 posts', async () => {
+      prisma.post.findMany.mockResolvedValue([{ likesCount: 5 }, { likesCount: 3 }]);
+      const result = await service.predictEngagement('u1');
+      expect(result.prediction).toBeNull();
+      expect(result.tips.length).toBeGreaterThan(0);
+    });
+
+    it('should return predictions when 3+ posts available', async () => {
+      const posts = Array.from({ length: 5 }, (_, i) => ({
+        likesCount: 10 + i,
+        commentsCount: 2 + i,
+        sharesCount: 1,
+        viewsCount: 100 + i * 10,
+        savesCount: 3,
+        hashtags: ['test'],
+        mediaUrls: i % 2 === 0 ? ['img.jpg'] : [],
+        createdAt: new Date(2026, 0, i + 1, 14, 0),
+      }));
+      prisma.post.findMany.mockResolvedValue(posts);
+
+      const result = await service.predictEngagement('u1');
+      expect(result.prediction).toBeDefined();
+      expect(result.prediction!.expectedLikes).toBeGreaterThan(0);
+      expect(result.insights).toBeDefined();
+      expect(result.insights!.bestHours).toBeDefined();
+    });
+  });
+
+  // ── T02 gap: getRepurposeSuggestions ──
+
+  describe('getRepurposeSuggestions', () => {
+    it('should suggest reel for text-only high-engagement post', async () => {
+      prisma.post.findUnique.mockResolvedValue({
+        userId: 'u1', content: 'A'.repeat(100), mediaUrls: [], mediaTypes: [],
+        likesCount: 15, commentsCount: 6, sharesCount: 0, postType: 'TEXT',
+      });
+
+      const result = await service.getRepurposeSuggestions('p1', 'u1');
+      expect(result.suggestions.some((s: any) => s.type === 'reel')).toBe(true);
+      expect(result.suggestions.some((s: any) => s.type === 'cross_post')).toBe(true);
+    });
+
+    it('should throw NotFoundException if post not found', async () => {
+      prisma.post.findUnique.mockResolvedValue(null);
+      await expect(service.getRepurposeSuggestions('missing', 'u1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException if not owner', async () => {
+      prisma.post.findUnique.mockResolvedValue({ userId: 'other', content: 'x', mediaUrls: [], mediaTypes: [] });
+      await expect(service.getRepurposeSuggestions('p1', 'u1')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  // ── T02 gap: report duplicate idempotency ──
+
+  describe('report (duplicate)', () => {
+    it('should return {reported: true} without creating duplicate report', async () => {
+      prisma.post.findUnique.mockResolvedValue({ id: 'p1' });
+      prisma.report.findFirst.mockResolvedValue({ id: 'existing-report' });
+
+      const result = await service.report('p1', 'u1', 'SPAM');
+      expect(result).toEqual({ reported: true });
+      expect(prisma.report.create).not.toHaveBeenCalled();
+    });
+  });
+
 });
