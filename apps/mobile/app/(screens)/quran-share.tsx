@@ -106,12 +106,14 @@ export default function QuranShareScreen() {
   }, [refetchSurahs, refetchVerse]);
 
   const handlePrevVerse = useCallback(() => {
+    haptic.tick();
     setCurrentVerse(v => Math.max(1, v - 1));
-  }, []);
+  }, [haptic]);
 
   const handleNextVerse = useCallback(() => {
+    haptic.tick();
     setCurrentVerse(v => Math.min(currentSurah.verses, v + 1));
-  }, [currentSurah.verses]);
+  }, [currentSurah.verses, haptic]);
 
   const isNavigatingRef = useRef(false);
 
@@ -134,11 +136,12 @@ export default function QuranShareScreen() {
   }, [router, verseText, translationText, currentSurah.name, currentVerse]);
 
   const handleCopyText = useCallback(async () => {
+    haptic.success();
     const text = `${verseText}\n\n${translationText}\n\n— ${currentSurah.name} ${currentVerse}`;
     await Clipboard.setStringAsync(text);
     setShowShareOptions(false);
     showToast({ message: t('common.copied', { defaultValue: 'Copied to clipboard' }), variant: 'success' });
-  }, [verseText, translationText, currentSurah.name, currentVerse, t]);
+  }, [haptic, verseText, translationText, currentSurah.name, currentVerse, t]);
 
   const isRefreshing = surahsRefetching || verseRefetching;
 

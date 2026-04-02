@@ -230,9 +230,10 @@ function ProfileCustomizationScreen() {
         haptic.success();
       } catch {
         haptic.error();
+        showToast({ message: t('common.somethingWentWrong', { defaultValue: 'Upload failed' }), variant: 'error' });
       }
     }
-  }, [haptic]);
+  }, [haptic, t]);
 
   const handleSave = useCallback(() => {
     haptic.save();

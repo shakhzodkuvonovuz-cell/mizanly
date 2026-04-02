@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput,
-  Switch, Pressable,
+  Switch, Pressable, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { EmptyState } from '@/components/ui/EmptyState';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
@@ -116,7 +117,7 @@ export default function QuietModeScreen() {
 
   if (query.isLoading) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
           title={t('quietMode.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -127,13 +128,33 @@ export default function QuietModeScreen() {
           <Skeleton.Rect width="100%" height={56} />
           <Skeleton.Rect width="100%" height={100} />
         </View>
-      </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (query.isError) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader
+          title={t('quietMode.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+        />
+        <View style={[styles.loadingContainer, { paddingTop: insets.top + 80 }]}>
+          <EmptyState
+            icon="alert-circle"
+            title={t('common.error')}
+            subtitle={t('common.tryAgain', { defaultValue: 'Something went wrong. Please try again.' })}
+            actionLabel={t('common.retry')}
+            onAction={() => query.refetch()}
+          />
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
           title={t('quietMode.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -345,7 +366,7 @@ export default function QuietModeScreen() {
             ))}
           </ScrollView>
         </BottomSheet>
-      </View>
+      </SafeAreaView>
     </ScreenErrorBoundary>
   );
 }

@@ -1,4 +1,4 @@
-import { useState, useCallback, memo } from 'react';
+import { useState, useCallback, memo, useRef } from 'react';
 import {
   View, Text, StyleSheet,
   FlatList, ScrollView, Dimensions, Pressable, Alert, Linking, Share,
@@ -212,6 +212,7 @@ export default function ProfileScreen() {
   const { user: clerkUser } = useUser();
   const queryClient = useQueryClient();
   const haptic = useContextualHaptic();
+  const isNavigatingRef = useRef(false);
   const { t, isRTL } = useTranslation();
   const PROFILE_TABS = [
     { key: 'posts', label: t('profile.posts') },
@@ -607,6 +608,8 @@ export default function ProfileScreen() {
             <Pressable
               style={styles.msgBtn}
               onPress={async () => {
+                if (isNavigatingRef.current) return;
+                isNavigatingRef.current = true;
                 haptic.navigate();
                 try {
                   const { messagesApi } = await import('@/services/api');
@@ -615,6 +618,8 @@ export default function ProfileScreen() {
                 } catch {
                   showToast({ message: t('common.error'), variant: 'error' });
                   router.push('/(screens)/new-conversation');
+                } finally {
+                  setTimeout(() => { isNavigatingRef.current = false; }, 500);
                 }
               }}
               accessibilityLabel={t('profile.sendMessage')}

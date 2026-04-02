@@ -426,9 +426,14 @@ export default function ReelDetailScreen() {
                 style={styles.followButton}
                 onPress={async () => {
                   try {
+                    haptic.tick();
                     await followsApi.follow(reelQuery.data?.user?.id);
                     queryClient.invalidateQueries({ queryKey: ['reel', id] });
-                  } catch {}
+                    haptic.success();
+                  } catch {
+                    haptic.error();
+                    showToast({ message: t('common.somethingWentWrong', { defaultValue: 'Something went wrong' }), variant: 'error' });
+                  }
                 }}
               >
                 <Text style={styles.followButtonText}>{t('common.follow')}</Text>

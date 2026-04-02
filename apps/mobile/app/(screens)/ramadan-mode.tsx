@@ -237,6 +237,7 @@ export default function RamadanModeScreen() {
   const ramadanQuery = useQuery({
     queryKey: ['ramadan-info'],
     queryFn: () => islamicApi.getRamadanInfo(),
+    staleTime: 5 * 60_000,
   });
 
   // Fetch prayer times for countdown calculation
