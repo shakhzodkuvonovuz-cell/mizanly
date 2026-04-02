@@ -200,6 +200,7 @@ export default function ZakatCalculatorScreen() {
     retry: 2,
   });
 
+  const usingFallbackPrices = !priceData;
   const goldPricePerGram = priceData?.goldPricePerGram ?? FALLBACK_GOLD_PRICE_PER_GRAM;
   const silverPricePerGram = priceData?.silverPricePerGram ?? FALLBACK_SILVER_PRICE_PER_GRAM;
   const nisabGold = NISAB_GOLD_GRAMS * goldPricePerGram;
@@ -510,6 +511,11 @@ export default function ZakatCalculatorScreen() {
                     <View style={styles.nisabHeaderRow}>
                       <Text style={styles.nisabTitle}>{t('screens.zakatCalculator.currentNisabThreshold')}</Text>
                       {pricesLoading && <ActivityIndicator size="small" color={colors.emerald} />}
+                      {usingFallbackPrices && !pricesLoading && (
+                        <Text style={{ color: colors.gold, fontSize: fontSize.xs, fontFamily: fonts.body }}>
+                          {t('screens.zakatCalculator.estimatedPrices', 'Estimated prices')}
+                        </Text>
+                      )}
                     </View>
                     <View style={styles.nisabRow}>
                       <Text style={styles.nisabLabel}>{t('screens.zakatCalculator.goldNisab')}</Text>

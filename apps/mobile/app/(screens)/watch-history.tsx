@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, Pressable, Alert,
   FlatList,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { showToast } from '@/components/ui/Toast';
 import { useRouter } from 'expo-router';
@@ -114,6 +115,7 @@ export default function WatchHistoryScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const haptic = useContextualHaptic();
+  const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
 
   const watchHistoryQuery = useInfiniteQuery({
@@ -179,7 +181,7 @@ export default function WatchHistoryScreen() {
             title={t('screens.watch-history.title')}
             leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
           />
-          <View style={styles.headerSpacer} />
+          <View style={{ height: insets.top + 56 }} />
           <EmptyState
             icon="flag"
             title={t('screens.watch-history.errorTitle')}
@@ -204,7 +206,7 @@ export default function WatchHistoryScreen() {
             accessibilityLabel: t('screens.watch-history.clearConfirmTitle'),
           }]}
         />
-        <View style={styles.headerSpacer} />
+        <View style={{ height: insets.top + 56 }} />
 
         <FlatList
             removeClippedSubviews={true}

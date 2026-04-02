@@ -320,7 +320,7 @@ export default function DuaCollectionScreen() {
           ListHeaderComponent={listHeader}
           ListEmptyComponent={listEmpty}
           refreshControl={
-            <BrandedRefreshControl refreshing={duasQuery.isRefetching} onRefresh={handleRefresh} />
+            <BrandedRefreshControl refreshing={duasQuery.isRefetching || dailyDuaQuery.isRefetching || (showBookmarked && bookmarkedQuery.isRefetching)} onRefresh={handleRefresh} />
           }
           contentContainerStyle={styles.listContent}
           ListFooterComponent={

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -182,6 +182,7 @@ function XPHistoryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const haptic = useContextualHaptic();
+  const isGoingBackRef = useRef(false);
 
   const xpQuery = useQuery({
     queryKey: ['xp'],
@@ -238,7 +239,12 @@ function XPHistoryScreen() {
         title={t('gamification.xp.history')}
         leftAction={{
           icon: 'arrow-left',
-          onPress: () => router.back(),
+          onPress: () => {
+            if (isGoingBackRef.current) return;
+            isGoingBackRef.current = true;
+            router.back();
+            setTimeout(() => { isGoingBackRef.current = false; }, 500);
+          },
           accessibilityLabel: t('common.back'),
         }}
       />

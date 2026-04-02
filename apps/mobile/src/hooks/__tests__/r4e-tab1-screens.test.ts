@@ -179,6 +179,10 @@ describe('dua-collection', () => {
     expect(src).toContain('Math.min(index * 60, 600)');
   });
 
+  test('refresh indicator combines all query states', () => {
+    expect(src).toContain('duasQuery.isRefetching || dailyDuaQuery.isRefetching');
+  });
+
   test('haptic on play audio is tick not navigate', () => {
     const block = src.slice(src.indexOf('handlePlayAudio'), src.indexOf('handlePlayAudio') + 150);
     expect(block).toContain('haptic.tick()');
@@ -291,6 +295,11 @@ describe('watch-history', () => {
 
   test('no unused isRTL variable', () => {
     expect(src).not.toMatch(/const.*isRTL.*=.*useTranslation/);
+  });
+
+  test('headerSpacer uses dynamic insets not magic 100', () => {
+    expect(src).toContain('insets.top + 56');
+    expect(src).not.toContain('styles.headerSpacer');
   });
 });
 
@@ -441,6 +450,10 @@ describe('xp-history', () => {
   test('levelCard RTL: uses rtlFlexRow inline', () => {
     expect(src).toContain("{ flexDirection: rtlFlexRow(isRTL) }");
   });
+
+  test('back button double-tap guard', () => {
+    expect(src).toContain('isGoingBackRef');
+  });
 });
 
 // ── zakat-calculator.tsx ──
@@ -506,6 +519,11 @@ describe('zakat-calculator', () => {
 
   test('press feedback on buttons', () => {
     expect(src).toContain('pressed && { opacity: 0.8 }');
+  });
+
+  test('fallback price indicator when live prices unavailable', () => {
+    expect(src).toContain('usingFallbackPrices');
+    expect(src).toContain('estimatedPrices');
   });
 
   test('zakat formula constants unchanged (Islamic data rule)', () => {
