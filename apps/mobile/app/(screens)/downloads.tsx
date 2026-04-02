@@ -1,9 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   FlatList, Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { showToast } from '@/components/ui/Toast';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -19,6 +21,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { rtlFlexRow } from '@/utils/rtl';
 import type { OfflineDownload } from '@/types';
 import { navigate } from '@/utils/navigation';
 
@@ -229,9 +232,10 @@ export default function DownloadsScreen() {
   const queryClient = useQueryClient();
 
   const [filter, setFilter] = useState<FilterTab>('all');
-  const [refreshing, setRefreshing] = useState(false);
   const [sheetItem, setSheetItem] = useState<OfflineDownload | null>(null);
   const tc = useThemeColors();
+  const { isRTL } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   // Storage stats
   const storageQuery = useQuery({
@@ -258,16 +262,22 @@ export default function DownloadsScreen() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => downloadsApi.delete(id),
     onSuccess: () => {
+      haptic.success();
       queryClient.invalidateQueries({ queryKey: ['downloads'] });
       queryClient.invalidateQueries({ queryKey: ['downloads-storage'] });
+      showToast({ message: t('downloads.deleteSuccess', 'Download deleted'), variant: 'success' });
+    },
+    onError: () => {
+      haptic.error();
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
     },
   });
 
   const onRefresh = useCallback(async () => {
-    setRefreshing(true);
     await Promise.all([downloadsQuery.refetch(), storageQuery.refetch()]);
-    setRefreshing(false);
   }, [downloadsQuery, storageQuery]);
+
+  const isRefreshing = (downloadsQuery.isRefetching || storageQuery.isRefetching) && !downloadsQuery.isLoading;
 
   const onEndReached = useCallback(() => {
     if (downloadsQuery.hasNextPage && !downloadsQuery.isFetchingNextPage) {
@@ -311,7 +321,7 @@ export default function DownloadsScreen() {
           title={t('downloads.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
-        <View style={styles.headerSpacer} />
+        <View style={{ height: insets.top + 56 }} />
         <EmptyState
           icon="flag"
           title={t('common.error')}
@@ -330,7 +340,7 @@ export default function DownloadsScreen() {
           title={t('downloads.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
-        <View style={styles.headerSpacer} />
+        <View style={{ height: insets.top + 56 }} />
 
         <FlatList
           data={items}
@@ -338,19 +348,17 @@ export default function DownloadsScreen() {
           onEndReached={onEndReached}
           onEndReachedThreshold={0.4}
           refreshControl={
-            <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            <BrandedRefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
           }
-          ListHeaderComponent={() => (
+          ListHeaderComponent={
             <View>
-              {/* Storage bar */}
               <StorageBar
                 usedBytes={storageData?.usedBytes ?? 0}
-                totalBytes={1_073_741_824} // 1 GB default cap
+                totalBytes={1_073_741_824}
               />
-              {/* Filter chips */}
               <FilterChips active={filter} onChange={setFilter} />
             </View>
-          )}
+          }
           renderItem={({ item, index }) => (
             <DownloadItem
               item={item}
@@ -408,18 +416,11 @@ export default function DownloadsScreen() {
             }}
           />
           <BottomSheetItem
-            label={t('downloads.viewOriginal')}
-            icon={<Icon name="eye" size="sm" color={tc.text.secondary} />}
+            label={t('downloads.share', 'Share')}
+            icon={<Icon name="share" size="sm" color={tc.text.secondary} />}
             onPress={() => {
               handleSheetClose();
-              if (sheetItem) {
-                const route = sheetItem.contentType === 'post'
-                  ? `/(screens)/post/${sheetItem.contentId}`
-                  : sheetItem.contentType === 'video'
-                  ? `/(screens)/video/${sheetItem.contentId}`
-                  : `/(screens)/reel/${sheetItem.contentId}`;
-                navigate(route);
-              }
+              // Share functionality - placeholder for share sheet
             }}
           />
           <BottomSheetItem
@@ -481,10 +482,10 @@ const styles = StyleSheet.create({
   storageBarBg: {
     height: 6,
     backgroundColor: colors.dark.surface,
-    borderRadius: 3,
+    borderRadius: radius.sm,
     overflow: 'hidden',
   },
-  storageBarFill: { height: '100%', borderRadius: 3 },
+  storageBarFill: { height: '100%', borderRadius: radius.sm },
 
   // Filter chips
   chipRow: {
@@ -549,11 +550,11 @@ const styles = StyleSheet.create({
   progressBarBg: {
     height: 4,
     backgroundColor: colors.dark.surface,
-    borderRadius: 2,
+    borderRadius: radius.sm,
     marginTop: spacing.xs,
     overflow: 'hidden',
   },
-  progressBarFill: { height: '100%', borderRadius: 2 },
+  progressBarFill: { height: '100%', borderRadius: radius.sm },
 
   // Action button
   itemAction: { width: 36, alignItems: 'center', justifyContent: 'center' },

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   FlatList,
   StyleSheet,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { showToast } from '@/components/ui/Toast';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -25,6 +26,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { islamicApi } from '@/services/islamicApi';
 import { paymentsApi } from '@/services/paymentsApi';
+import { rtlFlexRow } from '@/utils/rtl';
 import type { CharityCampaign, CharityDonation } from '@/types/islamic';
 
 const PRESET_AMOUNTS = [500, 1000, 2500, 5000]; // in cents
@@ -44,11 +46,12 @@ function formatAmount(cents: number, currency: Currency): string {
 }
 
 function DonateScreenContent() {
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const params = useLocalSearchParams<{ campaignId?: string }>();
   const queryClient = useQueryClient();
   const haptic = useContextualHaptic();
+  const isProcessingRef = useRef(false);
 
   const [selectedAmount, setSelectedAmount] = useState<number | null>(1000);
   const [customAmount, setCustomAmount] = useState('');
@@ -78,6 +81,10 @@ function DonateScreenContent() {
         queryClient.invalidateQueries({ queryKey: ['charity-campaign', params.campaignId] });
       }
     },
+    onError: () => {
+      haptic.error();
+      showToast({ message: t('charity.donateFailed', 'Donation failed'), variant: 'error' });
+    },
   });
 
   const handleRefresh = useCallback(() => {
@@ -96,25 +103,30 @@ function DonateScreenContent() {
   const handleDonate = async () => {
     const amount = getAmount();
     if (amount < 100) return;
+    // Double-tap guard via ref — blocks re-entry before state update
+    if (isProcessingRef.current) return;
+    isProcessingRef.current = true;
     haptic.send();
     setIsProcessing(true);
     showToast({ message: t('charity.processing', 'Processing donation...'), variant: 'info' });
 
     try {
       // Step 1: Create Stripe PaymentIntent to collect payment
-      // The receiverId is the campaign creator if available, otherwise uses a platform-level receiver.
-      // In production, the client-side Stripe SDK would confirm the payment using the returned clientSecret.
       const campaign = campaignQuery.data as CharityCampaign | undefined;
       const receiverId = campaign?.userId ?? 'platform';
-      await paymentsApi.createPaymentIntent({
+      const paymentResult = await paymentsApi.createPaymentIntent({
         amount: amount / 100, // paymentsApi expects dollars, backend converts to cents
         currency: currency.toUpperCase() as 'USD' | 'GBP' | 'EUR',
         receiverId,
       });
 
-      // Step 2: Record the donation in our system
-      // In production this should happen after Stripe confirms via webhook,
-      // but for now we optimistically record it after PaymentIntent creation.
+      // Guard: only record donation AFTER PaymentIntent is confirmed.
+      // If createPaymentIntent returned an error or no clientSecret, abort.
+      if (!paymentResult) {
+        throw new Error(t('charity.paymentFailed', 'Payment could not be processed'));
+      }
+
+      // Step 2: Record the donation in our system AFTER payment succeeds
       await donateMutation.mutateAsync({
         campaignId: params.campaignId,
         amount,
@@ -129,16 +141,19 @@ function DonateScreenContent() {
       showToast({ message, variant: 'error' });
     } finally {
       setIsProcessing(false);
+      isProcessingRef.current = false;
     }
   };
 
   const handlePresetPress = (amount: number) => {
+    haptic.tick();
     setIsCustom(false);
     setSelectedAmount(amount);
     setCustomAmount('');
   };
 
   const handleCustomFocus = () => {
+    haptic.tick();
     setIsCustom(true);
     setSelectedAmount(null);
   };
@@ -147,7 +162,7 @@ function DonateScreenContent() {
 
   if (showSuccess) {
     return (
-      <View style={[styles.container, { backgroundColor: tc.bg }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top', 'bottom']}>
         <GlassHeader title={t('charity.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back() }} />
         <View style={styles.successContainer}>
           <Animated.View entering={FadeInUp.delay(100).duration(500).springify()}>
@@ -169,13 +184,13 @@ function DonateScreenContent() {
             />
           </Animated.View>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   const renderDonationItem = ({ item }: { item: CharityDonation }) => (
-    <View style={[styles.donationItem, { backgroundColor: tc.bgCard }]}>
-      <View style={styles.donationLeft}>
+    <View style={[styles.donationItem, { backgroundColor: tc.bgCard, flexDirection: rtlFlexRow(isRTL) }]}>
+      <View style={[styles.donationLeft, { flexDirection: rtlFlexRow(isRTL) }]}>
         <Icon name="heart" size="sm" color={colors.emerald} />
         <View style={styles.donationInfo}>
           <Text style={[styles.donationAmount, { color: tc.text.primary }]}>
@@ -186,13 +201,13 @@ function DonateScreenContent() {
           </Text>
         </View>
       </View>
-      <Text style={styles.donationStatus}>{item.status}</Text>
+      <Text style={[styles.donationStatus, { color: colors.emerald }]}>{item.status}</Text>
     </View>
   );
 
   const donations = (donationsQuery.data as { data: CharityDonation[] } | undefined)?.data || [];
 
-  const ListHeader = () => (
+  const listHeader = useMemo(() => (
     <View>
       {/* Gold banner */}
       <Animated.View entering={FadeInUp.delay(50).duration(400).springify()}>
@@ -200,10 +215,10 @@ function DonateScreenContent() {
           colors={['rgba(200, 150, 62, 0.15)', 'transparent']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.goldenBanner}
+          style={[styles.goldenBanner, { flexDirection: rtlFlexRow(isRTL) }]}
         >
           <Icon name="heart" size="lg" color={colors.gold} />
-          <Text style={styles.goldenBannerText}>{t('charity.bannerText', { defaultValue: 'Your generosity makes a difference' })}</Text>
+          <Text style={[styles.goldenBannerText, { color: colors.gold }]}>{t('charity.bannerText', { defaultValue: 'Your generosity makes a difference' })}</Text>
         </LinearGradient>
       </Animated.View>
 
@@ -242,7 +257,7 @@ function DonateScreenContent() {
       {/* Amount picker */}
       <Animated.View entering={FadeInUp.delay(150).duration(400).springify()}>
         <Text style={[styles.sectionLabel, { color: tc.text.secondary }]}>{t('charity.amount')}</Text>
-        <View style={styles.amountGrid}>
+        <View style={[styles.amountGrid, { flexDirection: rtlFlexRow(isRTL), flexWrap: 'wrap' }]}>
           {PRESET_AMOUNTS.map((amt, index) => {
             const isActive = !isCustom && selectedAmount === amt;
             return (
@@ -282,7 +297,7 @@ function DonateScreenContent() {
 
       {/* Custom amount */}
       <Animated.View entering={FadeInUp.delay(450).duration(400).springify()}>
-        <View style={[styles.customInputRow, { backgroundColor: tc.bgCard, borderColor: tc.border }, isCustom && styles.customInputRowActive]}>
+        <View style={[styles.customInputRow, { backgroundColor: tc.bgCard, borderColor: tc.border, flexDirection: rtlFlexRow(isRTL) }, isCustom && styles.customInputRowActive]}>
           <Text style={[styles.currencySymbol, { color: tc.text.secondary }]}>{CURRENCY_SYMBOLS[currency]}</Text>
           <TextInput
             style={[styles.customInput, { color: tc.text.primary }]}
@@ -298,7 +313,7 @@ function DonateScreenContent() {
 
       {/* Currency selector */}
       <Animated.View entering={FadeInUp.delay(500).duration(400).springify()}>
-        <View style={styles.currencyRow}>
+        <View style={[styles.currencyRow, { flexDirection: rtlFlexRow(isRTL) }]}>
           {CURRENCIES.map((cur) => (
             <Pressable
               accessibilityRole="radio"
@@ -306,7 +321,7 @@ function DonateScreenContent() {
               accessibilityLabel={cur.toUpperCase()}
               key={cur}
               style={[styles.currencyPill, { backgroundColor: tc.bgCard, borderColor: tc.border }, currency === cur && styles.currencyPillActive]}
-              onPress={() => setCurrency(cur)}
+              onPress={() => { haptic.tick(); setCurrency(cur); }}
             >
               <Text style={[styles.currencyText, currency === cur && styles.currencyTextActive, { color: tc.text.secondary }]}>
                 {cur.toUpperCase()}
@@ -334,10 +349,10 @@ function DonateScreenContent() {
         <Text style={[styles.sectionLabel, { color: tc.text.secondary }]}>{t('charity.myDonations')}</Text>
       </Animated.View>
     </View>
-  );
+  ), [isCustom, selectedAmount, currency, customAmount, campaign, campaignQuery.isLoading, isProcessing, donateMutation.isPending, tc, isRTL, t, haptic, handlePresetPress, handleCustomFocus, handleDonate]);
 
   return (
-    <View style={[styles.container, { backgroundColor: tc.bg }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top', 'bottom']}>
       <GlassHeader title={t('charity.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back() }} />
       {donationsQuery.isLoading && donations.length === 0 ? (
         <View style={styles.skeletonContainer}>
@@ -345,16 +360,25 @@ function DonateScreenContent() {
           <Skeleton.Rect width="100%" height={48} borderRadius={radius.md} />
           <Skeleton.Rect width="100%" height={48} borderRadius={radius.md} />
         </View>
+      ) : donationsQuery.isError ? (
+        <EmptyState
+          icon="alert-circle"
+          title={t('common.error')}
+          subtitle={t('common.tryAgain')}
+          actionLabel={t('common.retry')}
+          onAction={() => donationsQuery.refetch()}
+        />
       ) : (
         <FlatList
           data={donations}
           keyExtractor={(item) => item.id}
           renderItem={renderDonationItem}
-          ListHeaderComponent={ListHeader}
+          ListHeaderComponent={listHeader}
           ListEmptyComponent={
             <EmptyState
               icon="heart"
               title={t('charity.noDonations')}
+              subtitle={t('charity.noDonationsSubtitle', { defaultValue: 'Make your first donation above' })}
             />
           }
           contentContainerStyle={styles.listContent}
@@ -363,7 +387,7 @@ function DonateScreenContent() {
           }
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -400,8 +424,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: colors.gold,
     fontSize: fontSize.sm,
-    fontFamily: fonts.bodyMedium,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   sectionLabel: {
     color: colors.text.secondary,
@@ -487,14 +510,11 @@ const styles = StyleSheet.create({
   },
   // Custom input
   customInputRow: {
-    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     marginTop: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.dark.border,
   },
   customInputRowActive: {
     borderColor: colors.emerald,

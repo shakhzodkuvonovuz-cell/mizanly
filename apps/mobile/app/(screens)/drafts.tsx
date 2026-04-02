@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { View, Text, FlatList, StyleSheet, Pressable, Alert } from 'react-native';
 // Note: Alert kept for destructive delete confirmation only
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNowStrict } from 'date-fns';
@@ -12,11 +13,14 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { GlassHeader } from '@/components/ui/GlassHeader';
+import { showToast } from '@/components/ui/Toast';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { draftsApi } from '@/services/api';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { rtlFlexRow } from '@/utils/rtl';
 import { navigate } from '@/utils/navigation';
 
 type DraftItem = {
@@ -39,8 +43,11 @@ export default function DraftsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const tc = useThemeColors();
+  const haptic = useContextualHaptic();
+  const insets = useSafeAreaInsets();
+  const isNavigatingRef = useRef(false);
 
   const { data: drafts, isLoading, isError, refetch } = useQuery({
     queryKey: ['drafts'],
@@ -49,16 +56,25 @@ export default function DraftsScreen() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => draftsApi.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['drafts'] }),
+    onSuccess: () => {
+      haptic.success();
+      queryClient.invalidateQueries({ queryKey: ['drafts'] });
+      showToast({ message: t('screens.drafts.deleteSuccess', 'Draft deleted'), variant: 'success' });
+    },
+    onError: () => {
+      haptic.error();
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+    },
   });
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await queryClient.invalidateQueries({ queryKey: ['drafts'] });
+    await refetch();
     setRefreshing(false);
-  }, [queryClient]);
+  }, [refetch]);
 
   const handleDelete = (id: string) => {
+    haptic.delete();
     Alert.alert(t('screens.drafts.deleteAlertTitle'), t('screens.drafts.deleteAlertMessage'), [
       { text: t('common.cancel'), style: 'cancel' },
       { text: t('common.delete'), style: 'destructive', onPress: () => deleteMutation.mutate(id) },
@@ -66,6 +82,9 @@ export default function DraftsScreen() {
   };
 
   const handleOpen = (draft: DraftItem) => {
+    if (isNavigatingRef.current) return;
+    isNavigatingRef.current = true;
+    haptic.tick();
     const screenMap: Record<string, string> = {
       SAF: '/(screens)/create-post',
       MAJLIS: '/(screens)/create-thread',
@@ -74,6 +93,7 @@ export default function DraftsScreen() {
     };
     const screen = screenMap[draft.space] ?? '/(screens)/create-post';
     navigate(screen, { draftId: draft.id });
+    setTimeout(() => { isNavigatingRef.current = false; }, 500);
   };
 
   const renderDraft = ({ item, index }: { item: DraftItem; index: number }) => {
@@ -82,7 +102,7 @@ export default function DraftsScreen() {
     const time = formatDistanceToNowStrict(new Date(item.updatedAt), { addSuffix: true, locale: getDateFnsLocale() });
 
     return (
-      <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+      <Animated.View entering={FadeInUp.delay(Math.min(index * 50, 500)).duration(400)}>
         <Pressable
           onPress={() => handleOpen(item)}
           accessibilityLabel={t('screens.drafts.draftLabel', { preview })}
@@ -90,7 +110,7 @@ export default function DraftsScreen() {
         >
           <LinearGradient
             colors={colors.gradient.cardDark}
-            style={styles.draftItem}
+            style={[styles.draftItem, { flexDirection: rtlFlexRow(isRTL) }]}
           >
             <LinearGradient
               colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
@@ -130,7 +150,7 @@ export default function DraftsScreen() {
           title={t('screens.drafts.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
-        <View style={styles.headerSpacer} />
+        <View style={{ height: insets.top + 56 }} />
         <EmptyState
           icon="flag"
           title={t('screens.drafts.errorTitle')}
@@ -149,7 +169,7 @@ export default function DraftsScreen() {
           title={t('screens.drafts.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
-        <View style={styles.headerSpacer} />
+        <View style={{ height: insets.top + 56 }} />
 
         {isLoading ? (
           <View style={styles.skeletonWrap}>

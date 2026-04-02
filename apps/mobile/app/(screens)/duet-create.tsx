@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInUp, withSpring, useAnimatedStyle, withRepeat } from 'react-native-reanimated';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Audio } from 'expo-av';
@@ -17,13 +17,15 @@ import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { showToast } from '@/components/ui/Toast';
 import { navigate } from '@/utils/navigation';
 import { formatTime } from '@/utils/formatTime';
+import { rtlFlexRow } from '@/utils/rtl';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+// screenHeight at module scope: used in StyleSheet.create which needs static values.
+// Stale after rotation — acceptable for this screen (camera always portrait).
+const { height: screenHeight } = Dimensions.get('window');
 
 type LayoutMode = 'side-by-side' | 'top-bottom' | 'react';
 
@@ -58,9 +60,9 @@ const sliderStyles = StyleSheet.create({
 
 export default function DuetCreateScreen() {
   const router = useRouter();
-  const { t } = useTranslation();
-  const [refreshing, setRefreshing] = useState(false);
+  const { t, isRTL } = useTranslation();
   const [isRecording, setIsRecording] = useState(false);
+  const isRecordingRef = useRef(false);
   const [recordTime, setRecordTime] = useState(0);
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('side-by-side');
   const [flashOn, setFlashOn] = useState(false);
@@ -84,8 +86,12 @@ export default function DuetCreateScreen() {
 
   useEffect(() => {
     (async () => {
-      const { granted } = await Audio.requestPermissionsAsync();
-      setAudioPermission(granted);
+      try {
+        const { granted } = await Audio.requestPermissionsAsync();
+        setAudioPermission(granted);
+      } catch {
+        setAudioPermission(false);
+      }
     })();
   }, []);
 
@@ -119,20 +125,20 @@ export default function DuetCreateScreen() {
     avatarUrl: null,
   };
 
-  // No data to refresh on this screen — refresh is a no-op
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    setRefreshing(false);
-  }, []);
+  const hasVideo = !!recordedUri;
 
   const handleRecord = async () => {
     if (!cameraRef.current) return;
 
-    if (isRecording) {
+    if (isRecordingRef.current) {
+      // Already recording — stop
       cameraRef.current.stopRecording();
+      isRecordingRef.current = false;
       setIsRecording(false);
       haptic.tick();
     } else {
+      // Prevent double-tap race: set ref immediately before async
+      isRecordingRef.current = true;
       setIsRecording(true);
       haptic.navigate();
       try {
@@ -141,9 +147,10 @@ export default function DuetCreateScreen() {
           setRecordedUri(video.uri);
           haptic.success();
         }
-      } catch (_err: unknown) {
+      } catch {
         // Recording was cancelled or failed
       } finally {
+        isRecordingRef.current = false;
         setIsRecording(false);
       }
     }
@@ -198,7 +205,6 @@ export default function DuetCreateScreen() {
 
         <ScrollView
           showsVerticalScrollIndicator={false}
-          refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
           {/* Original Video Info Card */}
           <Animated.View entering={FadeInUp.delay(50).duration(400)}>
@@ -556,7 +562,7 @@ export default function DuetCreateScreen() {
                     accessibilityLabel={t('duet.muteOriginal')}
                     accessibilityState={{ checked: isMuted }}
                     style={[styles.muteButton, { backgroundColor: tc.surface }, isMuted && styles.muteButtonActive]}
-                    onPress={() => setIsMuted(!isMuted)}
+                    onPress={() => { haptic.tick(); setIsMuted(!isMuted); }}
                   >
                     <Icon name={isMuted ? 'volume-x' : 'volume-2'} size="xs" color={isMuted ? colors.error : tc.text.secondary} />
                     <Text style={[styles.muteButtonText, isMuted && styles.muteButtonTextActive]}>
@@ -596,8 +602,12 @@ export default function DuetCreateScreen() {
           <Animated.View entering={FadeInUp.delay(350).duration(400)}>
             <Pressable accessibilityRole="button"
               accessibilityLabel={t('common.next')}
-              style={styles.nextButton}
-              onPress={() => router.push({ pathname: '/(screens)/create-reel', params: { videoUri: recordedUri ?? '', isDuet: 'true', duetOfId: reelId ?? '' } })}
+              style={[styles.nextButton, !hasVideo && { opacity: 0.5 }]}
+              disabled={!hasVideo || isRecording}
+              onPress={() => {
+                if (!recordedUri) return;
+                router.push({ pathname: '/(screens)/create-reel', params: { videoUri: recordedUri, isDuet: 'true', duetOfId: reelId ?? '' } });
+              }}
             >
               <LinearGradient
                 colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
@@ -1045,6 +1055,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   bottomSpacing: {
-    height: spacing.xxl,
+    height: spacing['2xl'],
   },
 });

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect, type MutableRefObject } from 'react';
 import {
   View, Text, StyleSheet, FlatList, Pressable, Share,
 } from 'react-native';
@@ -130,7 +130,7 @@ export default function DuaCollectionScreen() {
   const soundRef = useRef<Audio.Sound | null>(null);
 
   const handlePlayAudio = useCallback(() => {
-    haptic.navigate();
+    haptic.tick();
     showToast({ message: t('islamic.audioRecitationComingSoon', { defaultValue: 'Audio recitation coming soon' }), variant: 'info' });
   }, [haptic, t]);
 
@@ -159,13 +159,27 @@ export default function DuaCollectionScreen() {
     enabled: showBookmarked,
   });
 
+  const bookmarkingRef = useRef<Set<string>>(new Set());
   const bookmarkMutation = useMutation({
     mutationFn: (duaId: string) => islamicApi.bookmarkDua(duaId),
-    onSuccess: () => {
+    onSuccess: (_data, duaId) => {
       haptic.success();
+      bookmarkingRef.current.delete(duaId);
       queryClient.invalidateQueries({ queryKey: ['duas-bookmarked'] });
     },
+    onError: (_err, duaId) => {
+      haptic.error();
+      bookmarkingRef.current.delete(duaId);
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+    },
   });
+
+  const handleBookmark = useCallback((duaId: string) => {
+    if (bookmarkingRef.current.has(duaId)) return;
+    bookmarkingRef.current.add(duaId);
+    haptic.tick();
+    bookmarkMutation.mutate(duaId);
+  }, [bookmarkMutation, haptic]);
 
   const duas: Dua[] = showBookmarked
     ? (bookmarkedQuery.data ?? [])
@@ -279,6 +293,15 @@ export default function DuaCollectionScreen() {
           }}
         />
 
+        {duasQuery.isError && !showBookmarked ? (
+          <EmptyState
+            icon="alert-circle"
+            title={t('common.error')}
+            subtitle={t('common.tryAgain')}
+            actionLabel={t('common.retry')}
+            onAction={() => duasQuery.refetch()}
+          />
+        ) : (
         <FlatList
           data={duas}
           keyExtractor={(item) => item.id}
@@ -286,7 +309,7 @@ export default function DuaCollectionScreen() {
             <DuaCard
               dua={item}
               language={locale}
-              onBookmark={() => bookmarkMutation.mutate(item.id)}
+              onBookmark={() => handleBookmark(item.id)}
               onShare={() => handleShare(item)}
               onPlayAudio={handlePlayAudio}
             />
@@ -306,6 +329,8 @@ export default function DuaCollectionScreen() {
             ) : null
           }
         />
+        )}
+
       </SafeAreaView>
     </ScreenErrorBoundary>
   );
