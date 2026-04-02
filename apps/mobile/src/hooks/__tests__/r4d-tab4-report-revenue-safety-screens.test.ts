@@ -269,6 +269,19 @@ describe('R4D-T4: morning-briefing.tsx', () => {
     // Guard appears before the celebration card render
     expect(src).toContain('(briefing.totalTasks ?? 0) > 0 && briefing.tasksCompleted >= briefing.totalTasks');
   });
+
+  test('uses KeyboardAvoidingView for reflection input', () => {
+    expect(src).toContain('KeyboardAvoidingView');
+    expect(src).toContain('keyboardShouldPersistTaps');
+  });
+
+  test('animation delays halved (max 400ms not 800ms)', () => {
+    // Last card should be delay(400) not delay(800)
+    expect(src).not.toContain('delay(800)');
+    expect(src).not.toContain('delay(700)');
+    expect(src).not.toContain('delay(600)');
+    expect(src).not.toContain('delay(500)');
+  });
 });
 
 // ── mosque-finder.tsx ──
@@ -292,6 +305,14 @@ describe('R4D-T4: mosque-finder.tsx', () => {
 
   test('directions button has press feedback', () => {
     expect(src).toContain('pressed && { opacity: 0.7 }');
+  });
+
+  test('facility icons are semantic (not generic)', () => {
+    // parking should NOT be map-pin, wheelchair should NOT be check-circle
+    expect(src).not.toContain("parking: 'map-pin'");
+    expect(src).not.toContain("wheelchair: 'check-circle'");
+    expect(src).not.toContain("wudu: 'globe'");
+    expect(src).not.toContain("cafe: 'clock'");
   });
 });
 

@@ -106,13 +106,13 @@ interface Mosque {
 
 
 const FACILITY_ICONS: Record<string, IconName> = {
-  parking: 'map-pin',
-  wheelchair: 'check-circle',
+  parking: 'square',
+  wheelchair: 'user',
   womens: 'users',
-  wudu: 'globe',
+  wudu: 'droplet',
   school: 'book-open',
   library: 'book-open',
-  cafe: 'clock',
+  cafe: 'star',
 };
 
 function FacilityBadge({ facility }: { facility: string }) {

@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, TextInput,
+  KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -230,8 +231,10 @@ export default function MorningBriefingScreen() {
           }}
         />
 
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
           refreshControl={
             <BrandedRefreshControl refreshing={briefingQuery.isRefetching} onRefresh={handleRefresh} />
           }
@@ -262,7 +265,7 @@ export default function MorningBriefingScreen() {
               </Animated.View>
 
               {/* Progress overview */}
-              <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+              <Animated.View entering={FadeInUp.delay(50).duration(400)}>
                 <LinearGradient
                   colors={['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']}
                   style={styles.progressCard}
@@ -288,7 +291,7 @@ export default function MorningBriefingScreen() {
 
               {/* Prayer Times (compact) */}
               {briefing.prayerTimes && (
-                <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+                <Animated.View entering={FadeInUp.delay(100).duration(400)}>
                   <LinearGradient
                     colors={colors.gradient.cardDark}
                     style={styles.card}
@@ -310,7 +313,7 @@ export default function MorningBriefingScreen() {
               )}
 
               {/* Hadith of the Day */}
-              <Animated.View entering={FadeInUp.delay(300).duration(400)}>
+              <Animated.View entering={FadeInUp.delay(150).duration(400)}>
                 <LinearGradient
                   colors={['rgba(200,150,62,0.12)', 'rgba(200,150,62,0.04)']}
                   style={styles.card}
@@ -339,7 +342,7 @@ export default function MorningBriefingScreen() {
               </Animated.View>
 
               {/* Dua of the Day */}
-              <Animated.View entering={FadeInUp.delay(400).duration(400)}>
+              <Animated.View entering={FadeInUp.delay(200).duration(400)}>
                 <LinearGradient
                   colors={colors.gradient.cardDark}
                   style={styles.card}
@@ -365,7 +368,7 @@ export default function MorningBriefingScreen() {
               </Animated.View>
 
               {/* Dhikr Challenge */}
-              <Animated.View entering={FadeInUp.delay(500).duration(400)}>
+              <Animated.View entering={FadeInUp.delay(250).duration(400)}>
                 <LinearGradient
                   colors={['rgba(10,123,79,0.12)', 'rgba(10,123,79,0.04)']}
                   style={styles.card}
@@ -391,7 +394,7 @@ export default function MorningBriefingScreen() {
               </Animated.View>
 
               {/* Quran Task */}
-              <Animated.View entering={FadeInUp.delay(600).duration(400)}>
+              <Animated.View entering={FadeInUp.delay(300).duration(400)}>
                 <Pressable
                   onPress={() => {
                     if (!completedTasks.includes('quran') && !completeMutation.isPending) {
@@ -443,7 +446,7 @@ export default function MorningBriefingScreen() {
               </Animated.View>
 
               {/* Reflection Task */}
-              <Animated.View entering={FadeInUp.delay(700).duration(400)}>
+              <Animated.View entering={FadeInUp.delay(350).duration(400)}>
                 <LinearGradient
                   colors={['rgba(200,150,62,0.08)', 'rgba(200,150,62,0.02)']}
                   style={styles.card}
@@ -494,7 +497,7 @@ export default function MorningBriefingScreen() {
 
               {/* All tasks complete celebration */}
               {(briefing.totalTasks ?? 0) > 0 && briefing.tasksCompleted >= briefing.totalTasks && (
-                <Animated.View entering={FadeInUp.delay(800).duration(400)}>
+                <Animated.View entering={FadeInUp.delay(400).duration(400)}>
                   <LinearGradient
                     colors={[colors.emerald, colors.emeraldDark]}
                     style={styles.celebrationCard}
@@ -510,6 +513,7 @@ export default function MorningBriefingScreen() {
             </>
           )}
         </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </ScreenErrorBoundary>
   );
