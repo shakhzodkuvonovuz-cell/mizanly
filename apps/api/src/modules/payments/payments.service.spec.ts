@@ -756,6 +756,30 @@ describe('PaymentsService', () => {
     });
   });
 
+  describe('getStripeSubscriptionId — DB fallback — M#7', () => {
+    it('should fall back to DB when Redis mapping expired for internal→Stripe lookup', async () => {
+      // cancelSubscription with internal ID (not sub_) calls getStripeSubscriptionId
+      redis.get
+        .mockResolvedValueOnce(null)  // subscription:internal:sub-db-1 → miss
+        .mockResolvedValueOnce(null); // No other Redis hits
+      prisma.paymentMapping = {
+        ...prisma.paymentMapping,
+        findFirst: jest.fn().mockResolvedValue({ stripeId: 'sub_from_db' }),
+      };
+      prisma.membershipSubscription.findFirst.mockResolvedValue({ id: 'sub-db-1', userId: 'u1' });
+      prisma.membershipSubscription.update.mockResolvedValue({});
+
+      const result = await service.cancelSubscription('u1', 'sub-db-1');
+      // Should have looked up DB fallback
+      expect(prisma.paymentMapping.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { internalId: 'sub-db-1', type: 'subscription' },
+        }),
+      );
+      expect(result.message).toBeDefined();
+    });
+  });
+
   // --- R2 Tab4 Part 2: Premium endDate extension tests (X03-#16) ---
 
   describe('handlePremiumPaymentSucceeded — endDate extension', () => {

@@ -185,4 +185,24 @@ describe('GiftsService', () => {
       );
     });
   });
+
+  describe('sendGift — notification body uses "Someone" — L#55', () => {
+    it('should fire notification with "Someone" as sender name', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'receiver', isBanned: false, isDeactivated: false });
+      prisma.coinBalance.updateMany.mockResolvedValue({ count: 1 });
+      prisma.coinBalance.findUnique.mockResolvedValue({ coins: 100 }); // positive
+      prisma.giftRecord.create.mockResolvedValue({ id: 'gift-1' });
+      prisma.coinBalance.upsert.mockResolvedValue({});
+      prisma.coinTransaction.create.mockResolvedValue({});
+
+      const notifSvc = (service as any).notifications;
+
+      await service.sendGift('sender', { receiverId: 'receiver', giftType: 'rose' });
+      expect(notifSvc.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          body: expect.stringContaining('Someone'),
+        }),
+      );
+    });
+  });
 });
