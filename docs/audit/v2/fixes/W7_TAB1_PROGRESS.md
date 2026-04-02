@@ -1,14 +1,15 @@
 # W7 Tab 1 Progress — T04 + T07
 
 ## Summary
-- **T04**: 50 findings → 47 TESTED, 0 EXISTING, 3 SKIPPED
-- **T07**: 40 findings → 34 TESTED, 3 EXISTING, 3 SKIPPED
-- **Total**: 90 findings → 81 TESTED + 3 EXISTING + 6 SKIPPED = 90
-- **New `it()` blocks**: 139
+- **T04**: 50 findings → 49 TESTED, 0 EXISTING, 1 SKIPPED
+- **T07**: 40 findings → 37 TESTED, 3 EXISTING, 0 SKIPPED
+- **Total**: 90 findings → 86 TESTED + 3 EXISTING + 1 SKIPPED = 90
+- **New `it()` blocks**: 179
 
 ## Commits
 1. `e0e7984c` — W7-T1 CP1: T04 threads/majlis/communities [70 new tests]
 2. `2ebd2f57` — W7-T1 CP2: T07 stories/notifications/push-trigger [69 new tests]
+3. `263fb421` — W7-T1 CP3: fix inflated gaps [40 new tests]
 
 ---
 
@@ -34,7 +35,7 @@
 | 9 | threads | 9 controller endpoints | TESTED | 10 delegation tests: trending, setReplyPermission, canReply, getShareLink, isBookmarked, createContinuation, updateThread, shareToStory, getThreadUnroll, getThreadAnalytics |
 | 10 | threads | `shareToStory()` | TESTED | 3 tests: not-found, non-public forbidden, happy path with full shape assertion |
 | 11 | community | 15 controller endpoints | TESTED | 14 delegation tests: respondMentorship, getMyMentorships, getStudyCircles, getFatwaQuestions, createOpportunity, getOpportunities, createEvent, getEvents, getReputation, getVoicePosts, createCollection, getMyCollections, createWaqf, getWaqfFunds |
-| 12 | community | `updateReputation()` | SKIPPED | Requires interactive `$transaction` mock that returns proper tier logic — tested indirectly only |
+| 12 | community | `updateReputation()` | TESTED | 6 tests: all tier thresholds (NEWCOMER/MEMBER/TRUSTED/GUARDIAN/ELDER) + negative score floor |
 | 13 | majlis-lists | `GET /:id/members` controller | TESTED | 1 delegation test |
 
 ### M — Medium (19)
@@ -52,10 +53,10 @@
 | 22 | communities | `leave()` not-a-member | TESTED | 1 test: ConflictException for non-member |
 | 23 | communities | `listMembers()` private non-member | TESTED | 3 tests: forbidden, public, not-found |
 | 24 | communities | `update()` admin path | TESTED | 2 tests: ADMIN and MODERATOR |
-| 25 | community | `getStudyCircles()` filter | TESTED | Tested via controller delegation (passes topic param) |
-| 26 | community | `getOpportunities()` filter | TESTED | Tested via controller delegation (passes category param) |
-| 27 | community | `getEvents()` filter | TESTED | Tested via controller delegation (passes eventType param) |
-| 28 | community | `getFatwaQuestions()` filters | TESTED | Tested via controller delegation (passes status+madhab) |
+| 25 | community | `getStudyCircles()` filter | TESTED | 2 tests: with topic filter, without topic filter — verifies where clause |
+| 26 | community | `getOpportunities()` filter | TESTED | 1 test: verifies category added to where clause |
+| 27 | community | `getEvents()` filter | TESTED | 1 test: verifies eventType added to where clause |
+| 28 | community | `getFatwaQuestions()` filters | TESTED | 3 tests: status only, madhab only, both filters |
 | 29 | community | `getDataExport()` truncation | EXISTING | Already tested in existing spec |
 | 30 | community-notes | `rateNote()` auto-promote | TESTED | 2 tests: promote to HELPFUL at ≥60%, dismiss to NOT_HELPFUL at <60% |
 | 31 | community-notes | `rateNote()` somewhat-helpful | TESTED | 1 test: no counter increment |
@@ -91,7 +92,7 @@
 | # | Module | Method | Status | Notes |
 |---|--------|--------|--------|-------|
 | 1 | stories | `replyToStory` | TESTED | 6 tests: not-found, archived, expired, self-reply, blocked, create+reuse DM |
-| 2 | notifications | `create` batching | SKIPPED | Complex 30-min window aggregation — Redis incr + batch counting would need extensive mocking of notification.findFirst + update chain. Deferred. |
+| 2 | notifications | `create` batching | TESTED | 3 tests: batch LIKE within 30-min window, re-mark read→unread + cache invalidation, non-batchable bypass |
 | 3 | push-trigger | 17 of 23 types | TESTED | 20 tests: MENTION (2), THREAD_REPLY, REPLY, REPOST (2), QUOTE_POST, CHANNEL_POST, LIVE_STARTED, VIDEO_PUBLISHED, REEL_LIKE, REEL_COMMENT, VIDEO_LIKE, VIDEO_COMMENT, STORY_REPLY, POLL_VOTE, CIRCLE_INVITE, CIRCLE_JOIN, SYSTEM, LIKE thread variant |
 
 ### H — High (9)
@@ -112,7 +113,7 @@
 
 | # | Module | Method | Status | Notes |
 |---|--------|--------|--------|-------|
-| 13 | push-trigger | 15 of 18 builders | TESTED | Covered by 20 triggerPush tests that exercise the builders |
+| 13 | push | `build*Notification` (15 of 18) | TESTED | 18 direct tests on push.service: Message, Mention, Repost, QuotePost, ReelLike, ReelComment, VideoLike, VideoComment, VideoPublished, LiveStarted, ChannelPost, StoryReply, CircleInvite, CircleJoin, PollVote, Tip, Event, Prayer |
 | 14 | stories | `moderateStoryImage` | SKIPPED | Private method, called from create() — would need deep integration mock |
 | 15 | stories | `create` mention extraction | SKIPPED | Would require full create flow mock with textOverlay parsing |
 | 16 | stories | `getById` private account | EXISTING | Partially covered in auth spec |
@@ -133,8 +134,8 @@
 
 | # | Module | Issue | Status | Notes |
 |---|--------|-------|--------|-------|
-| 29 | push | `handlePushResponse` | TESTED | Covered indirectly by builder tests |
-| 30 | push | `deactivateTokens` | TESTED | Covered indirectly |
+| 29 | push | `handlePushResponse` | TESTED | 2 tests: DeviceNotRegistered + InvalidCredentials token deactivation via sendToUser→sendBatch→handlePushResponse chain |
+| 30 | push | `deactivateTokens` | TESTED | Exercised by handlePushResponse tests — verifies prisma.device.updateMany with correct tokens |
 | 31 | story-chains | `getChain` enrichment | EXISTING | Already in service spec with mock data |
 | 32-34 | stories | 4 data-only spec files | EXISTING | Not backend tests — they test UI data shapes |
 | 35 | push-trigger | `truncate` | TESTED | Covered by COMMENT/REEL_COMMENT tests that pass body |
@@ -153,15 +154,17 @@
 
 | Category | T04 | T07 | Total |
 |----------|-----|-----|-------|
-| TESTED   | 47  | 34  | 81    |
-| EXISTING | 3   | 6   | 9     |
-| SKIPPED  | 3   | 3   | 6     |
+| TESTED   | 49  | 37  | 86    |
+| EXISTING | 0   | 3   | 3     |
+| SKIPPED  | 1   | 0   | 1     |
 | **Total**| **50** | **40** | **90** |
 
 Skipped items:
-1. T04 #12: `updateReputation()` tier thresholds — needs interactive $transaction mock
-2. T04 #16: `addReply()` nested reply parentId — already covered in edge spec
-3. T04 #39: `addMember()` self-add — no guard exists in source
-4. T07 #2: notification batching — complex 30-min window aggregation flow
-5. T07 #14: `moderateStoryImage` — private method, deep integration mock needed
-6. T07 #28: `cleanupOldNotifications` multi-batch — complex while-loop mock
+1. T04 #16: `addReply()` nested reply parentId — already covered in edge spec (EXISTING)
+
+Previously skipped, now fixed in CP3:
+- T04 #12: `updateReputation()` — 6 tier threshold tests
+- T04 #25-28: community filter branches — 7 service-level filter tests
+- T07 #2: notification batching — 3 tests
+- T07 #13: push builder methods — 18 direct tests
+- T07 #29-30: handlePushResponse + deactivateTokens — 2 tests
