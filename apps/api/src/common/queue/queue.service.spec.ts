@@ -212,4 +212,39 @@ describe('QueueService', () => {
       await expect(service.onModuleDestroy()).resolves.not.toThrow();
     });
   });
+
+  // T13 row 28: Circuit breaker failure path
+  describe('circuit breaker failure', () => {
+    it('should propagate error when circuit breaker rejects (Redis down)', async () => {
+      circuitBreaker.exec.mockRejectedValue(new Error('Circuit open: redis'));
+      await expect(service.addPushNotificationJob({ notificationId: 'n1' })).rejects.toThrow('Circuit open: redis');
+    });
+  });
+
+  // T13 row 1: addWebhookDeliveryJob
+  describe('addWebhookDeliveryJob', () => {
+    it('should compute HMAC and enqueue without storing secret in Redis', async () => {
+      const result = await service.addWebhookDeliveryJob({
+        url: 'https://example.com/hook',
+        secret: 'test-secret',
+        event: 'post.created',
+        payload: { id: 'p1' },
+        webhookId: 'wh-1',
+      });
+      expect(result).toBe('job-1');
+      expect(webhooksQueue.add).toHaveBeenCalledWith(
+        'deliver',
+        expect.objectContaining({
+          url: 'https://example.com/hook',
+          event: 'post.created',
+          signature: expect.any(String),
+          timestamp: expect.any(String),
+        }),
+        expect.any(Object),
+      );
+      // Secret should NOT be in the job data
+      const jobData = webhooksQueue.add.mock.calls[0][1];
+      expect(jobData.secret).toBeUndefined();
+    });
+  });
 });

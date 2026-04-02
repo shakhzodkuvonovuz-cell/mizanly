@@ -471,4 +471,46 @@ describe('LiveService', () => {
       await expect(service.startLive('live1', 'host1')).rejects.toThrow(BadRequestException);
     });
   });
+
+  // T11 row 95: join re-join after leaving
+  describe('join — re-join after leaving', () => {
+    it('should update existing participant and only increment currentViewers (not totalViews)', async () => {
+      prisma.liveSession.findUnique
+        .mockResolvedValueOnce({
+          id: 'live1', hostId: 'host1', status: 'LIVE', isSubscribersOnly: false,
+          currentViewers: 5, participants: [],
+        }) // getById
+        .mockResolvedValueOnce({ currentViewers: 6 }); // after re-join
+      prisma.liveParticipant.findUnique.mockResolvedValue({ sessionId: 'live1', userId: 'viewer1', leftAt: new Date() }); // existing + leftAt set
+      prisma.liveParticipant.update.mockResolvedValue({});
+      prisma.$executeRaw.mockResolvedValue(1);
+
+      const result = await service.join('live1', 'viewer1');
+      expect(result.joined).toBe(true);
+      // Should update (re-join), not create
+      expect(prisma.liveParticipant.update).toHaveBeenCalledWith(expect.objectContaining({
+        where: { sessionId_userId: { sessionId: 'live1', userId: 'viewer1' } },
+        data: expect.objectContaining({ leftAt: null }),
+      }));
+      expect(prisma.liveParticipant.create).not.toHaveBeenCalled();
+    });
+  });
+
+  // T11 row 99: startLive — Stream integration failure fallback
+  describe('startLive — Stream failure fallback', () => {
+    it('should continue without Stream when createLiveInput fails', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', hostId: 'host1', status: 'SCHEDULED', title: 'Test' });
+      prisma.liveSession.update.mockResolvedValue({ id: 'live1', status: 'LIVE', startedAt: new Date() });
+      // Stream service throws
+      const streamService = (service as any).stream;
+      streamService.createLiveInput = jest.fn().mockRejectedValue(new Error('Cloudflare API down'));
+
+      const result = await service.startLive('live1', 'host1');
+      expect(result).toBeDefined();
+      // Should still update to LIVE despite Stream failure
+      expect(prisma.liveSession.update).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ status: 'LIVE' }),
+      }));
+    });
+  });
 });

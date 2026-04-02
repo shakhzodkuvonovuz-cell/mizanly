@@ -139,4 +139,31 @@ describe('AiTasksProcessor', () => {
       expect(result).toBe('SPAM');
     });
   });
+
+  // T13 row 12: lifecycle tests
+  describe('lifecycle', () => {
+    it('should not create worker when REDIS_URL not set', () => {
+      processor.onModuleInit();
+      expect((processor as any).worker).toBeNull();
+    });
+
+    it('should not throw on destroy when worker is null', async () => {
+      processor.onModuleInit();
+      await expect(processor.onModuleDestroy()).resolves.not.toThrow();
+    });
+  });
+
+  // T13 row 19 extended: message and video content types
+  describe('processModeration — video content type', () => {
+    it('should look up reportedUserId from video model', async () => {
+      prisma.video = { findUnique: jest.fn().mockResolvedValue({ userId: 'author-1' }) };
+      ai.moderateContent.mockResolvedValue({ safe: false, flags: ['violence'], confidence: 0.9 });
+      const job = { data: { content: 'Bad video', contentType: 'video', contentId: 'v1' }, updateProgress: jest.fn() };
+      await (processor as any).processModeration(job);
+      expect(prisma.video.findUnique).toHaveBeenCalledWith({ where: { id: 'v1' }, select: { userId: true } });
+      expect(prisma.report.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ reportedVideoId: 'v1', reportedUserId: 'author-1' }),
+      });
+    });
+  });
 });

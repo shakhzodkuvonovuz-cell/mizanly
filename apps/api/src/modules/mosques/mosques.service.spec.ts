@@ -179,4 +179,22 @@ describe('MosquesService', () => {
       expect(result.data).toHaveLength(50);
     });
   });
+
+  // T11 row 66: findNearby distance sort correctness
+  describe('findNearby — distance sort with multiple mosques', () => {
+    it('should return mosques sorted by distance from query point', async () => {
+      // Mosque A is closer to (40.71, -74.0) than mosque B
+      prisma.mosqueCommunity.findMany.mockResolvedValue([
+        { id: 'far', name: 'Far Mosque', latitude: 40.80, longitude: -73.90 },
+        { id: 'near', name: 'Near Mosque', latitude: 40.715, longitude: -74.005 },
+      ]);
+
+      const result = await service.findNearby(40.71, -74.0, 15);
+      expect(result).toHaveLength(2);
+      // Near mosque should be first
+      expect(result[0].id).toBe('near');
+      expect(result[1].id).toBe('far');
+      expect(result[0].distanceKm).toBeLessThan(result[1].distanceKm);
+    });
+  });
 });

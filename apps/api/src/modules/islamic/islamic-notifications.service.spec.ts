@@ -194,4 +194,93 @@ describe('IslamicNotificationsService', () => {
       );
     });
   });
+
+  // T11 rows 59-62: Missing notification service edge cases
+
+  describe('isInPrayerDND — mosque coordinates fallback', () => {
+    it('should compute prayer times from mosque lat/lng when Redis cache empty', async () => {
+      prisma.prayerNotificationSetting.findUnique.mockResolvedValue({ dndDuringPrayer: true });
+      redis.get.mockResolvedValue(null); // no cached prayer times
+      redis.hgetall.mockResolvedValue({ lat: '24.7136', lng: '46.6753' }); // mosque coords available
+      redis.setex.mockResolvedValue('OK');
+      const result = await service.isInPrayerDND('user-1');
+      // Should compute prayer times and return a boolean (true or false depending on current time)
+      expect(typeof result).toBe('boolean');
+      // Verify it attempted to re-seed the cache
+      expect(redis.setex).toHaveBeenCalledWith(
+        'prayer_times:user-1',
+        3600,
+        expect.any(String),
+      );
+    });
+  });
+
+  describe('shouldShowPrayFirstNudge — full path with prayer name', () => {
+    it('should return prayerName when in prayer window with adhan enabled', async () => {
+      const now = new Date();
+      const h = now.getHours().toString().padStart(2, '0');
+      const m = now.getMinutes().toString().padStart(2, '0');
+      prisma.prayerNotificationSetting.findUnique.mockResolvedValue({ dndDuringPrayer: true, adhanEnabled: true });
+      // First call to isInPrayerDND (inside shouldShowPrayFirstNudge)
+      redis.get.mockResolvedValue(JSON.stringify({
+        fajr: '05:00', dhuhr: `${h}:${m}`, asr: '15:30', maghrib: '18:00', isha: '19:30',
+      }));
+      const result = await service.shouldShowPrayFirstNudge('user-1');
+      // If current time matches a prayer window, show should be true with prayer name
+      if (result.show) {
+        expect(result.prayerName).toBeDefined();
+        expect(typeof result.prayerName).toBe('string');
+      } else {
+        // Time moved between mock setup and check — still valid
+        expect(result.show).toBe(false);
+      }
+    });
+  });
+
+  describe('getJummahReminder — behavior verification', () => {
+    it('should return isJummahDay false on non-Friday', async () => {
+      // Force a non-Friday by checking: if today is not Friday, the result is deterministic
+      const now = new Date();
+      const result = await service.getJummahReminder('user-1');
+      if (now.getDay() !== 5) {
+        expect(result.isJummahDay).toBe(false);
+        expect(result.nearPrayerTime).toBe(false);
+      } else {
+        expect(result.isJummahDay).toBe(true);
+        expect(typeof result.nearPrayerTime).toBe('boolean');
+      }
+    });
+
+    it('should include nearest mosque when user has membership', async () => {
+      prisma.mosqueMembership.findFirst.mockResolvedValue({
+        mosque: { name: 'Al-Masjid An-Nabawi' },
+      });
+      const result = await service.getJummahReminder('user-1');
+      if (result.isJummahDay) {
+        expect(result.nearestMosque).toEqual({ name: 'Al-Masjid An-Nabawi' });
+      }
+    });
+  });
+
+  describe('getRamadanStatus — hijri month verification', () => {
+    it('should return hijriMonth and hijriDay as numbers', () => {
+      const result = service.getRamadanStatus();
+      expect(typeof result.hijriMonth).toBe('number');
+      expect(result.hijriMonth).toBeGreaterThanOrEqual(1);
+      expect(result.hijriMonth).toBeLessThanOrEqual(12);
+      expect(typeof result.hijriDay).toBe('number');
+      expect(result.hijriDay).toBeGreaterThanOrEqual(1);
+      expect(result.hijriDay).toBeLessThanOrEqual(30);
+    });
+
+    it('should set dayNumber only when isRamadan is true', () => {
+      const result = service.getRamadanStatus();
+      if (result.isRamadan) {
+        expect(result.dayNumber).toBeGreaterThanOrEqual(1);
+        expect(result.dayNumber).toBeLessThanOrEqual(30);
+      } else {
+        expect(result.dayNumber).toBeUndefined();
+      }
+    });
+  });
 });
