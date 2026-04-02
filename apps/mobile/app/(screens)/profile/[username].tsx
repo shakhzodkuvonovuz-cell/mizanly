@@ -612,6 +612,7 @@ export default function ProfileScreen() {
                   const convo = await messagesApi.createDM(profile.id);
                   router.push(`/(screens)/conversation/${convo.id}`);
                 } catch {
+                  showToast({ message: t('common.error'), variant: 'error' });
                   router.push('/(screens)/new-conversation');
                 }
               }}

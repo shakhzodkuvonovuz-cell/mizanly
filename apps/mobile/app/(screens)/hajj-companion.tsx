@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, ScrollView, Share,
+  View, Text, StyleSheet, Pressable, ScrollView, Share, Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -357,7 +357,17 @@ function HajjCompanionContent() {
         <BottomSheetItem
           label={t('hajj.reset')}
           icon={<Icon name="trash" size="sm" color={colors.error} />}
-          onPress={() => resetMutation.mutate()}
+          onPress={() => {
+            haptic.delete();
+            Alert.alert(
+              t('hajj.resetConfirmTitle', { defaultValue: 'Reset Progress?' }),
+              t('hajj.resetConfirmMessage', { defaultValue: 'This will erase all your Hajj progress. This cannot be undone.' }),
+              [
+                { text: t('common.cancel'), style: 'cancel' },
+                { text: t('hajj.reset'), style: 'destructive', onPress: () => resetMutation.mutate() },
+              ],
+            );
+          }}
           destructive
         />
         <BottomSheetItem

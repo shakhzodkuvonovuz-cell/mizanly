@@ -6,6 +6,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -143,6 +144,7 @@ export default function QuietModeScreen() {
           contentContainerStyle={[styles.bodyContent, { paddingTop: insets.top + 60 }]}
         >
           {/* Hero Icon Card */}
+          <Animated.View entering={FadeInUp.delay(50).duration(400)}>
           <LinearGradient
             colors={['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']}
             start={{ x: 0, y: 0 }}
@@ -159,6 +161,7 @@ export default function QuietModeScreen() {
               {t('quietMode.settingsHint')}
             </Text>
           </LinearGradient>
+          </Animated.View>
 
           {/* Main Toggle */}
           <LinearGradient

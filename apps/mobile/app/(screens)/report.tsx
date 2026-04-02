@@ -104,6 +104,11 @@ export default function ReportScreen() {
   });
 
   const handleSubmit = () => {
+    if (!selectedReason) {
+      haptic.error();
+      showToast({ message: t('screens.report.selectReason', { defaultValue: 'Please select a reason' }), variant: 'error' });
+      return;
+    }
     haptic.send();
     reportMutation.mutate();
   };
@@ -143,7 +148,7 @@ export default function ReportScreen() {
               >
                 <Pressable
                   style={[styles.reasonItem, selectedReason === reason.value && styles.reasonItemSelected]}
-                  onPress={() => setSelectedReason(reason.value)}
+                  onPress={() => { haptic.tick(); setSelectedReason(reason.value); }}
                   accessibilityLabel={t(reason.labelKey)}
                   accessibilityRole="radio"
                   accessibilityState={{ selected: selectedReason === reason.value }}

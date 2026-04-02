@@ -113,6 +113,10 @@ describe('hajj-companion', () => {
     expect(src).not.toContain('left: 23');
   });
 
+  test('reset has double-confirmation with Alert.alert', () => {
+    expect(src).toContain('Alert.alert');
+    expect(src).toContain('resetConfirmTitle');
+  });
 });
 
 // ── D19: hajj-step.tsx ──
@@ -233,6 +237,11 @@ describe('profile/[username]', () => {
   test('highlight press error shows toast', () => {
     expect(src).not.toContain('silently ignore');
   });
+
+  test('createDM catch shows error toast', () => {
+    const dmSection = src.slice(src.indexOf('messagesApi.createDM'));
+    expect(dmSection).toContain('showToast');
+  });
 });
 
 // ── D28: profile-customization.tsx ──
@@ -332,6 +341,11 @@ describe('quiet-mode', () => {
     expect(styles).not.toContain('colors.text.primary');
     expect(styles).toContain('tc.text.primary');
   });
+
+  test('has entrance animations', () => {
+    expect(src).toContain('FadeInUp');
+    expect(src).toContain('Animated');
+  });
 });
 
 // ── D29: quran-reading-plan.tsx ──
@@ -427,6 +441,10 @@ describe('ramadan-mode', () => {
     expect(src).toContain('prayerTimesQuery.data');
     expect(src).toMatch(/schedule.*useMemo/s);
     expect(src).toContain('schedule.map');
+  });
+
+  test('no dead handleDhikrPress function', () => {
+    expect(src).not.toContain('handleDhikrPress');
   });
 });
 
@@ -525,5 +543,14 @@ describe('report', () => {
 
   test('submit has haptic', () => {
     expect(src).toContain('haptic.send()');
+  });
+
+  test('disabled submit shows error toast', () => {
+    expect(src).toContain('selectReason');
+    expect(src).toMatch(/!selectedReason.*haptic\.error/s);
+  });
+
+  test('reason selection has haptic', () => {
+    expect(src).toContain('haptic.tick(); setSelectedReason');
   });
 });

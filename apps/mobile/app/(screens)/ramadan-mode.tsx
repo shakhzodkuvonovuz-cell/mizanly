@@ -348,11 +348,6 @@ export default function RamadanModeScreen() {
     });
   }, [haptic, t]);
 
-  const handleDhikrPress = useCallback(() => {
-    haptic.tick();
-    navigate('/(screens)/dhikr-counter');
-  }, [haptic]);
-
   // Generate 30-day grid from API data
   const fastingGrid = useMemo(() => {
     return Array.from({ length: totalDays }, (_, i) => ({

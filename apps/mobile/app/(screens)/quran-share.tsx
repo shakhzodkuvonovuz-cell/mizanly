@@ -100,9 +100,8 @@ export default function QuranShareScreen() {
   const verseText = verseData?.arabic ?? '';
   const translationText = verseData?.translation ?? '';
 
-  const handleRefresh = useCallback(() => {
-    refetchSurahs();
-    refetchVerse();
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([refetchSurahs(), refetchVerse()]);
   }, [refetchSurahs, refetchVerse]);
 
   const handlePrevVerse = useCallback(() => {
