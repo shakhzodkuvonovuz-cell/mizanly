@@ -2,7 +2,7 @@
 module.exports = {
   testEnvironment: 'node',
   rootDir: '../../..',
-  testMatch: ['<rootDir>/src/hooks/__tests__/**/*.test.ts', '<rootDir>/src/services/__tests__/callkit.test.ts'],
+  testMatch: ['<rootDir>/src/hooks/__tests__/**/*.test.ts', '<rootDir>/src/services/__tests__/callkit.test.ts', '<rootDir>/src/services/__tests__/r4e-t2-screens.test.ts'],
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
       tsconfig: {
