@@ -30,7 +30,7 @@ import { ReactionPicker, type ReactionType } from '@/components/ui/ReactionPicke
 import { MentionAutocomplete } from '@/components/ui/MentionAutocomplete';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { postsApi } from '@/services/api';
 import { communityNotesApi } from '@/services/communityNotesApi';
 import type { Comment } from '@/types';
@@ -105,12 +105,16 @@ function CommentRow({
         ? postsApi.unlikeComment(postId, comment.id)
         : postsApi.likeComment(postId, comment.id),
     onMutate: () => {
-      setLocalLiked((p: boolean) => !p);
-      setLocalLikes((p: number) => (localLiked ? p - 1 : p + 1));
+      setLocalLiked((wasLiked: boolean) => {
+        setLocalLikes((count: number) => wasLiked ? count - 1 : count + 1);
+        return !wasLiked;
+      });
     },
     onError: () => {
-      setLocalLiked((p: boolean) => !p);
-      setLocalLikes((p: number) => (localLiked ? p + 1 : p - 1));
+      setLocalLiked((wasLiked: boolean) => {
+        setLocalLikes((count: number) => wasLiked ? count + 1 : count - 1);
+        return !wasLiked;
+      });
     },
   });
 
@@ -151,10 +155,10 @@ function CommentRow({
     ]);
   };
 
-  const handleCommentReaction = useCallback((type: ReactionType) => {
+  const handleCommentReaction = useCallback((_type: ReactionType) => {
     // TODO: Wire to postsApi.reactToComment(postId, comment.id, type) when backend supports multiple reaction types
     setShowReactions(false);
-  }, []);
+  }, [postId, comment.id]);
 
   const handleLongPress = useCallback(() => {
     if (!viewerId) return;
@@ -235,10 +239,10 @@ function CommentRow({
         {((comment as unknown as Record<string, unknown>).repliesCount as number) > 0 ? (
           <Pressable
             onPress={() => onReply(comment.id, comment.user.username)}
-            style={{ paddingStart: 40, paddingVertical: 4 }}
+            style={{ paddingStart: spacing['2xl'], paddingVertical: spacing.xs }}
           >
-            <Text style={{ color: colors.emerald, fontSize: 12, fontFamily: 'DMSans_500Medium' }}>
-              {(t as (k: string, o?: Record<string, unknown>) => string)('saf.viewReplies', { count: (comment as unknown as Record<string, unknown>).repliesCount as number })}
+            <Text style={{ color: colors.emerald, fontSize: fontSize.xs, fontFamily: fonts.bodyMedium }}>
+              {t('saf.viewReplies', { count: (comment as unknown as Record<string, unknown>).repliesCount as number })}
             </Text>
           </Pressable>
         ) : null}
@@ -254,7 +258,7 @@ function CommentRow({
       </View>
       {!editing && (
         <Pressable
-          onPress={() => { viewerId && likeMutation.mutate(); haptic.like(); }}
+          onPress={() => { if (!viewerId) return; likeMutation.mutate(); haptic.like(); }}
           disabled={!viewerId}
           hitSlop={8}
           style={styles.commentLike}
@@ -481,6 +485,7 @@ export default function PostDetailScreen() {
     queryKey: ['post', id],
     queryFn: () => postsApi.getById(id),
     enabled: !!id,
+    staleTime: 30_000,
   });
 
   const commentsQuery = useInfiniteQuery({
@@ -491,6 +496,7 @@ export default function PostDetailScreen() {
     getNextPageParam: (last) =>
       last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
     enabled: !!id,
+    staleTime: 30_000,
   });
 
   const rawComments: Comment[] = commentsQuery.data?.pages.flatMap((p) => p.data) ?? [];
@@ -868,13 +874,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   listenText: {
     color: colors.emerald,
     fontSize: fontSize.sm,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   commentsHeader: {
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
     borderTopWidth: 0.5, borderTopColor: tc.border,
   },
-  commentsTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
+  commentsTitle: { color: tc.text.primary, fontSize: fontSize.base, fontFamily: fonts.bodyBold },
   sortRow: {
     flexDirection: 'row' as const,
     gap: spacing.xs,
@@ -890,9 +896,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: colors.active.emerald10,
   },
   sortButtonText: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
-    fontWeight: '600' as const,
+    fontFamily: fonts.bodySemiBold,
   },
   sortButtonTextActive: {
     color: colors.emerald,
@@ -922,13 +928,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   commentBubbleOP: {},
   commentBubbleDefault: {},
-  commentUser: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '700', marginBottom: 2 },
-  commentText: { color: colors.text.primary, fontSize: fontSize.sm, lineHeight: 19 },
+  commentUser: { color: tc.text.primary, fontSize: fontSize.sm, fontFamily: fonts.bodyBold, marginBottom: 2 },
+  commentText: { color: tc.text.primary, fontSize: fontSize.sm, lineHeight: 19 },
   commentEditInput: { borderBottomWidth: 0.5, borderBottomColor: colors.emerald, paddingBottom: 2 },
   commentMeta: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.xs, paddingHorizontal: spacing.xs },
-  commentTime: { color: colors.text.tertiary, fontSize: fontSize.xs },
-  commentLikesLabel: { color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '600' },
-  commentAction: { color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '700' },
+  commentTime: { color: tc.text.tertiary, fontSize: fontSize.xs },
+  commentLikesLabel: { color: tc.text.secondary, fontSize: fontSize.xs, fontFamily: fonts.bodySemiBold },
+  commentAction: { color: tc.text.secondary, fontSize: fontSize.xs, fontFamily: fonts.bodyBold },
   commentActionDestructive: { color: colors.error, fontSize: fontSize.xs, fontWeight: '700' },
   commentLike: { paddingTop: spacing.xs },
   reactionPickerWrap: {
@@ -944,14 +950,14 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingHorizontal: spacing.base, paddingVertical: spacing.xs,
     backgroundColor: tc.bgElevated,
   },
-  replyBannerText: { color: colors.text.secondary, fontSize: fontSize.xs },
+  replyBannerText: { color: tc.text.secondary, fontSize: fontSize.xs },
   replyClose: { color: colors.text.secondary, fontSize: fontSize.sm },
   inputRow: {
     flexDirection: 'row', alignItems: 'flex-end',
     paddingHorizontal: spacing.base, paddingTop: spacing.sm, gap: spacing.sm,
   },
   input: {
-    flex: 1, color: colors.text.primary, fontSize: fontSize.base,
+    flex: 1, color: tc.text.primary, fontSize: fontSize.base,
     maxHeight: 100, paddingVertical: 6,
   },
   sendButton: {

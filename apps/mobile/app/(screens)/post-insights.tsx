@@ -16,11 +16,13 @@ import { Icon } from '@/components/ui/Icon';
 import type { IconName } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { formatCount } from '@/utils/formatCount';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { rtlFlexRow } from '@/utils/rtl';
 import { creatorApi } from '@/services/creatorApi';
 import { postsApi } from '@/services/api';
 import type { Post } from '@/types';
@@ -60,7 +62,7 @@ function PostInsightsContent() {
   const styles = createStyles(tc);
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const params = useLocalSearchParams<{ postId: string; postType: string }>();
 
   const [loading, setLoading] = useState(true);
@@ -125,6 +127,7 @@ function PostInsightsContent() {
       }
     } catch {
       setInsights(null);
+      showToast({ message: t('common.somethingWentWrong', 'Something went wrong'), variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -156,7 +159,7 @@ function PostInsightsContent() {
       <View style={[styles.screen, { paddingTop: insets.top + 60 }]}>
         <GlassHeader
           title={t('postInsights.title', 'Insights')}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back', 'Back') }}
         />
         <View style={styles.skeletonContainer}>
           <Skeleton.Rect width="100%" height={100} borderRadius={radius.md} />
@@ -181,7 +184,7 @@ function PostInsightsContent() {
     <View style={styles.screen} accessibilityLabel={t('postInsights.title', 'Insights')}>
       <GlassHeader
         title={t('postInsights.title', 'Insights')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back', 'Back') }}
       />
       <ScrollView
         contentContainerStyle={{
@@ -233,7 +236,7 @@ function PostInsightsContent() {
 
         {/* Engagement Row */}
         {insights ? (
-          <Animated.View entering={FadeInDown.delay(100).duration(300)} style={styles.engagementRow}>
+          <Animated.View entering={FadeInDown.delay(100).duration(300)} style={[styles.engagementRow, { flexDirection: rtlFlexRow(isRTL) }]}>
             {engagementMetrics.map((metric, index) => (
               <Animated.View
                 key={metric.label}
@@ -433,7 +436,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   postContentPreview: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     lineHeight: 20,
   },
   engagementRow: {
@@ -456,12 +459,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   engagementValue: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.md,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   engagementLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   card: {
     backgroundColor: tc.bgCard,
@@ -480,7 +483,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   cardTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   reachGrid: {
     flexDirection: 'row',
@@ -496,17 +499,17 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   reachValue: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.lg,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   reachLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   discoverySubtitle: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     marginBottom: spacing.md,
   },
   discoveryRow: {
@@ -523,7 +526,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   discoveryLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     width: 70,
   },
   discoveryBarTrack: {
@@ -540,7 +543,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   discoveryPercent: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     width: 32,
     textAlign: 'right',
   },
@@ -555,12 +558,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   interactionLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.base,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     flex: 1,
   },
   interactionValue: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
 });

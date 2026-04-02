@@ -124,8 +124,9 @@ export default function PlaylistDetailScreen() {
           haptic.navigate();
           router.push(`/(screens)/video/${item.video.id}`);
         }}
-        accessibilityLabel={`Watch video: ${item.video.title}`}
+        accessibilityLabel={t('accessibility.watchVideo', { title: item.video.title })}
         accessibilityRole="button"
+        style={({ pressed }) => pressed && { opacity: 0.7 }}
       >
         <LinearGradient
           colors={colors.gradient.cardDark}
@@ -318,7 +319,7 @@ export default function PlaylistDetailScreen() {
             refreshControl={
               <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
-            contentContainerStyle={[styles.list, { paddingTop: insets.top + 56 }]}
+            contentContainerStyle={[styles.list, { paddingTop: insets.top + 56, paddingBottom: insets.bottom + spacing.xl }]}
           />
         )}
       </View>
