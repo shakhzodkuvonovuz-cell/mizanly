@@ -20,6 +20,7 @@ import { bookmarksApi } from '@/services/api';
 import type { BookmarkCollection } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 
 const SCREEN_W = Dimensions.get('window').width;
 const FOLDER_CARD_WIDTH = (SCREEN_W - spacing.base * 2 - spacing.sm) / 2;
@@ -27,7 +28,7 @@ const FOLDER_CARD_WIDTH = (SCREEN_W - spacing.base * 2 - spacing.sm) / 2;
 type Folder = {
   id: string;
   name: string;
-  itemIds: string[];
+  count: number;
 };
 
 type FolderCardProps = {
@@ -37,12 +38,17 @@ type FolderCardProps = {
 };
 
 function FolderCard({ folder, onPress, onLongPress }: FolderCardProps) {
-  const itemCount = folder.itemIds.length;
+  const itemCount = folder.count;
   const { t } = useTranslation();
   const tc = useThemeColors();
   // For now, no cover thumbnail; we could later fetch first item's image
   return (
-    <Pressable onPress={onPress} onLongPress={onLongPress} style={[styles.folderCard, { backgroundColor: tc.bgCard }]}>
+    <Pressable
+      onPress={onPress}
+      onLongPress={onLongPress}
+      style={({ pressed }) => [styles.folderCard, { backgroundColor: tc.bgCard }, pressed && { opacity: 0.7 }]}
+      android_ripple={{ color: 'rgba(255,255,255,0.1)' }}
+    >
       <View style={[styles.folderIcon, { backgroundColor: tc.bgElevated }]}>
         <Icon name="bookmark" size="xl" color={colors.gold} />
       </View>
@@ -59,6 +65,7 @@ export default function BookmarkFoldersScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const tc = useThemeColors();
+  const haptic = useContextualHaptic();
   // Collections are now fetched from API via collectionsQuery
   const [refreshing, setRefreshing] = useState(false);
   const [createSheetVisible, setCreateSheetVisible] = useState(false);
@@ -67,6 +74,7 @@ export default function BookmarkFoldersScreen() {
   const collectionsQuery = useQuery({
     queryKey: ['bookmark-collections'],
     queryFn: () => bookmarksApi.getCollections(),
+    staleTime: 30_000,
   });
 
   const collections: BookmarkCollection[] = (collectionsQuery.data ?? []) as BookmarkCollection[];
@@ -75,7 +83,7 @@ export default function BookmarkFoldersScreen() {
   const foldersArray: Folder[] = collections.map((c) => ({
     id: c.name,
     name: c.name,
-    itemIds: Array.from({ length: c.count }, (_, j) => String(j)),
+    count: c.count,
   }));
 
   const onRefresh = useCallback(() => {
@@ -86,18 +94,21 @@ export default function BookmarkFoldersScreen() {
   const handleCreateFolder = useCallback(async () => {
     const trimmed = newFolderName.trim();
     if (!trimmed) {
+      haptic.error();
       showToast({ message: t('screens.bookmarkFolders.emptyNameError'), variant: 'error' });
       return;
     }
+    haptic.success();
     // Collections are implicit in the backend (created when first bookmark is saved to them).
     // Inform the user the folder name is ready — it will appear when they save a bookmark to it.
     showToast({ message: t('screens.bookmarkFolders.collectionCreatedHint'), variant: 'success' });
     setNewFolderName('');
     setCreateSheetVisible(false);
     collectionsQuery.refetch();
-  }, [newFolderName, collectionsQuery, t]);
+  }, [newFolderName, collectionsQuery, t, haptic]);
 
   const handleDeleteFolder = useCallback(async (folderName: string) => {
+    haptic.delete();
     Alert.alert(
       t('screens.bookmarkFolders.deleteAlertTitle'),
       t('screens.bookmarkFolders.deleteAlertMessage'),
@@ -125,11 +136,29 @@ export default function BookmarkFoldersScreen() {
         },
       ]
     );
-  }, [collectionsQuery, t]);
+  }, [collectionsQuery, t, haptic]);
 
   const handleFolderPress = useCallback((collectionName: string) => {
+    haptic.navigate();
     router.push(`/(screens)/saved?collection=${encodeURIComponent(collectionName)}`);
-  }, [router]);
+  }, [router, haptic]);
+
+  if (collectionsQuery.isError) {
+    return (
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
+        <GlassHeader title={t('screens.bookmarkFolders.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} />
+        <View style={{ paddingTop: insets.top + 52 }}>
+          <EmptyState
+            icon="bookmark"
+            title={t('screens.bookmarkFolders.errorTitle')}
+            subtitle={t('screens.bookmarkFolders.errorSubtitle')}
+            actionLabel={t('common.retry')}
+            onAction={() => collectionsQuery.refetch()}
+          />
+        </View>
+      </View>
+    );
+  }
 
   if (loading) {
     return (
@@ -182,12 +211,12 @@ export default function BookmarkFoldersScreen() {
         {/* FAB */}
         <Pressable
           accessibilityRole="button"
-          style={styles.fab}
-          onPress={() => setCreateSheetVisible(true)}
+          style={({ pressed }) => [styles.fab, pressed && { opacity: 0.8 }]}
+          onPress={() => { haptic.tick(); setCreateSheetVisible(true); }}
           hitSlop={8}
           accessibilityLabel={t('screens.bookmarkFolders.createFolderLabel')}
         >
-          <Icon name="plus" size="lg" color="#fff" />
+          <Icon name="plus" size="lg" color={tc.text.primary} />
         </Pressable>
 
         {/* Create Folder BottomSheet */}
@@ -203,11 +232,15 @@ export default function BookmarkFoldersScreen() {
               autoFocus
             />
             <View style={styles.sheetButtons}>
-              <Pressable style={styles.cancelBtn} onPress={() => setCreateSheetVisible(false)}>
+              <Pressable style={({ pressed }) => [styles.cancelBtn, pressed && { opacity: 0.7 }]} onPress={() => setCreateSheetVisible(false)}>
                 <Text style={[styles.cancelText, { color: tc.text.secondary }]}>{t('common.cancel')}</Text>
               </Pressable>
-              <Pressable style={styles.createBtn} onPress={handleCreateFolder}>
-                <Text style={styles.createText}>{t('screens.bookmarkFolders.createButton')}</Text>
+              <Pressable
+                style={({ pressed }) => [styles.createBtn, pressed && { opacity: 0.8 }, !newFolderName.trim() && { opacity: 0.4 }]}
+                onPress={handleCreateFolder}
+                disabled={!newFolderName.trim()}
+              >
+                <Text style={[styles.createText, { color: tc.text.primary }]}>{t('screens.bookmarkFolders.createButton')}</Text>
               </Pressable>
             </View>
           </View>
@@ -219,13 +252,12 @@ export default function BookmarkFoldersScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
 
   gridContainer: { paddingBottom: 100 },
   gridRow: { paddingHorizontal: spacing.base, gap: spacing.sm, marginBottom: spacing.sm },
   folderCard: {
     width: FOLDER_CARD_WIDTH,
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.md,
     padding: spacing.md,
     alignItems: 'center',
@@ -235,19 +267,16 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.bgElevated,
     alignItems: 'center',
     justifyContent: 'center',
   },
   folderName: {
-    color: colors.text.primary,
     fontSize: fontSize.base,
     fontWeight: '600',
     textAlign: 'center',
     width: '100%',
   },
   folderCount: {
-    color: colors.text.tertiary,
     fontSize: fontSize.sm,
   },
   skeletonGrid: {
@@ -277,20 +306,16 @@ const styles = StyleSheet.create({
 
   sheetContent: { padding: spacing.xl },
   sheetTitle: {
-    color: colors.text.primary,
     fontSize: fontSize.lg,
     fontWeight: '600',
     marginBottom: spacing.md,
   },
   input: {
-    backgroundColor: colors.dark.bgElevated,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    color: colors.text.primary,
     fontSize: fontSize.base,
     borderWidth: 1,
-    borderColor: colors.dark.border,
     marginBottom: spacing.lg,
   },
   sheetButtons: {
@@ -303,7 +328,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   cancelText: {
-    color: colors.text.secondary,
     fontSize: fontSize.base,
     fontWeight: '500',
   },
@@ -314,7 +338,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   createText: {
-    color: '#fff',
     fontSize: fontSize.base,
     fontWeight: '600',
   },

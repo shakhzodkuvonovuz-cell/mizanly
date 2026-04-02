@@ -19,6 +19,7 @@ import { blocksApi } from '@/services/api';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 
 interface BlockedUser {
   id: string;
@@ -40,6 +41,7 @@ export default function BlockedScreen() {
   const tc = useThemeColors();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const haptic = useContextualHaptic();
 
   const query = useInfiniteQuery({
     queryKey: ['blocked'],
@@ -52,8 +54,15 @@ export default function BlockedScreen() {
 
   const unblockMutation = useMutation({
     mutationFn: (userId: string) => blocksApi.unblock(userId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['blocked'] }),
-    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
+    onSuccess: () => {
+      haptic.success();
+      showToast({ message: t('screens.blocked.unblockSuccess'), variant: 'success' });
+      queryClient.invalidateQueries({ queryKey: ['blocked'] });
+    },
+    onError: (err: Error) => {
+      haptic.error();
+      showToast({ message: err.message, variant: 'error' });
+    },
   });
 
   const [refreshing, setRefreshing] = useState(false);
@@ -64,6 +73,7 @@ export default function BlockedScreen() {
   };
 
   const confirmUnblock = (item: BlockedUser) => {
+    haptic.delete();
     Alert.alert(
       t('screens.blocked.unblockAlertTitle', { username: item.blocked.username }),
       t('screens.blocked.unblockAlertMessage'),
@@ -103,7 +113,7 @@ export default function BlockedScreen() {
       {query.isLoading ? (
         <View style={styles.skeletonList}>
           {Array.from({ length: 6 }).map((_, i) => (
-            <View key={i} style={[styles.skeletonRow, { backgroundColor: tc.bgCard }]}>
+            <View key={i} style={[styles.skeletonRow, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
               <Skeleton.Circle size={46} />
               <View style={{ flex: 1, gap: spacing.sm }}>
                 <Skeleton.Rect width={120} height={14} />
@@ -128,7 +138,7 @@ export default function BlockedScreen() {
           renderItem={({ item, index }) => {
             const u = item.blocked;
             return (
-                <Animated.View entering={FadeInUp.delay(index * 30).duration(300)}>
+                <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 30).duration(300)}>
                   <LinearGradient
                     colors={['rgba(248,81,73,0.08)', 'rgba(248,81,73,0.02)']}
                     style={styles.row}
@@ -158,7 +168,7 @@ export default function BlockedScreen() {
           }}
           ListFooterComponent={() =>
             query.isFetchingNextPage ? (
-              <View style={[styles.skeletonRow, { backgroundColor: tc.bgCard }]}>
+              <View style={[styles.skeletonRow, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
                 <Skeleton.Circle size={46} />
                 <View style={{ flex: 1, gap: spacing.sm }}>
                   <Skeleton.Rect width={120} height={14} />
@@ -182,16 +192,14 @@ export default function BlockedScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
-  list: { padding: spacing.base, gap: spacing.sm, paddingBottom: 40 },
+  container: { flex: 1 },
+  list: { padding: spacing.base, gap: spacing.sm, paddingBottom: spacing['2xl'] },
   skeletonList: { padding: spacing.base, gap: spacing.md },
   skeletonRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
     padding: spacing.md,
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     borderWidth: 0.5,
-    borderColor: colors.active.white6,
   },
 
   row: {
@@ -203,12 +211,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   info: { flex: 1 },
-  name: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
+  name: { fontSize: fontSize.base, fontWeight: '600' },
   blockedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    marginTop: 2,
   },
-  username: { color: colors.text.secondary, fontSize: fontSize.sm },
+  username: { fontSize: fontSize.sm },
 });

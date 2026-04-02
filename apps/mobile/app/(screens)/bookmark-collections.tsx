@@ -34,6 +34,7 @@ export default function BookmarkCollectionsScreen() {
   const { data: collections, isLoading, isError, refetch } = useQuery({
     queryKey: ['bookmark-collections'],
     queryFn: () => bookmarksApi.getCollections(),
+    staleTime: 30_000,
   });
 
   const onRefresh = useCallback(async () => {
@@ -47,7 +48,8 @@ export default function BookmarkCollectionsScreen() {
     <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
       <Pressable
         accessibilityRole="button"
-        style={styles.card}
+        style={({ pressed }) => [styles.card, pressed && { opacity: 0.7 }]}
+        android_ripple={{ color: 'rgba(255,255,255,0.1)' }}
         onPress={() => {
           haptic.navigate();
           navigate('/(screens)/saved', { collection: item.name });
@@ -61,7 +63,7 @@ export default function BookmarkCollectionsScreen() {
             {item.thumbnailUrl ? (
               <ProgressiveImage uri={item.thumbnailUrl} width="100%" height={200} />
             ) : (
-              <View style={[styles.cover, styles.placeholderCover]}>
+              <View style={[styles.cover, styles.placeholderCover, { backgroundColor: tc.bgElevated }]}>
                 <LinearGradient
                   colors={['rgba(10,123,79,0.15)', 'rgba(200,150,62,0.1)']}
                   style={styles.placeholderGradient}
@@ -81,7 +83,7 @@ export default function BookmarkCollectionsScreen() {
         </LinearGradient>
       </Pressable>
     </Animated.View>
-  ), [haptic, tc.bgElevated, t]);
+  ), [haptic, tc.text.primary, tc.text.secondary, tc.text.tertiary, t]);
 
   if (isError) {
     return (
@@ -113,7 +115,7 @@ export default function BookmarkCollectionsScreen() {
         <View style={{ height: insets.top + 52 }} />
         <View style={{ padding: spacing.base, flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md }}>
           {[1, 2].map((_, i) => (
-            <View key={i} style={[styles.skeletonCard, { width: itemWidth }]}>
+            <View key={i} style={[styles.skeletonCard, { width: itemWidth, backgroundColor: tc.bgCard, borderColor: tc.border }]}>
               <Skeleton.Rect width="100%" height={itemWidth} borderRadius={radius.md} />
               <View style={{ padding: spacing.sm, gap: spacing.xs, marginTop: spacing.xs }}>
                 <Skeleton.Rect width="70%" height={14} borderRadius={radius.sm} />
@@ -164,7 +166,6 @@ export default function BookmarkCollectionsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg
   },
   listContent: {
     paddingHorizontal: spacing.base,
@@ -179,11 +180,9 @@ const styles = StyleSheet.create({
     marginTop: spacing['2xl'],
   },
   skeletonCard: {
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     padding: spacing.sm,
     borderWidth: 0.5,
-    borderColor: colors.active.white6,
   },
   card: {
     flex: 1,
@@ -207,7 +206,6 @@ const styles = StyleSheet.create({
   cover: {
     width: '100%',
     height: '100%',
-    backgroundColor: colors.dark.bgElevated,
   },
   placeholderCover: {
     justifyContent: 'center',
@@ -221,21 +219,18 @@ const styles = StyleSheet.create({
   },
   info: {
     padding: spacing.sm,
-    gap: 2,
+    gap: spacing.xs,
   },
   name: {
     fontSize: fontSize.base,
     fontWeight: '600',
-    color: colors.text.primary,
   },
   countBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    marginTop: 2,
   },
   count: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
   },
 });
