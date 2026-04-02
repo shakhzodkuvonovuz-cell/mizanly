@@ -546,7 +546,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     borderWidth: 1,
     borderRadius: radius.sm,
-    backgroundColor: colors.dark.surface,
   },
   multiline: { minHeight: 80, textAlignVertical: 'top' },
   charCountWrap: { alignItems: 'flex-end', marginTop: spacing.xs },

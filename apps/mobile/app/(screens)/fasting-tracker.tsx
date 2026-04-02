@@ -341,12 +341,11 @@ export default function FastingTrackerScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
   scrollContent: { paddingBottom: spacing['2xl'] },
   todayCard: {
     margin: spacing.base,
     padding: spacing.lg,
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.gold,
@@ -370,7 +369,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   todayBtnYes: { backgroundColor: colors.emerald },
-  todayBtnNo: { backgroundColor: colors.dark.surface },
+  todayBtnNo: {},
   todayBtnText: { color: '#fff', fontFamily: fonts.bold, fontSize: fontSize.sm },
   todayBtnTextNo: { fontFamily: fonts.semibold, fontSize: fontSize.sm },
   todayStatusText: {
@@ -387,7 +386,6 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.md,
     padding: spacing.md,
     alignItems: 'center',
@@ -404,7 +402,6 @@ const styles = StyleSheet.create({
   },
   calendarSection: {
     marginHorizontal: spacing.base,
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     padding: spacing.base,
     marginBottom: spacing.base,
@@ -451,7 +448,6 @@ const styles = StyleSheet.create({
   },
   sunnahSection: {
     marginHorizontal: spacing.base,
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     padding: spacing.base,
   },
@@ -467,7 +463,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   sunnahText: {
-    color: colors.text.secondary,
     fontSize: fontSize.sm,
   },
 });

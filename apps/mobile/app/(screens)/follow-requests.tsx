@@ -209,7 +209,7 @@ export default function FollowRequestsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
 
   list: { paddingBottom: 40, paddingHorizontal: spacing.base },
   skeletonList: { padding: spacing.base, gap: spacing.md },
@@ -227,9 +227,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   info: { flex: 1 },
-  name: { color: colors.text.primary, fontSize: fontSize.sm, fontFamily: fonts.bold },
-  username: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 1 },
-  bio: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 3 },
+  name: { fontSize: fontSize.sm, fontFamily: fonts.bold },
+  username: { fontSize: fontSize.xs, marginTop: 1 },
+  bio: { fontSize: fontSize.xs, marginTop: 3 },
 
   actions: { alignItems: 'center', gap: spacing.xs },
   acceptBtn: {

@@ -341,7 +341,6 @@ export default function LocationPickerScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   flex: {
     flex: 1,
@@ -356,10 +355,8 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.md,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.dark.border,
     paddingHorizontal: spacing.md,
     height: 44,
     gap: spacing.sm,
@@ -368,7 +365,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: fonts.body,
     fontSize: fontSize.base,
-    color: colors.text.primary,
     paddingVertical: 0,
   },
   section: {
@@ -378,16 +374,13 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: spacing.md,
   },
   locationCard: {
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.dark.border,
     padding: spacing.base,
     overflow: 'hidden',
   },
@@ -402,7 +395,6 @@ const styles = StyleSheet.create({
   },
   mapPlaceholder: {
     height: 120,
-    backgroundColor: colors.dark.surface,
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
@@ -412,7 +404,6 @@ const styles = StyleSheet.create({
   mapLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
   },
   coordsRow: {
     flexDirection: 'row',
@@ -422,7 +413,6 @@ const styles = StyleSheet.create({
   coordLabel: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
     marginEnd: spacing.xs,
   },
   coordLabelRight: {
@@ -431,12 +421,10 @@ const styles = StyleSheet.create({
   coordValue: {
     fontFamily: fonts.mono,
     fontSize: fontSize.sm,
-    color: colors.text.primary,
   },
   addressText: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
     lineHeight: 20,
   },
   emptyMap: {
@@ -448,7 +436,6 @@ const styles = StyleSheet.create({
   emptyMapText: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.tertiary,
   },
   coordInputRow: {
     flexDirection: 'row',
@@ -461,19 +448,15 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
     marginBottom: spacing.xs,
   },
   coordInput: {
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.md,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.dark.border,
     paddingHorizontal: spacing.md,
     height: 44,
     fontFamily: fonts.mono,
     fontSize: fontSize.base,
-    color: colors.text.primary,
   },
   applyButton: {
     flexDirection: 'row',
@@ -491,7 +474,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.dark.border,
-    backgroundColor: colors.dark.bgElevated,
   },
 });

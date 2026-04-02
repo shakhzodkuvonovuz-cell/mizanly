@@ -548,7 +548,6 @@ export default function EventDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   shareButton: {
     padding: spacing.sm,

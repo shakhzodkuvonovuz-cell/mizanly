@@ -238,12 +238,10 @@ export default function ManageBroadcastScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg
   },
   tabsWrap: {
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
-    backgroundColor: colors.dark.bg,
     zIndex: 1,
   },
   listContent: {
@@ -280,11 +278,9 @@ const styles = StyleSheet.create({
   name: {
     fontSize: fontSize.base,
     fontFamily: fonts.semibold,
-    color: colors.text.primary,
   },
   username: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
   },
   actionButton: {
     padding: spacing.xs,

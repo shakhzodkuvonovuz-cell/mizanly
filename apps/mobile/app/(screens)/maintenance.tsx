@@ -105,7 +105,6 @@ export default function MaintenanceScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   content: {
     flex: 1,
@@ -123,6 +122,5 @@ const styles = StyleSheet.create({
     lineHeight: lineHeight.sm,
     textAlign: 'center',
     marginTop: spacing.lg,
-    color: colors.text.tertiary,
   },
 });

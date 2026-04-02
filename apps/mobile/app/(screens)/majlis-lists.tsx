@@ -279,7 +279,6 @@ export default function MajlisListsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg
   },
   listContent: {
     paddingBottom: spacing['2xl'],
@@ -317,11 +316,9 @@ const styles = StyleSheet.create({
   name: {
     fontSize: fontSize.base,
     fontFamily: fonts.semibold,
-    color: colors.text.primary,
   },
   desc: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
   },
   membersBadge: {
     flexDirection: 'row',
@@ -349,21 +346,17 @@ const styles = StyleSheet.create({
   sheetTitle: {
     fontSize: fontSize.lg,
     fontFamily: fonts.bold,
-    color: colors.text.primary,
     marginBottom: spacing.xl,
   },
   inputLabel: {
     fontSize: fontSize.sm,
     fontFamily: fonts.medium,
-    color: colors.text.secondary,
     marginBottom: spacing.xs,
   },
   input: {
-    backgroundColor: colors.dark.surface,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: 12,
-    color: colors.text.primary,
     fontSize: fontSize.base,
     marginBottom: spacing.md,
   },
@@ -380,11 +373,9 @@ const styles = StyleSheet.create({
   toggleTitle: {
     fontSize: fontSize.base,
     fontFamily: fonts.medium,
-    color: colors.text.primary,
   },
   toggleDesc: {
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
     marginTop: 2,
   },
 });
