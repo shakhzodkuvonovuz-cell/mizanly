@@ -478,6 +478,260 @@ describe('PaymentsService', () => {
     });
   });
 
+  // ═══ T08 Audit: Critical missing coverage ═══
+
+  describe('handlePaymentIntentFailed — C1', () => {
+    it('should mark tip as failed and record failure message', async () => {
+      redis.get.mockResolvedValue('tip-fail-1');
+      prisma.tip.update.mockResolvedValue({});
+      await service.handlePaymentIntentFailed({
+        id: 'pi_failed_1',
+        last_payment_error: { message: 'Card declined' },
+        metadata: {},
+      } as any);
+      expect(prisma.tip.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'tip-fail-1' },
+          data: expect.objectContaining({
+            status: 'failed',
+            message: expect.stringContaining('failed'),
+          }),
+        }),
+      );
+    });
+
+    it('should clean up Redis mapping after failure', async () => {
+      redis.get.mockResolvedValue('tip-fail-2');
+      prisma.tip.update.mockResolvedValue({});
+      await service.handlePaymentIntentFailed({ id: 'pi_failed_2', metadata: {} } as any);
+      expect(redis.del).toHaveBeenCalledWith('payment_intent:pi_failed_2');
+    });
+
+    it('should fall back to DB when Redis mapping is missing', async () => {
+      redis.get.mockResolvedValue(null);
+      prisma.tip = {
+        ...prisma.tip,
+        findFirst: jest.fn().mockResolvedValue({ id: 'tip-db-fallback' }),
+        update: jest.fn().mockResolvedValue({}),
+      };
+      await service.handlePaymentIntentFailed({
+        id: 'pi_no_redis', metadata: { senderId: 'u1' },
+      } as any);
+      expect(prisma.tip.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ senderId: 'u1', status: 'pending' }),
+        }),
+      );
+      expect(prisma.tip.update).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'tip-db-fallback' } }),
+      );
+    });
+
+    it('should log warning and return when no tip found', async () => {
+      redis.get.mockResolvedValue(null);
+      prisma.tip = { ...prisma.tip, findFirst: jest.fn().mockResolvedValue(null) };
+      const loggerSpy = jest.spyOn(service['logger'], 'warn');
+      await service.handlePaymentIntentFailed({ id: 'pi_orphan', metadata: {} } as any);
+      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('No tip found'));
+    });
+  });
+
+  describe('handleInvoicePaymentFailed — C2', () => {
+    it('should mark subscription as past_due with 3-day grace period', async () => {
+      redis.get.mockResolvedValue('sub-db-grace');
+      prisma.membershipSubscription.update.mockResolvedValue({});
+      await service.handleInvoicePaymentFailed({
+        subscription: 'sub_stripe_grace',
+        metadata: {},
+      } as any);
+      expect(prisma.membershipSubscription.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'sub-db-grace' },
+          data: expect.objectContaining({
+            status: 'past_due',
+            endDate: expect.any(Date),
+          }),
+        }),
+      );
+      // Grace deadline should be ~3 days from now
+      const callData = prisma.membershipSubscription.update.mock.calls[0][0].data;
+      const graceMs = callData.endDate.getTime() - Date.now();
+      const graceDays = graceMs / (24 * 60 * 60 * 1000);
+      expect(graceDays).toBeGreaterThan(2.9);
+      expect(graceDays).toBeLessThan(3.1);
+    });
+
+    it('should skip when no subscriptionId in invoice', async () => {
+      prisma.membershipSubscription.update.mockResolvedValue({});
+      await service.handleInvoicePaymentFailed({ metadata: {} } as any);
+      expect(prisma.membershipSubscription.update).not.toHaveBeenCalled();
+    });
+
+    it('should log warning and return when no subscription found', async () => {
+      redis.get.mockResolvedValue(null);
+      prisma.membershipSubscription = {
+        ...prisma.membershipSubscription,
+        findUnique: jest.fn().mockResolvedValue(null),
+      };
+      const loggerSpy = jest.spyOn(service['logger'], 'warn');
+      await service.handleInvoicePaymentFailed({
+        subscription: 'sub_unknown',
+        metadata: {},
+      } as any);
+      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('No subscription found'));
+    });
+  });
+
+  describe('handleSubscriptionUpdated — C3', () => {
+    it('should map Stripe active status to internal active', async () => {
+      redis.get.mockResolvedValue('sub-db-updated');
+      prisma.membershipSubscription.update.mockResolvedValue({});
+      await service.handleSubscriptionUpdated({
+        id: 'sub_updated_1', status: 'active', metadata: {},
+        current_period_end: Math.floor(Date.now() / 1000) + 2592000,
+      } as any);
+      expect(prisma.membershipSubscription.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ status: 'active' }),
+        }),
+      );
+    });
+
+    it('should map Stripe past_due to internal past_due', async () => {
+      redis.get.mockResolvedValue('sub-db-pd');
+      prisma.membershipSubscription.update.mockResolvedValue({});
+      await service.handleSubscriptionUpdated({
+        id: 'sub_pd', status: 'past_due', metadata: {},
+      } as any);
+      expect(prisma.membershipSubscription.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ status: 'past_due' }),
+        }),
+      );
+    });
+
+    it('should map Stripe canceled to internal cancelled', async () => {
+      redis.get.mockResolvedValue('sub-db-canceled');
+      prisma.membershipSubscription.update.mockResolvedValue({});
+      await service.handleSubscriptionUpdated({
+        id: 'sub_canceled', status: 'canceled', metadata: {},
+      } as any);
+      expect(prisma.membershipSubscription.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ status: 'cancelled' }),
+        }),
+      );
+    });
+
+    it('should map Stripe unpaid to internal past_due', async () => {
+      redis.get.mockResolvedValue('sub-db-unpaid');
+      prisma.membershipSubscription.update.mockResolvedValue({});
+      await service.handleSubscriptionUpdated({
+        id: 'sub_unpaid', status: 'unpaid', metadata: {},
+      } as any);
+      expect(prisma.membershipSubscription.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ status: 'past_due' }),
+        }),
+      );
+    });
+
+    it('should map Stripe paused to internal paused', async () => {
+      redis.get.mockResolvedValue('sub-db-paused');
+      prisma.membershipSubscription.update.mockResolvedValue({});
+      await service.handleSubscriptionUpdated({
+        id: 'sub_paused', status: 'paused', metadata: {},
+      } as any);
+      expect(prisma.membershipSubscription.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ status: 'paused' }),
+        }),
+      );
+    });
+
+    it('should update endDate from current_period_end', async () => {
+      redis.get.mockResolvedValue('sub-db-period');
+      prisma.membershipSubscription.update.mockResolvedValue({});
+      const periodEnd = Math.floor(Date.now() / 1000) + 2592000;
+      await service.handleSubscriptionUpdated({
+        id: 'sub_period', status: 'active', metadata: {},
+        current_period_end: periodEnd,
+      } as any);
+      const callData = prisma.membershipSubscription.update.mock.calls[0][0].data;
+      expect(callData.endDate).toEqual(new Date(periodEnd * 1000));
+    });
+
+    it('should skip when no subscription found', async () => {
+      redis.get.mockResolvedValue(null);
+      prisma.membershipSubscription = {
+        ...prisma.membershipSubscription,
+        findUnique: jest.fn().mockResolvedValue(null),
+      };
+      const loggerSpy = jest.spyOn(service['logger'], 'warn');
+      await service.handleSubscriptionUpdated({
+        id: 'sub_unknown', status: 'active', metadata: {},
+      } as any);
+      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('No subscription found'));
+    });
+  });
+
+  describe('handleInvoicePaid — happy path — M12', () => {
+    it('should update subscription to active with period end from Stripe retrieve', async () => {
+      redis.get.mockResolvedValue('sub-db-paid');
+      const periodEnd = Math.floor(Date.now() / 1000) + 2592000;
+      mockStripeInstance.subscriptions.retrieve.mockResolvedValueOnce({
+        current_period_end: periodEnd,
+      });
+      prisma.membershipSubscription.update.mockResolvedValue({});
+      await service.handleInvoicePaid({ subscription: 'sub_invoice_paid', metadata: {} } as any);
+      expect(prisma.membershipSubscription.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'sub-db-paid' },
+          data: expect.objectContaining({
+            status: 'active',
+            endDate: new Date(periodEnd * 1000),
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('handleCoinPurchaseSucceeded — idempotency — M8', () => {
+    it('should skip when coins were already credited for this PI', async () => {
+      prisma.coinTransaction.findFirst.mockResolvedValue({ id: 'ct-existing' });
+      prisma.$transaction = jest.fn();
+      const loggerSpy = jest.spyOn(service['logger'], 'log');
+      await service.handlePaymentIntentSucceeded({
+        id: 'pi_dupe_coin', metadata: { type: 'coin_purchase', userId: 'u1', coinAmount: '500' },
+      } as any);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('already credited'));
+    });
+  });
+
+  describe('createCoinPurchaseIntent — M53', () => {
+    it('should reject coinAmount below $0.50 minimum', async () => {
+      // coinAmount=1 → priceInCents = ceil(1*0.99) = 1 cent < 50 cents
+      await expect(service.createCoinPurchaseIntent('u1', 1)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject non-integer coinAmount', async () => {
+      await expect(service.createCoinPurchaseIntent('u1', 0)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject coinAmount over 100,000', async () => {
+      await expect(service.createCoinPurchaseIntent('u1', 100001)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should succeed for valid coinAmount', async () => {
+      redis.get.mockResolvedValue('cus_cached');
+      const result = await service.createCoinPurchaseIntent('u1', 500);
+      expect(result.coinAmount).toBe(500);
+      expect(result.priceInCents).toBe(Math.ceil(500 * 0.99));
+      expect(result.clientSecret).toBe('secret_test');
+    });
+  });
+
   // --- R2 Tab4 Part 2: Premium endDate extension tests (X03-#16) ---
 
   describe('handlePremiumPaymentSucceeded — endDate extension', () => {

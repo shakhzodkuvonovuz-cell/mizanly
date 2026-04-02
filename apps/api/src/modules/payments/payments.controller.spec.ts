@@ -23,6 +23,7 @@ describe('PaymentsController', () => {
             cancelSubscription: jest.fn(),
             listPaymentMethods: jest.fn(),
             attachPaymentMethod: jest.fn(),
+            createCoinPurchaseIntent: jest.fn(),
           },
         },
         { provide: ClerkAuthGuard, useValue: { canActivate: jest.fn(() => true) } },
@@ -84,6 +85,19 @@ describe('PaymentsController', () => {
       await controller.attachPaymentMethod(userId, { paymentMethodId: 'pm-1' } as any);
 
       expect(service.attachPaymentMethod).toHaveBeenCalledWith(userId, 'pm-1');
+    });
+  });
+
+  // ═══ T08 Audit: Missing controller test ═══
+
+  describe('createCoinPurchaseIntent — C1 controller', () => {
+    it('should delegate to paymentsService.createCoinPurchaseIntent with userId and coinAmount', async () => {
+      service.createCoinPurchaseIntent.mockResolvedValue({ clientSecret: 'pi_secret', coinAmount: 500, priceInCents: 495 } as any);
+
+      const result = await controller.createCoinPurchaseIntent(userId, { coinAmount: 500 } as any);
+
+      expect(service.createCoinPurchaseIntent).toHaveBeenCalledWith(userId, 500);
+      expect(result).toEqual(expect.objectContaining({ clientSecret: 'pi_secret', coinAmount: 500 }));
     });
   });
 });

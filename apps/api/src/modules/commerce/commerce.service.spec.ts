@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, BadRequestException, ConflictException, NotImplementedException } from '@nestjs/common';
+import { NotFoundException, BadRequestException, ConflictException, NotImplementedException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { CommerceService } from './commerce.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
@@ -258,6 +258,416 @@ describe('CommerceService', () => {
       prisma.zakatFund.findMany.mockResolvedValue([{ id: 'zf-1', title: 'Ramadan Fund' }]);
       const result = await service.getZakatFunds();
       expect(result.data).toHaveLength(1);
+    });
+  });
+
+  // ═══ T08 Audit: Critical missing coverage ═══
+
+  describe('updateProduct — C4', () => {
+    it('should update product when owner', async () => {
+      prisma.product.findUnique.mockResolvedValue({ ...mockProduct, sellerId: 'u1' });
+      prisma.product.update.mockResolvedValue({ ...mockProduct, title: 'Updated' });
+      const result = await service.updateProduct('u1', 'prod-1', { title: 'Updated' });
+      expect(result.title).toBe('Updated');
+    });
+
+    it('should throw NotFoundException when product does not exist', async () => {
+      prisma.product.findUnique.mockResolvedValue(null);
+      await expect(service.updateProduct('u1', 'nonexistent', { title: 'X' }))
+        .rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException when not owner', async () => {
+      prisma.product.findUnique.mockResolvedValue(mockProduct); // sellerId: 'seller-1'
+      await expect(service.updateProduct('other-user', 'prod-1', { title: 'X' }))
+        .rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw BadRequestException for negative price', async () => {
+      prisma.product.findUnique.mockResolvedValue({ ...mockProduct, sellerId: 'u1' });
+      await expect(service.updateProduct('u1', 'prod-1', { price: -5 }))
+        .rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for invalid status', async () => {
+      prisma.product.findUnique.mockResolvedValue({ ...mockProduct, sellerId: 'u1' });
+      await expect(service.updateProduct('u1', 'prod-1', { status: 'INVALID' }))
+        .rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('deleteProduct — C5', () => {
+    beforeEach(() => {
+      prisma.order = { ...prisma.order, count: jest.fn().mockResolvedValue(0) };
+      prisma.product.delete = jest.fn().mockResolvedValue({});
+    });
+
+    it('should delete product when owner and no active orders', async () => {
+      prisma.product.findUnique.mockResolvedValue({ ...mockProduct, sellerId: 'u1' });
+      prisma.order.count.mockResolvedValue(0);
+      const result = await service.deleteProduct('u1', 'prod-1');
+      expect(result.message).toContain('deleted');
+    });
+
+    it('should throw NotFoundException when product does not exist', async () => {
+      prisma.product.findUnique.mockResolvedValue(null);
+      await expect(service.deleteProduct('u1', 'nonexistent')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException when not owner', async () => {
+      prisma.product.findUnique.mockResolvedValue(mockProduct); // sellerId: 'seller-1'
+      await expect(service.deleteProduct('other-user', 'prod-1')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw BadRequestException when product has active orders', async () => {
+      prisma.product.findUnique.mockResolvedValue({ ...mockProduct, sellerId: 'u1' });
+      prisma.order.count.mockResolvedValue(3);
+      await expect(service.deleteProduct('u1', 'prod-1')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('updateOrderStatus — C6', () => {
+    const mockOrder = {
+      id: 'order-1', status: 'PAID', quantity: 2, productId: 'prod-1', buyerId: 'buyer-1',
+      product: { id: 'prod-1', sellerId: 'seller-1' },
+    };
+
+    beforeEach(() => {
+      prisma.order.findUnique.mockResolvedValue(mockOrder);
+      prisma.order.update.mockResolvedValue({ ...mockOrder, status: 'SHIPPED' });
+    });
+
+    it('should update order status for valid transition (PAID → SHIPPED)', async () => {
+      const result = await service.updateOrderStatus('order-1', 'seller-1', 'SHIPPED');
+      expect(prisma.order.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: { status: 'SHIPPED' } }),
+      );
+    });
+
+    it('should throw NotFoundException when order does not exist', async () => {
+      prisma.order.findUnique.mockResolvedValue(null);
+      await expect(service.updateOrderStatus('nonexistent', 'seller-1', 'SHIPPED'))
+        .rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException when not seller', async () => {
+      prisma.order.findUnique.mockResolvedValue(mockOrder);
+      await expect(service.updateOrderStatus('order-1', 'not-seller', 'SHIPPED'))
+        .rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw BadRequestException for invalid status', async () => {
+      await expect(service.updateOrderStatus('order-1', 'seller-1', 'INVALID'))
+        .rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for invalid transition (PAID → PENDING)', async () => {
+      prisma.order.findUnique.mockResolvedValue(mockOrder); // status: PAID
+      await expect(service.updateOrderStatus('order-1', 'seller-1', 'PENDING'))
+        .rejects.toThrow(BadRequestException);
+    });
+
+    it('should restore stock on CANCELLED status', async () => {
+      prisma.order.findUnique.mockResolvedValue({
+        ...mockOrder, status: 'PENDING', product: { id: 'prod-1', sellerId: 'seller-1' },
+      });
+      const txProductUpdateMany = jest.fn().mockResolvedValue({ count: 1 });
+      const txOrderUpdate = jest.fn().mockResolvedValue({ status: 'CANCELLED' });
+      prisma.$transaction.mockImplementation((fn: (tx: unknown) => Promise<unknown>) =>
+        fn({
+          product: { updateMany: txProductUpdateMany },
+          order: { update: txOrderUpdate },
+        }),
+      );
+      await service.updateOrderStatus('order-1', 'seller-1', 'CANCELLED');
+      expect(txProductUpdateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ stock: { increment: 2 } }),
+        }),
+      );
+    });
+
+    it('should restore stock on REFUNDED status', async () => {
+      prisma.order.findUnique.mockResolvedValue(mockOrder); // status: PAID
+      const txProductUpdateMany = jest.fn().mockResolvedValue({ count: 1 });
+      const txOrderUpdate = jest.fn().mockResolvedValue({ status: 'REFUNDED' });
+      prisma.$transaction.mockImplementation((fn: (tx: unknown) => Promise<unknown>) =>
+        fn({
+          product: { updateMany: txProductUpdateMany },
+          order: { update: txOrderUpdate },
+        }),
+      );
+      await service.updateOrderStatus('order-1', 'seller-1', 'REFUNDED');
+      expect(txProductUpdateMany).toHaveBeenCalled();
+    });
+  });
+
+  describe('getSellerOrders — C7', () => {
+    it('should return orders for seller products', async () => {
+      prisma.order.findMany.mockResolvedValue([
+        { id: 'order-1', status: 'PAID', product: { title: 'Test' } },
+      ]);
+      const result = await service.getSellerOrders('seller-1');
+      expect(result.data).toHaveLength(1);
+      expect(prisma.order.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { product: { sellerId: 'seller-1' } },
+        }),
+      );
+    });
+
+    it('should filter by status when provided', async () => {
+      prisma.order.findMany.mockResolvedValue([]);
+      await service.getSellerOrders('seller-1', undefined, 20, 'PAID');
+      expect(prisma.order.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ status: 'PAID' }),
+        }),
+      );
+    });
+
+    it('should return empty when no orders', async () => {
+      prisma.order.findMany.mockResolvedValue([]);
+      const result = await service.getSellerOrders('seller-1');
+      expect(result.data).toEqual([]);
+      expect(result.meta.hasMore).toBe(false);
+    });
+  });
+
+  describe('getSellerAnalytics — C8', () => {
+    beforeEach(() => {
+      prisma.product.count = jest.fn().mockResolvedValue(5);
+      prisma.product.findMany.mockResolvedValue([{ id: 'prod-1', title: 'Top', salesCount: 100 }]);
+      prisma.order.count = jest.fn().mockResolvedValue(50);
+      prisma.order.aggregate = jest.fn().mockResolvedValue({ _sum: { totalAmount: 2500.50 } });
+    });
+
+    it('should return seller analytics', async () => {
+      const result = await service.getSellerAnalytics('seller-1');
+      expect(result.totalProducts).toBe(5);
+      expect(result.totalOrders).toBe(50);
+      expect(result.totalRevenue).toBe(2500.50);
+      expect(result.topProducts).toHaveLength(1);
+    });
+
+    it('should return 0 revenue when no paid orders', async () => {
+      prisma.order.aggregate.mockResolvedValue({ _sum: { totalAmount: null } });
+      const result = await service.getSellerAnalytics('seller-1');
+      expect(result.totalRevenue).toBe(0);
+    });
+  });
+
+  describe('reviewProduct — self-review guard — H8', () => {
+    it('should throw BadRequestException when reviewing own product', async () => {
+      prisma.product.findUnique.mockResolvedValue(mockProduct); // sellerId: 'seller-1'
+      await expect(service.reviewProduct('seller-1', 'prod-1', 5))
+        .rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('reviewProduct — duplicate P2002 — M9', () => {
+    it('should throw ConflictException on duplicate review', async () => {
+      prisma.product.findUnique.mockResolvedValue(mockProduct);
+      prisma.productReview.create.mockRejectedValue({ code: 'P2002' });
+      await expect(service.reviewProduct('user-1', 'prod-1', 5))
+        .rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('getProducts — search/category filter — M3', () => {
+    it('should filter by category', async () => {
+      prisma.product.findMany.mockResolvedValue([]);
+      await service.getProducts(undefined, 20, 'FOOD');
+      expect(prisma.product.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ category: 'FOOD' }),
+        }),
+      );
+    });
+
+    it('should filter by search string', async () => {
+      prisma.product.findMany.mockResolvedValue([]);
+      await service.getProducts(undefined, 20, undefined, 'halal');
+      expect(prisma.product.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            title: { contains: 'halal', mode: 'insensitive' },
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('createProduct — negative price', () => {
+    it('should throw BadRequestException for negative price', async () => {
+      await expect(service.createProduct('u1', {
+        title: 'Test', description: 'X', price: -5,
+        images: [], category: 'FOOD',
+      })).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('updateBusiness — C21', () => {
+    it('should update business when owner', async () => {
+      prisma.halalBusiness.findUnique.mockResolvedValue({ id: 'biz-1', ownerId: 'u1' });
+      prisma.halalBusiness.update.mockResolvedValue({ id: 'biz-1', name: 'Updated' });
+      const result = await service.updateBusiness('u1', 'biz-1', { name: 'Updated' });
+      expect(result.name).toBe('Updated');
+    });
+
+    it('should throw NotFoundException when business does not exist', async () => {
+      prisma.halalBusiness.findUnique.mockResolvedValue(null);
+      await expect(service.updateBusiness('u1', 'nonexistent', { name: 'X' }))
+        .rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException when not owner', async () => {
+      prisma.halalBusiness.findUnique.mockResolvedValue({ id: 'biz-1', ownerId: 'other' });
+      await expect(service.updateBusiness('u1', 'biz-1', { name: 'X' }))
+        .rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('deleteBusiness — C22', () => {
+    beforeEach(() => {
+      prisma.halalBusiness.delete = jest.fn().mockResolvedValue({});
+    });
+
+    it('should delete business when owner', async () => {
+      prisma.halalBusiness.findUnique.mockResolvedValue({ id: 'biz-1', ownerId: 'u1' });
+      const result = await service.deleteBusiness('u1', 'biz-1');
+      expect(result.message).toContain('deleted');
+    });
+
+    it('should throw NotFoundException when business does not exist', async () => {
+      prisma.halalBusiness.findUnique.mockResolvedValue(null);
+      await expect(service.deleteBusiness('u1', 'nonexistent')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException when not owner', async () => {
+      prisma.halalBusiness.findUnique.mockResolvedValue({ id: 'biz-1', ownerId: 'other' });
+      await expect(service.deleteBusiness('u1', 'biz-1')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('reviewBusiness — H20', () => {
+    it('should create review and update avg rating', async () => {
+      prisma.halalBusiness.findUnique.mockResolvedValue({ id: 'biz-1', ownerId: 'other' });
+      prisma.businessReview.create.mockResolvedValue({ rating: 5 });
+      prisma.businessReview.aggregate.mockResolvedValue({ _avg: { rating: 4.5 }, _count: 10 });
+      prisma.halalBusiness.update.mockResolvedValue({});
+      const result = await service.reviewBusiness('u1', 'biz-1', 5, 'Great!');
+      expect(result.rating).toBe(5);
+    });
+
+    it('should throw BadRequestException for self-review', async () => {
+      prisma.halalBusiness.findUnique.mockResolvedValue({ id: 'biz-1', ownerId: 'u1' });
+      await expect(service.reviewBusiness('u1', 'biz-1', 5))
+        .rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for invalid rating', async () => {
+      await expect(service.reviewBusiness('u1', 'biz-1', 0)).rejects.toThrow(BadRequestException);
+      await expect(service.reviewBusiness('u1', 'biz-1', 6)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw NotFoundException when business does not exist', async () => {
+      prisma.halalBusiness.findUnique.mockResolvedValue(null);
+      await expect(service.reviewBusiness('u1', 'nonexistent', 5))
+        .rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ConflictException on duplicate review', async () => {
+      prisma.halalBusiness.findUnique.mockResolvedValue({ id: 'biz-1', ownerId: 'other' });
+      prisma.businessReview.create.mockRejectedValue({ code: 'P2002' });
+      await expect(service.reviewBusiness('u1', 'biz-1', 5))
+        .rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('createZakatFund — H23', () => {
+    it('should create zakat fund for user', async () => {
+      prisma.zakatFund.create.mockResolvedValue({ id: 'zf-1', title: 'Education' });
+      const result = await service.createZakatFund('u1', {
+        title: 'Education', description: 'For students', goalAmount: 10000, category: 'EDUCATION',
+      });
+      expect(result.id).toBe('zf-1');
+      expect(prisma.zakatFund.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ recipientId: 'u1', title: 'Education' }),
+        }),
+      );
+    });
+  });
+
+  describe('createTreasury — H26', () => {
+    beforeEach(() => {
+      prisma.circleMember = { findUnique: jest.fn() };
+      prisma.communityTreasury.create.mockResolvedValue({ id: 'treasury-1' });
+    });
+
+    it('should create treasury when user is circle member', async () => {
+      prisma.circleMember.findUnique.mockResolvedValue({ circleId: 'c1', userId: 'u1' });
+      const result = await service.createTreasury('u1', 'c1', {
+        title: 'Community Fund', goalAmount: 5000,
+      });
+      expect(result.id).toBe('treasury-1');
+    });
+
+    it('should throw ForbiddenException when not circle member', async () => {
+      prisma.circleMember.findUnique.mockResolvedValue(null);
+      await expect(service.createTreasury('u1', 'c1', {
+        title: 'Fund', goalAmount: 5000,
+      })).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('getWaqfFunds — H28', () => {
+    beforeEach(() => {
+      prisma.waqfFund = { findMany: jest.fn() };
+    });
+
+    it('should return active waqf funds', async () => {
+      prisma.waqfFund.findMany.mockResolvedValue([{ id: 'wf-1', title: 'Mosque Fund' }]);
+      const result = await service.getWaqfFunds();
+      expect(result.data).toHaveLength(1);
+      expect(prisma.waqfFund.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { isActive: true },
+        }),
+      );
+    });
+
+    it('should support cursor pagination', async () => {
+      prisma.waqfFund.findMany.mockResolvedValue([]);
+      await service.getWaqfFunds('cursor-1', 10);
+      expect(prisma.waqfFund.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cursor: { id: 'cursor-1' },
+          skip: 1,
+          take: 11,
+        }),
+      );
+    });
+  });
+
+  describe('subscribePremium — Stripe PI failure — M32', () => {
+    it('should throw BadRequestException when Stripe PI creation fails', async () => {
+      prisma.premiumSubscription.findUnique.mockResolvedValue(null);
+      mockStripeInstance.paymentIntents.create.mockRejectedValueOnce(new Error('Stripe down'));
+      await expect(service.subscribePremium('u1', 'monthly'))
+        .rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('createOrder — PI cancellation on rollback — M12', () => {
+    it('should cancel PI when order creation transaction fails', async () => {
+      prisma.product.findUnique.mockResolvedValue(mockProduct);
+      prisma.$transaction.mockRejectedValueOnce(new Error('TX failed'));
+      mockStripeInstance.paymentIntents.cancel.mockResolvedValue({});
+      await expect(service.createOrder('buyer-1', { productId: 'prod-1' }))
+        .rejects.toThrow();
+      expect(mockStripeInstance.paymentIntents.cancel).toHaveBeenCalledWith('pi_test_123');
     });
   });
 });
