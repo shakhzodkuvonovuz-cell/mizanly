@@ -29,6 +29,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { showToast } from '@/components/ui/Toast';
+import { rtlFlexRow, rtlChevron } from '@/utils/rtl';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { formatCount } from '@/utils/formatCount';
 import { gamificationApi } from '@/services/api';
@@ -67,7 +68,7 @@ interface SeriesDetail {
 function SeriesDetailContent() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
@@ -201,7 +202,7 @@ function SeriesDetailContent() {
             {new Date(item.createdAt).toLocaleDateString()}
           </Text>
         </View>
-        <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
+        <Icon name={rtlChevron(isRTL, 'forward')} size="sm" color={tc.text.tertiary} />
       </Pressable>
     </Animated.View>
   );
@@ -251,7 +252,7 @@ function SeriesDetailContent() {
 
         {/* Creator Card */}
         <Pressable
-          style={styles.creatorCard}
+          style={[styles.creatorCard, { flexDirection: rtlFlexRow(isRTL) }]}
           onPress={() => navigate(`/(screens)/profile/${series.creator.username}`)}
           accessibilityRole="button"
         >
@@ -267,7 +268,7 @@ function SeriesDetailContent() {
             </View>
             <Text style={styles.creatorUsername}>@{series.creator.username}</Text>
           </View>
-          <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
+          <Icon name={rtlChevron(isRTL, 'forward')} size="sm" color={tc.text.tertiary} />
         </Pressable>
 
         {/* Follow / Add Episode Buttons */}

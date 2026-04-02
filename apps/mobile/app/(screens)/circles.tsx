@@ -117,6 +117,7 @@ function CreateSheet({
 export default function CirclesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const headerOffset = insets.top + spacing['4xl'] + spacing.xs;
   const { t } = useTranslation();
   const tc = useThemeColors();
   const queryClient = useQueryClient();
@@ -184,7 +185,7 @@ export default function CirclesScreen() {
           rightActions={[{ icon: 'plus', onPress: () => setShowCreate(true), accessibilityLabel: t('screens.circles.createCircleLabel') }]}
         />
 
-        <Text style={[styles.subtitle, { marginTop: insets.top + 52, color: tc.text.secondary }]}>
+        <Text style={[styles.subtitle, { marginTop: headerOffset, color: tc.text.secondary }]}>
           {t('screens.circles.subtitle')}
         </Text>
 
@@ -211,6 +212,7 @@ export default function CirclesScreen() {
             }
             renderItem={({ item, index }) => (
               <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+                <Pressable style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
                 <LinearGradient
                   colors={colors.gradient.cardDark}
                   style={styles.circleCard}
@@ -246,6 +248,7 @@ export default function CirclesScreen() {
                     </LinearGradient>
                   </Pressable>
                 </LinearGradient>
+                </Pressable>
               </Animated.View>
             )}
             ListEmptyComponent={() => (

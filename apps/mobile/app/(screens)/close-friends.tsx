@@ -40,7 +40,7 @@ function UserRow({ user, isMe, isCloseFriend, onToggle, onPress, disabled, index
   const tc = useThemeColors();
   return (
     <Animated.View entering={FadeInUp.delay(index * 30).duration(300)}>
-      <Pressable onPress={onPress}>
+      <Pressable onPress={onPress} style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
         <LinearGradient
           colors={isCloseFriend ? ['rgba(10,123,79,0.12)', 'rgba(10,123,79,0.04)'] : ['rgba(45,53,72,0.2)', 'rgba(28,35,51,0.1)']}
           style={styles.row}
@@ -110,6 +110,7 @@ export default function CloseFriendsScreen() {
     queryKey: ['my-circles'],
     queryFn: () => circlesApi.getMyCircles(),
     enabled: !!currentUserId,
+    staleTime: 30_000,
   });
 
   // Find or create Close Friends circle
@@ -148,6 +149,7 @@ export default function CloseFriendsScreen() {
     queryKey: ['circle-members', closeFriendsCircle?.id],
     queryFn: () => circlesApi.getMembers(closeFriendsCircle?.id ?? ''),
     enabled: !!closeFriendsCircle,
+    staleTime: 30_000,
   });
 
   const memberIds = useMemo(() =>

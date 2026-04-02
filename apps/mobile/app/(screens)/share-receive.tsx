@@ -7,6 +7,7 @@ import {
   TextInput,
   Pressable,
   Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
@@ -23,6 +24,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { rtlFlexRow } from '@/utils/rtl';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -191,7 +193,7 @@ function SpaceCard({
   const styles = createStyles(tc);
   return (
     <Animated.View
-      entering={FadeInUp.delay(200 + index * 80).duration(350)}
+      entering={FadeInUp.delay(Math.min(200 + index * 80, 400)).duration(350)}
       style={styles.spaceCardWrapper}
     >
       <Pressable
@@ -233,7 +235,7 @@ function ShareReceiveContent() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const haptic = useContextualHaptic();
 
   const { sharedText, sharedImage, sharedVideo, sharedUrl } = useLocalSearchParams<{
@@ -324,6 +326,7 @@ function ShareReceiveContent() {
         }}
       />
 
+      <KeyboardAvoidingView style={styles.scroll} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -348,7 +351,7 @@ function ShareReceiveContent() {
           <Text style={styles.sectionTitle}>{t('shareReceive.selectSpace')}</Text>
         </Animated.View>
 
-        <View style={styles.spacesGrid}>
+        <View style={[styles.spacesGrid, { flexDirection: rtlFlexRow(isRTL) }]}>
           {SPACES.map((space, index) => (
             <SpaceCard
               key={space.key}
@@ -362,8 +365,8 @@ function ShareReceiveContent() {
         </View>
 
         {/* Caption input */}
-        <Animated.View entering={FadeInDown.delay(500).duration(350)} style={styles.captionSection}>
-          <View style={styles.captionHeader}>
+        <Animated.View entering={FadeInDown.delay(300).duration(350)} style={styles.captionSection}>
+          <View style={[styles.captionHeader, { flexDirection: rtlFlexRow(isRTL) }]}>
             <Text style={styles.sectionTitle}>{t('shareReceive.addCaption')}</Text>
             <CharCountRing current={captionLength} max={MAX_CAPTION_LENGTH} size={28} />
           </View>
@@ -382,7 +385,7 @@ function ShareReceiveContent() {
         </Animated.View>
 
         {/* Share button */}
-        <Animated.View entering={FadeInDown.delay(600).duration(350)} style={styles.shareButton}>
+        <Animated.View entering={FadeInDown.delay(400).duration(350)} style={styles.shareButton}>
           <GradientButton
             label={t('shareReceive.share')}
             icon="send"
@@ -392,6 +395,7 @@ function ShareReceiveContent() {
           />
         </Animated.View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

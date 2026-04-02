@@ -248,7 +248,7 @@ function ChatWallpaperScreen() {
         <Pressable
           key={color.value}
           onPress={() => handleSelectColor(color.value)}
-          style={styles.colorItem}
+          style={({ pressed }) => [styles.colorItem, pressed && { opacity: 0.7 }]}
           accessibilityRole="button"
           accessibilityLabel={color.name}
         >
@@ -279,7 +279,7 @@ function ChatWallpaperScreen() {
           <Pressable
             key={pair.name}
             onPress={() => handleSelectGradient(pair.colors)}
-            style={styles.gradientItem}
+            style={({ pressed }) => [styles.gradientItem, pressed && { opacity: 0.7 }]}
             accessibilityRole="button"
             accessibilityLabel={pair.name}
           >
@@ -311,7 +311,7 @@ function ChatWallpaperScreen() {
           <Pressable
             key={pattern.name}
             onPress={() => handleSelectPattern(pattern.name)}
-            style={styles.gradientItem}
+            style={({ pressed }) => [styles.gradientItem, pressed && { opacity: 0.7 }]}
             accessibilityRole="button"
             accessibilityLabel={pattern.name}
           >

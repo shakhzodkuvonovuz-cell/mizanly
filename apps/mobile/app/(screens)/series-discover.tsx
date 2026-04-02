@@ -26,6 +26,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { showToast } from '@/components/ui/Toast';
+import { rtlFlexRow } from '@/utils/rtl';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { gamificationApi } from '@/services/api';
 
@@ -59,7 +60,7 @@ interface SeriesResponse {
 function SeriesDiscoverContent() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
@@ -213,7 +214,7 @@ function SeriesDiscoverContent() {
 
         {/* Bottom info */}
         <View style={styles.seriesInfo}>
-          <View style={styles.creatorRow}>
+          <View style={[styles.creatorRow, { flexDirection: rtlFlexRow(isRTL) }]}>
             <Avatar
               uri={item.creator.avatarUrl}
               name={item.creator.displayName}

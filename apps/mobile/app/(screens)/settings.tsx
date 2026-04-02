@@ -174,6 +174,10 @@ export default function SettingsScreen() {
   const matchesSearch = useCallback((label: string) =>
     !searchQuery || label.toLowerCase().includes(searchQuery.toLowerCase()),
   [searchQuery]);
+  // Skip entrance animations during active search to prevent layout thrashing
+  const sectionEntering = useCallback((delay: number) =>
+    searchQuery ? undefined : FadeInUp.delay(delay).duration(400).springify(),
+  [searchQuery]);
 
   const settingsQuery = useQuery({
     queryKey: ['settings'],
@@ -374,7 +378,7 @@ export default function SettingsScreen() {
 
           {/* Content Section */}
           {(matchesSearch(t('settings.contentPreferences')) || matchesSearch(t('settings.drafts')) || matchesSearch(t('settings.archive')) || matchesSearch(t('settings.watchHistory')) || matchesSearch(t('downloads.title')) || matchesSearch(t('nasheed.settingsLabel'))) && (
-          <Animated.View entering={FadeInUp.delay(0).duration(400).springify()}>
+          <Animated.View entering={sectionEntering(0)}>
             <SectionHeader title={t('settings.sections.content')} icon="layers" />
             <LinearGradient
               colors={colors.gradient.cardDark}
@@ -436,7 +440,7 @@ export default function SettingsScreen() {
 
           {/* Appearance Section */}
           {(matchesSearch(t('settings.appearance')) || matchesSearch(t('settings.saved'))) && (
-          <Animated.View entering={FadeInUp.delay(60).duration(400).springify()}>
+          <Animated.View entering={sectionEntering(60)}>
             <SectionHeader title={t('settings.appearance')} icon="eye" />
             <LinearGradient
               colors={colors.gradient.cardDark}
@@ -468,7 +472,7 @@ export default function SettingsScreen() {
 
           {/* Profile Section */}
           {matchesSearch(t('profile.shareProfile')) && (
-          <Animated.View entering={FadeInUp.delay(120).duration(400).springify()}>
+          <Animated.View entering={sectionEntering(120)}>
             <SectionHeader title={t('settings.sections.profile')} icon="user" />
             <LinearGradient
               colors={colors.gradient.cardDark}
@@ -489,7 +493,7 @@ export default function SettingsScreen() {
 
           {/* Privacy Section */}
           {(matchesSearch(t('settings.privateAccount')) || matchesSearch(t('settings.followRequests')) || matchesSearch(t('settings.blockedKeywords')) || matchesSearch(t('biometric.settingsLabel')) || matchesSearch(t('parentalControls.settingsLabel')) || matchesSearch(t('settings.readReceipts'))) && (
-          <Animated.View entering={FadeInUp.delay(180).duration(400).springify()}>
+          <Animated.View entering={sectionEntering(180)}>
           <SectionHeader title={t('settings.privacy')} icon="lock" />
           <LinearGradient
             colors={colors.gradient.cardDark}
@@ -558,7 +562,7 @@ export default function SettingsScreen() {
 
           {/* Notifications Section */}
           {(matchesSearch(t('settings.likes')) || matchesSearch(t('settings.comments')) || matchesSearch(t('settings.newFollowers')) || matchesSearch(t('settings.mentions')) || matchesSearch(t('settings.messages')) || matchesSearch(t('settings.notificationTones')) || matchesSearch(t('settings.notifications'))) && (
-          <Animated.View entering={FadeInUp.delay(240).duration(400).springify()}>
+          <Animated.View entering={sectionEntering(240)}>
           <SectionHeader title={t('settings.notifications')} icon="bell" />
           <LinearGradient
             colors={colors.gradient.cardDark}
@@ -625,7 +629,7 @@ export default function SettingsScreen() {
 
           {/* Wellbeing Section */}
           {(matchesSearch(t('settings.filterSensitiveContent')) || matchesSearch(t('quietMode.settingsLabel')) || matchesSearch(t('screenTime.settingsLabel')) || matchesSearch(t('nasheed.settingsLabel')) || matchesSearch(t('contentFilter.title')) || matchesSearch(t('autoPlaySettings.title'))) && (
-          <Animated.View entering={FadeInUp.delay(300).duration(400).springify()}>
+          <Animated.View entering={sectionEntering(300)}>
           <SectionHeader title={t('settings.sections.wellbeing')} icon="smile" />
           <LinearGradient
             colors={colors.gradient.cardDark}
@@ -692,7 +696,7 @@ export default function SettingsScreen() {
 
           {/* Islamic Section */}
           {(matchesSearch(t('islamic.prayerTimes')) || matchesSearch(t('islamic.qibla')) || matchesSearch(t('hijri.title')) || matchesSearch(t('islamic.dhikr')) || matchesSearch(t('quranPlan.title')) || matchesSearch(t('islamic.hadith')) || matchesSearch(t('islamic.mosque')) || matchesSearch(t('hajj.title')) || matchesSearch(t('islamic.zakat')) || matchesSearch(t('eidCards.title')) || matchesSearch(t('scholar.title')) || matchesSearch(t('quranRoom.title')) || matchesSearch(t('charity.title')) || matchesSearch(t('settings.ramadanMode')) || matchesSearch(t('islamic.duaCollection')) || matchesSearch(t('islamic.fastingTracker')) || matchesSearch(t('islamic.halalFinder')) || matchesSearch(t('islamic.hifzTracker')) || matchesSearch(t('islamic.morningBriefing')) || matchesSearch(t('islamic.namesOfAllah')) || matchesSearch(t('wellbeing.windDown'))) && (
-          <Animated.View entering={FadeInUp.delay(360).duration(400).springify()}>
+          <Animated.View entering={sectionEntering(360)}>
           <SectionHeader title={t('islamic.prayerTimes')} icon="globe" />
           <LinearGradient
             colors={colors.gradient.cardDark}
@@ -874,7 +878,7 @@ export default function SettingsScreen() {
 
           {/* Accessibility Section */}
           {matchesSearch(t('settings.reduceMotion')) && (
-          <Animated.View entering={FadeInUp.delay(420).duration(400).springify()}>
+          <Animated.View entering={sectionEntering(420)}>
           <SectionHeader title={t('settings.accessibility')} icon="volume-x" />
           <LinearGradient
             colors={colors.gradient.cardDark}
@@ -896,7 +900,7 @@ export default function SettingsScreen() {
 
           {/* Blocked & Muted Section */}
           {(matchesSearch(t('settings.blockedAccounts')) || matchesSearch(t('settings.mutedAccounts')) || matchesSearch(t('settings.restrictedAccounts')) || matchesSearch(t('settings.collabRequests')) || matchesSearch(t('settings.appealModeration'))) && (
-          <Animated.View entering={FadeInUp.delay(480).duration(400).springify()}>
+          <Animated.View entering={sectionEntering(480)}>
           <SectionHeader title={t('settings.sections.blockedMuted')} icon="slash" />
           <LinearGradient
             colors={colors.gradient.cardDark}
@@ -950,7 +954,7 @@ export default function SettingsScreen() {
 
           {/* Circles Section */}
           {matchesSearch(t('settings.circles')) && (
-          <Animated.View entering={FadeInUp.delay(540).duration(400).springify()}>
+          <Animated.View entering={sectionEntering(540)}>
           <SectionHeader title={t('settings.sections.closeFriends')} icon="users" />
           <LinearGradient
             colors={colors.gradient.cardDark}
@@ -971,7 +975,7 @@ export default function SettingsScreen() {
 
           {/* AI Section */}
           {(matchesSearch(t('ai.title')) || matchesSearch(t('ai.avatar.title'))) && (
-          <Animated.View entering={FadeInUp.delay(600).duration(400).springify()}>
+          <Animated.View entering={sectionEntering(600)}>
           <SectionHeader title={t('settings.sections.ai')} icon="loader" />
           <LinearGradient
             colors={colors.gradient.cardDark}
@@ -1000,7 +1004,7 @@ export default function SettingsScreen() {
 
           {/* Creator Section */}
           {(matchesSearch(t('settings.analytics')) || matchesSearch(t('settings.broadcastChannels')) || matchesSearch(t('settings.myReports')) || matchesSearch(t('settings.creatorDashboard')) || matchesSearch(t('settings.revenue')) || matchesSearch(t('settings.creatorStorefront')) || matchesSearch(t('settings.enableTips')) || matchesSearch(t('settings.membershipTiers'))) && (
-          <Animated.View entering={FadeInUp.delay(660).duration(400).springify()}>
+          <Animated.View entering={sectionEntering(660)}>
           <SectionHeader title={t('settings.sections.creator')} icon="bar-chart-2" />
           <LinearGradient
             colors={colors.gradient.cardDark}
@@ -1078,7 +1082,7 @@ export default function SettingsScreen() {
 
           {/* Community Section */}
           {(matchesSearch(t('community.localBoards')) || matchesSearch(t('community.mentorship')) || matchesSearch(t('community.fatwaQA')) || matchesSearch(t('community.waqfEndowments')) || matchesSearch(t('community.watchParties')) || matchesSearch(t('community.voicePost')) || matchesSearch(t('settings.volunteerBoard')) || matchesSearch(t('settings.events')) || matchesSearch(t('settings.giftShop')) || matchesSearch(t('settings.followedTopics'))) && (
-          <Animated.View entering={FadeInUp.delay(720).duration(400).springify()}>
+          <Animated.View entering={sectionEntering(720)}>
           <SectionHeader title={t('settings.sections.community')} icon="users" />
           <LinearGradient
             colors={colors.gradient.cardDark}
@@ -1172,7 +1176,7 @@ export default function SettingsScreen() {
 
           {/* Gamification Section */}
           {(matchesSearch(t('gamification.settingsStreaks')) || matchesSearch(t('gamification.settingsAchievements')) || matchesSearch(t('gamification.settingsLeaderboard')) || matchesSearch(t('gamification.settingsChallenges')) || matchesSearch(t('gamification.settingsXPHistory')) || matchesSearch(t('gamification.settingsProfile'))) && (
-          <Animated.View entering={FadeInUp.delay(780).duration(400).springify()}>
+          <Animated.View entering={sectionEntering(780)}>
           <SectionHeader title={t('gamification.settingsSection')} icon="trending-up" />
           <LinearGradient
             colors={colors.gradient.cardDark}
@@ -1234,7 +1238,7 @@ export default function SettingsScreen() {
 
           {/* Account Section */}
           {(matchesSearch(t('settings.account')) || matchesSearch(t('settings.twoFactor')) || matchesSearch(t('settings.accountSwitcher')) || matchesSearch(t('settings.contactSync')) || matchesSearch(t('settings.closeFriends')) || matchesSearch(t('settings.statusPrivacy')) || matchesSearch(t('settings.disappearingDefault')) || matchesSearch(t('settings.storageManagement')) || matchesSearch(t('settings.manageData')) || matchesSearch(t('settings.deactivateAccount')) || matchesSearch(t('settings.deleteAccount'))) && (
-          <Animated.View entering={FadeInUp.delay(840).duration(400).springify()}>
+          <Animated.View entering={sectionEntering(840)}>
           <SectionHeader title={t('settings.account')} icon="user" />
           <LinearGradient
             colors={colors.gradient.cardDark}
@@ -1338,7 +1342,7 @@ export default function SettingsScreen() {
           )}
 
           {/* Premium Sign Out Button + About — always visible */}
-          <Animated.View entering={FadeInUp.delay(900).duration(400).springify()}>
+          <Animated.View entering={sectionEntering(900)}>
           {matchesSearch(t('settings.signOut')) && (
           <Pressable style={styles.signOutButton} onPress={handleSignOut}>
             <LinearGradient

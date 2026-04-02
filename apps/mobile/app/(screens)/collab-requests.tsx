@@ -4,7 +4,7 @@ import {
   FlatList, Alert,
 } from 'react-native';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -36,12 +36,13 @@ type TabKey = 'pending' | 'accepted';
 
 export default function CollabRequestsScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ tab?: string }>();
   const tc = useThemeColors();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const haptic = useContextualHaptic();
-  const [activeTab, setActiveTab] = useState<TabKey>('pending');
+  const [activeTab, setActiveTab] = useState<TabKey>((params.tab as TabKey) || 'pending');
   const [refreshing, setRefreshing] = useState(false);
 
   // Pending invites (non‑paginated)
@@ -282,7 +283,7 @@ export default function CollabRequestsScreen() {
           activeKey={activeTab}
           onTabChange={(key) => setActiveTab(key as TabKey)}
           variant="underline"
-          style={[styles.tabSelector, { marginTop: insets.top + 52 }]}
+          style={[styles.tabSelector, { marginTop: insets.top + spacing['4xl'] + spacing.xs }]}
         />
 
         {isLoading ? (
