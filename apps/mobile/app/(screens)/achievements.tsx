@@ -8,6 +8,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery } from '@tanstack/react-query';
@@ -62,7 +63,7 @@ const CATEGORY_ICONS: Record<string, IconName> = {
   social: 'users',
   islamic: 'globe',
   milestone: 'trending-up',
-  special: 'star' as IconName,
+  special: 'star',
 };
 
 function AchievementCard({
@@ -280,7 +281,7 @@ function AchievementsScreen() {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: tc.bg }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
       <GlassHeader
         title={t('gamification.achievements.title')}
         leftAction={{
@@ -327,7 +328,7 @@ function AchievementsScreen() {
           />
         )}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -342,11 +343,9 @@ export default function AchievementsScreenWrapper() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   content: {
     flex: 1,
-    paddingTop: 100,
   },
   listContent: {
     paddingHorizontal: spacing.base,
@@ -397,7 +396,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
     borderWidth: 0.5,
-    borderColor: colors.dark.borderLight,
+    borderColor: 'rgba(72,79,88,0.5)',
     minHeight: 200,
   },
   lockedCard: {
@@ -427,7 +426,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: colors.dark.bg,
+    borderColor: 'transparent',
   },
   cardName: {
     fontFamily: fonts.bodySemiBold,
@@ -442,7 +441,7 @@ const styles = StyleSheet.create({
   },
   rarityBadge: {
     paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
+    paddingVertical: spacing.xs,
     borderRadius: radius.full,
   },
   rarityText: {

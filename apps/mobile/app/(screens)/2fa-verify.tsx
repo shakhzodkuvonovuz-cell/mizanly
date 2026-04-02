@@ -6,7 +6,11 @@ import {
   Pressable,
   TextInput,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Linking,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Animated, {
   FadeInUp,
@@ -21,6 +25,7 @@ import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, radius, fontSize, animation, fonts } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { twoFactorApi } from '@/services/twoFactorApi';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -30,6 +35,8 @@ export default function TwoFactorVerifyScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const tc = useThemeColors();
+  const haptic = useContextualHaptic();
+  const styles = createStyles(tc);
   const [mode, setMode] = useState<'code' | 'backup'>('code');
   const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
   const [backupCode, setBackupCode] = useState('');
@@ -45,6 +52,7 @@ export default function TwoFactorVerifyScreen() {
 
   const handleCodeChange = (text: string, index: number) => {
     if (!/^\d?$/.test(text)) return;
+    haptic.tick();
 
     const newCode = [...verificationCode];
     newCode[index] = text;
@@ -89,6 +97,7 @@ export default function TwoFactorVerifyScreen() {
       } else {
         await twoFactorApi.backup({ backupCode });
       }
+      haptic.success();
       showToast({ message: t('screens.2faVerify.verificationSuccessMessage'), variant: 'success' });
       router.back();
     } catch (err) {
@@ -181,12 +190,13 @@ export default function TwoFactorVerifyScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={[styles.container, { backgroundColor: tc.bg }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('screens.2faVerify.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
 
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.content}>
           {/* Hero Icon */}
           <Animated.View
@@ -266,7 +276,7 @@ export default function TwoFactorVerifyScreen() {
                   t('screens.2faVerify.lostAccessMessage'),
                   [
                     { text: t('common.cancel'), style: 'cancel' },
-                    { text: t('screens.2faVerify.lostAccessButtonContact'), onPress: () => {} },
+                    { text: t('screens.2faVerify.lostAccessButtonContact'), onPress: () => Linking.openURL('mailto:support@mizanly.app?subject=2FA%20Lost%20Access') },
                   ]
                 )
               }
@@ -292,20 +302,20 @@ export default function TwoFactorVerifyScreen() {
             </LinearGradient>
           </Animated.View>
         </View>
-      </View>
-  
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+
     </ScreenErrorBoundary>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg, // overridden inline
   },
   content: {
     flex: 1,
-    paddingTop: 100,
+    paddingTop: spacing.base,
     paddingHorizontal: spacing.base,
     paddingBottom: spacing['3xl'],
   },
@@ -324,14 +334,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   heroTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize['2xl'],
     fontWeight: '700',
     marginBottom: spacing.sm,
     textAlign: 'center',
   },
   heroSubtitle: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.base,
     textAlign: 'center',
     lineHeight: 22,
@@ -343,7 +353,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   inputLabel: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.base,
     marginBottom: spacing.lg,
     textAlign: 'center',
@@ -365,7 +375,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.08)',
   },
   otpDigit: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize['2xl'],
     fontWeight: '700',
     textAlign: 'center',
@@ -388,7 +398,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   backupInput: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize['2xl'],
     fontWeight: '700',
     fontFamily: fonts.mono,
@@ -399,7 +409,7 @@ const styles = StyleSheet.create({
     color: colors.error,
   },
   backupHint: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.sm,
     marginBottom: spacing.lg,
     textAlign: 'center',
@@ -433,7 +443,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
   },
   verifyText: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.md,
     fontWeight: '700',
   },
@@ -447,7 +457,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   lostAccessText: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.sm,
     fontWeight: '500',
   },
@@ -475,7 +485,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   helpDescription: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     lineHeight: 18,
   },

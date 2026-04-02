@@ -14,6 +14,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { Avatar } from '@/components/ui/Avatar';
 import { colors, spacing, radius, fontSize, fonts, fontSizeExt } from '@/theme';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { usersApi } from '@/services/api';
@@ -57,7 +58,7 @@ function mapUserToAccount(user: User, sessionId: string, isActive: boolean): Acc
     posts: formatCount(user.postsCount),
     isActive,
     unreadCount: 0,
-    lastActive: isActive ? 'Active now' : 'Tap to switch',
+    lastActive: isActive ? 'active_now' : 'tap_to_switch',
     isVerified: user.isVerified ?? false,
   };
 }
@@ -66,6 +67,7 @@ export default function AccountSwitcherScreen() {
   const router = useRouter();
   const tc = useThemeColors();
   const { t } = useTranslation();
+  const haptic = useContextualHaptic();
   const [autoSwitchOnNotification, setAutoSwitchOnNotification] = useState(false);
   const [switching, setSwitching] = useState(false);
   const queryClient = useQueryClient();
@@ -97,7 +99,7 @@ export default function AccountSwitcherScreen() {
       return {
         id: su?.id ?? session.id,
         sessionId: session.id,
-        displayName: su?.fullName ?? su?.username ?? 'Account',
+        displayName: su?.fullName ?? su?.username ?? t('screens.accountSwitcher.account', { defaultValue: 'Account' }),
         username: su?.username ?? '',
         avatarUrl: su?.imageUrl ?? null,
         accountType: 'Personal' as const,
@@ -106,7 +108,7 @@ export default function AccountSwitcherScreen() {
         posts: '-',
         isActive: false,
         unreadCount: 0,
-        lastActive: 'Tap to switch',
+        lastActive: 'tap_to_switch',
         isVerified: false,
       };
     });
@@ -121,6 +123,7 @@ export default function AccountSwitcherScreen() {
 
   const handleSwitchAccount = useCallback(async (account: Account) => {
     if (switching) return;
+    haptic.navigate();
     setSwitching(true);
     try {
       await setActive({ session: account.sessionId });
@@ -135,9 +138,9 @@ export default function AccountSwitcherScreen() {
   }, [switching, setActive, queryClient, router, t]);
 
   const handleAddAccount = useCallback(() => {
-    // Navigate to sign-in screen to add another account
+    haptic.navigate();
     router.push('/(auth)/sign-in');
-  }, [router]);
+  }, [router, haptic]);
 
   const handleSignOutAll = useCallback(() => {
     Alert.alert(
@@ -284,7 +287,10 @@ export default function AccountSwitcherScreen() {
                           </LinearGradient>
                         </View>
 
-                        <Text style={[styles.lastActive, { color: tc.text.tertiary }]}>{account.lastActive}</Text>
+                        <Text style={[styles.lastActive, { color: tc.text.tertiary }]}>
+                          {account.lastActive === 'active_now' ? t('screens.accountSwitcher.activeNow', { defaultValue: 'Active now' })
+                            : t('screens.accountSwitcher.tapToSwitch', { defaultValue: 'Tap to switch' })}
+                        </Text>
                       </View>
 
                       {/* Unread Badge + Switch Button */}
@@ -361,7 +367,7 @@ export default function AccountSwitcherScreen() {
                 </View>
 
                 {/* Manage Accounts Row */}
-                <Pressable accessibilityRole="button" accessibilityLabel={t('screens.accountSwitcher.manageAccounts')} style={[styles.managementRow, { opacity: 0.5 }]} disabled>
+                <Pressable accessibilityRole="button" accessibilityLabel={t('screens.accountSwitcher.manageAccounts')} style={[styles.managementRow, { opacity: 0.5 }]} onPress={() => showToast({ message: t('common.comingSoon', { defaultValue: 'Coming soon' }), variant: 'info' })}>
                   <View style={styles.managementRowLeft}>
                     <Icon name="users" size="sm" color={tc.text.secondary} />
                     <Text style={[styles.managementRowText, { color: tc.text.primary }]}>{t('screens.accountSwitcher.manageAccounts')}</Text>
@@ -370,7 +376,7 @@ export default function AccountSwitcherScreen() {
                 </Pressable>
 
                 {/* Default Account Row */}
-                <Pressable accessibilityRole="button" accessibilityLabel={t('screens.accountSwitcher.defaultAccount')} style={[styles.managementRow, { opacity: 0.5 }]} disabled>
+                <Pressable accessibilityRole="button" accessibilityLabel={t('screens.accountSwitcher.defaultAccount')} style={[styles.managementRow, { opacity: 0.5 }]} onPress={() => showToast({ message: t('common.comingSoon', { defaultValue: 'Coming soon' }), variant: 'info' })}>
                   <View style={styles.managementRowLeft}>
                     <Icon name="user" size="sm" color={tc.text.secondary} />
                     <Text style={[styles.managementRowText, { color: tc.text.primary }]}>{t('screens.accountSwitcher.defaultAccount')}</Text>
@@ -443,7 +449,6 @@ export default function AccountSwitcherScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   heroCard: {
     marginHorizontal: spacing.base,
@@ -647,7 +652,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   unreadBadgeText: {
-    fontSize: 12,
+    fontSize: fontSize.xs,
     color: '#FFF',
     fontWeight: '600',
   },

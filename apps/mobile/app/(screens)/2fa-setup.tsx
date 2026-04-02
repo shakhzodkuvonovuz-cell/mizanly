@@ -7,13 +7,14 @@ import {
   ScrollView,
   Share,
   TextInput,
-  Alert,
   Image,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import * as ScreenCapture from 'expo-screen-capture';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, SlideInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
@@ -22,6 +23,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { colors, spacing, radius, fontSize, animation, fonts } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { twoFactorApi } from '@/services/twoFactorApi';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { TwoFactorSetupResponse, TwoFactorStatus } from '@/types/twoFactor';
@@ -54,6 +56,9 @@ export default function TwoFactorSetupScreen() {
   const [setupResponse, setSetupResponse] = useState<TwoFactorSetupResponse | null>(null);
   const { t } = useTranslation();
   const tc = useThemeColors();
+  const haptic = useContextualHaptic();
+  const insets = useSafeAreaInsets();
+  const styles = createStyles(tc);
 
   // Refs for OTP inputs
   const inputRefs = useRef<(TextInput | null)[]>(Array(6).fill(null));
@@ -67,6 +72,7 @@ export default function TwoFactorSetupScreen() {
 
   const handleCodeChange = (text: string, index: number) => {
     if (!/^\d?$/.test(text)) return;
+    haptic.tick();
 
     const newCode = [...verificationCode];
     newCode[index] = text;
@@ -139,19 +145,13 @@ export default function TwoFactorSetupScreen() {
     showToast({ message: t('auth.allBackupCodesCopied'), variant: 'success' });
   };
 
-  const downloadBackupCodes = () => {
-    Alert.alert(
-      t('auth.downloadBackupCodes'),
-      t('auth.downloadBackupCodesMessage'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        { text: t('common.download'), onPress: async () => {
-          try {
-            await Share.share({ message: backupCodes.join('\n'), title: '2FA Backup Codes' });
-          } catch {}
-        } },
-      ]
-    );
+  const downloadBackupCodes = async () => {
+    haptic.tick();
+    try {
+      await Share.share({ message: backupCodes.join('\n'), title: '2FA Backup Codes' });
+    } catch {
+      // User cancelled share
+    }
   };
 
   const renderStepIndicator = () => (
@@ -188,16 +188,18 @@ export default function TwoFactorSetupScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={[styles.container, { backgroundColor: tc.bg }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('auth.twoFactorAuthentication')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
 
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingTop: spacing.base }]}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           <Animated.View entering={FadeInUp.duration(500)}>
             {/* Step Indicator */}
@@ -262,8 +264,8 @@ export default function TwoFactorSetupScreen() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={t('common.continue')}
-                style={styles.nextButton}
-                onPress={() => setActiveStep('qr')}
+                style={({ pressed }) => [styles.nextButton, pressed && { opacity: 0.85 }]}
+                onPress={() => { haptic.navigate(); setActiveStep('qr'); }}
               >
                 <LinearGradient
                   colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
@@ -520,6 +522,7 @@ export default function TwoFactorSetupScreen() {
             )}
           </Animated.View>
         </ScrollView>
+        </KeyboardAvoidingView>
 
         {/* Authenticator App Picker Bottom Sheet */}
         <BottomSheet visible={showAppPicker} onClose={() => setShowAppPicker(false)}>
@@ -535,22 +538,20 @@ export default function TwoFactorSetupScreen() {
             />
           ))}
         </BottomSheet>
-      </View>
-  
+      </SafeAreaView>
+
     </ScreenErrorBoundary>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg, // overridden inline
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 100,
     paddingHorizontal: spacing.base,
     paddingBottom: spacing['3xl'],
   },
@@ -575,7 +576,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   stepNumber: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     fontWeight: '700',
   },
@@ -612,13 +613,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   infoTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.lg,
     fontWeight: '700',
     marginBottom: spacing.sm,
   },
   infoDescription: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.base,
     textAlign: 'center',
     lineHeight: 22,
@@ -642,15 +643,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   stepTitle: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.md,
     fontWeight: '600',
   },
   stepTitleActive: {
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   stepDescription: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.base,
     marginBottom: spacing.lg,
     lineHeight: 20,
@@ -675,7 +676,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   appPickerText: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     fontWeight: '500',
   },
@@ -694,7 +695,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
   },
   nextButtonText: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.md,
     fontWeight: '600',
   },
@@ -725,13 +726,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   qrMockText: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.lg,
     fontWeight: '600',
     marginBottom: spacing.xs,
   },
   qrMockSubtext: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.sm,
   },
 
@@ -740,7 +741,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   secretLabel: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     marginBottom: spacing.xs,
   },
@@ -754,7 +755,7 @@ const styles = StyleSheet.create({
     borderColor: colors.active.emerald30,
   },
   secretText: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.md,
     fontWeight: '600',
     fontFamily: fonts.mono,
@@ -776,7 +777,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.08)',
   },
   otpDigit: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize['2xl'],
     fontWeight: '700',
     textAlign: 'center',
@@ -810,7 +811,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   backupCodeText: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.md,
     fontWeight: '700',
     fontFamily: fonts.mono,
@@ -837,7 +838,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.08)',
   },
   backupActionText: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     fontWeight: '600',
   },

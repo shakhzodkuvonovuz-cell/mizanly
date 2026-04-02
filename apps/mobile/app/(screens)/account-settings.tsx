@@ -281,7 +281,8 @@ export default function AccountSettingsScreen() {
                       }
                       await requestDeletionMutation.mutateAsync();
                     } catch {
-                      await requestDeletionMutation.mutateAsync();
+                      // Biometric error — do NOT proceed with deletion
+                      showToast({ message: t('common.error', { defaultValue: 'Authentication failed' }), variant: 'error' });
                     }
                   },
                 },
@@ -294,17 +295,7 @@ export default function AccountSettingsScreen() {
   };
 
   const handleExportData = () => {
-    Alert.alert(
-      t('accountSettings.downloadDataTitle'),
-      t('accountSettings.downloadDataMessage'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('common.download'),
-          onPress: () => exportDataMutation.mutate(),
-        },
-      ],
-    );
+    exportDataMutation.mutate();
   };
 
   if (userQuery.isLoading) {
@@ -358,7 +349,7 @@ export default function AccountSettingsScreen() {
         <ScrollView
           style={styles.body}
           contentContainerStyle={[styles.bodyContent, { paddingTop: insets.top + 52 }]}
-          refreshControl={<BrandedRefreshControl refreshing={userQuery.isLoading} onRefresh={() => userQuery.refetch()} />}
+          refreshControl={<BrandedRefreshControl refreshing={userQuery.isRefetching} onRefresh={() => userQuery.refetch()} />}
         >
           {/* Account Info */}
           <SectionHeader title={t('accountSettings.sections.accountInfo')} index={0} />
@@ -415,14 +406,14 @@ export default function AccountSettingsScreen() {
               <Row
                 label={t('accountSettings.deactivateAccount')}
                 hint={t('accountSettings.deactivateHint')}
-                onPress={handleDeactivate}
+                onPress={deactivateMutation.isPending ? undefined : handleDeactivate}
                 destructive
               />
               <View style={styles.divider} />
               <Row
                 label={t('accountSettings.deleteAccount')}
                 hint={t('accountSettings.deleteHint')}
-                onPress={handleDeleteAccount}
+                onPress={requestDeletionMutation.isPending ? undefined : handleDeleteAccount}
                 destructive
               />
             </LinearGradient>
@@ -444,9 +435,9 @@ export default function AccountSettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
   body: { flex: 1 },
-  bodyContent: { paddingBottom: 60 },
+  bodyContent: { paddingBottom: spacing['3xl'] },
 
   sectionHeaderGradient: {
     marginHorizontal: spacing.base,
