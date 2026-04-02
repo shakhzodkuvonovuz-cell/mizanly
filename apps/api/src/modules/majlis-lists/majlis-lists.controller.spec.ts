@@ -125,4 +125,15 @@ describe('MajlisListsController', () => {
       expect(service.getTimeline).toHaveBeenCalledWith(userId, 'list-1', 'cursor-1');
     });
   });
+
+  // ── W7-T1: Missing getMembers controller delegation test (T04 #13, H severity) ──
+  describe('getMembers', () => {
+    it('should call service.getMembers with userId, listId, and cursor', async () => {
+      service.getMembers.mockResolvedValue({ data: [], meta: { cursor: null, hasMore: false } } as any);
+
+      await controller.getMembers(userId, 'list-1', 'cursor-1');
+
+      expect(service.getMembers).toHaveBeenCalledWith(userId, 'list-1', 'cursor-1');
+    });
+  });
 });

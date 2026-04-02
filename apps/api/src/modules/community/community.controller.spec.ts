@@ -176,4 +176,130 @@ describe('CommunityController', () => {
       expect(result).toEqual(expect.objectContaining({ url: expect.any(String) }));
     });
   });
+
+  // ── W7-T1: Missing controller delegation tests (T04 #11, H severity) ──
+
+  describe('respondMentorship', () => {
+    it('should call communityService.respondMentorship with userId, menteeId, accept', async () => {
+      service.respondMentorship.mockResolvedValue({ status: 'MENTORSHIP_ACTIVE' } as any);
+      const result = await controller.respondMentorship(userId, 'mentee-1', { accept: true } as any);
+      expect(service.respondMentorship).toHaveBeenCalledWith(userId, 'mentee-1', true);
+      expect(result).toEqual(expect.objectContaining({ status: 'MENTORSHIP_ACTIVE' }));
+    });
+  });
+
+  describe('getMyMentorships', () => {
+    it('should call communityService.getMyMentorships with userId', async () => {
+      service.getMyMentorships.mockResolvedValue({ asMentor: [], asMentee: [] } as any);
+      const result = await controller.getMyMentorships(userId);
+      expect(service.getMyMentorships).toHaveBeenCalledWith(userId);
+      expect(result).toEqual({ asMentor: [], asMentee: [] });
+    });
+  });
+
+  describe('getStudyCircles', () => {
+    it('should call communityService.getStudyCircles with topic and cursor', async () => {
+      service.getStudyCircles.mockResolvedValue({ data: [], meta: { cursor: null, hasMore: false } } as any);
+      await controller.getStudyCircles('QURAN', 'cursor-1');
+      expect(service.getStudyCircles).toHaveBeenCalledWith('QURAN', 'cursor-1');
+    });
+  });
+
+  describe('getFatwaQuestions', () => {
+    it('should call communityService.getFatwaQuestions with status, madhab, cursor', async () => {
+      service.getFatwaQuestions.mockResolvedValue({ data: [], meta: { cursor: null, hasMore: false } } as any);
+      await controller.getFatwaQuestions('FATWA_PENDING', 'hanafi', 'cursor-1');
+      expect(service.getFatwaQuestions).toHaveBeenCalledWith('FATWA_PENDING', 'hanafi', 'cursor-1');
+    });
+  });
+
+  describe('createOpportunity', () => {
+    it('should call communityService.createOpportunity with userId and dto', async () => {
+      const dto = { title: 'Help needed', description: 'desc', category: 'EDUCATION' };
+      service.createOpportunity.mockResolvedValue({ id: 'opp-1' } as any);
+      const result = await controller.createOpportunity(userId, dto as any);
+      expect(service.createOpportunity).toHaveBeenCalledWith(userId, dto);
+      expect(result).toEqual(expect.objectContaining({ id: 'opp-1' }));
+    });
+  });
+
+  describe('getOpportunities', () => {
+    it('should call communityService.getOpportunities with category and cursor', async () => {
+      service.getOpportunities.mockResolvedValue({ data: [], meta: { cursor: null, hasMore: false } } as any);
+      await controller.getOpportunities('EDUCATION', 'cursor-1');
+      expect(service.getOpportunities).toHaveBeenCalledWith('EDUCATION', 'cursor-1');
+    });
+  });
+
+  describe('createEvent', () => {
+    it('should call communityService.createEvent with userId and dto', async () => {
+      const dto = { title: 'Eid Party', eventType: 'EID', startDate: '2026-04-01' };
+      service.createEvent.mockResolvedValue({ id: 'evt-1' } as any);
+      const result = await controller.createEvent(userId, dto as any);
+      expect(service.createEvent).toHaveBeenCalledWith(userId, dto);
+      expect(result).toEqual(expect.objectContaining({ id: 'evt-1' }));
+    });
+  });
+
+  describe('getEvents', () => {
+    it('should call communityService.getEvents with eventType and cursor', async () => {
+      service.getEvents.mockResolvedValue({ data: [], meta: { cursor: null, hasMore: false } } as any);
+      await controller.getEvents('EID', 'cursor-1');
+      expect(service.getEvents).toHaveBeenCalledWith('EID', 'cursor-1');
+    });
+  });
+
+  describe('getReputation', () => {
+    it('should call communityService.getReputation with userId', async () => {
+      service.getReputation.mockResolvedValue({ score: 100, tier: 'MEMBER' } as any);
+      const result = await controller.getReputation(userId);
+      expect(service.getReputation).toHaveBeenCalledWith(userId);
+      expect(result).toEqual(expect.objectContaining({ score: 100 }));
+    });
+  });
+
+  describe('getVoicePosts', () => {
+    it('should call communityService.getVoicePosts with cursor', async () => {
+      service.getVoicePosts.mockResolvedValue({ data: [], meta: { cursor: null, hasMore: false } } as any);
+      await controller.getVoicePosts('cursor-1');
+      expect(service.getVoicePosts).toHaveBeenCalledWith('cursor-1');
+    });
+  });
+
+  describe('createCollection', () => {
+    it('should call communityService.createCollection with userId and dto', async () => {
+      const dto = { name: 'My Favorites', isPublic: true };
+      service.createCollection.mockResolvedValue({ id: 'col-1' } as any);
+      const result = await controller.createCollection(userId, dto as any);
+      expect(service.createCollection).toHaveBeenCalledWith(userId, dto);
+      expect(result).toEqual(expect.objectContaining({ id: 'col-1' }));
+    });
+  });
+
+  describe('getMyCollections', () => {
+    it('should call communityService.getMyCollections with userId', async () => {
+      service.getMyCollections.mockResolvedValue([{ id: 'col-1' }] as any);
+      const result = await controller.getMyCollections(userId);
+      expect(service.getMyCollections).toHaveBeenCalledWith(userId);
+      expect(result).toHaveLength(1);
+    });
+  });
+
+  describe('createWaqf', () => {
+    it('should call communityService.createWaqf with userId and dto', async () => {
+      const dto = { title: 'Mosque Fund', description: 'desc', goalAmount: 10000 };
+      service.createWaqf.mockResolvedValue({ id: 'waqf-1' } as any);
+      const result = await controller.createWaqf(userId, dto as any);
+      expect(service.createWaqf).toHaveBeenCalledWith(userId, dto);
+      expect(result).toEqual(expect.objectContaining({ id: 'waqf-1' }));
+    });
+  });
+
+  describe('getWaqfFunds', () => {
+    it('should call communityService.getWaqfFunds with cursor', async () => {
+      service.getWaqfFunds.mockResolvedValue({ data: [], meta: { cursor: null, hasMore: false } } as any);
+      await controller.getWaqfFunds('cursor-1');
+      expect(service.getWaqfFunds).toHaveBeenCalledWith('cursor-1');
+    });
+  });
 });

@@ -126,4 +126,71 @@ describe('CommunityNotesService', () => {
       data: { notHelpfulVotes: { increment: 1 } },
     }));
   });
+
+  // ── W7-T1: rateNote() auto-promote threshold (T04 #30, M severity) ──
+  it('should auto-promote to HELPFUL when >=5 votes and >=60% helpful', async () => {
+    prisma.communityNote.findUnique.mockResolvedValue({ id: 'cn-1', authorId: 'author-x', helpfulVotes: 3, notHelpfulVotes: 1 });
+    prisma.communityNoteRating.findUnique.mockResolvedValue(null);
+    prisma.communityNoteRating.create.mockResolvedValue({});
+    // After increment, helpfulVotes=4, notHelpfulVotes=1 => total=5, ratio=80%
+    prisma.communityNote.update.mockResolvedValue({ id: 'cn-1', helpfulVotes: 4, notHelpfulVotes: 1 });
+
+    await service.rateNote('voter-5', 'cn-1', 'NOTE_HELPFUL');
+
+    // Should have called update twice: once for incrementing vote, once for auto-promote
+    expect(prisma.communityNote.update).toHaveBeenCalledTimes(2);
+    expect(prisma.communityNote.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: { status: 'HELPFUL' },
+    }));
+  });
+
+  it('should auto-dismiss to NOT_HELPFUL when >=5 votes and <60% helpful', async () => {
+    prisma.communityNote.findUnique.mockResolvedValue({ id: 'cn-1', authorId: 'author-x', helpfulVotes: 1, notHelpfulVotes: 3 });
+    prisma.communityNoteRating.findUnique.mockResolvedValue(null);
+    prisma.communityNoteRating.create.mockResolvedValue({});
+    // After increment, helpfulVotes=1, notHelpfulVotes=4 => total=5, ratio=20%
+    prisma.communityNote.update.mockResolvedValue({ id: 'cn-1', helpfulVotes: 1, notHelpfulVotes: 4 });
+
+    await service.rateNote('voter-5', 'cn-1', 'NOTE_NOT_HELPFUL');
+
+    expect(prisma.communityNote.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: { status: 'NOT_HELPFUL' },
+    }));
+  });
+
+  // ── W7-T1: rateNote() somewhat-helpful neutral (T04 #31, M severity) ──
+  it('should not increment any counter for NOTE_SOMEWHAT_HELPFUL', async () => {
+    prisma.communityNote.findUnique
+      .mockResolvedValueOnce({ id: 'cn-1', authorId: 'author-x', helpfulVotes: 2, notHelpfulVotes: 1 }) // for note lookup
+      .mockResolvedValueOnce({ id: 'cn-1', helpfulVotes: 2, notHelpfulVotes: 1 }); // for fallback findUnique inside tx
+    prisma.communityNoteRating.findUnique.mockResolvedValue(null);
+    prisma.communityNoteRating.create.mockResolvedValue({});
+
+    await service.rateNote('voter-3', 'cn-1', 'NOTE_SOMEWHAT_HELPFUL');
+
+    // Should only call communityNote.update if needed — but for somewhat_helpful, update is not called for incrementing
+    // The update calls should NOT include helpfulVotes or notHelpfulVotes increment
+    const updateCalls = prisma.communityNote.update.mock.calls;
+    for (const call of updateCalls) {
+      expect(call[0].data).not.toHaveProperty('helpfulVotes');
+      expect(call[0].data).not.toHaveProperty('notHelpfulVotes');
+    }
+  });
+
+  // ── W7-T1: rateNote() self-rating prevention (T04 #47, L severity) ──
+  it('should throw BadRequestException when author tries to rate own note', async () => {
+    prisma.communityNote.findUnique.mockResolvedValue({ id: 'cn-1', authorId: 'u1', helpfulVotes: 2, notHelpfulVotes: 0 });
+    await expect(service.rateNote('u1', 'cn-1', 'NOTE_HELPFUL')).rejects.toThrow(BadRequestException);
+  });
+
+  // ── W7-T1: createNote() thread content not found (T04 #32, M severity) ──
+  it('should throw NotFoundException when thread content not found', async () => {
+    prisma.thread.findFirst.mockResolvedValue(null);
+    await expect(service.createNote('u1', 'thread', 'missing', 'note')).rejects.toThrow(NotFoundException);
+  });
+
+  it('should throw NotFoundException when reel content not found', async () => {
+    prisma.reel.findFirst.mockResolvedValue(null);
+    await expect(service.createNote('u1', 'reel', 'missing', 'note')).rejects.toThrow(NotFoundException);
+  });
 });

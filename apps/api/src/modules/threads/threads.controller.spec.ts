@@ -32,6 +32,16 @@ describe('ThreadsController', () => {
     getUserThreads: jest.fn(),
     report: jest.fn(),
     dismiss: jest.fn(),
+    // W7-T1: Missing methods for controller delegation tests
+    setReplyPermission: jest.fn(),
+    canReply: jest.fn(),
+    getShareLink: jest.fn(),
+    isBookmarked: jest.fn(),
+    createContinuation: jest.fn(),
+    updateThread: jest.fn(),
+    shareToStory: jest.fn(),
+    getThreadUnroll: jest.fn(),
+    getThreadAnalytics: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -211,6 +221,97 @@ describe('ThreadsController', () => {
       mockService.dismiss.mockResolvedValue({ dismissed: true });
       await controller.dismiss('thread-1', 'user-1');
       expect(mockService.dismiss).toHaveBeenCalledWith('thread-1', 'user-1');
+    });
+  });
+
+  // ── W7-T1: Missing controller delegation tests (T04 #9, H severity) ──
+
+  describe('getTrending', () => {
+    it('should call service.getFeed with empty userId, trending type, cursor, and limit', async () => {
+      mockService.getFeed.mockResolvedValue({ data: [], meta: { hasMore: false } });
+      await controller.getTrending('cursor-1', '10');
+      expect(mockService.getFeed).toHaveBeenCalledWith('', 'trending', 'cursor-1', 10);
+    });
+  });
+
+  describe('setReplyPermission', () => {
+    it('should call service.setReplyPermission with id, userId, and permission', async () => {
+      mockService.setReplyPermission.mockResolvedValue({ updated: true, permission: 'following' });
+      const result = await controller.setReplyPermission('thread-1', 'user-1', { permission: 'following' } as any);
+      expect(mockService.setReplyPermission).toHaveBeenCalledWith('thread-1', 'user-1', 'following');
+      expect(result).toEqual({ updated: true, permission: 'following' });
+    });
+  });
+
+  describe('canReply', () => {
+    it('should call service.canReply with id and viewerId', async () => {
+      mockService.canReply.mockResolvedValue({ canReply: true, reason: 'everyone' });
+      const result = await controller.canReply('thread-1', 'viewer-1');
+      expect(mockService.canReply).toHaveBeenCalledWith('thread-1', 'viewer-1');
+      expect(result).toEqual({ canReply: true, reason: 'everyone' });
+    });
+  });
+
+  describe('getShareLink', () => {
+    it('should call service.getShareLink with id', async () => {
+      mockService.getShareLink.mockResolvedValue({ url: 'https://mizanly.app/thread/t1' });
+      const result = await controller.getShareLink('thread-1');
+      expect(mockService.getShareLink).toHaveBeenCalledWith('thread-1');
+      expect(result.url).toBe('https://mizanly.app/thread/t1');
+    });
+  });
+
+  describe('isBookmarked', () => {
+    it('should call service.isBookmarked with id and userId', async () => {
+      mockService.isBookmarked.mockResolvedValue({ bookmarked: true });
+      const result = await controller.isBookmarked('thread-1', 'user-1');
+      expect(mockService.isBookmarked).toHaveBeenCalledWith('thread-1', 'user-1');
+      expect(result).toEqual({ bookmarked: true });
+    });
+  });
+
+  describe('createContinuation', () => {
+    it('should call service.createContinuation with userId, id, and content', async () => {
+      mockService.createContinuation.mockResolvedValue({ id: 'cont-1' });
+      const result = await controller.createContinuation('thread-1', 'user-1', { content: 'continuation' } as any);
+      expect(mockService.createContinuation).toHaveBeenCalledWith('user-1', 'thread-1', 'continuation');
+      expect(result).toEqual({ id: 'cont-1' });
+    });
+  });
+
+  describe('updateThread', () => {
+    it('should call service.updateThread with id, userId, and content', async () => {
+      mockService.updateThread.mockResolvedValue({ id: 'thread-1', content: 'updated' });
+      const result = await controller.updateThread('thread-1', 'user-1', { content: 'updated' } as any);
+      expect(mockService.updateThread).toHaveBeenCalledWith('thread-1', 'user-1', 'updated');
+      expect(result.content).toBe('updated');
+    });
+  });
+
+  describe('shareToStory', () => {
+    it('should call service.shareToStory with id and userId', async () => {
+      mockService.shareToStory.mockResolvedValue({ threadId: 't1', content: 'test' });
+      const result = await controller.shareToStory('thread-1', 'user-1');
+      expect(mockService.shareToStory).toHaveBeenCalledWith('thread-1', 'user-1');
+      expect(result.threadId).toBe('t1');
+    });
+  });
+
+  describe('getThreadUnroll', () => {
+    it('should call service.getThreadUnroll with id', async () => {
+      mockService.getThreadUnroll.mockResolvedValue({ data: [{ id: 't1' }], meta: { totalParts: 1 } });
+      const result = await controller.getThreadUnroll('thread-1');
+      expect(mockService.getThreadUnroll).toHaveBeenCalledWith('thread-1');
+      expect(result.meta.totalParts).toBe(1);
+    });
+  });
+
+  describe('getThreadAnalytics', () => {
+    it('should call service.getThreadAnalytics with id and userId', async () => {
+      mockService.getThreadAnalytics.mockResolvedValue({ thread: {}, average: {}, comparison: {} });
+      const result = await controller.getThreadAnalytics('thread-1', 'user-1');
+      expect(mockService.getThreadAnalytics).toHaveBeenCalledWith('thread-1', 'user-1');
+      expect(result).toHaveProperty('comparison');
     });
   });
 });

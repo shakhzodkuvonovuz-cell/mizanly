@@ -26,6 +26,7 @@ describe('ThreadsService', () => {
               update: jest.fn(),
               findMany: jest.fn(),
               findFirst: jest.fn(),
+              count: jest.fn(),
             },
             threadReaction: {
               create: jest.fn(),
@@ -52,10 +53,12 @@ describe('ThreadsService', () => {
             },
             user: {
               findUnique: jest.fn(),
+              findMany: jest.fn(),
               update: jest.fn(),
             },
             follow: {
               findMany: jest.fn(),
+              findUnique: jest.fn(),
             },
             block: {
               findMany: jest.fn(),
@@ -980,6 +983,403 @@ describe('ThreadsService', () => {
     it('B04-#12: getUserThreads should reject deactivated user', async () => {
       prisma.user.findUnique.mockResolvedValue({ id: 'u1', isBanned: false, isDeactivated: true, isDeleted: false });
       await expect(service.getUserThreads('deactivated-user')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ────────────────────────────────────────────────────────────
+  // W7-T1: canReply() — 5 permission branches (T04 #1, C severity)
+  // ────────────────────────────────────────────────────────────
+  describe('canReply', () => {
+    const baseThread = { userId: 'author-1', replyPermission: 'EVERYONE', mentions: ['alice'], isRemoved: false, user: { username: 'author' } };
+
+    it('should throw NotFoundException for nonexistent thread', async () => {
+      prisma.thread.findUnique.mockResolvedValue(null);
+      await expect(service.canReply('missing-id')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException for removed thread', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ ...baseThread, isRemoved: true });
+      await expect(service.canReply('t1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should return canReply=true reason=author when viewer is the thread author', async () => {
+      prisma.thread.findUnique.mockResolvedValue(baseThread);
+      const result = await service.canReply('t1', 'author-1');
+      expect(result).toEqual({ canReply: true, reason: 'author' });
+    });
+
+    it('should return canReply=true reason=everyone when permission is EVERYONE', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ ...baseThread, replyPermission: 'EVERYONE' });
+      const result = await service.canReply('t1', 'viewer-1');
+      expect(result).toEqual({ canReply: true, reason: 'everyone' });
+    });
+
+    it('should return canReply=false reason=none when permission is NONE', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ ...baseThread, replyPermission: 'NONE' });
+      const result = await service.canReply('t1', 'viewer-1');
+      expect(result).toEqual({ canReply: false, reason: 'none' });
+    });
+
+    it('should return canReply=true reason=following when viewer follows author', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ ...baseThread, replyPermission: 'FOLLOWING' });
+      prisma.follow.findUnique.mockResolvedValue({ followerId: 'viewer-1', followingId: 'author-1' });
+      const result = await service.canReply('t1', 'viewer-1');
+      expect(result).toEqual({ canReply: true, reason: 'following' });
+    });
+
+    it('should return canReply=false reason=not_following when viewer does not follow author', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ ...baseThread, replyPermission: 'FOLLOWING' });
+      prisma.follow.findUnique.mockResolvedValue(null);
+      const result = await service.canReply('t1', 'viewer-1');
+      expect(result).toEqual({ canReply: false, reason: 'not_following' });
+    });
+
+    it('should return canReply=false reason=not_following when unauthenticated and permission is FOLLOWING', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ ...baseThread, replyPermission: 'FOLLOWING' });
+      const result = await service.canReply('t1');
+      expect(result).toEqual({ canReply: false, reason: 'not_following' });
+    });
+
+    it('should return canReply=true reason=mentioned when viewer is mentioned', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ ...baseThread, replyPermission: 'MENTIONED', mentions: ['alice'] });
+      prisma.user.findUnique.mockResolvedValue({ username: 'alice' });
+      const result = await service.canReply('t1', 'viewer-1');
+      expect(result).toEqual({ canReply: true, reason: 'mentioned' });
+    });
+
+    it('should return canReply=false reason=not_mentioned when viewer is not mentioned', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ ...baseThread, replyPermission: 'MENTIONED', mentions: ['alice'] });
+      prisma.user.findUnique.mockResolvedValue({ username: 'bob' });
+      const result = await service.canReply('t1', 'viewer-1');
+      expect(result).toEqual({ canReply: false, reason: 'not_mentioned' });
+    });
+
+    it('should return canReply=false reason=not_mentioned when unauthenticated and permission is MENTIONED', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ ...baseThread, replyPermission: 'MENTIONED' });
+      const result = await service.canReply('t1');
+      expect(result).toEqual({ canReply: false, reason: 'not_mentioned' });
+    });
+  });
+
+  // ────────────────────────────────────────────────────────────
+  // W7-T1: createContinuation() (T04 #2, C severity)
+  // ────────────────────────────────────────────────────────────
+  describe('createContinuation', () => {
+    const parentThread = { id: 'parent-1', userId: 'u1', isRemoved: false, chainId: null, chainPosition: null, visibility: 'PUBLIC' };
+
+    beforeEach(() => {
+      const cs = (service as any).contentSafety;
+      cs.moderateText = jest.fn().mockResolvedValue({ safe: true, flags: [] });
+    });
+
+    it('should throw NotFoundException for nonexistent parent thread', async () => {
+      prisma.thread.findUnique.mockResolvedValue(null);
+      await expect(service.createContinuation('u1', 'missing', 'content')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException when non-author tries to continue', async () => {
+      prisma.thread.findUnique.mockResolvedValue(parentThread);
+      await expect(service.createContinuation('other-user', 'parent-1', 'content')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw BadRequestException for removed thread', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ ...parentThread, isRemoved: true });
+      await expect(service.createContinuation('u1', 'parent-1', 'content')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should create chain head from non-chain parent and set chainId=parentId', async () => {
+      prisma.thread.findUnique.mockResolvedValue(parentThread);
+      prisma.thread.update.mockResolvedValue({});
+      prisma.thread.count.mockResolvedValue(1);
+      const continuation = { id: 'cont-1', chainId: 'parent-1', chainPosition: 2, isChainHead: false };
+      prisma.thread.create.mockResolvedValue(continuation);
+
+      const result = await service.createContinuation('u1', 'parent-1', 'continuation text');
+
+      // Parent should be updated to become chain head
+      expect(prisma.thread.update).toHaveBeenCalledWith({
+        where: { id: 'parent-1' },
+        data: { chainId: 'parent-1', chainPosition: 1, isChainHead: true },
+      });
+      expect(prisma.thread.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ chainId: 'parent-1', isChainHead: false }),
+      }));
+      expect(result).toEqual(continuation);
+    });
+
+    it('should use existing chainId when parent is already in a chain', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ ...parentThread, chainId: 'chain-99' });
+      prisma.thread.count.mockResolvedValue(3);
+      prisma.thread.create.mockResolvedValue({ id: 'cont-2', chainId: 'chain-99', chainPosition: 4 });
+
+      await service.createContinuation('u1', 'parent-1', 'content');
+
+      // Should NOT update parent since it's already in a chain
+      expect(prisma.thread.update).not.toHaveBeenCalled();
+      expect(prisma.thread.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ chainId: 'chain-99', chainPosition: 4 }),
+      }));
+    });
+  });
+
+  // ────────────────────────────────────────────────────────────
+  // W7-T1: updateThread() (T04 #3, C severity)
+  // ────────────────────────────────────────────────────────────
+  describe('updateThread', () => {
+    beforeEach(() => {
+      const cs = (service as any).contentSafety;
+      cs.moderateText = jest.fn().mockResolvedValue({ safe: true, flags: [] });
+    });
+
+    it('should throw NotFoundException for nonexistent thread', async () => {
+      prisma.thread.findUnique.mockResolvedValue(null);
+      await expect(service.updateThread('missing', 'u1', 'new content')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException when non-owner tries to update', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ userId: 'other', isRemoved: false });
+      await expect(service.updateThread('t1', 'u1', 'new content')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw BadRequestException for removed thread', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ userId: 'u1', isRemoved: true });
+      await expect(service.updateThread('t1', 'u1', 'new content')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should update thread content and return updated thread', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ userId: 'u1', isRemoved: false });
+      const updated = { id: 't1', content: 'updated text', visibility: 'PUBLIC', hashtags: [], user: { username: 'u1' } };
+      prisma.thread.update.mockResolvedValue(updated);
+
+      const result = await service.updateThread('t1', 'u1', 'updated text');
+
+      expect(prisma.thread.update).toHaveBeenCalledWith(expect.objectContaining({
+        where: { id: 't1' },
+        data: { content: 'updated text' },
+      }));
+      expect(result).toEqual(updated);
+    });
+  });
+
+  // ────────────────────────────────────────────────────────────
+  // W7-T1: shareToStory() (T04 #4, H severity)
+  // ────────────────────────────────────────────────────────────
+  describe('shareToStory', () => {
+    it('should throw NotFoundException for nonexistent/removed thread', async () => {
+      prisma.thread.findFirst.mockResolvedValue(null);
+      await expect(service.shareToStory('missing', 'u1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException when non-owner tries to share non-public thread', async () => {
+      prisma.thread.findFirst.mockResolvedValue({
+        id: 't1', userId: 'author-1', visibility: 'FOLLOWERS', content: 'test',
+        user: { displayName: 'Author', username: 'author', avatarUrl: null },
+        likesCount: 10, repliesCount: 5,
+      });
+      await expect(service.shareToStory('t1', 'other-user')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should return formatted story data for public thread', async () => {
+      prisma.thread.findFirst.mockResolvedValue({
+        id: 't1', userId: 'author-1', visibility: 'PUBLIC', content: 'Hello world',
+        user: { displayName: 'Author', username: 'author', avatarUrl: 'https://avatar.url' },
+        likesCount: 10, repliesCount: 5,
+      });
+
+      const result = await service.shareToStory('t1', 'viewer-1');
+
+      expect(result).toEqual(expect.objectContaining({
+        threadId: 't1',
+        content: 'Hello world',
+        author: 'Author',
+        authorAvatar: 'https://avatar.url',
+        authorUsername: 'author',
+        likesCount: 10,
+        repliesCount: 5,
+        shareUrl: 'https://mizanly.app/thread/t1',
+      }));
+    });
+  });
+
+  // ────────────────────────────────────────────────────────────
+  // W7-T1: recordView() (T04 #5, M severity)
+  // ────────────────────────────────────────────────────────────
+  describe('recordView', () => {
+    it('should increment viewsCount for the thread', async () => {
+      prisma.thread.update.mockResolvedValue({});
+      await service.recordView('t1');
+      expect(prisma.thread.update).toHaveBeenCalledWith({
+        where: { id: 't1' },
+        data: { viewsCount: { increment: 1 } },
+      });
+    });
+
+    it('should gracefully swallow errors (fire-and-forget)', async () => {
+      prisma.thread.update.mockRejectedValue(new Error('DB error'));
+      // Should not throw — error is caught internally
+      await expect(service.recordView('nonexistent')).resolves.toBeUndefined();
+    });
+  });
+
+  // ────────────────────────────────────────────────────────────
+  // W7-T1: addReply() reply permission enforcement (T04 #6, M)
+  // ────────────────────────────────────────────────────────────
+  describe('addReply — reply permission enforcement', () => {
+    const baseThread = {
+      id: 't1', userId: 'author-1', isRemoved: false, scheduledAt: null,
+      replyPermission: 'FOLLOWING', mentions: ['alice'],
+    };
+
+    beforeEach(() => {
+      // Ensure content safety returns safe for reply permission tests
+      const cs = (service as any).contentSafety;
+      cs.moderateText = jest.fn().mockResolvedValue({ safe: true, flags: [] });
+    });
+
+    it('should throw ForbiddenException for FOLLOWING when replier does not follow author', async () => {
+      prisma.thread.findUnique.mockResolvedValue(baseThread);
+      prisma.follow.findUnique.mockResolvedValue(null);
+      await expect(service.addReply('t1', 'replier-1', 'test reply')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw ForbiddenException for MENTIONED when replier is not mentioned', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ ...baseThread, replyPermission: 'MENTIONED' });
+      prisma.user.findUnique.mockResolvedValue({ username: 'bob' });
+      await expect(service.addReply('t1', 'replier-1', 'test reply')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw ForbiddenException for NONE permission', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ ...baseThread, replyPermission: 'NONE' });
+      await expect(service.addReply('t1', 'replier-1', 'test reply')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should allow author to reply regardless of permission setting', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ ...baseThread, replyPermission: 'NONE' });
+      prisma.threadReply.findUnique.mockResolvedValue(null);
+      const reply = { id: 'r1', content: 'reply', user: { id: 'author-1' } };
+      prisma.$transaction.mockResolvedValue([reply, {}]);
+      prisma.threadReply.create.mockResolvedValue(reply);
+      prisma.thread.update.mockResolvedValue({});
+
+      const result = await service.addReply('t1', 'author-1', 'self reply');
+      expect(result).toEqual(reply);
+    });
+  });
+
+  // ────────────────────────────────────────────────────────────
+  // W7-T1: bookmark() P2002 race (T04 #8, M severity)
+  // ────────────────────────────────────────────────────────────
+  describe('bookmark — P2002 race condition', () => {
+    it('should throw ConflictException when P2002 unique constraint violated', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ id: 't1', isRemoved: false });
+      // Import the actual PrismaClientKnownRequestError class
+      const { Prisma } = require('@prisma/client');
+      const p2002Error = new Prisma.PrismaClientKnownRequestError('Unique constraint failed', { code: 'P2002', clientVersion: '5.0.0' });
+      prisma.$transaction.mockRejectedValue(p2002Error);
+
+      await expect(service.bookmark('t1', 'u1')).rejects.toThrow(ConflictException);
+    });
+  });
+
+  // ────────────────────────────────────────────────────────────
+  // W7-T1: like() P2002 race (T04 #9, M severity)
+  // ────────────────────────────────────────────────────────────
+  describe('like — P2002 race condition', () => {
+    it('should return liked:true when P2002 occurs (concurrent duplicate)', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ id: 't1', isRemoved: false, userId: 'other-user', scheduledAt: null });
+      prisma.threadReaction.findUnique.mockResolvedValue(null);
+      const error = new Error('P2002') as any;
+      error.code = 'P2002';
+      prisma.$transaction.mockRejectedValue(error);
+
+      const result = await service.like('t1', 'u1');
+      expect(result).toEqual({ liked: true });
+    });
+  });
+
+  // ────────────────────────────────────────────────────────────
+  // W7-T1: votePoll() P2002 race (T04 #10, M severity)
+  // ────────────────────────────────────────────────────────────
+  describe('votePoll — P2002 race condition', () => {
+    it('should throw ConflictException when P2002 occurs (concurrent duplicate vote)', async () => {
+      prisma.pollOption.findUnique.mockResolvedValue({
+        id: 'opt-1', pollId: 'poll-1',
+        poll: { endsAt: null, allowMultiple: false },
+      });
+      prisma.pollVote.findUnique.mockResolvedValue(null);
+      prisma.pollVote.findFirst.mockResolvedValue(null);
+      const error = new Error('P2002') as any;
+      error.code = 'P2002';
+      prisma.$transaction.mockRejectedValue(error);
+
+      await expect(service.votePoll('opt-1', 'u1')).rejects.toThrow(ConflictException);
+    });
+  });
+
+  // ────────────────────────────────────────────────────────────
+  // W7-T1: getThreadAnalytics() (tested in unroll spec but verify here)
+  // ────────────────────────────────────────────────────────────
+  describe('getThreadAnalytics', () => {
+    it('should throw NotFoundException for nonexistent thread', async () => {
+      prisma.thread.findUnique.mockResolvedValue(null);
+      await expect(service.getThreadAnalytics('t1', 'u1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException for non-author', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ id: 't1', userId: 'other' });
+      await expect(service.getThreadAnalytics('t1', 'u1')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should return thread stats with comparison to average', async () => {
+      prisma.thread.findUnique.mockResolvedValue({
+        id: 't1', userId: 'u1', likesCount: 20, repliesCount: 10, repostsCount: 5, viewsCount: 100,
+      });
+      prisma.thread.findMany.mockResolvedValue([
+        { likesCount: 10, repliesCount: 5, repostsCount: 2, viewsCount: 50 },
+        { likesCount: 10, repliesCount: 5, repostsCount: 2, viewsCount: 50 },
+      ]);
+
+      const result = await service.getThreadAnalytics('t1', 'u1');
+
+      expect(result.thread).toEqual({ likes: 20, replies: 10, reposts: 5, views: 100 });
+      expect(result.average.likes).toBe(10);
+      expect(result.comparison.likesVsAvg).toBe(100); // (20-10)/10 * 100
+    });
+  });
+
+  // ────────────────────────────────────────────────────────────
+  // W7-T1: getThreadUnroll() (verify basic behavior)
+  // ────────────────────────────────────────────────────────────
+  describe('getThreadUnroll', () => {
+    it('should throw NotFoundException for nonexistent thread', async () => {
+      prisma.thread.findFirst.mockResolvedValue(null);
+      await expect(service.getThreadUnroll('missing')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException for non-public thread', async () => {
+      prisma.thread.findFirst.mockResolvedValue({ id: 't1', visibility: 'FOLLOWERS', chainId: null });
+      await expect(service.getThreadUnroll('t1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should return single thread when no chain', async () => {
+      const thread = { id: 't1', visibility: 'PUBLIC', chainId: null };
+      prisma.thread.findFirst.mockResolvedValue(thread);
+      const result = await service.getThreadUnroll('t1');
+      expect(result.data).toEqual([thread]);
+      expect(result.meta.totalParts).toBe(1);
+    });
+
+    it('should return chain threads ordered by position', async () => {
+      prisma.thread.findFirst.mockResolvedValue({ id: 't1', visibility: 'PUBLIC', chainId: 'chain-1' });
+      const chain = [
+        { id: 't1', chainPosition: 1 },
+        { id: 't2', chainPosition: 2 },
+      ];
+      prisma.thread.findMany.mockResolvedValue(chain);
+      const result = await service.getThreadUnroll('t1');
+      expect(result.data).toEqual(chain);
+      expect(result.meta.totalParts).toBe(2);
+      expect(result.meta.chainId).toBe('chain-1');
     });
   });
 });
