@@ -31,6 +31,7 @@ import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { commerceApi } from '@/services/api';
 import { navigate } from '@/utils/navigation';
 import { formatCount } from '@/utils/formatCount';
+import { rtlFlexRow } from '@/utils/rtl';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -97,7 +98,7 @@ function renderStars(rating: number, size: 'xs' | 'sm' = 'xs', inactiveColor: st
 function ProductDetailContent() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();

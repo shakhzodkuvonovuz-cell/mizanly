@@ -256,6 +256,7 @@ export default function ProfileScreen() {
   const profileQuery = useQuery({
     queryKey: ['profile', username],
     queryFn: () => usersApi.getProfile(username),
+    staleTime: 30_000,
   });
   const profile = profileQuery.data;
   const isFollowing = profile?.isFollowing ?? false;
@@ -1021,7 +1022,17 @@ export default function ProfileScreen() {
         <BottomSheetItem
           label={t('profile.muteUser', { username })}
           icon={<Icon name="volume-x" size="sm" color={tc.text.primary} />}
-          onPress={() => muteMutation.mutate()}
+          onPress={() => {
+            haptic.delete();
+            Alert.alert(
+              t('profile.muteUser', { username }),
+              t('profile.muteConfirmMessage', { defaultValue: 'You will no longer see posts from this user in your feed.' }),
+              [
+                { text: t('common.cancel'), style: 'cancel' },
+                { text: t('common.mute', { defaultValue: 'Mute' }), style: 'destructive', onPress: () => muteMutation.mutate() },
+              ],
+            );
+          }}
         />
         <BottomSheetItem
           label={t('profile.blockUser', { username })}
