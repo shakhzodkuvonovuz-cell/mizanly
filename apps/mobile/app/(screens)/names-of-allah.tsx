@@ -7,7 +7,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useQuery } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Audio } from 'expo-av';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -47,11 +46,13 @@ function NameCard({ name, isLearned, onToggleLearned, onShare, onPlayAudio, expa
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
+  const haptic = useContextualHaptic();
 
   return (
     <Pressable
-      style={[styles.nameCard, isLearned && styles.nameCardLearned]}
-      onPress={onToggleExpand}
+      style={({ pressed }) => [styles.nameCard, isLearned && styles.nameCardLearned, pressed && { opacity: 0.85 }]}
+      onPress={() => { haptic.tick(); onToggleExpand(); }}
+      android_ripple={{ color: colors.active.emerald10 }}
       accessibilityLabel={`${name.transliteration} - ${name.englishMeaning}`}
       accessibilityRole="button"
     >
@@ -131,17 +132,10 @@ export default function NamesOfAllahScreen() {
   const [learnedSet, setLearnedSet] = useState<Set<number>>(new Set());
   const [learnedLoaded, setLearnedLoaded] = useState(false);
 
-  // Audio playback (name pronunciation not yet available from API)
-  const soundRef = useRef<Audio.Sound | null>(null);
-
   const handlePlayAudio = useCallback(() => {
     haptic.navigate();
     showToast({ message: t('islamic.audioPronunciationComingSoon', { defaultValue: 'Audio pronunciation coming soon' }), variant: 'info' });
   }, [haptic, t]);
-
-  useEffect(() => {
-    return () => { soundRef.current?.unloadAsync(); };
-  }, []);
 
   // Load learned names from AsyncStorage
   const loadLearned = useCallback(async () => {
@@ -151,10 +145,10 @@ export default function NamesOfAllahScreen() {
         setLearnedSet(new Set(JSON.parse(stored)));
       }
     } catch {
-      // ignore
+      showToast({ message: t('common.error', { defaultValue: 'Could not load progress' }), variant: 'error' });
     }
     setLearnedLoaded(true);
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!learnedLoaded) loadLearned();
@@ -163,17 +157,22 @@ export default function NamesOfAllahScreen() {
   const namesQuery = useQuery({
     queryKey: ['names-of-allah'],
     queryFn: () => islamicApi.getNamesOfAllah(),
+    staleTime: 24 * 60 * 60 * 1000, // 24h — static Islamic data
   });
 
   const dailyQuery = useQuery({
     queryKey: ['daily-name'],
     queryFn: () => islamicApi.getDailyNameOfAllah(),
+    staleTime: 60 * 60 * 1000, // 1h — daily name
   });
 
   const names: NameOfAllah[] = namesQuery.data ?? [];
   const dailyName: NameOfAllah | null = dailyQuery.data ?? null;
 
+  const togglingRef = useRef(false);
   const toggleLearned = useCallback(async (num: number) => {
+    if (togglingRef.current) return;
+    togglingRef.current = true;
     haptic.success();
     setLearnedSet(prev => {
       const next = new Set(prev);
@@ -182,6 +181,7 @@ export default function NamesOfAllahScreen() {
       AsyncStorage.setItem(LEARNED_KEY, JSON.stringify([...next])).catch(() => {});
       return next;
     });
+    setTimeout(() => { togglingRef.current = false; }, 300);
   }, [haptic]);
 
   const handleShare = useCallback((name: NameOfAllah) => {
@@ -208,7 +208,15 @@ export default function NamesOfAllahScreen() {
         </View>
       </View>
 
-      {/* Daily Name */}
+      {/* Daily Name — skeleton placeholder to prevent layout jump */}
+      {dailyQuery.isLoading && !dailyName && (
+        <View style={[styles.dailyCard, { alignItems: 'center', gap: spacing.sm }]}>
+          <Skeleton.Rect width={80} height={14} borderRadius={radius.sm} />
+          <Skeleton.Rect width={160} height={36} borderRadius={radius.sm} />
+          <Skeleton.Rect width={120} height={16} borderRadius={radius.sm} />
+          <Skeleton.Rect width={200} height={14} borderRadius={radius.sm} />
+        </View>
+      )}
       {dailyName && (
         <View style={styles.dailyCard}>
           <Text style={styles.dailyLabel}>{t('namesOfAllah.dailyName')}</Text>
@@ -219,7 +227,7 @@ export default function NamesOfAllahScreen() {
         </View>
       )}
     </View>
-  ), [dailyName, learnedCount, t]);
+  ), [dailyName, dailyQuery.isLoading, learnedCount, t, styles]);
 
   return (
     <ScreenErrorBoundary>
@@ -252,7 +260,13 @@ export default function NamesOfAllahScreen() {
           ListHeaderComponent={listHeader}
           ListEmptyComponent={
             namesQuery.isLoading ? null : (
-              <EmptyState icon="heart" title={t('namesOfAllah.title')} />
+              <EmptyState
+                icon="heart"
+                title={t('namesOfAllah.title')}
+                subtitle={t('common.checkConnectionAndRetry', { defaultValue: 'Check your connection and try again' })}
+                actionLabel={t('common.retry')}
+                onAction={() => namesQuery.refetch()}
+              />
             )
           }
           refreshControl={
@@ -281,7 +295,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     padding: spacing.base,
   },
   progressText: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     marginBottom: spacing.sm,
   },
@@ -314,7 +328,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.sm,
   },
   dailyArabic: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSizeExt.display,
     fontFamily: fonts.arabic,
     textAlign: 'center',
@@ -328,14 +342,14 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.xs,
   },
   dailyMeaning: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.md,
     fontWeight: '700',
     textAlign: 'center',
     marginBottom: spacing.sm,
   },
   dailyExplanation: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     textAlign: 'center',
     lineHeight: 20,
@@ -367,7 +381,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     alignItems: 'center',
   },
   numberText: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.xs,
     fontWeight: '700',
   },
@@ -375,7 +389,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flex: 1,
   },
   arabicName: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.lg,
     fontFamily: fonts.arabic,
   },
@@ -385,7 +399,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     fontWeight: '600',
   },
   meaningText: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.xs,
   },
   expandedSection: {
@@ -395,7 +409,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderTopColor: tc.border,
   },
   explanationText: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.sm,
     lineHeight: 20,
     marginBottom: spacing.sm,
@@ -417,7 +431,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   nameActionBtnActive: {},
   nameActionText: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.xs,
   },
 });

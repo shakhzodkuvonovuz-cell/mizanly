@@ -16,8 +16,10 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { rtlFlexRow } from '@/utils/rtl';
 import { searchApi, messagesApi, followsApi } from '@/services/api';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import type { User, Conversation } from '@/types';
@@ -56,7 +58,8 @@ export default function NewConversationScreen() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
+  const haptic = useContextualHaptic();
   const { user } = useUser();
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -82,6 +85,7 @@ export default function NewConversationScreen() {
   const recentConversationsQuery = useQuery({
     queryKey: ['recent-conversations'],
     queryFn: () => messagesApi.getConversations(),
+    staleTime: 30 * 1000, // 30s — recent conversations
   });
 
   const suggestionsQuery = useQuery({
@@ -137,7 +141,8 @@ export default function NewConversationScreen() {
   const dmMutation = useMutation({
     mutationFn: (targetUserId: string) => messagesApi.createDM(targetUserId),
     onSuccess: (convo) => {
-      router.replace(`/(screens)/conversation/${convo.id}`);
+      haptic.success();
+      router.push(`/(screens)/conversation/${convo.id}`);
     },
     onError: (err: Error) => showToast({ message: err.message || t('messages.couldNotStartConversation'), variant: 'error' }),
   });
@@ -177,12 +182,14 @@ export default function NewConversationScreen() {
   const renderUserRow = (item: User | RecentContact, index: number) => {
     const isRecent = 'conversationId' in item;
     return (
-      <Animated.View entering={FadeInUp.delay(index * 60).duration(400)}>
+      <Animated.View entering={FadeInUp.delay(Math.min(index, 10) * 60).duration(400)}>
         <Pressable
-          style={styles.userRow}
-          onPress={() =>
-            isRecent ? handleContactPress(item as RecentContact) : dmMutation.mutate(item.id)
-          }
+          style={({ pressed }) => [styles.userRow, { flexDirection: rtlFlexRow(isRTL) }, pressed && { opacity: 0.85 }]}
+          onPress={() => {
+            haptic.navigate();
+            isRecent ? handleContactPress(item as RecentContact) : dmMutation.mutate(item.id);
+          }}
+          android_ripple={{ color: colors.active.emerald10 }}
           disabled={dmMutation.isPending}
           accessibilityLabel={t('messages.chatWith', { name: item.displayName })}
           accessibilityRole="button"
@@ -190,7 +197,7 @@ export default function NewConversationScreen() {
         >
           <Avatar uri={item.avatarUrl} name={item.displayName ?? ''} size="md" />
           <View style={styles.userInfo}>
-            <View style={styles.nameRow}>
+            <View style={[styles.nameRow, { flexDirection: rtlFlexRow(isRTL) }]}>
               <Text style={styles.name}>{item.displayName}</Text>
               {item.isVerified && <VerifiedBadge size={13} />}
             </View>
@@ -291,6 +298,7 @@ export default function NewConversationScreen() {
             removeClippedSubviews={true}
             data={people}
             keyExtractor={(item) => item.id}
+            keyboardShouldPersistTaps="handled"
             refreshControl={
               <BrandedRefreshControl
                 refreshing={false}
@@ -309,6 +317,7 @@ export default function NewConversationScreen() {
           <SectionList
             sections={sections}
             keyExtractor={(item) => item.id}
+            keyboardShouldPersistTaps="handled"
             refreshControl={
               <BrandedRefreshControl
                 refreshing={false}
@@ -353,8 +362,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     width: 36, height: 36, borderRadius: radius.sm,
     alignItems: 'center', justifyContent: 'center',
   },
-  toLabel: { color: colors.text.secondary, fontSize: fontSize.base, fontWeight: '600' },
-  searchInput: { flex: 1, color: colors.text.primary, fontSize: fontSize.base },
+  toLabel: { color: tc.text.secondary, fontSize: fontSize.base, fontWeight: '600' },
+  searchInput: { flex: 1, color: tc.text.primary, fontSize: fontSize.base },
   skeletonList: { padding: spacing.base, gap: spacing.md },
   skeletonRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
@@ -362,7 +371,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
 
   userRow: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
+    alignItems: 'center', gap: spacing.md,
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
     marginHorizontal: spacing.base,
     marginBottom: spacing.sm,
@@ -372,26 +381,26 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderColor: colors.active.white6,
   },
   userInfo: { flex: 1 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  name: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
-  handle: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 1 },
+  nameRow: { alignItems: 'center', gap: spacing.xs },
+  name: { color: tc.text.primary, fontSize: fontSize.base, fontWeight: '600' },
+  handle: { color: tc.text.secondary, fontSize: fontSize.sm, marginTop: 1 },
   mailIconBg: {
     width: 36, height: 36, borderRadius: radius.sm,
     alignItems: 'center', justifyContent: 'center',
   },
 
   sectionLabel: {
-    color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '600',
+    color: tc.text.secondary, fontSize: fontSize.sm, fontWeight: '600',
     textTransform: 'uppercase' as const, letterSpacing: 0.5,
     paddingHorizontal: spacing.base, paddingTop: spacing.md, paddingBottom: spacing.sm,
   },
   suggestionsLabel: {
-    color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '600',
+    color: tc.text.secondary, fontSize: fontSize.sm, fontWeight: '600',
     textTransform: 'uppercase' as const, letterSpacing: 0.5,
     paddingHorizontal: spacing.base, paddingTop: spacing.md, paddingBottom: spacing.sm,
   },
   empty: { alignItems: 'center', paddingTop: 60 },
-  emptyText: { color: colors.text.secondary, fontSize: fontSize.base },
+  emptyText: { color: tc.text.secondary, fontSize: fontSize.base },
   hint: { alignItems: 'center', paddingTop: 80 },
-  hintText: { color: colors.text.tertiary, fontSize: fontSize.base },
+  hintText: { color: tc.text.tertiary, fontSize: fontSize.base },
 });

@@ -10,7 +10,7 @@ import Animated, {
   FadeIn, FadeInUp,
   useSharedValue, useAnimatedStyle, withSpring,
 } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
@@ -19,6 +19,8 @@ import { colors, spacing, fontSize, radius, fonts, shadow, animation } from '@/t
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { rtlFlexRow } from '@/utils/rtl';
+import { showToast } from '@/components/ui/Toast';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -105,7 +107,7 @@ function NotificationTonesScreen() {
     conversationId: string;
     currentTone?: string;
   }>();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
 
@@ -123,15 +125,17 @@ function NotificationTonesScreen() {
   // ── Load saved tone ──
   useEffect(() => {
     if (!conversationId) return;
-    AsyncStorage.getItem(`${TONE_STORAGE_PREFIX}${conversationId}`).then(
-      (val) => {
+    AsyncStorage.getItem(`${TONE_STORAGE_PREFIX}${conversationId}`)
+      .then((val) => {
         if (val) {
           setSelectedTone(val);
           setOriginalTone(val);
         }
-      },
-    );
-  }, [conversationId]);
+      })
+      .catch(() => {
+        showToast({ message: t('common.error', { defaultValue: 'Could not load tone' }), variant: 'error' });
+      });
+  }, [conversationId, t]);
 
   // ── Handlers ──
   const handleSelect = useCallback((toneId: string) => {
@@ -189,7 +193,7 @@ function NotificationTonesScreen() {
   }, []);
 
   const handleSave = useCallback(async () => {
-    if (!conversationId) return;
+    if (!conversationId || saving) return;
     setSaving(true);
     try {
       await AsyncStorage.setItem(
@@ -197,13 +201,15 @@ function NotificationTonesScreen() {
         selectedTone,
       );
       haptic.success();
+      showToast({ message: t('notificationTones.saved', { defaultValue: 'Tone saved' }), variant: 'success' });
       router.back();
     } catch {
       haptic.error();
+      showToast({ message: t('common.error', { defaultValue: 'Failed to save' }), variant: 'error' });
     } finally {
       setSaving(false);
     }
-  }, [conversationId, selectedTone, haptic, router]);
+  }, [conversationId, selectedTone, haptic, router, saving, t]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -232,7 +238,7 @@ function NotificationTonesScreen() {
         <Animated.View entering={FadeInUp.delay(index * 40).duration(250)}>
           <Pressable
             onPress={() => handleSelect(item.id)}
-            style={[styles.toneRow, isSelected && styles.toneRowSelected]}
+            style={[styles.toneRow, { flexDirection: rtlFlexRow(isRTL) }, isSelected && styles.toneRowSelected]}
             accessibilityRole="radio"
             accessibilityState={{ selected: isSelected }}
             accessibilityLabel={t(item.labelKey)}
@@ -277,7 +283,7 @@ function NotificationTonesScreen() {
                 hitSlop={8}
               >
                 <Icon
-                  name={isPlaying ? 'check' : 'play'}
+                  name={isPlaying ? 'volume-2' : 'play'}
                   size="sm"
                   color={isPlaying ? colors.emerald : tc.text.tertiary}
                 />
@@ -295,7 +301,7 @@ function NotificationTonesScreen() {
   const keyExtractor = useCallback((item: ToneOption) => item.id, []);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader
         title={t('notificationTones.title')}
         leftAction={{
@@ -352,7 +358,7 @@ function NotificationTonesScreen() {
           />
         </Animated.View>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -371,7 +377,6 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   list: {
     flex: 1,
-    marginTop: 100,
   },
   listContent: {
     paddingHorizontal: spacing.base,
@@ -395,19 +400,18 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   headerTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.md,
-    color: colors.text.primary,
+    color: tc.text.primary,
     marginBottom: spacing.xs,
   },
   headerSubtitle: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     textAlign: 'center',
     paddingHorizontal: spacing.xl,
   },
   // Tone row
   toneRow: {
-    flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.base,
@@ -446,7 +450,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   toneName: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   toneNameSelected: {
     fontFamily: fonts.bodySemiBold,
@@ -455,7 +459,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   toneSubtitle: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     marginTop: 2,
   },
   // Play button
@@ -488,7 +492,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     end: 0,
     paddingHorizontal: spacing.base,
     paddingTop: spacing.md,
-    backgroundColor: 'rgba(13, 17, 23, 0.95)',
+    backgroundColor: tc.isDark ? 'rgba(13, 17, 23, 0.95)' : 'rgba(255, 255, 255, 0.95)',
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: tc.border,
   },

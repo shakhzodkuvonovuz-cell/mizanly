@@ -221,6 +221,9 @@ function NotificationRow({ notification, index }: { notification: AggregatedNoti
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       showToast({ message: t('notifications.followed'), variant: 'success' });
     },
+    onError: () => {
+      showToast({ message: t('common.error', { defaultValue: 'Failed to follow' }), variant: 'error' });
+    },
   });
 
   const handlePress = () => {
@@ -260,7 +263,7 @@ function NotificationRow({ notification, index }: { notification: AggregatedNoti
           {isAggregated ? (
             <View style={styles.stackedAvatars}>
               {aggregatedActors.slice(0, 3).map((actor, idx) => (
-                <View key={idx} style={[styles.stackedAvatar, { marginLeft: idx > 0 ? -8 : 0, zIndex: 3 - idx }]}>
+                <View key={idx} style={[styles.stackedAvatar, idx > 0 ? (isRTL ? { marginRight: -8 } : { marginLeft: -8 }) : undefined, { zIndex: 3 - idx }]}>
                   <Avatar uri={actor.avatarUrl} name={actor.displayName} size="sm" />
                 </View>
               ))}
@@ -289,8 +292,12 @@ function NotificationRow({ notification, index }: { notification: AggregatedNoti
                     <Text style={styles.rowActor}>{aggregatedActors[1]?.displayName}</Text>
                   </>
                 )}
-                {' and '}
-                <Text style={styles.rowActor}>{notification._aggregatedCount! - (aggregatedActors.length > 1 ? 2 : 1)} {t('notifications.others')}</Text>
+                {notification._aggregatedCount! - (aggregatedActors.length > 1 ? 2 : 1) > 0 && (
+                  <>
+                    {' and '}
+                    <Text style={styles.rowActor}>{notification._aggregatedCount! - (aggregatedActors.length > 1 ? 2 : 1)} {t('notifications.others')}</Text>
+                  </>
+                )}
                 {' '}{t('notifications.likedYourPost')}
               </>
             ) : (
@@ -314,7 +321,8 @@ function NotificationRow({ notification, index }: { notification: AggregatedNoti
               followMutation.mutate(notification.actor!.id);
               haptic.follow();
             }}
-            style={[styles.followBackBtn, { backgroundColor: colors.emerald }]}
+            disabled={followMutation.isPending}
+            style={[styles.followBackBtn, { backgroundColor: colors.emerald, opacity: followMutation.isPending ? 0.6 : 1 }]}
             accessibilityRole="button"
             accessibilityLabel={t('notifications.followBack')}
           >
@@ -388,6 +396,7 @@ export default function NotificationsScreen() {
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) =>
       last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
+    staleTime: 15 * 1000, // 15s — prevent refetch on every tab switch
   });
 
   const notifications: Notification[] = query.data?.pages.flatMap((p) => p.data) ?? [];
@@ -448,9 +457,10 @@ export default function NotificationsScreen() {
                   size="sm"
                   variant="ghost"
                   onPress={() => markAllMutation.mutate()}
+                  disabled={markAllMutation.isPending}
                 />
               ),
-              onPress: () => markAllMutation.mutate(),
+              onPress: () => {},
               accessibilityLabel: t('notifications.markAllReadAccessibility'),
             }]}
           />
@@ -502,7 +512,7 @@ export default function NotificationsScreen() {
           ListFooterComponent={() =>
             query.isFetchingNextPage ? <Skeleton.Rect width="100%" height={60} /> : null
           }
-          contentContainerStyle={{ paddingBottom: 40 }}
+          contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}
           stickySectionHeadersEnabled={true}
         />
       </View>
@@ -518,7 +528,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   skeletonRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
 
   sectionHeader: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.sm,
     fontWeight: '700',
@@ -578,12 +588,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderColor: tc.bg,
   },
   rowContent: { flex: 1 },
-  rowText: { color: colors.text.primary, fontSize: fontSize.sm, lineHeight: 20 },
+  rowText: { color: tc.text.primary, fontSize: fontSize.sm, lineHeight: 20 },
   rowActor: { fontWeight: '700' },
-  rowBody: { color: colors.text.secondary, fontSize: fontSize.xs, lineHeight: lineHeight.xs, marginTop: 2 },
-  rowTime: { color: colors.text.tertiary, fontSize: fontSize.xs, lineHeight: lineHeight.xs, marginTop: spacing.xs },
+  rowBody: { color: tc.text.secondary, fontSize: fontSize.xs, lineHeight: lineHeight.xs, marginTop: 2 },
+  rowTime: { color: tc.text.tertiary, fontSize: fontSize.xs, lineHeight: lineHeight.xs, marginTop: spacing.xs },
 
-  requestDone: { color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '600' },
+  requestDone: { color: tc.text.secondary, fontSize: fontSize.xs, fontWeight: '600' },
   requestActions: { flexDirection: 'row', gap: spacing.xs, alignItems: 'center' },
 
   notifThumb: {
