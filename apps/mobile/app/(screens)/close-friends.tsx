@@ -20,8 +20,10 @@ import { Badge } from '@/components/ui/Badge';
 import { colors, spacing, fontSize, fonts, radius } from '@/theme';
 import { followsApi, circlesApi, usersApi } from '@/services/api';
 import type { User, PaginatedResponse, Circle, CircleMember } from '@/types';
+import { showToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const CLOSE_FRIENDS_CIRCLE_NAME = 'Close Friends';
@@ -46,7 +48,7 @@ function UserRow({ user, isMe, isCloseFriend, onToggle, onPress, disabled, index
           <Avatar uri={user.avatarUrl} name={user.displayName} size="md" showRing={isCloseFriend} ringColor={colors.emerald} />
           <View style={styles.info}>
             <View style={styles.nameRow}>
-              <Text style={[styles.name, isCloseFriend && styles.nameActive]}>{user.displayName}</Text>
+              <Text style={[styles.name, { color: tc.text.primary }, isCloseFriend && { color: colors.emerald }]}>{user.displayName}</Text>
               {user.isVerified && <VerifiedBadge size={13} />}
               {isCloseFriend && (
                 <LinearGradient
@@ -164,6 +166,8 @@ export default function CloseFriendsScreen() {
 
   const followers: User[] = followersQuery.data?.pages.flatMap((p: PaginatedResponse<User>) => p.data) ?? [];
 
+  const haptic = useContextualHaptic();
+
   // Toggle close friend status
   const toggleMemberMutation = useMutation({
     mutationFn: ({ userId, add }: { userId: string; add: boolean }) => {
@@ -172,15 +176,24 @@ export default function CloseFriendsScreen() {
         ? circlesApi.addMembers(closeFriendsCircle.id, [userId])
         : circlesApi.removeMembers(closeFriendsCircle.id, [userId]);
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
+      haptic.success();
       queryClient.invalidateQueries({ queryKey: ['circle-members', closeFriendsCircle?.id] });
+      showToast({
+        message: variables.add ? t('screens.closeFriends.addedToast') : t('screens.closeFriends.removedToast'),
+        variant: 'success',
+      });
+    },
+    onError: (err: Error) => {
+      showToast({ message: err.message, variant: 'error' });
     },
   });
 
   const toggleCloseFriend = useCallback((userId: string, add: boolean) => {
     if (!closeFriendsCircle || toggleMemberMutation.isPending) return;
+    haptic.tick();
     toggleMemberMutation.mutate({ userId, add });
-  }, [closeFriendsCircle, toggleMemberMutation]);
+  }, [closeFriendsCircle, toggleMemberMutation, haptic]);
 
   // Filter followers based on search query
   const filteredFollowers = useMemo(() => {
@@ -330,7 +343,7 @@ export default function CloseFriendsScreen() {
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <Icon name="heart" size="xs" color={colors.gold} />
-            <Text style={[styles.statsText, styles.statsTextAccent]}>
+            <Text style={[styles.statsText, { color: colors.gold, fontFamily: fonts.bodySemiBold }]}>
               {t('screens.closeFriends.statsCloseFriends', { count: memberIds.length })}
             </Text>
           </View>
@@ -388,14 +401,13 @@ export default function CloseFriendsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
   headerTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
   },
   headerTitle: {
-    color: colors.text.primary,
     fontSize: fontSize.md,
     fontFamily: fonts.bodySemiBold,
   },
@@ -417,8 +429,8 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    color: colors.text.primary,
     fontSize: fontSize.base,
+    fontFamily: fonts.body,
     paddingVertical: 0,
   },
   statsBar: {
@@ -443,12 +455,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.active.emerald30,
   },
   statsText: {
-    color: colors.text.secondary,
     fontSize: fontSize.sm,
+    fontFamily: fonts.body,
   },
   statsTextAccent: {
     color: colors.gold,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   skeletonList: { padding: spacing.base, gap: spacing.lg },
   skeletonRow: {
@@ -469,7 +481,7 @@ const styles = StyleSheet.create({
     borderColor: colors.active.white6,
   },
   nameActive: {
-    color: colors.emerald,
+    // Active color now applied via inline tc override
   },
   closeFriendBadge: {
     paddingHorizontal: 6,
@@ -489,6 +501,6 @@ const styles = StyleSheet.create({
   },
   info: { flex: 1 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  name: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
-  handle: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 1 },
+  name: { fontSize: fontSize.base, fontFamily: fonts.bodySemiBold },
+  handle: { fontSize: fontSize.sm, fontFamily: fonts.body, marginTop: 1 },
 });

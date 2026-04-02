@@ -107,7 +107,9 @@ function ChatWallpaperScreen() {
       (val) => {
         if (val) setCurrentWallpaper(val);
       },
-    );
+    ).catch(() => {
+      // Storage read failed — continue with no wallpaper
+    });
   }, [conversationId]);
 
   // ── Selection helpers ──
@@ -423,7 +425,7 @@ function ChatWallpaperScreen() {
                 accessibilityRole="tab"
                 accessibilityState={{ selected: isActive }}
               >
-                <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
+                <Text style={[styles.tabText, { color: tc.text.secondary }, isActive && { color: colors.emerald, fontFamily: fonts.bodySemiBold }]}>
                   {tabLabels[tab]}
                 </Text>
               </Pressable>
@@ -475,7 +477,6 @@ export default function ChatWallpaperScreenWrapper() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   scrollView: {
     flex: 1,
@@ -490,7 +491,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: colors.dark.border,
     marginBottom: spacing.lg,
     ...shadow.md,
   },
@@ -517,7 +517,6 @@ const styles = StyleSheet.create({
   previewLabel: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.sm,
-    color: colors.text.primary,
   },
   patternPreviewLabel: {
     fontFamily: fonts.bodySemiBold,
@@ -527,7 +526,6 @@ const styles = StyleSheet.create({
   // Tabs
   tabRow: {
     flexDirection: 'row',
-    backgroundColor: colors.dark.bgElevated,
     borderRadius: radius.md,
     padding: spacing.xs,
     marginBottom: spacing.lg,
@@ -544,11 +542,9 @@ const styles = StyleSheet.create({
   tabText: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
   },
   tabTextActive: {
     fontFamily: fonts.bodySemiBold,
-    color: colors.emerald,
   },
   tabContent: {
     marginBottom: spacing.lg,
@@ -582,7 +578,6 @@ const styles = StyleSheet.create({
   colorName: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
     textAlign: 'center',
   },
   // Gradient grid
@@ -610,7 +605,6 @@ const styles = StyleSheet.create({
   gradientName: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
     textAlign: 'center',
     marginTop: spacing.xs,
   },
@@ -626,7 +620,7 @@ const styles = StyleSheet.create({
   patternLabel: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.sm,
-    color: 'rgba(255,255,255,0.5)',
+    color: 'rgba(255,255,255,0.6)',
   },
   patternCheck: {
     position: 'absolute',
@@ -642,7 +636,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: colors.dark.border,
   },
   customPreview: {
     width: '100%',
@@ -668,14 +661,11 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.dark.border,
-    backgroundColor: colors.dark.bgElevated,
     marginBottom: spacing.base,
   },
   defaultText: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.base,
-    color: colors.text.secondary,
   },
   // Save
   saveButtonWrap: {

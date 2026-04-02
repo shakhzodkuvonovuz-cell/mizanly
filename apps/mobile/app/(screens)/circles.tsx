@@ -13,12 +13,13 @@ import { Icon } from '@/components/ui/Icon';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { showToast } from '@/components/ui/Toast';
 import { circlesApi } from '@/services/api';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const EMOJIS = ['⭕', '⭐', '🌙', '🤝', '💚', '🕌', '📿', '🏠', '💼', '🎓'];
@@ -43,10 +44,13 @@ function CreateSheet({
   const tc = useThemeColors();
   const [emoji, setEmoji] = useState('⭕');
   const { t } = useTranslation();
+  const haptic = useContextualHaptic();
 
   const createMutation = useMutation({
     mutationFn: () => circlesApi.create(name.trim(), emoji),
     onSuccess: () => {
+      haptic.success();
+      showToast({ message: t('screens.circles.createdToast'), variant: 'success' });
       setName('');
       setEmoji('⭕');
       onCreated();
@@ -80,7 +84,7 @@ function CreateSheet({
 
       {/* Name input */}
       <TextInput
-        style={[styles.nameInput, { backgroundColor: tc.bgElevated }]}
+        style={[styles.nameInput, { backgroundColor: tc.bgElevated, color: tc.text.primary }]}
         value={name}
         onChangeText={setName}
         placeholder={t('screens.circles.circleNamePlaceholder')}
@@ -116,6 +120,7 @@ export default function CirclesScreen() {
   const { t } = useTranslation();
   const tc = useThemeColors();
   const queryClient = useQueryClient();
+  const haptic = useContextualHaptic();
   const [showCreate, setShowCreate] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = async () => {
@@ -138,6 +143,7 @@ export default function CirclesScreen() {
   });
 
   const handleDelete = (circle: Circle) => {
+    haptic.delete();
     Alert.alert(
       t('screens.circles.deleteAlertTitle', { name: circle.name }),
       t('screens.circles.deleteAlertMessage'),
@@ -178,7 +184,7 @@ export default function CirclesScreen() {
           rightActions={[{ icon: 'plus', onPress: () => setShowCreate(true), accessibilityLabel: t('screens.circles.createCircleLabel') }]}
         />
 
-        <Text style={[styles.subtitle, { marginTop: insets.top + 52 }]}>
+        <Text style={[styles.subtitle, { marginTop: insets.top + 52, color: tc.text.secondary }]}>
           {t('screens.circles.subtitle')}
         </Text>
 
@@ -266,10 +272,10 @@ export default function CirclesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
 
   subtitle: {
-    color: colors.text.secondary, fontSize: fontSize.sm,
+    fontSize: fontSize.sm, fontFamily: fonts.body,
     paddingHorizontal: spacing.base, paddingTop: spacing.md, paddingBottom: spacing.sm,
   },
 
@@ -301,14 +307,14 @@ const styles = StyleSheet.create({
   },
   circleEmoji: { fontSize: 24 },
   circleInfo: { flex: 1 },
-  circleName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
+  circleName: { fontSize: fontSize.base, fontFamily: fonts.bodySemiBold },
   memberBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
     marginTop: 2,
   },
-  circleMemberCount: { color: colors.text.tertiary, fontSize: fontSize.sm },
+  circleMemberCount: { fontSize: fontSize.sm, fontFamily: fonts.body },
   deleteBtn: {
     padding: spacing.xs,
     borderRadius: radius.full,
@@ -322,7 +328,7 @@ const styles = StyleSheet.create({
 
   // Sheet content
   sheetTitle: {
-    color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700',
+    fontSize: fontSize.base, fontFamily: fonts.bodyBold,
     textAlign: 'center', marginBottom: spacing.lg,
     paddingHorizontal: spacing.base,
   },
@@ -344,9 +350,9 @@ const styles = StyleSheet.create({
   emojiBtnActive: { borderColor: colors.emerald },
   emojiText: { fontSize: 24 },
   nameInput: {
-    backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
+    borderRadius: radius.md,
     paddingHorizontal: spacing.md, paddingVertical: spacing.md,
-    color: colors.text.primary, fontSize: fontSize.base,
+    fontSize: fontSize.base, fontFamily: fonts.body,
     marginBottom: spacing.lg, marginHorizontal: spacing.base,
     borderWidth: 1,
     borderColor: colors.active.white6,
@@ -362,5 +368,5 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
   },
   createBtnDisabled: { opacity: 0.6 },
-  createBtnText: { color: '#fff', fontSize: fontSize.base, fontWeight: '700' },
+  createBtnText: { color: '#fff', fontSize: fontSize.base, fontFamily: fonts.bodyBold },
 });
