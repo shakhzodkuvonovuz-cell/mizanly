@@ -302,7 +302,7 @@ export default function AccountSwitcherScreen() {
                         )}
                         <Pressable accessibilityRole="button"
                           accessibilityLabel={t('screens.accountSwitcher.switchButton')}
-                          style={styles.switchButton}
+                          style={({ pressed }) => [styles.switchButton, pressed && { opacity: 0.7 }]}
                           onPress={() => handleSwitchAccount(account)}
                           disabled={switching}
                         >
@@ -332,7 +332,7 @@ export default function AccountSwitcherScreen() {
 
           {/* Add Account Section */}
           <Animated.View entering={FadeInUp.delay(200).duration(400)}>
-            <Pressable accessibilityRole="button" accessibilityLabel={t('screens.accountSwitcher.addAccount')} style={styles.addAccountCard} onPress={handleAddAccount}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('screens.accountSwitcher.addAccount')} style={({ pressed }) => [styles.addAccountCard, pressed && { opacity: 0.85 }]} onPress={handleAddAccount}>
               <LinearGradient
                 colors={['rgba(45,53,72,0.2)', 'rgba(28,35,51,0.1)']}
                 style={[styles.addAccountGradient, styles.addAccountDashed]}
@@ -429,7 +429,7 @@ export default function AccountSwitcherScreen() {
                   <Text style={[styles.securityText, { color: tc.text.secondary }]}>
                     {t('screens.accountSwitcher.securityText')}
                   </Text>
-                  <Pressable accessibilityRole="button" accessibilityLabel={t('screens.accountSwitcher.signOutAll')} onPress={handleSignOutAll}>
+                  <Pressable accessibilityRole="button" accessibilityLabel={t('screens.accountSwitcher.signOutAll')} style={({ pressed }) => pressed && { opacity: 0.7 }} onPress={handleSignOutAll}>
                     <Text style={styles.signOutAllText}>{t('screens.accountSwitcher.signOutAll')}</Text>
                   </Pressable>
                 </View>

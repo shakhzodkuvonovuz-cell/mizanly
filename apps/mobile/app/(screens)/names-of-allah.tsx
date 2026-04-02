@@ -245,7 +245,7 @@ export default function NamesOfAllahScreen() {
           data={names}
           keyExtractor={(item) => String(item.number)}
           renderItem={({ item, index }) => (
-            <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
+            <Animated.View entering={FadeInUp.delay(Math.min(index, 25) * 30).duration(350).springify()}>
             <NameCard
               name={item}
               isLearned={learnedSet.has(item.number)}
