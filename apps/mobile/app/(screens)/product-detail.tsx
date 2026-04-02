@@ -7,6 +7,7 @@ import {
   Pressable,
   Dimensions,
   FlatList,
+  Share,
 } from 'react-native';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -22,6 +23,7 @@ import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -109,6 +111,7 @@ function ProductDetailContent() {
     queryKey: ['product', params.id],
     queryFn: () => commerceApi.getProduct(params.id!) as Promise<ProductDetail>,
     enabled: !!params.id,
+    staleTime: 30_000,
   });
 
   const orderMutation = useMutation({
@@ -118,6 +121,10 @@ function ProductDetailContent() {
       queryClient.invalidateQueries({ queryKey: ['my-orders'] });
       navigate('/(screens)/orders');
     },
+    onError: (err: Error) => {
+      haptic.error();
+      showToast({ message: err.message || t('common.somethingWentWrong', 'Something went wrong'), variant: 'error' });
+    },
   });
 
   const handleRefresh = useCallback(() => {
@@ -125,6 +132,7 @@ function ProductDetailContent() {
   }, [productQuery]);
 
   const product = productQuery.data;
+  const shareUrl = `https://mizanly.app/product/${params.id}`;
 
   const handleBuyNow = () => {
     haptic.navigate();
@@ -202,7 +210,12 @@ function ProductDetailContent() {
         rightActions={[
           {
             icon: 'share',
-            onPress: () => haptic.tick(),
+            onPress: async () => {
+              haptic.tick();
+              try {
+                await Share.share({ message: `${product.title} - ${shareUrl}` });
+              } catch { /* User cancelled */ }
+            },
             accessibilityLabel: t('common.share', 'Share'),
           },
         ]}
@@ -298,7 +311,7 @@ function ProductDetailContent() {
             style={styles.sellerInner}
             onPress={() => navigate(`/(screens)/profile/${product.seller.username}`)}
             accessibilityRole="button"
-            accessibilityLabel={`View ${product.seller.displayName}'s profile`}
+            accessibilityLabel={t('accessibility.viewProfile', { name: product.seller.displayName })}
           >
             <Avatar
               uri={product.seller.avatarUrl}
@@ -332,6 +345,7 @@ function ProductDetailContent() {
             label={t('product.buyNow', 'Buy Now')}
             onPress={handleBuyNow}
             loading={orderMutation.isPending}
+            disabled={orderMutation.isPending}
             fullWidth
           />
           <View style={styles.installmentRow}>
@@ -486,7 +500,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: 'rgba(255,255,255,0.4)',
   },
   dotActive: {
-    backgroundColor: colors.text.primary,
+    backgroundColor: '#fff',
     width: 20,
   },
   // Info
@@ -495,7 +509,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: spacing.sm,
   },
   productTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.xl,
     fontFamily: fonts.bodySemiBold,
   },
@@ -510,7 +524,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: 2,
   },
   ratingText: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     fontFamily: fonts.body,
     marginStart: spacing.sm,
@@ -564,12 +578,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: spacing.xs,
   },
   sellerName: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     fontFamily: fonts.bodySemiBold,
   },
   sellerUsername: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.sm,
     fontFamily: fonts.body,
     marginTop: 2,
@@ -580,13 +594,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.md,
   },
   sectionTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.md,
     fontFamily: fonts.bodySemiBold,
     marginBottom: spacing.sm,
   },
   descriptionText: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.base,
     fontFamily: fonts.body,
     lineHeight: 22,
@@ -608,7 +622,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderColor: tc.border,
   },
   installmentText: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     fontFamily: fonts.body,
     flex: 1,
@@ -637,7 +651,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: 2,
   },
   reviewAuthor: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.sm,
     fontFamily: fonts.bodySemiBold,
   },
@@ -646,18 +660,18 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: 1,
   },
   reviewDate: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.xs,
     fontFamily: fonts.body,
   },
   reviewComment: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     fontFamily: fonts.body,
     lineHeight: 20,
   },
   noReviews: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.sm,
     fontFamily: fonts.body,
     textAlign: 'center',
@@ -697,7 +711,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     height: 100,
   },
   relatedTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.sm,
     fontFamily: fonts.body,
     paddingHorizontal: spacing.sm,

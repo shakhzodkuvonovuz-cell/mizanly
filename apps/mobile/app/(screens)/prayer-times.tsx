@@ -79,6 +79,7 @@ function getCompassDirection(degrees: number): string {
 function CountdownTimer({ targetTime, nextPrayerName }: { targetTime: string; nextPrayerName: string }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
+  const { t } = useTranslation();
   const [remaining, setRemaining] = useState('00:00:00');
 
   useEffect(() => {
@@ -108,7 +109,7 @@ function CountdownTimer({ targetTime, nextPrayerName }: { targetTime: string; ne
 
   return (
     <View style={styles.countdownTimerWrap}>
-      <Text style={styles.countdownTimerLabel}>Next: {nextPrayerName} in</Text>
+      <Text style={styles.countdownTimerLabel}>{t('islamic.nextPrayerIn', { prayer: nextPrayerName })}</Text>
       <Text style={styles.countdownTimerText}>{remaining}</Text>
     </View>
   );
@@ -336,6 +337,7 @@ export default function PrayerTimesScreen() {
   const { data: notifSettings } = useQuery({
     queryKey: ['prayer-notification-settings'],
     queryFn: () => islamicApi.getPrayerNotificationSettings(),
+    staleTime: 60_000,
   });
 
   const updateMutation = useMutation({
@@ -838,7 +840,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: spacing.sm,
   },
   locationText: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     lineHeight: lineHeight.base,
     fontWeight: '500',
@@ -990,10 +992,10 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     alignItems: 'center',
   },
   sectionTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     lineHeight: lineHeight.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   prayerCard: {
     marginBottom: spacing.sm,
@@ -1037,17 +1039,17 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flex: 1,
   },
   prayerName: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     lineHeight: lineHeight.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   prayerNameCurrent: {
     color: '#fff',
   },
   prayerArabic: {
     fontFamily: fonts.arabic,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.xs,
     marginTop: 2,
   },
@@ -1059,7 +1061,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     padding: spacing.xs,
   },
   prayerTime: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.base,
     fontWeight: '500',
   },
@@ -1071,7 +1073,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: 'rgba(255,255,255,0.2)',
     paddingHorizontal: spacing.xs,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: radius.sm,
     marginTop: spacing.xs,
   },
   currentBadgeText: {
@@ -1083,7 +1085,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: colors.active.gold20,
     paddingHorizontal: spacing.xs,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: radius.sm,
     marginTop: spacing.xs,
   },
   nextBadgeText: {
@@ -1117,12 +1119,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flex: 1,
   },
   methodLabel: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.xs,
     marginBottom: 2,
   },
   methodValue: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     fontWeight: '500',
   },
@@ -1141,18 +1143,18 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.xs,
   },
   dateSubtext: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.sm,
   },
 
   // Settings
   settingsTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.lg,
     lineHeight: lineHeight.lg,
     letterSpacing: letterSpacing.snug,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     paddingHorizontal: spacing.base,
     paddingBottom: spacing.md,
   },
@@ -1170,13 +1172,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginEnd: spacing.md,
   },
   settingsLabel: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     lineHeight: lineHeight.base,
     fontWeight: '500',
   },
   settingsDescription: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.xs,
     lineHeight: lineHeight.xs,
     marginTop: 2,
