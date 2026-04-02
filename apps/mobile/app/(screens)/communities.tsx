@@ -18,11 +18,13 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
-import { colors, spacing, radius, fontSize, fontSizeExt } from '@/theme';
+import { colors, spacing, radius, fontSize, fontSizeExt, fonts } from '@/theme';
+import { showToast } from '@/components/ui/Toast';
 import { communitiesApi } from '@/services/communitiesApi';
 import type { Community } from '@/types/communities';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 
@@ -49,10 +51,8 @@ function CommunityCard({
 
   const handlePress = () => {
     scaleAnim.value = withSpring(0.98, { damping: 15 });
-    setTimeout(() => {
-      scaleAnim.value = withSpring(1, { damping: 15 });
-      onPress(community);
-    }, 100);
+    scaleAnim.value = withSpring(1, { damping: 15 });
+    onPress(community);
   };
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -129,7 +129,7 @@ function CommunityCard({
                 colors={community.isJoined ? ['transparent', 'transparent'] : [colors.emerald, colors.gold]}
                 style={styles.joinButtonGradient}
               >
-                <Text style={[styles.joinButtonText, community.isJoined && styles.joinButtonTextJoined]}>
+                <Text style={[styles.joinButtonText, community.isJoined && { color: tc.text.secondary }]}>
                   {community.isJoined ? t('screens.communities.joinButtonJoined') : t('screens.communities.joinButtonJoin')}
                 </Text>
               </LinearGradient>
@@ -147,10 +147,8 @@ function FAB({ onPress }: { onPress: () => void }) {
 
   const handlePress = () => {
     scaleAnim.value = withSpring(0.9, { damping: 10 });
-    setTimeout(() => {
-      scaleAnim.value = withSpring(1, { damping: 10 });
-      onPress();
-    }, 100);
+    scaleAnim.value = withSpring(1, { damping: 10 });
+    onPress();
   };
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -174,6 +172,7 @@ function FAB({ onPress }: { onPress: () => void }) {
 export default function CommunitiesScreen() {
   const router = useRouter();
   const tc = useThemeColors();
+  const haptic = useContextualHaptic();
   const [activeTab, setActiveTab] = useState<'discover' | 'joined'>('discover');
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -220,28 +219,42 @@ export default function CommunitiesScreen() {
   const handleJoin = useCallback(async (id: string) => {
     const community = communities.find(c => c.id === id);
     if (!community) return;
-    // Optimistic update
+    haptic.tick();
+    const wasJoined = community.isJoined;
+    // Optimistic update (including memberCount)
     setCommunities(prev => prev.map(c =>
-      c.id === id ? { ...c, isJoined: !c.isJoined } : c
+      c.id === id ? {
+        ...c,
+        isJoined: !c.isJoined,
+        memberCount: c.memberCount + (wasJoined ? -1 : 1),
+      } : c
     ));
     try {
-      if (community.isJoined) {
+      if (wasJoined) {
         await communitiesApi.leave(id);
       } else {
         await communitiesApi.join(id);
       }
+      showToast({
+        message: wasJoined ? t('screens.communities.leftToast') : t('screens.communities.joinedToast'),
+        variant: 'success',
+      });
     } catch (err) {
       // Revert on error
       setCommunities(prev => prev.map(c =>
-        c.id === id ? { ...c, isJoined: community.isJoined } : c
+        c.id === id ? { ...c, isJoined: wasJoined, memberCount: community.memberCount } : c
       ));
-      // Show error toast maybe
+      showToast({
+        message: err instanceof Error ? err.message : t('screens.communities.errorJoinFailed'),
+        variant: 'error',
+      });
     }
-  }, [communities]);
+  }, [communities, haptic, t]);
 
   const handleCommunityPress = useCallback((community: Community) => {
+    haptic.navigate();
     navigate('/(screens)/community-posts', { communityId: community.id });
-  }, [router]);
+  }, [haptic]);
 
   const handleCreateCommunity = useCallback(() => {
     setShowCreateModal(true);
@@ -259,7 +272,7 @@ export default function CommunitiesScreen() {
         <View style={styles.searchContainer}>
           <LinearGradient
             colors={colors.gradient.cardDark}
-            style={styles.searchBar}
+            style={[styles.searchBar, { borderColor: tc.border }]}
           >
             <Icon name="search" size="sm" color={tc.text.tertiary} />
             <TextInput
@@ -289,7 +302,7 @@ export default function CommunitiesScreen() {
               style={styles.tabGradient}
             >
               <Icon name="search" size="xs" color={activeTab === 'discover' ? colors.emerald : tc.text.tertiary} />
-              <Text style={[styles.tabText, activeTab === 'discover' && styles.tabTextActive]}>{t('screens.communities.tabDiscover')}</Text>
+              <Text style={[styles.tabText, { color: tc.text.tertiary }, activeTab === 'discover' && { color: colors.emerald, fontFamily: fonts.bodySemiBold }]}>{t('screens.communities.tabDiscover')}</Text>
             </LinearGradient>
           </Pressable>
 
@@ -303,7 +316,7 @@ export default function CommunitiesScreen() {
               style={styles.tabGradient}
             >
               <Icon name="users" size="xs" color={activeTab === 'joined' ? colors.emerald : tc.text.tertiary} />
-              <Text style={[styles.tabText, activeTab === 'joined' && styles.tabTextActive]}>
+              <Text style={[styles.tabText, { color: tc.text.tertiary }, activeTab === 'joined' && { color: colors.emerald, fontFamily: fonts.bodySemiBold }]}>
                 {t('screens.communities.tabJoined')} {joinedCount > 0 && `(${joinedCount})`}
               </Text>
             </LinearGradient>
@@ -321,10 +334,13 @@ export default function CommunitiesScreen() {
               <Pressable
                 accessibilityRole="button"
                 key={category}
-                style={[styles.categoryPill, activeCategory === category && styles.categoryPillActive]}
-                onPress={() => setActiveCategory(category)}
+                style={[styles.categoryPill, { backgroundColor: tc.surface }, activeCategory === category && styles.categoryPillActive]}
+                onPress={() => {
+                  haptic.tick();
+                  setActiveCategory(category);
+                }}
               >
-                <Text style={[styles.categoryText, activeCategory === category && styles.categoryTextActive]}>
+                <Text style={[styles.categoryText, { color: tc.text.secondary }, activeCategory === category && { color: '#fff', fontFamily: fonts.bodySemiBold }]}>
                   {t(`screens.communities.category.${category.toLowerCase()}`)}
                 </Text>
               </Pressable>
@@ -351,6 +367,14 @@ export default function CommunitiesScreen() {
                 <Skeleton.PostCard key={i} />
               ))}
             </View>
+          ) : error ? (
+            <EmptyState
+              icon="alert-circle"
+              title={t('screens.communities.errorTitle')}
+              subtitle={error}
+              actionLabel={t('common.retry')}
+              onAction={onRefresh}
+            />
           ) : (
             <EmptyState
               icon="users"
@@ -392,7 +416,6 @@ export default function CommunitiesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
 
   // Search
@@ -408,13 +431,12 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: radius.full,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
     gap: spacing.sm,
   },
   searchInput: {
     flex: 1,
-    color: colors.text.primary,
     fontSize: fontSize.base,
+    fontFamily: fonts.body,
     paddingVertical: 0,
   },
 
@@ -442,13 +464,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
   },
   tabText: {
-    color: colors.text.tertiary,
     fontSize: fontSize.base,
-    fontWeight: '500',
+    fontFamily: fonts.bodyMedium,
   },
   tabTextActive: {
-    color: colors.emerald,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
 
   // Categories
@@ -462,7 +482,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
     borderRadius: radius.full,
-    backgroundColor: 'rgba(45,53,72,0.4)',
     borderWidth: 1,
     borderColor: colors.active.white6,
   },
@@ -471,13 +490,11 @@ const styles = StyleSheet.create({
     borderColor: colors.emerald,
   },
   categoryText: {
-    color: colors.text.secondary,
     fontSize: fontSize.sm,
-    fontWeight: '500',
+    fontFamily: fonts.bodyMedium,
   },
   categoryTextActive: {
-    color: '#fff',
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
 
   // List
@@ -525,7 +542,7 @@ const styles = StyleSheet.create({
   unreadBadgeText: {
     color: '#fff',
     fontSize: fontSize.xs,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
   },
   iconContainer: {
     marginTop: -28,
@@ -539,7 +556,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
-    borderColor: colors.dark.bg,
   },
   iconEmoji: {
     fontSize: fontSizeExt.heading,
@@ -549,14 +565,13 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
   },
   communityName: {
-    color: colors.text.primary,
     fontSize: fontSize.md,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
     marginBottom: spacing.xs,
   },
   communityDescription: {
-    color: colors.text.secondary,
     fontSize: fontSize.sm,
+    fontFamily: fonts.body,
     lineHeight: 20,
     marginBottom: spacing.sm,
   },
@@ -572,8 +587,8 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   memberCountText: {
-    color: colors.text.tertiary,
     fontSize: fontSize.xs,
+    fontFamily: fonts.body,
   },
   categoryBadge: {
     backgroundColor: colors.active.emerald10,
@@ -584,7 +599,7 @@ const styles = StyleSheet.create({
   cardCategoryText: {
     color: colors.emerald,
     fontSize: fontSize.xs,
-    fontWeight: '500',
+    fontFamily: fonts.bodyMedium,
   },
   joinButton: {
     borderRadius: radius.lg,
@@ -604,10 +619,10 @@ const styles = StyleSheet.create({
   joinButtonText: {
     color: '#fff',
     fontSize: fontSize.sm,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   joinButtonTextJoined: {
-    color: colors.text.secondary,
+    // color now applied via inline tc override
   },
 
   // FAB

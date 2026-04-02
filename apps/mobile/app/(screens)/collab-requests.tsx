@@ -16,12 +16,13 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { TabSelector } from '@/components/ui/TabSelector';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { showToast } from '@/components/ui/Toast';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { collabsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import type { PostCollab, Post, User } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
@@ -39,6 +40,7 @@ export default function CollabRequestsScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const haptic = useContextualHaptic();
   const [activeTab, setActiveTab] = useState<TabKey>('pending');
   const [refreshing, setRefreshing] = useState(false);
 
@@ -90,6 +92,7 @@ export default function CollabRequestsScreen() {
   };
 
   const confirmAccept = (collab: CollabItem) => {
+    haptic.tick();
     Alert.alert(
       t('collabRequests.acceptAlert.title'),
       t('collabRequests.acceptAlert.message', { postPreview: collab.post?.content?.substring(0, 50) ?? t('collabRequests.thisPost') }),
@@ -101,6 +104,7 @@ export default function CollabRequestsScreen() {
   };
 
   const confirmDecline = (collab: CollabItem) => {
+    haptic.delete();
     Alert.alert(
       t('collabRequests.declineAlert.title'),
       t('collabRequests.declineAlert.message'),
@@ -112,6 +116,7 @@ export default function CollabRequestsScreen() {
   };
 
   const confirmRemove = (collab: CollabItem) => {
+    haptic.delete();
     Alert.alert(
       t('collabRequests.removeAlert.title'),
       t('collabRequests.removeAlert.message'),
@@ -154,30 +159,30 @@ export default function CollabRequestsScreen() {
               </Text>
             </View>
             <View style={styles.actionRow}>
-              <LinearGradient
-                colors={['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']}
-                style={styles.actionBtn}
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => confirmAccept(item)}
+                disabled={acceptMutation.isPending && acceptMutation.variables === item.id}
               >
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => confirmAccept(item)}
-                  disabled={acceptMutation.isPending && acceptMutation.variables === item.id}
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']}
+                  style={styles.actionBtn}
                 >
                   <Text style={styles.actionBtnText}>{t('collabRequests.accept')}</Text>
-                </Pressable>
-              </LinearGradient>
-              <LinearGradient
-                colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
-                style={styles.actionBtn}
+                </LinearGradient>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => confirmDecline(item)}
+                disabled={declineMutation.isPending && declineMutation.variables === item.id}
               >
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => confirmDecline(item)}
-                  disabled={declineMutation.isPending && declineMutation.variables === item.id}
+                <LinearGradient
+                  colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
+                  style={styles.actionBtn}
                 >
                   <Text style={[styles.actionBtnText, { color: colors.error }]}>{t('collabRequests.decline')}</Text>
-                </Pressable>
-              </LinearGradient>
+                </LinearGradient>
+              </Pressable>
             </View>
           </View>
         </LinearGradient>
@@ -266,7 +271,7 @@ export default function CollabRequestsScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top', 'bottom']}>
         <GlassHeader
           title={t('collabRequests.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -339,7 +344,7 @@ export default function CollabRequestsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
   tabSelector: { marginHorizontal: spacing.base, marginTop: spacing.sm },
 
   list: { paddingBottom: 40, paddingHorizontal: spacing.base, gap: spacing.md },
@@ -359,8 +364,8 @@ const styles = StyleSheet.create({
   },
   info: { flex: 1, gap: spacing.sm },
   userRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  name: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '700' },
-  username: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 1 },
+  name: { fontSize: fontSize.sm, fontFamily: fonts.bodyBold },
+  username: { fontSize: fontSize.xs, fontFamily: fonts.body, marginTop: 1 },
   postPreview: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   thumbnail: {
     width: 50, height: 50, borderRadius: radius.sm,
@@ -372,13 +377,13 @@ const styles = StyleSheet.create({
   },
   noThumbnail: { borderWidth: 0.5, borderColor: colors.dark.border },
   postContent: {
-    color: colors.text.secondary, fontSize: fontSize.sm, flex: 1,
+    fontSize: fontSize.sm, fontFamily: fonts.body, flex: 1,
   },
   postMeta: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
   },
-  metaText: { color: colors.text.tertiary, fontSize: fontSize.xs },
-  metaDot: { color: colors.text.tertiary, fontSize: fontSize.xs, marginHorizontal: 2 },
+  metaText: { fontSize: fontSize.xs, fontFamily: fonts.body },
+  metaDot: { fontSize: fontSize.xs, marginHorizontal: 2 },
 
   actionRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs },
   actionBtn: {
@@ -389,7 +394,7 @@ const styles = StyleSheet.create({
   actionBtnText: {
     color: '#fff',
     fontSize: fontSize.sm,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   removeBtn: {
     alignSelf: 'flex-start',
@@ -402,6 +407,6 @@ const styles = StyleSheet.create({
   removeBtnText: {
     color: colors.error,
     fontSize: fontSize.sm,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
 });
