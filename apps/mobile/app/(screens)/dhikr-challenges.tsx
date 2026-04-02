@@ -135,6 +135,7 @@ export default function DhikrChallengesScreen() {
     fetchNextPage,
     hasNextPage,
     isLoading,
+    isError,
     refetch,
     isFetchingNextPage,
   } = useInfiniteQuery({
@@ -160,11 +161,11 @@ export default function DhikrChallengesScreen() {
       setShowCreateSheet(false);
       setNewTitle('');
       setNewTarget('1000');
-      setCreating(false);
+      haptic.success();
       showToast({ message: t('dhikr.challengeCreated', { defaultValue: 'Challenge created' }), variant: 'success' });
     },
     onError: () => {
-      setCreating(false);
+      haptic.error();
       showToast({ message: t('common.error'), variant: 'error' });
     },
   });
@@ -182,7 +183,7 @@ export default function DhikrChallengesScreen() {
     if (!newTitle.trim()) return;
     const target = parseInt(newTarget, 10);
     if (isNaN(target) || target < 100) return;
-    setCreating(true);
+    if (createMutation.isPending) return;
     createMutation.mutate({
       title: newTitle.trim(),
       phrase: newPhrase,
@@ -211,6 +212,14 @@ export default function DhikrChallengesScreen() {
 
         {isLoading ? (
           <LoadingSkeleton />
+        ) : isError ? (
+          <EmptyState
+            icon="alert-circle"
+            title={t('common.error')}
+            subtitle={t('common.somethingWentWrong')}
+            actionLabel={t('common.retry')}
+            onAction={() => refetch()}
+          />
         ) : (
           <FlatList
             data={challenges}
@@ -220,7 +229,7 @@ export default function DhikrChallengesScreen() {
             refreshControl={
               <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
-            onEndReached={() => { if (hasNextPage) fetchNextPage(); }}
+            onEndReached={() => { if (hasNextPage && !isFetchingNextPage) fetchNextPage(); }}
             onEndReachedThreshold={0.3}
             ListEmptyComponent={
               <EmptyState
@@ -228,6 +237,13 @@ export default function DhikrChallengesScreen() {
                 title={t('dhikr.noActive')}
                 subtitle={t('dhikr.createChallenge')}
               />
+            }
+            ListFooterComponent={
+              isFetchingNextPage ? (
+                <View style={{ alignItems: 'center', paddingVertical: spacing.lg }}>
+                  <Skeleton.Rect width={120} height={16} borderRadius={radius.sm} />
+                </View>
+              ) : null
             }
           />
         )}
@@ -294,7 +310,8 @@ export default function DhikrChallengesScreen() {
             <GradientButton
               label={t('dhikr.createChallenge')}
               onPress={handleCreate}
-              loading={creating}
+              loading={createMutation.isPending}
+              disabled={createMutation.isPending}
             />
           </View>
         </BottomSheet>

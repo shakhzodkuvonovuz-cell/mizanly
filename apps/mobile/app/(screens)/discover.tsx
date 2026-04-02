@@ -1,4 +1,4 @@
-import { useState, useCallback, memo } from 'react';
+import { useState, useCallback, useMemo, memo, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,6 @@ import {
   Dimensions,
   ScrollView,
 } from 'react-native';
-import { Video as ExpoVideo, ResizeMode } from 'expo-av';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useScrollLinkedHeader } from '@/hooks/useScrollLinkedHeader';
@@ -21,13 +20,14 @@ import { Icon, type IconName } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
-import { colors, spacing, fontSize, radius, lineHeight, letterSpacing } from '@/theme';
+import { colors, spacing, fontSize, radius, lineHeight, letterSpacing, fonts } from '@/theme';
 import { formatCount } from '@/utils/formatCount';
 import { searchApi } from '@/services/api';
 import type { TrendingHashtag, Post, Reel, Thread, Video } from '@/types';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const CATEGORY_KEYS = ['all', 'trending', 'food', 'fashion', 'sports', 'tech', 'islamic', 'art'] as const;
@@ -244,6 +244,7 @@ type ExploreItem = Post | Reel | Thread | Video;
 const ExploreGridItem = memo(function ExploreGridItem({ item, isFeature }: { item: ExploreItem; isFeature?: boolean }) {
   const { t } = useTranslation();
   const tc = useThemeColors();
+  const isNavigatingRef = useRef(false);
 
   // Determine type
   const isReel = 'videoUrl' in item && item.videoUrl;
@@ -258,16 +259,11 @@ const ExploreGridItem = memo(function ExploreGridItem({ item, isFeature }: { ite
     isVideo ? (item as Video).thumbnailUrl :
     undefined;
 
-  // Resolve video URI for auto-play (prefer HLS for streaming efficiency, fall back to direct URL)
-  const videoUri = isReel
-    ? (item as Reel).hlsUrl || (item as Reel).videoUrl
-    : isVideo
-      ? (item as Video).hlsUrl || (item as Video).videoUrl
-      : undefined;
-
-  const hasPlayableVideo = !!(isReel || isVideo) && !!videoUri;
-
   const handlePress = () => {
+    if (isNavigatingRef.current) return;
+    isNavigatingRef.current = true;
+    setTimeout(() => { isNavigatingRef.current = false; }, 500);
+
     if (isReel) {
       navigate(`/(screens)/reel/${item.id}`);
     } else if (isPost) {
@@ -292,19 +288,8 @@ const ExploreGridItem = memo(function ExploreGridItem({ item, isFeature }: { ite
         pressed && { transform: [{ scale: 0.97 }], opacity: 0.9 },
       ]}
     >
-      {hasPlayableVideo ? (
-        <ExpoVideo
-          source={{ uri: videoUri }}
-          style={[styles.gridImage, { height: itemHeight }]}
-          resizeMode={ResizeMode.COVER}
-          shouldPlay
-          isLooping
-          isMuted
-          useNativeControls={false}
-          posterSource={thumbnailUrl ? { uri: thumbnailUrl } : undefined}
-          usePoster={!!thumbnailUrl}
-        />
-      ) : thumbnailUrl ? (
+      {/* Show thumbnail only — no autoplay video (#20 OOM fix) */}
+      {thumbnailUrl ? (
         <ProgressiveImage uri={thumbnailUrl} width="100%" height={itemHeight} contentFit="cover" accessibilityLabel={t('accessibility.contentImage')} />
       ) : (
         <View style={[styles.gridImage, styles.placeholder, { backgroundColor: tc.surface }]} />
@@ -337,6 +322,7 @@ function ExploreGridSkeleton() {
 export default function DiscoverScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const haptic = useContextualHaptic();
   const [refreshing, setRefreshing] = useState(false);
   const [activeCategory, setActiveCategory] = useState<CategoryKey>('all');
   const tc = useThemeColors();
@@ -368,6 +354,7 @@ export default function DiscoverScreen() {
   const {
     data: exploreData,
     isLoading: exploreLoading,
+    isFetchingNextPage,
     error: exploreError,
     hasNextPage,
     fetchNextPage,
@@ -377,12 +364,13 @@ export default function DiscoverScreen() {
     queryFn: ({ pageParam }) => searchApi.getExploreFeed(pageParam, activeCategory !== 'all' ? activeCategory : undefined),
     getNextPageParam: (lastPage) => lastPage.meta.cursor ?? undefined,
     initialPageParam: undefined as string | undefined,
+    staleTime: 60_000,
   });
 
   const exploreItems = exploreData?.pages.flatMap((page) => page.data) ?? [];
 
-  // Generate featured items from first 5 content items with media
-  const featuredItems: FeaturedItem[] = exploreItems
+  // Generate featured items from first 5 content items with media (memoized #21)
+  const featuredItems = useMemo<FeaturedItem[]>(() => exploreItems
     .filter((item) => {
       if ('videoUrl' in item) return true; // Reel
       if ('postType' in item && (item as Post).mediaUrls?.length > 0) return true; // Post
@@ -402,7 +390,7 @@ export default function DiscoverScreen() {
           ? (item as Reel).thumbnailUrl || (item as Reel).videoUrl
           : isVideo
             ? String(itemRecord.thumbnailUrl || itemRecord.videoUrl || '')
-            : (item as Post).mediaUrls[0],
+            : (item as Post).mediaUrls?.[0] ?? '',
         creator: {
           avatarUrl: item.user?.avatarUrl,
           displayName: item.user?.displayName || 'User',
@@ -410,7 +398,7 @@ export default function DiscoverScreen() {
         viewsCount: (item as Reel | Video).viewsCount || 0,
         type: isReel ? 'reel' : isVideo ? 'video' : 'post',
       };
-    });
+    }), [exploreItems]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -419,10 +407,10 @@ export default function DiscoverScreen() {
   }, [refetchTrending, refetchExplore]);
 
   const loadMore = useCallback(() => {
-    if (hasNextPage && !exploreLoading) {
+    if (hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
     }
-  }, [hasNextPage, exploreLoading, fetchNextPage]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const isLoading = trendingLoading || exploreLoading;
   const isEmpty = !isLoading && exploreItems.length === 0;
@@ -476,24 +464,24 @@ export default function DiscoverScreen() {
           )}
           ListHeaderComponent={
             <>
-              <CategoryPills active={activeCategory} onSelect={setActiveCategory} categories={CATEGORIES} />
+              <CategoryPills active={activeCategory} onSelect={(c) => { haptic.tick(); setActiveCategory(c); }} categories={CATEGORIES} />
               {featuredItems.length > 0 && <FeaturedSection items={featuredItems} />}
               {trendingLoading ? <TrendingHashtagsSkeleton /> : trendingError ? null : <TrendingHashtags hashtags={trendingData ?? []} />}
               {/* Quick links */}
-              <View style={{ flexDirection: 'row', paddingHorizontal: spacing.base, gap: spacing.sm, marginBottom: spacing.md }}>
+              <View style={styles.quickLinksRow}>
                 <Pressable
-                  style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: tc.surface, borderRadius: radius.md, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: tc.border }}
-                  onPress={() => navigate('/(screens)/hashtag-explore')}
+                  style={({ pressed }) => [styles.quickLinkButton, { backgroundColor: tc.surface, borderColor: tc.border }, pressed && { opacity: 0.7 }]}
+                  onPress={() => { haptic.navigate(); navigate('/(screens)/hashtag-explore'); }}
                 >
                   <Icon name="hash" size="sm" color={colors.emerald} />
-                  <Text style={{ color: tc.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>{t('screens.hashtag-explore.title')}</Text>
+                  <Text style={[styles.quickLinkText, { color: tc.text.primary }]}>{t('screens.hashtag-explore.title')}</Text>
                 </Pressable>
                 <Pressable
-                  style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: tc.surface, borderRadius: radius.md, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: tc.border }}
-                  onPress={() => navigate('/(screens)/series-discover')}
+                  style={({ pressed }) => [styles.quickLinkButton, { backgroundColor: tc.surface, borderColor: tc.border }, pressed && { opacity: 0.7 }]}
+                  onPress={() => { haptic.navigate(); navigate('/(screens)/series-discover'); }}
                 >
                   <Icon name="layers" size="sm" color={colors.gold} />
-                  <Text style={{ color: tc.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>{t('series.discoverTitle')}</Text>
+                  <Text style={[styles.quickLinkText, { color: tc.text.primary }]}>{t('series.discoverTitle')}</Text>
                 </Pressable>
               </View>
               <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>{t('discover.explore')}</Text>
@@ -577,10 +565,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.emerald,
   },
   categoryText: {
+    fontFamily: fonts.bodyMedium,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.sm,
     color: colors.text.primary,
-    fontWeight: '500',
   },
   categoryTextActive: {
     color: '#fff',
@@ -615,10 +603,10 @@ const styles = StyleSheet.create({
   },
   featuredTitle: {
     color: '#fff',
+    fontFamily: fonts.headingBold,
     fontSize: fontSize.md,
     lineHeight: lineHeight.md,
     letterSpacing: letterSpacing.snug,
-    fontWeight: '700',
     marginBottom: spacing.sm,
   },
   featuredMeta: {
@@ -646,7 +634,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   featuredCreatorName: {
-    color: colors.text.secondary,
+    fontFamily: fonts.body,
+    color: '#ddd',
     fontSize: fontSize.xs,
     lineHeight: lineHeight.xs,
     flex: 1,
@@ -657,7 +646,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   featuredViewsText: {
-    color: colors.text.secondary,
+    fontFamily: fonts.body,
+    color: '#ddd',
     fontSize: fontSize.xs,
     lineHeight: lineHeight.xs,
   },
@@ -666,10 +656,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   sectionTitle: {
+    fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
     lineHeight: lineHeight.base,
     color: colors.text.primary,
-    fontWeight: '600',
     marginBottom: spacing.md,
   },
   sectionTitleRow: {
@@ -703,27 +693,27 @@ const styles = StyleSheet.create({
     borderColor: colors.gold,
   },
   hashtagText: {
+    fontFamily: fonts.bodyMedium,
     fontSize: fontSize.sm,
     color: colors.text.primary,
-    fontWeight: '500',
   },
   hashtagTextGold: {
+    fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.sm,
     color: colors.gold,
-    fontWeight: '600',
   },
   hashtagCount: {
+    fontFamily: fonts.body,
     fontSize: fontSize.xs,
     color: colors.text.tertiary,
-    fontWeight: '400',
     marginTop: 2,
   },
   hashtagCountGold: {
+    fontFamily: fonts.bodyMedium,
     fontSize: fontSize.xs,
     lineHeight: lineHeight.xs,
     color: colors.gold,
-    fontWeight: '500',
     opacity: 0.8,
   },
   gridRow: {
@@ -771,9 +761,28 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xl,
   },
   footerText: {
+    fontFamily: fonts.bodyMedium,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.sm,
     color: colors.text.tertiary,
-    fontWeight: '500',
+  },
+  quickLinksRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  quickLinkButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    borderRadius: radius.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderWidth: 1,
+  },
+  quickLinkText: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: fontSize.sm,
   },
 });

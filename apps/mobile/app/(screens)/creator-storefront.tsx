@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -25,6 +25,7 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { api } from '@/services/api';
 import { navigate } from '@/utils/navigation';
+import { showToast } from '@/components/ui/Toast';
 import { formatCount } from '@/utils/formatCount';
 
 interface StorefrontProduct {
@@ -63,18 +64,17 @@ function CreatorStorefrontContent() {
   const [products, setProducts] = useState<StorefrontProduct[]>([]);
   const [creator, setCreator] = useState<CreatorProfile | null>(null);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
   const fetchStorefront = useCallback(async (isRefresh = false) => {
     if (!userId) return;
     if (isRefresh) setRefreshing(true);
+    setHasError(false);
     try {
-      // TODO [cross-scope]: Backend GET /products needs a sellerId filter param
-      // to support creator storefronts. Currently returns all products.
       const [productsRes, profileRes] = await Promise.all([
         api.get(`/products?sellerId=${userId}`),
         api.get(`/users/${userId}`),
       ]);
-      // API client already unwraps the response envelope
       const products = Array.isArray(productsRes) ? productsRes as StorefrontProduct[] : [];
       const profile = profileRes as CreatorProfile & { isMe?: boolean };
       setProducts(products);
@@ -83,27 +83,39 @@ function CreatorStorefrontContent() {
         setIsOwnProfile(!!profile.isMe);
       }
     } catch {
-      // Keep existing data on error
+      // On initial load show error; on refresh keep existing data
+      if (!isRefresh && products.length === 0) {
+        setHasError(true);
+      }
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [userId]);
+  }, [userId, products.length, t]);
 
   useEffect(() => {
     fetchStorefront();
   }, [fetchStorefront]);
 
   const handleRefresh = useCallback(() => {
+    haptic.tick();
     fetchStorefront(true);
-  }, [fetchStorefront]);
+  }, [fetchStorefront, haptic]);
 
+  const isNavigatingRef = useRef(false);
   const handleProductPress = useCallback((productId: string) => {
+    if (isNavigatingRef.current) return;
+    isNavigatingRef.current = true;
+    setTimeout(() => { isNavigatingRef.current = false; }, 500);
     haptic.navigate();
     navigate('/(screens)/product-detail', { productId });
-  }, [haptic, router]);
+  }, [haptic]);
 
   const handleAddProduct = useCallback(() => {
+    if (isNavigatingRef.current) return;
+    isNavigatingRef.current = true;
+    setTimeout(() => { isNavigatingRef.current = false; }, 500);
     haptic.navigate();
     router.push('/(screens)/marketplace');
   }, [haptic, router]);
@@ -111,15 +123,15 @@ function CreatorStorefrontContent() {
   const formatFollowers = (count: number): string => formatCount(count);
 
   const renderProduct = useCallback(({ item, index }: { item: StorefrontProduct; index: number }) => (
-    <Animated.View entering={FadeInUp.delay(100 + index * 50).duration(400)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 50).duration(400)}>
       <Pressable
         onPress={() => handleProductPress(item.id)}
-        style={[styles.productCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
+        style={({ pressed }) => [styles.productCard, { backgroundColor: tc.bgCard, borderColor: tc.border }, pressed && { opacity: 0.7 }]}
         accessibilityRole="button"
         accessibilityLabel={`${item.name}, ${item.currency}${item.price}`}
       >
         {item.imageUrl ? (
-          <ProgressiveImage uri={item.imageUrl} width={CARD_WIDTH} height={CARD_WIDTH} style={{ backgroundColor: tc.surface }} />
+          <ProgressiveImage uri={item.imageUrl} width={CARD_WIDTH} height={CARD_WIDTH} style={{ backgroundColor: tc.surface }} borderRadius={0} />
         ) : (
           <View style={[styles.productImage, styles.productImagePlaceholder]}>
             <Icon name="image" size="lg" color={tc.text.tertiary} />
@@ -185,7 +197,7 @@ function CreatorStorefrontContent() {
             <View style={styles.creatorInfo}>
               <Text style={[styles.creatorName, { color: tc.text.primary }]}>{creator.displayName}</Text>
               <Text style={[styles.creatorUsername, { color: tc.text.secondary }]}>@{creator.username}</Text>
-              <Text style={styles.creatorFollowers}>
+              <Text style={[styles.creatorFollowers, { color: tc.text.tertiary }]}>
                 {formatFollowers(creator.followersCount)} {t('storefront.followers')}
               </Text>
             </View>
@@ -195,8 +207,8 @@ function CreatorStorefrontContent() {
         <View style={[styles.shopStats, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
           <View style={styles.statItem}>
             <Icon name="layers" size="sm" color={colors.emerald} />
-            <Text style={styles.statValue}>{products.length}</Text>
-            <Text style={styles.statLabel}>{t('storefront.products')}</Text>
+            <Text style={[styles.statValue, { color: tc.text.primary }]}>{products.length}</Text>
+            <Text style={[styles.statLabel, { color: tc.text.secondary }]}>{t('storefront.products')}</Text>
           </View>
         </View>
       </Animated.View>
@@ -227,13 +239,23 @@ function CreatorStorefrontContent() {
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={
           !loading ? (
-            <EmptyState
-              icon="layers"
-              title={t('storefront.emptyTitle')}
-              subtitle={isOwnProfile ? t('storefront.emptyOwnerSub') : t('storefront.emptySub')}
-              actionLabel={isOwnProfile ? t('storefront.addProduct') : undefined}
-              onAction={isOwnProfile ? handleAddProduct : undefined}
-            />
+            hasError ? (
+              <EmptyState
+                icon="alert-circle"
+                title={t('common.error')}
+                subtitle={t('common.somethingWentWrong')}
+                actionLabel={t('common.retry')}
+                onAction={() => fetchStorefront()}
+              />
+            ) : (
+              <EmptyState
+                icon="layers"
+                title={t('storefront.emptyTitle')}
+                subtitle={isOwnProfile ? t('storefront.emptyOwnerSub') : t('storefront.emptySub')}
+                actionLabel={isOwnProfile ? t('storefront.addProduct') : undefined}
+                onAction={isOwnProfile ? handleAddProduct : undefined}
+              />
+            )
           ) : null
         }
         contentContainerStyle={[
@@ -259,7 +281,7 @@ function CreatorStorefrontContent() {
         >
           <Pressable
             onPress={handleAddProduct}
-            style={styles.fabButton}
+            style={({ pressed }) => [styles.fabButton, pressed && { opacity: 0.7 }]}
             accessibilityRole="button"
             accessibilityLabel={t('storefront.addProduct')}
           >
@@ -384,10 +406,10 @@ const styles = StyleSheet.create({
     start: spacing.sm,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
+    gap: spacing.xs,
     backgroundColor: colors.active.emerald20,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
+    paddingVertical: spacing.xs,
     borderRadius: radius.full,
   },
   halalText: {

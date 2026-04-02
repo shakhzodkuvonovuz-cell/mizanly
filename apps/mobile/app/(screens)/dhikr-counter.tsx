@@ -5,8 +5,9 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  Dimensions,
+  useWindowDimensions,
   Share,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -35,8 +36,6 @@ import { showToast } from '@/components/ui/Toast';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { islamicApi } from '@/services/islamicApi';
 import { navigate } from '@/utils/navigation';
-
-const { width } = Dimensions.get('window');
 
 const PRESET_PHRASES = [
   { id: 'subhanallah', latin: 'SubhanAllah', arabic: 'سبحان الله', meaning: 'Glory be to Allah' },
@@ -105,6 +104,25 @@ function getBeadClickUri(): string {
     _beadClickUri = generateBeadClickWav(800, 50);
   }
   return _beadClickUri;
+}
+
+// Pre-loaded sound instance to avoid creating one per tap (#86 fix)
+let _beadClickSound: Audio.Sound | null = null;
+async function getBeadClickSound(): Promise<Audio.Sound> {
+  if (_beadClickSound) {
+    try {
+      await _beadClickSound.setPositionAsync(0);
+      return _beadClickSound;
+    } catch {
+      _beadClickSound = null;
+    }
+  }
+  const { sound } = await Audio.Sound.createAsync(
+    { uri: getBeadClickUri() },
+    { shouldPlay: false },
+  );
+  _beadClickSound = sound;
+  return sound;
 }
 
 function PhraseButton({
@@ -177,30 +195,24 @@ export default function DhikrCounterScreen() {
   const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const { width: screenWidth } = useWindowDimensions();
   const [refreshing, setRefreshing] = useState(false);
   const [selectedPhrase, setSelectedPhrase] = useState(PRESET_PHRASES[0]);
   const [count, setCount] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
   const sessionSavedRef = useRef(false);
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
 
   const counterScale = useSharedValue(1);
   const progressWidth = useSharedValue(0);
   const shimmerOpacity = useSharedValue(0);
   const tc = useThemeColors();
 
-  // Bead click sound on each dhikr tap
+  // Bead click sound — reuse single Sound instance (#86 fix)
   const playBeadClick = useCallback(async () => {
     try {
-      const uri = getBeadClickUri();
-      const { sound } = await Audio.Sound.createAsync(
-        { uri },
-        { shouldPlay: true },
-      );
-      sound.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded && status.didJustFinish) {
-          sound.unloadAsync();
-        }
-      });
+      const sound = await getBeadClickSound();
+      await sound.playAsync();
     } catch {
       // Silent fallback — haptic only
     }
@@ -218,7 +230,7 @@ export default function DhikrCounterScreen() {
     streak: statsData?.streak ?? 0,
   };
 
-  // Save session mutation
+  // Save session mutation — queued to prevent race conditions (#77, #78)
   const saveSessionMutation = useMutation({
     mutationFn: (data: { phrase: string; count: number; target?: number }) =>
       islamicApi.saveDhikrSession(data),
@@ -226,7 +238,20 @@ export default function DhikrCounterScreen() {
       queryClient.invalidateQueries({ queryKey: ['dhikr-stats'] });
       showToast({ message: t('screens.dhikrCounter.sessionSaved', { defaultValue: 'Session saved' }), variant: 'success' });
     },
+    onError: () => {
+      haptic.error();
+      showToast({ message: t('common.somethingWentWrong', { defaultValue: 'Failed to save session' }), variant: 'error' });
+    },
   });
+
+  // Queue saves to prevent concurrent mutation cancellation (#77, #78)
+  const queueSave = useCallback((data: { phrase: string; count: number; target?: number }) => {
+    saveQueueRef.current = saveQueueRef.current.then(() =>
+      new Promise<void>((resolve) => {
+        saveSessionMutation.mutate(data, { onSettled: () => resolve() });
+      })
+    );
+  }, [saveSessionMutation]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -247,25 +272,47 @@ export default function DhikrCounterScreen() {
     );
   }, [haptic, counterScale, playBeadClick]);
 
+  const isResettingRef = useRef(false);
   const handleReset = useCallback(() => {
-    // Save session before resetting if count > 0
-    if (count > 0 && !sessionSavedRef.current) {
-      saveSessionMutation.mutate({
-        phrase: selectedPhrase.id,
-        count,
-        target: DAILY_GOAL,
-      });
+    if (isResettingRef.current) return;
+    if (count === 0) return;
+
+    const doReset = () => {
+      isResettingRef.current = true;
+      // Save session before resetting if count > 0
+      if (count > 0 && !sessionSavedRef.current) {
+        queueSave({
+          phrase: selectedPhrase.id,
+          count,
+          target: DAILY_GOAL,
+        });
+      }
+      haptic.delete();
+      setCount(0);
+      setHasStarted(false);
+      sessionSavedRef.current = false;
+      setTimeout(() => { isResettingRef.current = false; }, 500);
+    };
+
+    // Confirmation dialog for non-trivial counts (#79)
+    if (count >= 10) {
+      Alert.alert(
+        t('screens.dhikrCounter.resetTitle', { defaultValue: 'Reset Counter?' }),
+        t('screens.dhikrCounter.resetMessage', { defaultValue: 'Your current count will be saved before resetting.' }),
+        [
+          { text: t('common.cancel'), style: 'cancel', onPress: () => { isResettingRef.current = false; } },
+          { text: t('common.reset', { defaultValue: 'Reset' }), style: 'destructive', onPress: doReset },
+        ],
+      );
+    } else {
+      doReset();
     }
-    haptic.delete();
-    setCount(0);
-    setHasStarted(false);
-    sessionSavedRef.current = false;
-  }, [haptic, count, selectedPhrase.id, saveSessionMutation]);
+  }, [haptic, count, selectedPhrase.id, queueSave, t]);
 
   const selectPhrase = useCallback((phrase: typeof PRESET_PHRASES[0]) => {
     // Save session before switching phrase if count > 0
     if (count > 0 && !sessionSavedRef.current) {
-      saveSessionMutation.mutate({
+      queueSave({
         phrase: selectedPhrase.id,
         count,
         target: DAILY_GOAL,
@@ -276,7 +323,7 @@ export default function DhikrCounterScreen() {
     setCount(0);
     setHasStarted(false);
     sessionSavedRef.current = false;
-  }, [haptic, count, selectedPhrase.id, saveSessionMutation]);
+  }, [haptic, count, selectedPhrase.id, queueSave]);
 
   const handleShareProgress = useCallback(async () => {
     haptic.send();
@@ -301,7 +348,7 @@ export default function DhikrCounterScreen() {
     if (isComplete && !sessionSavedRef.current) {
       haptic.success();
       sessionSavedRef.current = true;
-      saveSessionMutation.mutate({
+      queueSave({
         phrase: selectedPhrase.id,
         count,
         target: DAILY_GOAL,
@@ -313,7 +360,8 @@ export default function DhikrCounterScreen() {
         withTiming(0, { duration: 500 })
       );
     }
-  }, [isComplete, haptic, shimmerOpacity, count, selectedPhrase.id, saveSessionMutation]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- only trigger on isComplete change
+  }, [isComplete]);
 
   const counterAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: counterScale.value }],
@@ -416,12 +464,17 @@ export default function DhikrCounterScreen() {
             </Pressable>
 
             {/* Reset Button */}
-            <Pressable onPress={handleReset} style={styles.resetButton} accessibilityRole="button" accessibilityLabel={t('accessibility.resetCounter')}>
+            <Pressable
+              onPress={handleReset}
+              style={[styles.resetButton, { end: screenWidth / 2 - COUNTER_SIZE / 2 - 20 }]}
+              accessibilityRole="button"
+              accessibilityLabel={t('accessibility.resetCounter')}
+            >
               <LinearGradient
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
                 style={styles.resetButtonGradient}
               >
-                <Icon name="circle" size="xs" color={tc.text.tertiary} />
+                <Icon name="repeat" size="xs" color={tc.text.tertiary} />
               </LinearGradient>
             </Pressable>
           </Animated.View>
@@ -629,7 +682,6 @@ const styles = StyleSheet.create({
   resetButton: {
     position: 'absolute',
     top: 0,
-    right: width / 2 - COUNTER_SIZE / 2 - 20,
   },
   resetButtonGradient: {
     width: 36,

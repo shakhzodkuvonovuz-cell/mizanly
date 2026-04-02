@@ -66,6 +66,7 @@ function CrossPostContent() {
     },
     onError: () => {
       haptic.error();
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
     },
   });
 
@@ -92,6 +93,7 @@ function CrossPostContent() {
       showToast({ message: t('crossPost.noSpaces'), variant: 'error' });
       return;
     }
+    if (crossPostMutation.isPending) return;
     haptic.send();
     crossPostMutation.mutate();
   };
@@ -163,7 +165,7 @@ function CrossPostContent() {
             <View style={[styles.previewRow, { flexDirection: rtlFlexRow(isRTL) }]}>
               {post.thumbnailUrl || (post.mediaUrls && post.mediaUrls.length > 0) ? (
                 <ProgressiveImage
-                  uri={post.thumbnailUrl || post.mediaUrls[0]}
+                  uri={post.thumbnailUrl || post.mediaUrls?.[0] || ''}
                   width={72}
                   height={72}
                   borderRadius={radius.md}
@@ -199,12 +201,13 @@ function CrossPostContent() {
                 key={space.key}
                 style={[
                   styles.spaceOption,
+                  { backgroundColor: tc.bgCard, borderColor: tc.border },
                   isSelected && styles.spaceOptionSelected,
                   { flexDirection: rtlFlexRow(isRTL) },
                 ]}
                 onPress={() => toggleSpace(space.key)}
               >
-                <View style={[styles.spaceIconWrap, isSelected && styles.spaceIconWrapSelected]}>
+                <View style={[styles.spaceIconWrap, { backgroundColor: tc.surface }, isSelected && styles.spaceIconWrapSelected]}>
                   <Icon
                     name={space.icon}
                     size="md"
@@ -215,8 +218,8 @@ function CrossPostContent() {
                   {t(space.tKey)}
                 </Text>
                 <View style={styles.spacer} />
-                <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
-                  {isSelected && <Icon name="check" size="xs" color="#fff" />}
+                <View style={[styles.checkbox, { borderColor: tc.border }, isSelected && styles.checkboxSelected]}>
+                  {isSelected && <Icon name="check" size="xs" color={colors.text.onColor} />}
                 </View>
               </Pressable>
             );
@@ -237,7 +240,7 @@ function CrossPostContent() {
             style={[styles.captionInputWrap, { borderColor: tc.border }]}
           >
             <TextInput
-              style={[styles.captionInput, { textAlign: rtlTextAlign(isRTL) }]}
+              style={[styles.captionInput, { color: tc.text.primary, textAlign: rtlTextAlign(isRTL) }]}
               placeholder={t('crossPost.captionPlaceholder')}
               placeholderTextColor={tc.text.tertiary}
               value={captionOverride}
@@ -251,7 +254,7 @@ function CrossPostContent() {
       </ScrollView>
 
       {/* Bottom action */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + spacing.base }]}>
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + spacing.base, backgroundColor: tc.bg, borderTopColor: tc.border }]}>
         <GradientButton
           label={crossPostMutation.isPending ? t('crossPost.posting') : t('crossPost.post')}
           onPress={handleCrossPost}

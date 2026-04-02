@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, Dimensions,
+  View, Text, StyleSheet, Pressable, Dimensions, Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
-import { SafeAreaView } from 'react-native-safe-area-context';
+// SafeAreaView not used — camera screens use full-screen layout
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import Animated, {
   FadeIn, FadeInUp, FadeOut,
@@ -96,16 +96,26 @@ function DisposableCameraScreen() {
   }, [haptic]);
 
   // ── Capture both photos ──
+  const bounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup setTimeout on unmount (#37 fix)
+  useEffect(() => {
+    return () => {
+      if (bounceTimerRef.current) clearTimeout(bounceTimerRef.current);
+    };
+  }, []);
+
   const capturePhotos = useCallback(async () => {
     if (isCapturing || !mainCameraRef.current || !miniCameraRef.current) return;
 
     setIsCapturing(true);
     haptic.send();
 
-    // Animate capture button
+    // Animate capture button — tracked for unmount cleanup (#37)
     captureScale.value = withSpring(0.85, animation.spring.snappy);
-    setTimeout(() => {
+    bounceTimerRef.current = setTimeout(() => {
       captureScale.value = withSpring(1, animation.spring.bouncy);
+      bounceTimerRef.current = null;
     }, 150);
 
     try {
@@ -134,13 +144,26 @@ function DisposableCameraScreen() {
     }
   }, [isCapturing, haptic, captureScale, mainFacing, t]);
 
-  // ── Retake ──
+  // ── Retake — with confirmation (#39) ──
   const retake = useCallback(() => {
-    setBackPhoto(null);
-    setFrontPhoto(null);
-    setIsCaptured(false);
-    haptic.tick();
-  }, [haptic]);
+    Alert.alert(
+      t('disposable.retakeTitle', { defaultValue: 'Retake Photos?' }),
+      t('disposable.retakeMessage', { defaultValue: 'Both photos will be discarded.' }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('disposable.retake', { defaultValue: 'Retake' }),
+          style: 'destructive',
+          onPress: () => {
+            setBackPhoto(null);
+            setFrontPhoto(null);
+            setIsCaptured(false);
+            haptic.tick();
+          },
+        },
+      ],
+    );
+  }, [haptic, t]);
 
   // ── Share as story ──
   const postMutation = useMutation({
@@ -257,7 +280,7 @@ function DisposableCameraScreen() {
                 <Text style={styles.shareHeaderText}>{t('disposable.share')}</Text>
               ),
               onPress: () => {
-                if (!isPosting) postMutation.mutate();
+                if (!isPosting && !postMutation.isPending) postMutation.mutate();
               },
               accessibilityLabel: t('disposable.share'),
             },
@@ -303,7 +326,7 @@ function DisposableCameraScreen() {
 
           <Animated.View entering={FadeInUp.delay(300).duration(300)} style={[styles.noEditBanner, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
             <Icon name="lock" size="sm" color={tc.text.secondary} />
-            <Text style={styles.noEditText}>
+            <Text style={[styles.noEditText, { color: tc.text.secondary }]}>
               {t('disposable.noEditing')}
             </Text>
           </Animated.View>
@@ -311,8 +334,9 @@ function DisposableCameraScreen() {
           <Animated.View entering={FadeInUp.delay(400).duration(300)} style={styles.shareSection}>
             <GradientButton
               label={t('disposable.shareAsStory')}
-              onPress={() => postMutation.mutate()}
+              onPress={() => { if (!postMutation.isPending) postMutation.mutate(); }}
               loading={isPosting}
+              disabled={postMutation.isPending}
               icon="send"
             />
           </Animated.View>
@@ -373,7 +397,7 @@ function DisposableCameraScreen() {
 
       {/* Tagline */}
       <Animated.View entering={FadeInUp.delay(200).duration(400)} style={styles.taglineContainer}>
-        <Text style={styles.taglineMain}>{t('disposable.tagline1')}</Text>
+        <Text style={[styles.taglineMain, { color: tc.text.secondary }]}>{t('disposable.tagline1')}</Text>
         <Text style={styles.taglineSub}>{t('disposable.tagline2')}</Text>
       </Animated.View>
 

@@ -69,7 +69,7 @@ function ContributorRow({
 }) {
   const tc = useThemeColors();
   return (
-    <View style={styles.contributorRow}>
+    <View style={[styles.contributorRow, { borderBottomColor: tc.border }]}>
       <View style={styles.rankBadge}>
         <Text style={[styles.rankText, rank <= 3 && styles.rankTextTop, { color: tc.text.tertiary }]}>{rank}</Text>
       </View>
@@ -119,7 +119,7 @@ export default function DhikrChallengeDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const tc = useThemeColors();
 
-  const { data: challenge, isLoading, refetch } = useQuery({
+  const { data: challenge, isLoading, isError, refetch } = useQuery({
     queryKey: ['dhikr-challenge', id],
     queryFn: () => islamicApi.getDhikrChallenge(id ?? ''),
     enabled: !!id,
@@ -132,6 +132,10 @@ export default function DhikrChallengeDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['dhikr-challenges'] });
       showToast({ message: t('dhikr.joinedChallenge', { defaultValue: 'Joined challenge' }), variant: 'success' });
     },
+    onError: () => {
+      haptic.error();
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+    },
   });
 
   const contributeMutation = useMutation({
@@ -142,6 +146,10 @@ export default function DhikrChallengeDetailScreen() {
       setContributeCount(0);
       setShowContribute(false);
       showToast({ message: t('dhikr.contributed', { defaultValue: 'Contribution submitted' }), variant: 'success' });
+    },
+    onError: () => {
+      haptic.error();
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
     },
   });
 
@@ -164,8 +172,8 @@ export default function DhikrChallengeDetailScreen() {
 
   const detail = challenge as DhikrChallengeDetail | undefined;
 
-  // Check if current user is a participant
-  const isParticipant = (detail?.topContributors?.length ?? 0) > 0;
+  // isParticipant is now based on participantCount field, not contributor list (#46 fix)
+  const _isParticipant = (detail?.participantCount ?? 0) > 0;
 
   const renderHeader = useCallback(() => {
     if (!detail) return null;
@@ -292,12 +300,20 @@ export default function DhikrChallengeDetailScreen() {
 
         {isLoading ? (
           <LoadingSkeleton />
+        ) : isError ? (
+          <EmptyState
+            icon="alert-circle"
+            title={t('common.error')}
+            subtitle={t('common.somethingWentWrong')}
+            actionLabel={t('common.retry')}
+            onAction={() => refetch()}
+          />
         ) : (
           <FlatList
             data={detail?.topContributors ?? []}
             keyExtractor={(item, index) => `${item.userId}-${index}`}
             renderItem={({ item, index }) => (
-              <Animated.View entering={FadeInUp.delay(350 + index * 50).duration(300)}>
+              <Animated.View entering={FadeInUp.delay(350 + Math.min(index, 15) * 50).duration(300)}>
                 <ContributorRow contributor={item} rank={index + 1} />
               </Animated.View>
             )}
