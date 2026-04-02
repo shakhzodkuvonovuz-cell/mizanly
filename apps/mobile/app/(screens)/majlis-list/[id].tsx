@@ -48,10 +48,11 @@ export default function MajlisListDetailScreen() {
   const listData = listQuery.data as MajlisList | undefined;
 
   const onRefresh = useCallback(async () => {
+    haptic.tick();
     setRefreshing(true);
     await Promise.all([listQuery.refetch(), timelineQuery.refetch()]);
     setRefreshing(false);
-  }, [listQuery, timelineQuery]);
+  }, [listQuery, timelineQuery, haptic]);
 
   const onEndReached = useCallback(() => {
     if (timelineQuery.hasNextPage && !timelineQuery.isFetchingNextPage) {

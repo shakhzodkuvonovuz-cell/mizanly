@@ -384,14 +384,14 @@ export const usersApi = {
     api.get<PaginatedResponse<Post>>(`/users/${username}/posts${qs({ cursor })}`),
   getUserThreads: (username: string, cursor?: string) =>
     api.get<PaginatedResponse<Thread>>(`/users/${username}/threads${qs({ cursor })}`),
-  getSavedPosts: (cursor?: string) =>
-    api.get<PaginatedResponse<Post>>(`/users/me/saved-posts${qs({ cursor })}`),
-  getSavedThreads: (cursor?: string) =>
-    api.get<PaginatedResponse<Thread>>(`/users/me/saved-threads${qs({ cursor })}`),
-  getSavedReels: (cursor?: string) =>
-    api.get<PaginatedResponse<Reel>>(`/users/me/saved-reels${qs({ cursor })}`),
-  getSavedVideos: (cursor?: string) =>
-    api.get<PaginatedResponse<Video>>(`/users/me/saved-videos${qs({ cursor })}`),
+  getSavedPosts: (cursor?: string, collection?: string) =>
+    api.get<PaginatedResponse<Post>>(`/users/me/saved-posts${qs({ cursor, collection })}`),
+  getSavedThreads: (cursor?: string, collection?: string) =>
+    api.get<PaginatedResponse<Thread>>(`/users/me/saved-threads${qs({ cursor, collection })}`),
+  getSavedReels: (cursor?: string, collection?: string) =>
+    api.get<PaginatedResponse<Reel>>(`/users/me/saved-reels${qs({ cursor, collection })}`),
+  getSavedVideos: (cursor?: string, collection?: string) =>
+    api.get<PaginatedResponse<Video>>(`/users/me/saved-videos${qs({ cursor, collection })}`),
   getFollowRequests: () => api.get('/follows/requests/incoming'),
   getAnalytics: () => api.get<{ stats: CreatorStat[] }>('/users/me/analytics'),
   getWatchHistory: (cursor?: string) =>

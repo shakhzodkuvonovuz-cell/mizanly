@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions, ActivityIndicator } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -176,6 +177,7 @@ export default function SchedulePostScreen() {
 
   return (
     <ScreenErrorBoundary>
+    <StatusBar style="light" />
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader title={t('screens.schedule-post.title')} showBackButton />
 

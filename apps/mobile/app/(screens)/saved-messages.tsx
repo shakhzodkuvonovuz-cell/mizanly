@@ -75,6 +75,10 @@ export default function SavedMessagesScreen() {
       haptic.delete();
       showToast({ message: t('common.deleted'), variant: 'success' });
     },
+    onError: () => {
+      haptic.error();
+      showToast({ message: t('common.somethingWentWrong', { defaultValue: 'Something went wrong' }), variant: 'error' });
+    },
   });
 
   const pinMutation = useMutation({

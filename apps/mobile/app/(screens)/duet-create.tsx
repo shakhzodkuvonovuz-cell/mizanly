@@ -223,14 +223,14 @@ export default function DuetCreateScreen() {
                 colors={colors.gradient.cardDark}
                 style={styles.originalInfoGradient}
               >
-                <View style={styles.creatorRow}>
+                <View style={[styles.creatorRow, { flexDirection: rtlFlexRow(isRTL) }]}>
                   <View style={styles.avatarContainer}>
                     <View style={[styles.avatarPlaceholder, { backgroundColor: tc.surface }]}>
                       <Icon name="user" size="md" color={tc.text.tertiary} />
                     </View>
                   </View>
                   <View style={styles.creatorInfo}>
-                    <View style={styles.creatorNameRow}>
+                    <View style={[styles.creatorNameRow, { flexDirection: rtlFlexRow(isRTL) }]}>
                       <Text style={styles.creatorName}>{originalCreator.displayName}</Text>
                       {originalCreator.isVerified && <VerifiedBadge size={13} />}
                     </View>
@@ -558,7 +558,7 @@ export default function DuetCreateScreen() {
                 colors={colors.gradient.cardDark}
                 style={styles.audioGradient}
               >
-                <View style={styles.audioHeader}>
+                <View style={[styles.audioHeader, { flexDirection: rtlFlexRow(isRTL) }]}>
                   <View style={styles.audioIconContainer}>
                     <LinearGradient
                       colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
@@ -582,7 +582,7 @@ export default function DuetCreateScreen() {
                 </View>
 
                 <View style={styles.volumeSliders}>
-                  <View style={styles.volumeRow}>
+                  <View style={[styles.volumeRow, { flexDirection: rtlFlexRow(isRTL) }]}>
                     <Text style={styles.volumeLabel}>{t('duet.originalAudio')}</Text>
                     <Text style={styles.volumeValue}>{originalVolume}%</Text>
                   </View>
@@ -593,7 +593,7 @@ export default function DuetCreateScreen() {
                     trackColor={tc.surface}
                   />
 
-                  <View style={[styles.volumeRow, styles.volumeRowSecond]}>
+                  <View style={[styles.volumeRow, styles.volumeRowSecond, { flexDirection: rtlFlexRow(isRTL) }]}>
                     <Text style={styles.volumeLabel}>{t('duet.yourAudio')}</Text>
                     <Text style={styles.volumeValue}>{yourVolume}%</Text>
                   </View>

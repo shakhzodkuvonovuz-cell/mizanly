@@ -156,7 +156,7 @@ export default function SavedScreen() {
 
   const savedPostsQuery = useInfiniteQuery({
     queryKey: ['saved-posts', activeCollection],
-    queryFn: ({ pageParam }) => usersApi.getSavedPosts(pageParam as string | undefined),
+    queryFn: ({ pageParam }) => usersApi.getSavedPosts(pageParam as string | undefined, activeCollection),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
     enabled: activeTab === 'posts',
@@ -164,7 +164,7 @@ export default function SavedScreen() {
 
   const savedThreadsQuery = useInfiniteQuery({
     queryKey: ['saved-threads', activeCollection],
-    queryFn: ({ pageParam }) => usersApi.getSavedThreads(pageParam as string | undefined),
+    queryFn: ({ pageParam }) => usersApi.getSavedThreads(pageParam as string | undefined, activeCollection),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
     enabled: activeTab === 'threads',
@@ -172,7 +172,7 @@ export default function SavedScreen() {
 
   const savedReelsQuery = useInfiniteQuery({
     queryKey: ['saved-reels', activeCollection],
-    queryFn: ({ pageParam }) => usersApi.getSavedReels(pageParam as string | undefined),
+    queryFn: ({ pageParam }) => usersApi.getSavedReels(pageParam as string | undefined, activeCollection),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
     enabled: activeTab === 'reels',
@@ -180,7 +180,7 @@ export default function SavedScreen() {
 
   const savedVideosQuery = useInfiniteQuery({
     queryKey: ['saved-videos', activeCollection],
-    queryFn: ({ pageParam }) => usersApi.getSavedVideos(pageParam as string | undefined),
+    queryFn: ({ pageParam }) => usersApi.getSavedVideos(pageParam as string | undefined, activeCollection),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
     enabled: activeTab === 'videos',

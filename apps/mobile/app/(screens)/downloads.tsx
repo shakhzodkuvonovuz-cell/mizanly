@@ -41,7 +41,7 @@ type FilterTab = typeof FILTER_TABS[number];
 // ── Storage Bar ──
 
 function StorageBar({ usedBytes, totalBytes }: { usedBytes: number; totalBytes: number }) {
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const tc = useThemeColors();
   const pct = totalBytes > 0 ? Math.min((usedBytes / totalBytes) * 100, 100) : 0;
 
@@ -50,8 +50,8 @@ function StorageBar({ usedBytes, totalBytes }: { usedBytes: number; totalBytes: 
       colors={colors.gradient.cardDark}
       style={styles.storageCard}
     >
-      <View style={styles.storageHeader}>
-        <View style={styles.storageIconRow}>
+      <View style={[styles.storageHeader, { flexDirection: rtlFlexRow(isRTL) }]}>
+        <View style={[styles.storageIconRow, { flexDirection: rtlFlexRow(isRTL) }]}>
           <LinearGradient
             colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
             style={styles.storageIconBg}
@@ -85,7 +85,7 @@ function FilterChips({
   active: FilterTab;
   onChange: (tab: FilterTab) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const haptic = useContextualHaptic();
   const tc = useThemeColors();
 
@@ -96,7 +96,7 @@ function FilterChips({
   };
 
   return (
-    <View style={styles.chipRow}>
+    <View style={[styles.chipRow, { flexDirection: rtlFlexRow(isRTL) }]}>
       {FILTER_TABS.map((tab) => {
         const isActive = tab === active;
         return (
@@ -130,7 +130,7 @@ function DownloadItem({
   onLongPress: (item: OfflineDownload) => void;
   onAction: (item: OfflineDownload, action: 'pause' | 'resume' | 'retry' | 'delete') => void;
 }) {
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const tc = useThemeColors();
 
   const typeBadgeColors: Record<string, string> = {
@@ -146,7 +146,7 @@ function DownloadItem({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={(item as unknown as Record<string, unknown>).title as string || `${item.contentType} ${item.contentId.slice(0, 8)}`}
-        style={styles.downloadItem}
+        style={[styles.downloadItem, { flexDirection: rtlFlexRow(isRTL) }]}
         onLongPress={() => onLongPress(item)}
         delayLongPress={400}
       >
@@ -171,7 +171,7 @@ function DownloadItem({
           <Text style={[styles.itemTitle, { color: tc.text.primary }]} numberOfLines={1}>
             {(item as unknown as Record<string, unknown>).title as string || `${item.contentType} ${item.contentId.slice(0, 8)}...`}
           </Text>
-          <View style={styles.itemMeta}>
+          <View style={[styles.itemMeta, { flexDirection: rtlFlexRow(isRTL) }]}>
             <Text style={[styles.itemSize, { color: tc.text.tertiary }]}>{formatBytes(item.fileSize)}</Text>
             <Text style={[styles.itemStatus, { color: tc.text.secondary }]}>
               {item.status === 'complete' ? t('downloads.complete')
