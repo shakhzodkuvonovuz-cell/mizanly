@@ -495,14 +495,14 @@ export default function CreateEventScreen() {
               <Text style={styles.formLabel}>{t('events.community')}</Text>
             </View>
 
-            <Pressable accessibilityRole="button" accessibilityLabel={t('events.postToCommunity')} style={[styles.communityDropdown, { backgroundColor: tc.surface }]}>
+            <View style={[styles.communityDropdown, { backgroundColor: tc.surface }]}>
               <Text style={selectedCommunity ? styles.dropdownValue : styles.dropdownPlaceholder}>
                 {selectedCommunity
                   ? communities.find(c => c.id === selectedCommunity)?.name
                   : t('events.postToCommunity')}
               </Text>
               <Icon name="chevron-down" size="xs" color={tc.text.tertiary} />
-            </Pressable>
+            </View>
 
             <Text style={styles.sectionTitle}>{t('events.yourCommunities')}</Text>
             {communitiesLoading ? (
@@ -615,7 +615,7 @@ export default function CreateEventScreen() {
         }}>
           <Text style={styles.draftText}>{t('events.saveDraft')}</Text>
         </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel={t('events.createEvent')} onPress={handleSubmit} disabled={submitting}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('events.createEvent')} onPress={handleSubmit} disabled={submitting} style={{ opacity: submitting ? 0.5 : 1 }}>
           <LinearGradient
             colors={[colors.emerald, colors.emeraldDark]}
             style={styles.createButton}

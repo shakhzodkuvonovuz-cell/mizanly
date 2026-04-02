@@ -41,6 +41,7 @@ export default function CreateClipScreen() {
   const clipDuration = useMemo(() => Math.max(0, endTime - startTime), [startTime, endTime]);
   const isValid = clipDuration >= 0.5 && clipDuration <= 60 && endTime <= totalDuration;
 
+  const createLockRef = useRef(false);
   const createMutation = useMutation({
     mutationFn: () => clipsApi.create(videoId as string, {
       startTime,
@@ -57,6 +58,7 @@ export default function CreateClipScreen() {
       haptic.error();
       showToast({ message: err.message || t('clips.createFailed') || 'Failed to create clip', variant: 'error' });
     },
+    onSettled: () => { createLockRef.current = false; },
   });
 
   const adjustStart = (delta: number) => {
@@ -159,7 +161,7 @@ export default function CreateClipScreen() {
           <Animated.View entering={FadeInDown.delay(250).duration(300)} style={styles.submitSection}>
             <GradientButton
               label={createMutation.isPending ? t('clips.creating') : t('clips.create')}
-              onPress={() => createMutation.mutate()}
+              onPress={() => { if (createLockRef.current) return; createLockRef.current = true; createMutation.mutate(); }}
               disabled={!isValid || createMutation.isPending}
               loading={createMutation.isPending}
               fullWidth

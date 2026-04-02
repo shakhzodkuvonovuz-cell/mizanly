@@ -248,6 +248,7 @@ export default function CreateGroupScreen() {
                 scrollEnabled={true}
                 keyExtractor={(item) => item.id}
                 removeClippedSubviews={true}
+                keyboardShouldPersistTaps="handled"
                 refreshControl={<BrandedRefreshControl refreshing={searchQuery.isFetching} onRefresh={() => searchQuery.refetch()} />}
                 renderItem={({ item }) => (
                   <Pressable
@@ -303,7 +304,7 @@ export default function CreateGroupScreen() {
                 createMutation.mutate();
               }}
               loading={createMutation.isPending}
-              disabled={groupName.trim().length === 0}
+              disabled={groupName.trim().length === 0 || selectedMembers.length < MIN_MEMBERS}
             />
           </View>
 
@@ -328,7 +329,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
 
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   nameInput: {
-    flex: 1, color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '600',
+    flex: 1, color: tc.text.primary, fontSize: fontSize.lg, fontWeight: '600',
     paddingVertical: spacing.xs,
   },
 
@@ -343,8 +344,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: colors.emerald, alignItems: 'center', justifyContent: 'center',
   },
   skipBtn: { marginTop: spacing.sm, alignItems: 'center' },
-  skipText: { color: colors.text.secondary, fontSize: fontSize.sm },
-  skipDisabled: { color: colors.text.tertiary },
+  skipText: { color: tc.text.secondary, fontSize: fontSize.sm },
+  skipDisabled: { color: tc.text.tertiary },
 
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   chip: {
@@ -365,7 +366,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: tc.bgCard, borderRadius: radius.full,
     marginBottom: spacing.md,
   },
-  searchInput: { flex: 1, color: colors.text.primary, fontSize: fontSize.base },
+  searchInput: { flex: 1, color: tc.text.primary, fontSize: fontSize.base },
 
   loader: { marginVertical: spacing.xl, gap: spacing.sm },
   userRow: {
@@ -375,13 +376,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   userInfo: { flex: 1 },
   userNameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  name: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
-  handle: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 1 },
+  name: { color: tc.text.primary, fontSize: fontSize.base, fontWeight: '600' },
+  handle: { color: tc.text.secondary, fontSize: fontSize.sm, marginTop: 1 },
 
   empty: { alignItems: 'center', paddingTop: 40 },
-  emptyText: { color: colors.text.secondary, fontSize: fontSize.base },
+  emptyText: { color: tc.text.secondary, fontSize: fontSize.base },
   hint: { alignItems: 'center', paddingTop: 40 },
-  hintText: { color: colors.text.tertiary, fontSize: fontSize.base },
+  hintText: { color: tc.text.tertiary, fontSize: fontSize.base },
 
   error: {
     color: colors.error, fontSize: fontSize.sm, textAlign: 'center',

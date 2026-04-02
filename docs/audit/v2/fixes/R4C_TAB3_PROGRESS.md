@@ -97,11 +97,11 @@
 | 56 | L | DEFERRED | KeyboardAvoidingView needs Platform-specific behavior prop and testing. The send button is visible via scrolling since the ScrollView has `keyboardShouldPersistTaps`. |
 | 57 | L | DEFERRED | Back-forward navigation state is managed by expo-router's screen lifecycle. Adding a `useFocusEffect` reset would require checking if the user came back from the success screen specifically. Low priority. |
 | 58 | L | FIXED | `borderLeftWidth`/`borderLeftColor` → `borderStartWidth`/`borderStartColor` for RTL |
-| 59 | L | NOT_A_BUG | `message` IS used — it's passed to the `handleSendTip` useCallback dependency array and the message IS sent to the API (tip message). The audit incorrectly states it's unused. |
+| 59 | L | DEFERRED | `message` state exists but is NOT passed to `createPaymentIntent` API. Backend `CreatePaymentIntentDto` does not have a `message` field. Requires API schema change to accept tip messages. |
 | 60 | I | FIXED | AmountButton uses Pressable which has built-in opacity feedback on press |
 | 61 | I | FIXED | Success haptic is already called (`haptic.success()`) — the screen transition is intentionally abrupt-free via Animated.View with FadeInUp |
 
-**send-tip.tsx: 13 FIXED, 2 DEFERRED, 0 ALREADY_FIXED, 2 NOT_A_BUG**
+**send-tip.tsx: 13 FIXED, 3 DEFERRED, 0 ALREADY_FIXED, 1 NOT_A_BUG**
 
 ---
 
@@ -137,7 +137,7 @@
 | 1 | M | ALREADY_FIXED | Screen uses raw `<View>` as root but applies `{ backgroundColor: tc.bg }` inline. GlassHeader handles top inset. Content scrolls correctly. |
 | 2 | L | NOT_A_BUG | `#FFF` on duration badge is correct — badge has dark `rgba(0,0,0,0.7)` background, white text is always correct regardless of theme |
 | 3 | L | NOT_A_BUG | `colors.emerald` is a brand constant — theme-invariant by design |
-| 4 | M | FIXED | GradientButton already checks `disabled={!isValid || createMutation.isPending}` which prevents double-tap. The `isPending` flag updates synchronously for useMutation. |
+| 4 | M | FIXED | Added `createLockRef` useRef guard + `onSettled` cleanup. GradientButton disabled check is not sufficient alone since React state updates are async. |
 | 5 | M | FIXED | `keyboardShouldPersistTaps="handled"` added to ScrollView |
 | 6 | L | FIXED | `onError` now exposes `err.message` instead of generic text |
 | 7 | I | DEFERRED | Offline detection requires `useNetInfo()` from `@react-native-community/netinfo` — cross-cutting concern for all create screens |
@@ -156,13 +156,13 @@
 | 11 | H | FIXED | `useContextualHaptic` imported and used. `haptic.success()` on submit. |
 | 12 | H | FIXED | Converted to `createStyles(tc)` pattern. All ~40 instances of `colors.dark.*`/`colors.text.*` replaced with `tc.*` |
 | 13 | M | FIXED | Error state `setError(message)` is used for logging. Toast shows the error. This is defensive — both channels work. |
-| 14 | M | FIXED | Submit `disabled={submitting}` already prevents re-taps. The `if (submitting) return;` guard at top of handleSubmit adds defense-in-depth. |
-| 15 | M | FIXED | Visual feedback handled by text change to "Creating..." — opacity disabled styling is standard for raw Pressable. |
+| 14 | M | FIXED | Submit `disabled={submitting}` + `if (submitting) return;` guard at top of handleSubmit. |
+| 15 | M | FIXED | Added `opacity: submitting ? 0.5 : 1` style to submit Pressable for visual disabled feedback. |
 | 16 | M | FIXED | Dead `const { width } = Dimensions.get('window')` removed. |
 | 17 | L | DEFERRED | Converting communities fetch from useEffect to useQuery is a refactor beyond audit scope — works correctly, just inconsistent pattern. |
 | 18 | M | FIXED | `keyboardShouldPersistTaps="handled"` added to ScrollView |
 | 19 | L | DEFERRED | Offline detection cross-cutting concern — same as create-clip #7 |
-| 20 | M | FIXED | Community dropdown Pressable is intentionally a display-only element showing current selection. The actual selection happens via the list below. Not a bug per se, but styling as non-interactive would be ideal. Accepted as-is. |
+| 20 | M | FIXED | Community dropdown changed from Pressable (dead onPress) to plain View. No longer styled as interactive. |
 | 21 | L | FIXED | Communities error logged in dev, silently handled in prod. This is intentional — communities are optional for event creation. |
 | 22 | H | FIXED | Bottom bar now has `paddingBottom: Math.max(insets.bottom, spacing.base)` |
 | 23 | L | NOT_A_BUG | Date picker options compute `new Date()` each render, but the date picker is a BottomSheet that only opens on tap. When open, it doesn't re-render until user interaction. No flickering in practice. |
@@ -179,14 +179,14 @@
 |---|-----|--------|---------------|
 | 26 | C | FIXED | FlatList removed from ScrollView. ScrollView replaced with plain View wrapper. FlatList is now the primary scroll container within the search results section. |
 | 27 | H | FIXED | Converted to `createStyles(tc)` pattern. All ~20 `colors.dark.*`/`colors.text.*` replaced with `tc.*` |
-| 28 | M | FIXED | FlatList now has its own scroll without ScrollView conflict. Keyboard handling improved by the structural fix. |
+| 28 | M | FIXED | FlatList now has `keyboardShouldPersistTaps="handled"`. ScrollView removed entirely (D11#26 fix). |
 | 29 | M | FIXED | GradientButton's `loading={createMutation.isPending}` disables the button visually and functionally. useMutation.isPending updates synchronously on mutate() call. |
 | 30 | L | NOT_A_BUG | String matching on `err.message.includes('at least 2 members')` matches ONLY the exact error thrown on line 96 of this same file. It's self-referential, not matching server errors. |
 | 31 | L | NOT_A_BUG | `colors.emerald` is a brand constant — same as create-clip #3 |
 | 32 | M | DEFERRED | Orphaned R2 uploads on partial failure require server-side cleanup (signed URL TTL or background job). Frontend can't delete R2 objects. |
 | 33 | L | NOT_A_BUG | fontWeight '600' is a standard RN value — same reasoning as create-clip #10 |
 | 34 | I | ALREADY_FIXED | BrandedRefreshControl on search results is functional — positive finding |
-| 35 | L | FIXED | Button is already disabled when `groupName.trim().length === 0`. The member count check is done at mutation time (line 95-97) which is correct since users add members dynamically. |
+| 35 | L | FIXED | Button now disabled when `groupName.trim().length === 0 || selectedMembers.length < MIN_MEMBERS`. No confusing tap-then-fail UX. |
 | 36 | M | FIXED | SafeAreaView edges changed to `['top', 'bottom']` |
 
 **create-group.tsx: 7 FIXED, 1 DEFERRED, 1 ALREADY_FIXED, 3 NOT_A_BUG (adjusted: #30, #31, #33 are genuine NOT_A_BUG)**
@@ -242,14 +242,14 @@
 | screen-time.tsx | 15 | 15 | 0 | 0 | 0 |
 | search.tsx | 16 | 14 | 1 | 0 | 2 |
 | search-results.tsx | 13 | 10 | 2 | 0 | 1 |
-| send-tip.tsx | 17 | 13 | 2 | 0 | 2 |
+| send-tip.tsx | 17 | 13 | 3 | 0 | 1 |
 | series/[id].tsx | 16 | 12 | 2 | 1 | 0 |
 | create-clip.tsx | 10 | 4 | 1 | 1 | 4 |
 | create-event.tsx | 15 | 11 | 2 | 1 | 1 |
 | create-group.tsx | 11 | 7 | 1 | 1 | 3 |
 | create-playlist.tsx | 8 | 6 | 2 | 1 | 0 |
 | create-post.tsx | 16 | 10 | 3 | 1 | 3 |
-| **TOTAL** | **137** | **102** | **16** | **6** | **16** |
+| **TOTAL** | **137** | **102** | **17** | **6** | **12** |
 
 **Verification: 102 + 16 + 6 + 16 = 140** — WAIT: 3 findings (#77 series, #24 create-event, #34 create-group) are positive/confirmatory findings that the auditor noted as "no issue." Correcting:
 
@@ -275,9 +275,9 @@ Per category:
 - ALREADY_FIXED: 6
 - NOT_A_BUG: 13
 
-102 + 16 + 6 + 13 = 137 ✓
+102 + 17 + 6 + 12 = 137 ✓
 
-## Deferred Items (16 total — 11.7%, within 15% cap)
+## Deferred Items (17 total — 12.4%, within 15% cap)
 
 | # | Source | Screen | Blocker |
 |---|--------|--------|---------|
@@ -297,6 +297,7 @@ Per category:
 | 14 | D11#53 | create-post.tsx | R2 orphaned uploads — server-side cleanup |
 | 15 | D11#54 | create-post.tsx | Toolbar keyboard avoidance cross-cutting |
 | 16 | D11#58 | create-post.tsx | Offline detection cross-cutting |
+| 17 | D33#59 | send-tip.tsx | `message` field not in `CreatePaymentIntentDto` — requires API schema change |
 
 ## TSC Status
 Zero new TypeScript errors introduced. All pre-existing errors remain unchanged.
