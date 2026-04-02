@@ -1,12 +1,12 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   View, Text, StyleSheet, TextInput,
   KeyboardAvoidingView, Platform, ScrollView,
-  Pressable,
+  Pressable, Alert, StatusBar,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
@@ -14,12 +14,12 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { CharCountRing } from '@/components/ui/CharCountRing';
-import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, fonts, fontSize, spacing, radius } from '@/theme';
 import { videosApi } from '@/services/api';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { showToast } from '@/components/ui/Toast';
@@ -58,9 +58,11 @@ const POSITION_OPTIONS: { value: EndScreenPosition; label: string }[] = [
   { value: 'bottom-right', label: 'BR' },
 ];
 
+let draftCounter = 0;
 function createDraft(): EndScreenDraft {
+  draftCounter += 1;
   return {
-    id: Date.now().toString(),
+    id: `draft-${Date.now()}-${draftCounter}`,
     type: 'subscribe',
     targetId: '',
     label: '',
@@ -87,28 +89,60 @@ export default function EndScreenEditorScreen() {
   const { videoId } = useLocalSearchParams<{ videoId: string }>();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const haptic = useContextualHaptic();
+  const insets = useSafeAreaInsets();
 
   const [items, setItems] = useState<EndScreenDraft[]>([]);
   const [initialized, setInitialized] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [positionSheetIndex, setPositionSheetIndex] = useState<number | null>(null);
   const tc = useThemeColors();
 
+  // FIX D16#42 CRITICAL: moved setState out of useQuery.select into useEffect
   const {
+    data: endScreenData,
     isLoading,
+    isError,
     refetch,
   } = useQuery<EndScreen[]>({
     queryKey: ['end-screens', videoId],
     queryFn: () => videosApi.getEndScreens(videoId ?? ''),
     enabled: !!videoId,
-    select: (data) => {
-      if (!initialized && data) {
-        setItems(data.map(mapToEndScreenDraft));
-        setInitialized(true);
-      }
-      return data;
-    },
   });
+
+  useEffect(() => {
+    if (endScreenData && !initialized) {
+      setItems(endScreenData.map(mapToEndScreenDraft));
+      setInitialized(true);
+    }
+  }, [endScreenData, initialized]);
+
+  // Track dirty state for unsaved changes guard
+  const initialItemsRef = useRef<string>('');
+  useEffect(() => {
+    if (endScreenData && initialized) {
+      initialItemsRef.current = JSON.stringify(endScreenData.map(mapToEndScreenDraft));
+    }
+  }, [endScreenData, initialized]);
+
+  const isDirty = useMemo(() => {
+    if (!initialized) return false;
+    return JSON.stringify(items) !== initialItemsRef.current;
+  }, [items, initialized]);
+
+  const handleBack = useCallback(() => {
+    if (isDirty) {
+      Alert.alert(
+        t('common.unsavedChanges', 'Unsaved Changes'),
+        t('common.discardChangesMessage', 'You have unsaved changes. Are you sure you want to go back?'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('common.discard', 'Discard'), style: 'destructive', onPress: () => router.back() },
+        ],
+      );
+    } else {
+      router.back();
+    }
+  }, [isDirty, router, t]);
 
   const saveMutation = useMutation({
     mutationFn: () =>
@@ -121,21 +155,40 @@ export default function EndScreenEditorScreen() {
         showAtSeconds: item.showAtSeconds,
       }))),
     onSuccess: () => {
+      haptic.success();
       queryClient.invalidateQueries({ queryKey: ['end-screens', videoId] });
       showToast({ message: t('endScreens.saved'), variant: 'success' });
       router.back();
     },
-    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
+    onError: (err: Error) => {
+      haptic.error();
+      showToast({ message: err.message, variant: 'error' });
+    },
   });
 
   const handleAddItem = useCallback(() => {
     if (items.length >= MAX_ITEMS) return;
+    haptic.tick();
     setItems((prev) => [...prev, createDraft()]);
-  }, [items.length]);
+  }, [items.length, haptic]);
 
   const handleRemoveItem = useCallback((index: number) => {
-    setItems((prev) => prev.filter((_, i) => i !== index));
-  }, []);
+    Alert.alert(
+      t('common.confirmDelete', 'Delete Item'),
+      t('endScreens.confirmRemove', 'Are you sure you want to remove this end screen item?'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: () => {
+            haptic.tick();
+            setItems((prev) => prev.filter((_, i) => i !== index));
+          },
+        },
+      ],
+    );
+  }, [haptic, t]);
 
   const handleUpdateItem = useCallback(<K extends keyof EndScreenDraft>(
     index: number,
@@ -150,11 +203,13 @@ export default function EndScreenEditorScreen() {
   const handleSave = useCallback(() => {
     const invalid = items.find((item) => !item.label.trim());
     if (invalid) {
+      haptic.error();
       showToast({ message: t('endScreens.labelRequired'), variant: 'error' });
       return;
     }
+    haptic.save();
     saveMutation.mutate();
-  }, [items, saveMutation, t]);
+  }, [items, saveMutation, t, haptic]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -164,12 +219,13 @@ export default function EndScreenEditorScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
+      <StatusBar barStyle="light-content" />
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top', 'bottom']}>
         <GlassHeader
           title={t('endScreens.title')}
           leftAction={{
             icon: 'arrow-left',
-            onPress: () => router.back(),
+            onPress: handleBack,
             accessibilityLabel: t('common.back'),
           }}
         />
@@ -179,7 +235,7 @@ export default function EndScreenEditorScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <ScrollView
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 52 + spacing.base }]}
             keyboardShouldPersistTaps="handled"
             refreshControl={
               <BrandedRefreshControl
@@ -193,6 +249,14 @@ export default function EndScreenEditorScreen() {
                 <Skeleton.Rect width="100%" height={120} />
                 <Skeleton.Rect width="100%" height={120} />
               </View>
+            ) : isError ? (
+              <EmptyState
+                icon="alert-circle"
+                title={t('common.error.loadContent', 'Failed to load')}
+                subtitle={t('common.error.checkConnection', 'Check your connection and try again')}
+                actionLabel={t('common.retry')}
+                onAction={() => refetch()}
+              />
             ) : (
               <Animated.View entering={FadeInUp.duration(400)}>
                 {/* Info text */}
@@ -201,7 +265,7 @@ export default function EndScreenEditorScreen() {
                   style={styles.infoCard}
                 >
                   <Icon name="layers" size="sm" color={colors.emerald} />
-                  <Text style={styles.infoText}>{t('endScreens.info')}</Text>
+                  <Text style={[styles.infoText, { color: tc.text.secondary, writingDirection: 'auto' }]}>{t('endScreens.info')}</Text>
                 </LinearGradient>
 
                 {/* End screen items */}
@@ -216,7 +280,7 @@ export default function EndScreenEditorScreen() {
                     >
                       {/* Header row with delete */}
                       <View style={styles.itemHeader}>
-                        <Text style={styles.itemNumber}>
+                        <Text style={[styles.itemNumber, { color: tc.text.primary }]}>
                           {t('endScreens.item')} {index + 1}
                         </Text>
                         <Pressable
@@ -230,7 +294,7 @@ export default function EndScreenEditorScreen() {
                       </View>
 
                       {/* Type selector */}
-                      <Text style={styles.fieldLabel}>{t('endScreens.typeLabel')}</Text>
+                      <Text style={[styles.fieldLabel, { color: tc.text.secondary }]}>{t('endScreens.typeLabel')}</Text>
                       <View style={styles.typeRow}>
                         {TYPE_OPTIONS.map((opt) => (
                           <Pressable
@@ -263,7 +327,7 @@ export default function EndScreenEditorScreen() {
 
                       {/* Label input */}
                       <View style={styles.labelRow}>
-                        <Text style={styles.fieldLabel}>{t('endScreens.labelField')}</Text>
+                        <Text style={[styles.fieldLabel, { color: tc.text.secondary }]}>{t('endScreens.labelField')}</Text>
                         <CharCountRing current={item.label.length} max={MAX_LABEL} />
                       </View>
                       <TextInput
@@ -279,7 +343,7 @@ export default function EndScreenEditorScreen() {
                       {/* Target ID (for subscribe, watch_next, playlist) */}
                       {item.type !== 'link' && (
                         <>
-                          <Text style={styles.fieldLabel}>{t('endScreens.targetId')}</Text>
+                          <Text style={[styles.fieldLabel, { color: tc.text.secondary }]}>{t('endScreens.targetId')}</Text>
                           <TextInput
                             style={[styles.textInput, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
                             value={item.targetId}
@@ -294,7 +358,7 @@ export default function EndScreenEditorScreen() {
                       {/* URL (for link type) */}
                       {item.type === 'link' && (
                         <>
-                          <Text style={styles.fieldLabel}>{t('endScreens.url')}</Text>
+                          <Text style={[styles.fieldLabel, { color: tc.text.secondary }]}>{t('endScreens.url')}</Text>
                           <TextInput
                             style={[styles.textInput, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
                             value={item.url}
@@ -309,7 +373,7 @@ export default function EndScreenEditorScreen() {
                       )}
 
                       {/* Position picker */}
-                      <Text style={styles.fieldLabel}>{t('endScreens.position')}</Text>
+                      <Text style={[styles.fieldLabel, { color: tc.text.secondary }]}>{t('endScreens.position')}</Text>
                       <View style={styles.positionGrid}>
                         {POSITION_OPTIONS.map((pos) => (
                           <Pressable
@@ -335,7 +399,7 @@ export default function EndScreenEditorScreen() {
                       </View>
 
                       {/* Timing controls */}
-                      <Text style={styles.fieldLabel}>
+                      <Text style={[styles.fieldLabel, { color: tc.text.secondary }]}>
                         {t('endScreens.timing')}: {item.showAtSeconds}s
                       </Text>
                       <View style={styles.timingRow}>
@@ -351,7 +415,7 @@ export default function EndScreenEditorScreen() {
                           accessibilityRole="button"
                           accessibilityLabel={t('endScreens.decrease')}
                         >
-                          <Text style={styles.timingButtonText}>-</Text>
+                          <Text style={[styles.timingButtonText, { color: tc.text.primary }]}>-</Text>
                         </Pressable>
                         <View style={[styles.timingBar, { backgroundColor: tc.surface }]}>
                           <View
@@ -373,10 +437,10 @@ export default function EndScreenEditorScreen() {
                           accessibilityRole="button"
                           accessibilityLabel={t('endScreens.increase')}
                         >
-                          <Text style={styles.timingButtonText}>+</Text>
+                          <Text style={[styles.timingButtonText, { color: tc.text.primary }]}>+</Text>
                         </Pressable>
                       </View>
-                      <Text style={styles.timingHint}>
+                      <Text style={[styles.timingHint, { color: tc.text.tertiary }]}>
                         {t('endScreens.timingHint', { seconds: item.showAtSeconds })}
                       </Text>
                     </LinearGradient>
@@ -395,7 +459,7 @@ export default function EndScreenEditorScreen() {
                 )}
 
                 {items.length >= MAX_ITEMS && (
-                  <Text style={styles.maxHint}>{t('endScreens.maxReached')}</Text>
+                  <Text style={[styles.maxHint, { color: tc.text.tertiary }]}>{t('endScreens.maxReached')}</Text>
                 )}
 
                 {/* Empty state */}
@@ -429,25 +493,6 @@ export default function EndScreenEditorScreen() {
           </ScrollView>
         </KeyboardAvoidingView>
 
-        {/* Position picker bottom sheet */}
-        <BottomSheet
-          visible={positionSheetIndex !== null}
-          onClose={() => setPositionSheetIndex(null)}
-        >
-          {POSITION_OPTIONS.map((pos) => (
-            <BottomSheetItem
-              key={pos.value}
-              label={pos.label}
-              icon="map-pin"
-              onPress={() => {
-                if (positionSheetIndex !== null) {
-                  handleUpdateItem(positionSheetIndex, 'position', pos.value);
-                }
-                setPositionSheetIndex(null);
-              }}
-            />
-          ))}
-        </BottomSheet>
       </SafeAreaView>
     </ScreenErrorBoundary>
   );
@@ -459,7 +504,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.dark.bg,
   },
   scrollContent: {
-    paddingTop: 100,
     paddingHorizontal: spacing.base,
     paddingBottom: 40,
     gap: spacing.md,

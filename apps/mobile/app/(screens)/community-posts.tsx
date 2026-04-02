@@ -1,7 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  FlatList, TextInput, KeyboardAvoidingView, Platform, Image as RNImage, ScrollView,
+  FlatList, TextInput, KeyboardAvoidingView, Platform, ScrollView,
+  Alert, StatusBar,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
@@ -26,6 +27,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
 import * as Clipboard from 'expo-clipboard';
 import * as ImagePicker from 'expo-image-picker';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -66,7 +68,7 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
   }, [onLongPress, post]);
 
   return (
-    <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+    <Animated.View entering={index < 10 ? FadeInUp.delay(index * 50).duration(400) : undefined}>
       <Pressable
         style={styles.postCard}
         onLongPress={handleLongPress}
@@ -101,7 +103,7 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
       </View>
 
       {post.content ? (
-        <RichText text={post.content} style={styles.postContent} />
+        <RichText text={post.content} style={[styles.postContent, { color: tc.text.primary }]} />
       ) : null}
 
       {post.mediaUrls.length > 0 && (
@@ -122,7 +124,7 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
             size="sm"
             color={liked ? colors.error : tc.text.secondary}
           />
-          <Text style={[styles.postActionCount, liked && styles.likedCount]}>
+          <Text style={[styles.postActionCount, { color: tc.text.secondary }, liked && styles.likedCount]}>
             {formatCount(likeCount)}
           </Text>
         </Pressable>
@@ -147,6 +149,7 @@ export default function CommunityPostsScreen() {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const tc = useThemeColors();
+  const haptic = useContextualHaptic();
   const [refreshing, setRefreshing] = useState(false);
   const [composeText, setComposeText] = useState('');
   const [showCreateSheet, setShowCreateSheet] = useState(false);
@@ -159,6 +162,7 @@ export default function CommunityPostsScreen() {
     queryKey: ['channel', handle],
     queryFn: () => channelsApi.getByHandle(handle),
     enabled: !!handle,
+    staleTime: 30_000,
   });
 
   const channel = channelQuery.data;
@@ -172,6 +176,7 @@ export default function CommunityPostsScreen() {
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
     enabled: !!handle,
+    staleTime: 30_000,
   });
 
   const posts: ChannelPost[] = postsQuery.data?.pages.flatMap((p) => p.data) ?? [];
@@ -259,9 +264,23 @@ export default function CommunityPostsScreen() {
   });
 
   const handleDeletePost = useCallback((postId: string) => {
-    deleteMutation.mutate(postId);
-    setSelectedPost(null);
-  }, [deleteMutation]);
+    Alert.alert(
+      t('communityPosts.confirmDeleteTitle', 'Delete Post'),
+      t('communityPosts.confirmDeleteMessage', 'Are you sure you want to delete this post? This cannot be undone.'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: () => {
+            haptic.tick();
+            deleteMutation.mutate(postId);
+            setSelectedPost(null);
+          },
+        },
+      ],
+    );
+  }, [deleteMutation, haptic, t]);
 
   const handleCopyText = useCallback(async (content: string) => {
     await Clipboard.setStringAsync(content);
@@ -330,9 +349,10 @@ export default function CommunityPostsScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <View style={[styles.container, { backgroundColor: tc.bg }]}>
+          <StatusBar barStyle="light-content" />
           <GlassHeader
             title={t('communityPosts.title')}
-            leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+            leftAction={{ icon: 'arrow-left', onPress: () => { haptic.tick(); router.back(); }, accessibilityLabel: t('common.back') }}
           />
           <View style={styles.headerSpacer} />
 
@@ -351,7 +371,7 @@ export default function CommunityPostsScreen() {
                   >
                     {selectedMediaList.map((media, idx) => (
                       <View key={idx} style={styles.mediaPreviewItem}>
-                        <RNImage source={{ uri: media.uri }} style={styles.mediaPreview} resizeMode="cover" />
+                        <ProgressiveImage uri={media.uri} width={120} height={120} borderRadius={radius.md} />
                         <Pressable
                           style={styles.mediaPreviewClose}
                           onPress={() => setSelectedMediaList(prev => prev.filter((_, i) => i !== idx))}
@@ -372,7 +392,7 @@ export default function CommunityPostsScreen() {
                 <View style={styles.composeContainer}>
                   <TextInput
                     ref={composeInputRef}
-                    style={[styles.composeInput, { backgroundColor: tc.bgElevated }]}
+                    style={[styles.composeInput, { backgroundColor: tc.bgElevated, color: tc.text.primary }]}
                     placeholder={t('communityPosts.placeholder')}
                     placeholderTextColor={tc.text.tertiary}
                     value={composeText}
@@ -384,13 +404,13 @@ export default function CommunityPostsScreen() {
                     accessibilityRole="button"
                     style={[styles.composeButton, !composeText.trim() && selectedMediaList.length === 0 && styles.composeButtonDisabled]}
                     onPress={handleCreatePost}
-                    disabled={!composeText.trim() && selectedMediaList.length === 0 || createMutation.isPending}
+                    disabled={(!composeText.trim() && selectedMediaList.length === 0) || createMutation.isPending}
                   >
                     {createMutation.isPending ? (
                       <Icon name="loader" size="sm" color={tc.text.secondary} />
                     ) : (
                       <LinearGradient
-                        colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
+                        colors={[colors.active.emerald30 ?? 'rgba(10,123,79,0.3)', colors.active.emerald10 ?? 'rgba(10,123,79,0.1)']}
                         style={styles.composeButtonGradient}
                       >
                         <Icon name="send" size="sm" color={colors.emerald} />

@@ -4259,5 +4259,42 @@
     "searchPlaceholder": "Cari emoji...",
     "noRecent": "Tiada emoji terbaru",
     "noResults": "Tiada emoji dijumpai"
+  },
+  "guidelines": {
+    "respect": {
+      "title": "Respect & Kindness",
+      "rule1": "Treat everyone with dignity and respect",
+      "rule2": "No hate speech, discrimination, or harassment",
+      "rule3": "No bullying, threats, or intimidation",
+      "rule4": "Be mindful of cultural and religious sensitivities"
+    },
+    "safety": {
+      "title": "Safety",
+      "rule1": "No content promoting violence or self-harm",
+      "rule2": "No sharing of private information without consent",
+      "rule3": "Report concerning content immediately",
+      "rule4": "Protect minors"
+    },
+    "content": {
+      "title": "Appropriate Content",
+      "rule1": "No nudity or sexually explicit content",
+      "rule2": "No graphic violence or gore",
+      "rule3": "No spam, scams, or misleading content",
+      "rule4": "No copyright infringement"
+    },
+    "islamic": {
+      "title": "Islamic Values",
+      "rule1": "Respect Islamic teachings and scholarship",
+      "rule2": "Verify religious claims with authentic sources",
+      "rule3": "No sectarian attacks or takfir",
+      "rule4": "Be truthful"
+    },
+    "authenticity": {
+      "title": "Authenticity",
+      "rule1": "No impersonation of real people or organizations",
+      "rule2": "No fake engagement",
+      "rule3": "Be transparent about sponsored content",
+      "rule4": "One account per person"
+    }
   }
 }

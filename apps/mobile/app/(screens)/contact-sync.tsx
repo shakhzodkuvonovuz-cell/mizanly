@@ -1,7 +1,7 @@
 import { useCallback, useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  FlatList,
+  FlatList, StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -21,6 +21,7 @@ import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { showToast } from '@/components/ui/Toast';
 import { usersApi, followsApi } from '@/services/api';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -50,10 +51,10 @@ function ContactRow({
   const { t } = useTranslation();
 
   return (
-    <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+    <Animated.View entering={index < 10 ? FadeInUp.delay(index * 50).duration(400) : undefined}>
       <LinearGradient
         colors={colors.gradient.cardDark}
-        style={styles.row}
+        style={[styles.row, { borderColor: tc.border }]}
       >
         <Pressable accessibilityRole="button" accessibilityLabel={user.displayName} onPress={() => router.push(`/(screens)/profile/${user.username}`)}>
           <Avatar uri={user.avatarUrl} name={user.displayName} size="md" />
@@ -95,15 +96,18 @@ export default function ContactSyncScreen() {
   const { t } = useTranslation();
   const tc = useThemeColors();
 
+  const haptic = useContextualHaptic();
   const [contacts, setContacts] = useState<ContactUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [pendingFollowId, setPendingFollowId] = useState<string | null>(null);
 
   const fetchContacts = useCallback(async () => {
     setLoading(true);
+    setFetchError(false);
     try {
       const { status } = await Contacts.requestPermissionsAsync();
       if (status !== 'granted') {
@@ -163,6 +167,7 @@ export default function ContactSyncScreen() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : t('common.error');
       showToast({ message: errorMessage, variant: 'error' });
+      setFetchError(true);
     } finally {
       setLoading(false);
     }
@@ -230,12 +235,36 @@ export default function ContactSyncScreen() {
     );
   }
 
+  if (fetchError && !loading) {
+    return (
+      <ScreenErrorBoundary>
+        <View style={[styles.container, { backgroundColor: tc.bg }]}>
+          <StatusBar barStyle="light-content" />
+          <GlassHeader
+            title={t('contactSync.title')}
+            leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+          />
+          <View style={[styles.centeredContent, { paddingTop: insets.top + 80 }]}>
+            <EmptyState
+              icon="alert-circle"
+              title={t('contactSync.errorTitle', 'Failed to load contacts')}
+              subtitle={t('common.error.checkConnection', 'Check your connection and try again')}
+              actionLabel={t('common.retry')}
+              onAction={fetchContacts}
+            />
+          </View>
+        </View>
+      </ScreenErrorBoundary>
+    );
+  }
+
   return (
     <ScreenErrorBoundary>
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
+        <StatusBar barStyle="light-content" />
         <GlassHeader
           title={t('contactSync.title')}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+          leftAction={{ icon: 'arrow-left', onPress: () => { haptic.tick(); router.back(); }, accessibilityLabel: t('common.back') }}
         />
 
         {loading && !refreshing ? (
@@ -244,7 +273,7 @@ export default function ContactSyncScreen() {
             {Array.from({ length: 6 }).map((_, i) => (
               <View key={i} style={styles.skeletonRow}>
                 <Skeleton.Circle size={48} />
-                <View style={{ flex: 1, gap: 6 }}>
+                <View style={{ flex: 1, gap: spacing.sm }}>
                   <Skeleton.Rect width={140} height={14} />
                   <Skeleton.Rect width={90} height={11} />
                 </View>
