@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, TextInput,
-  FlatList, Dimensions,
+  FlatList,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,7 +25,7 @@ import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { showToast } from '@/components/ui/Toast';
 
-const { width: screenWidth } = Dimensions.get('window');
+// D03 #2: screenWidth was dead code — removed Dimensions usage
 
 const CATEGORIES = [
   'Trending', 'Islamic', 'Nasheeds', 'Lo-fi', 'Acoustic', 'Hip Hop', 'Pop', 'Qiraat'
@@ -127,7 +127,7 @@ function AudioCard({
         style={[styles.audioCard, isCurrentTrack && styles.audioCardActive]}
       >
         {/* Play Button */}
-        <Pressable onPress={onPlay} style={styles.playButton}>
+        <Pressable onPress={onPlay} style={({ pressed }) => [styles.playButton, pressed && { opacity: 0.7 }]}>
           <LinearGradient
             colors={[colors.emerald, colors.gold]}
             style={styles.playButtonInner}
@@ -153,7 +153,7 @@ function AudioCard({
 
         {/* Actions */}
         <View style={styles.trackActions}>
-          <Pressable onPress={onToggleFavorite} style={styles.favoriteButton}>
+          <Pressable onPress={onToggleFavorite} style={({ pressed }) => [styles.favoriteButton, pressed && { opacity: 0.7 }]}>
             <Icon name={track.isFavorite ? 'heart-filled' : 'heart'} size="sm" color={track.isFavorite ? colors.like : tc.text.tertiary} />
           </Pressable>
           <GradientButton
@@ -200,8 +200,13 @@ export default function AudioLibraryScreen() {
   }), [allTracks, searchQuery, favoritesOnly]);
 
   const soundRef = useRef<Audio.Sound | null>(null);
+  const playingLockRef = useRef(false);
 
   const handlePlay = useCallback(async (trackId: string) => {
+    if (playingLockRef.current) return;
+    playingLockRef.current = true;
+    haptic.tick();
+
     // Stop current if already playing
     if (soundRef.current) {
       try { await soundRef.current.stopAsync(); await soundRef.current.unloadAsync(); } catch { /* ignore */ }
@@ -212,11 +217,15 @@ export default function AudioLibraryScreen() {
       // Was playing this track — toggle off
       setIsPlaying(false);
       setCurrentTrackId(null);
+      playingLockRef.current = false;
       return;
     }
 
     const track = allTracks.find(t => t.id === trackId);
-    if (!track?.audioUrl) return;
+    if (!track?.audioUrl) {
+      playingLockRef.current = false;
+      return;
+    }
 
     setCurrentTrackId(trackId);
     setIsPlaying(true);
@@ -227,6 +236,7 @@ export default function AudioLibraryScreen() {
         { shouldPlay: true },
       );
       soundRef.current = sound;
+      playingLockRef.current = false;
 
       sound.setOnPlaybackStatusUpdate((status) => {
         if (status.isLoaded && status.didJustFinish) {
@@ -240,8 +250,9 @@ export default function AudioLibraryScreen() {
       if (__DEV__) console.warn('Audio playback failed:', err);
       setIsPlaying(false);
       setCurrentTrackId(null);
+      playingLockRef.current = false;
     }
-  }, [currentTrackId, isPlaying, allTracks]);
+  }, [currentTrackId, isPlaying, allTracks, haptic]);
 
   useEffect(() => {
     return () => { soundRef.current?.unloadAsync().catch(() => {}); };
@@ -264,7 +275,7 @@ export default function AudioLibraryScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={[styles.container, { backgroundColor: tc.bg }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('audioLibrary.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -324,7 +335,7 @@ export default function AudioLibraryScreen() {
         <FlatList
           data={filteredAudio}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.audioList}
+          contentContainerStyle={[styles.audioList, currentTrackId ? { paddingBottom: 120 } : undefined]}
           refreshControl={<BrandedRefreshControl refreshing={isRefetching} onRefresh={() => refetch()} />}
           renderItem={({ item, index }) => (
             <AudioCard
@@ -344,6 +355,12 @@ export default function AudioLibraryScreen() {
                   <Skeleton.Rect key={i} width="100%" height={80} borderRadius={radius.md} />
                 ))}
               </View>
+            ) : searchQuery.length > 0 ? (
+              <EmptyState
+                icon="search"
+                title={t('audioLibrary.noSearchResults')}
+                subtitle={t('audioLibrary.tryDifferentSearch')}
+              />
             ) : (
               <EmptyState
                 icon="music"
@@ -372,7 +389,7 @@ export default function AudioLibraryScreen() {
                     {allTracks.find(t => t.id === currentTrackId)?.artist}
                   </Text>
                 </View>
-                <Pressable onPress={handleUseSound} style={styles.nowPlayingUseButton}>
+                <Pressable onPress={handleUseSound} style={({ pressed }) => [styles.nowPlayingUseButton, pressed && { opacity: 0.7 }]}>
                   <Text style={styles.nowPlayingUseText}>{t('audioLibrary.useThisSound')}</Text>
                   <Icon name="chevron-right" size="xs" color="#fff" />
                 </Pressable>
@@ -415,8 +432,8 @@ export default function AudioLibraryScreen() {
             </Animated.View>
           </View>
         )}
-      </View>
-  
+      </SafeAreaView>
+
     </ScreenErrorBoundary>
   );
 }
@@ -424,7 +441,6 @@ export default function AudioLibraryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
 
   // Search
@@ -445,8 +461,6 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    color: colors.text.primary, // overridden inline via tc
-
     fontSize: fontSize.base,
     paddingVertical: 0,
   },
@@ -463,7 +477,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
+    paddingVertical: spacing.sm,
     borderRadius: radius.full,
     backgroundColor: 'rgba(45,53,72,0.4)',
     borderWidth: 1,
@@ -474,7 +488,6 @@ const styles = StyleSheet.create({
     borderColor: colors.emerald,
   },
   categoryText: {
-    color: colors.text.secondary,
     fontSize: fontSize.sm,
     fontWeight: '500',
   },
@@ -536,14 +549,12 @@ const styles = StyleSheet.create({
     marginStart: spacing.sm,
   },
   trackTitle: {
-    color: colors.text.primary,
     fontSize: fontSize.base,
     fontWeight: '600',
   },
   trackArtist: {
-    color: colors.text.secondary,
     fontSize: fontSize.xs,
-    marginTop: 2,
+    marginTop: spacing.xs,
   },
   trackMeta: {
     flexDirection: 'row',
@@ -551,7 +562,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   trackDuration: {
-    color: colors.text.tertiary,
     fontSize: fontSize.xs,
   },
   trackUses: {
@@ -647,12 +657,10 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   selectedTrackTitle: {
-    color: colors.text.primary,
     fontSize: fontSize.lg,
     fontWeight: '600',
   },
   selectedTrackArtist: {
-    color: colors.text.secondary,
     fontSize: fontSize.base,
     marginTop: spacing.xs,
     marginStart: 32 + spacing.sm,
@@ -665,7 +673,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   selectedTrackMetaText: {
-    color: colors.text.tertiary,
     fontSize: fontSize.xs,
   },
   selectedTrackButton: {
@@ -676,7 +683,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   selectedTrackCancelText: {
-    color: colors.text.secondary,
     fontSize: fontSize.base,
   },
 });

@@ -60,43 +60,63 @@ export default function BiometricLockScreen() {
     }
   };
 
+  const [authPending, setAuthPending] = useState(false);
+
   const authenticate = useCallback(async (): Promise<boolean> => {
-    const result = await LocalAuthentication.authenticateAsync({
-      promptMessage: t('biometric.unlockPrompt'),
-      fallbackLabel: '',
-    });
-    return result.success;
+    try {
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: t('biometric.unlockPrompt'),
+        fallbackLabel: '',
+      });
+      return result.success;
+    } catch {
+      showToast({ message: t('biometric.hardwareError'), variant: 'error' });
+      return false;
+    }
   }, [t]);
 
   const handleToggle = useCallback(async () => {
+    if (authPending) return;
     haptic.tick();
+    setAuthPending(true);
 
-    if (!biometricLockEnabled) {
-      // Enabling: authenticate first to confirm
-      const success = await authenticate();
-      if (success) {
-        setBiometricLockEnabled(true);
+    try {
+      if (!biometricLockEnabled) {
+        const success = await authenticate();
+        if (success) {
+          haptic.success();
+          setBiometricLockEnabled(true);
+        } else {
+          showToast({ message: t('biometric.notEnrolled'), variant: 'error' });
+        }
       } else {
-        showToast({ message: t('biometric.notEnrolled'), variant: 'error' });
+        const success = await authenticate();
+        if (success) {
+          haptic.success();
+          setBiometricLockEnabled(false);
+        }
       }
-    } else {
-      // Disabling: authenticate to confirm identity
-      const success = await authenticate();
-      if (success) {
-        setBiometricLockEnabled(false);
-      }
+    } finally {
+      setAuthPending(false);
     }
-  }, [biometricLockEnabled, authenticate, setBiometricLockEnabled, haptic, t]);
+  }, [biometricLockEnabled, authenticate, setBiometricLockEnabled, haptic, t, authPending]);
 
   const handleTestAuth = useCallback(async () => {
+    if (authPending) return;
     haptic.tick();
-    const success = await authenticate();
-    if (success) {
-      showToast({ message: t('biometric.testSuccess'), variant: 'success' });
-    } else {
-      showToast({ message: t('biometric.testFailed'), variant: 'error' });
+    setAuthPending(true);
+    try {
+      const success = await authenticate();
+      if (success) {
+        haptic.success();
+        showToast({ message: t('biometric.testSuccess'), variant: 'success' });
+      } else {
+        showToast({ message: t('biometric.testFailed'), variant: 'error' });
+      }
+    } finally {
+      setAuthPending(false);
     }
-  }, [authenticate, haptic, t]);
+  }, [authenticate, haptic, t, authPending]);
 
   const biometricLabel = biometricType === 'faceId'
     ? t('biometric.faceId')
@@ -224,8 +244,9 @@ export default function BiometricLockScreen() {
             </View>
             {/* Tap area covers the whole row */}
             <Pressable
-              style={StyleSheet.absoluteFill}
+              style={({ pressed }) => [StyleSheet.absoluteFill, pressed && { opacity: 0.7 }]}
               onPress={handleToggle}
+              disabled={authPending}
               accessibilityRole="switch"
               accessibilityState={{ checked: biometricLockEnabled }}
               accessibilityLabel={t('biometric.enable')}
@@ -253,7 +274,6 @@ export default function BiometricLockScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   body: {
     flex: 1,
@@ -285,12 +305,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   infoTitle: {
-    color: colors.text.primary,
     fontSize: fontSize.lg,
     fontWeight: '700',
   },
   infoSubtitle: {
-    color: colors.text.secondary,
     fontSize: fontSize.base,
   },
   card: {
@@ -320,7 +338,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   toggleLabel: {
-    color: colors.text.primary,
     fontSize: fontSize.base,
     flex: 1,
   },
@@ -328,7 +345,6 @@ const styles = StyleSheet.create({
     width: 50,
     height: 28,
     borderRadius: radius.lg,
-    backgroundColor: colors.dark.border,
     padding: 4,
     justifyContent: 'center',
   },

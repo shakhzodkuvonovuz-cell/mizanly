@@ -20,12 +20,14 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import type { BlockedKeyword } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { showToast } from '@/components/ui/Toast';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 
 export default function BlockedKeywordsScreen() {
   const router = useRouter();
   const tc = useThemeColors();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const haptic = useContextualHaptic();
   const [newWord, setNewWord] = useState('');
 
   const [refreshing, setRefreshing] = useState(false);
@@ -38,16 +40,27 @@ export default function BlockedKeywordsScreen() {
   const addMutation = useMutation({
     mutationFn: (word: string) => settingsApi.addBlockedKeyword(word),
     onSuccess: () => {
+      haptic.success();
+      showToast({ message: t('screens.blockedKeywords.addSuccess'), variant: 'success' });
       setNewWord('');
       queryClient.invalidateQueries({ queryKey: ['blocked-keywords'] });
     },
-    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
+    onError: (err: Error) => {
+      haptic.error();
+      showToast({ message: err.message, variant: 'error' });
+    },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => settingsApi.deleteBlockedKeyword(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['blocked-keywords'] }),
-    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
+    onSuccess: () => {
+      haptic.success();
+      queryClient.invalidateQueries({ queryKey: ['blocked-keywords'] });
+    },
+    onError: (err: Error) => {
+      haptic.error();
+      showToast({ message: err.message, variant: 'error' });
+    },
   });
 
   const handleAdd = useCallback(() => {
@@ -63,6 +76,7 @@ export default function BlockedKeywordsScreen() {
   }, [refetch]);
 
   const handleDelete = useCallback((id: string, word: string) => {
+    haptic.delete();
     Alert.alert(
       t('screens.blockedKeywords.removeAlertTitle'),
       t('screens.blockedKeywords.removeAlertMessage', { word }),
@@ -71,7 +85,7 @@ export default function BlockedKeywordsScreen() {
         { text: t('screens.blockedKeywords.removeButton'), style: 'destructive', onPress: () => deleteMutation.mutate(id) },
       ]
     );
-  }, [deleteMutation]);
+  }, [deleteMutation, haptic]);
 
   if (isError) {
     return (
@@ -134,6 +148,7 @@ export default function BlockedKeywordsScreen() {
               <Pressable
                 onPress={handleAdd}
                 disabled={!newWord.trim() || addMutation.isPending}
+                style={({ pressed }) => [pressed && { opacity: 0.7 }]}
                 accessibilityLabel={t('screens.blockedKeywords.addKeywordLabel')}
                 accessibilityRole="button"
               >
@@ -180,6 +195,7 @@ export default function BlockedKeywordsScreen() {
                       onPress={() => handleDelete(item.id, item.word)}
                       hitSlop={8}
                       disabled={deleteMutation.isPending}
+                      style={({ pressed }) => [pressed && { opacity: 0.7 }]}
                       accessibilityLabel={t('screens.blockedKeywords.removeKeywordLabel')}
                       accessibilityRole="button"
                     >
@@ -211,10 +227,10 @@ export default function BlockedKeywordsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
   hint: {
-    color: colors.text.secondary, fontSize: fontSize.sm,
-    paddingHorizontal: spacing.base, paddingTop: 100, paddingBottom: spacing.sm,
+    fontSize: fontSize.sm,
+    paddingHorizontal: spacing.base, paddingTop: spacing.sm, paddingBottom: spacing.sm,
     lineHeight: 19,
   },
   addRow: {
@@ -234,7 +250,7 @@ const styles = StyleSheet.create({
     marginEnd: spacing.xs,
   },
   input: {
-    flex: 1, color: colors.text.primary, fontSize: fontSize.base,
+    flex: 1, fontSize: fontSize.base,
     paddingVertical: spacing.sm,
   },
   addBtn: {
@@ -256,7 +272,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     marginEnd: spacing.md,
   },
-  keywordText: { color: colors.text.primary, fontSize: fontSize.base, flex: 1 },
+  keywordText: { fontSize: fontSize.base, flex: 1 },
   deleteBtnBg: {
     width: 28, height: 28, borderRadius: radius.sm,
     alignItems: 'center', justifyContent: 'center',

@@ -5,8 +5,8 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  Dimensions,
   Alert,
+  useWindowDimensions,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth, useUser } from '@clerk/clerk-expo';
@@ -21,6 +21,7 @@ import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { audioRoomsApi } from '@/services/audioRoomsApi';
 import type { AudioRoom, AudioRoomParticipant } from '@/types/audioRooms';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
@@ -28,7 +29,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { showToast } from '@/components/ui/Toast';
 
-const { width } = Dimensions.get('window');
+// width now from useWindowDimensions hook for responsive layout
 
 interface Speaker {
   id: string;
@@ -59,6 +60,7 @@ interface RaisedHand {
 export default function AudioRoomScreen() {
   const router = useRouter();
   const tc = useThemeColors();
+  const { width } = useWindowDimensions();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [room, setRoom] = useState<AudioRoom | null>(null);
   const [participants, setParticipants] = useState<AudioRoomParticipant[]>([]);
@@ -126,15 +128,15 @@ export default function AudioRoomScreen() {
   }, [fetchData]);
 
   const formatTimeAgo = (dateString?: string) => {
-    if (!dateString) return 'Just now';
+    if (!dateString) return t('audioRoom.justNow');
     const diff = new Date().getTime() - new Date(dateString).getTime();
     const minutes = Math.floor(diff / 60000);
-    if (minutes < 1) return 'Just now';
-    if (minutes < 60) return `${minutes}m ago`;
+    if (minutes < 1) return t('audioRoom.justNow');
+    if (minutes < 60) return t('audioRoom.minutesAgo', { count: minutes });
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
+    if (hours < 24) return t('audioRoom.hoursAgo', { count: hours });
     const days = Math.floor(hours / 24);
-    return `${days}d ago`;
+    return t('audioRoom.daysAgo', { count: days });
   };
 
   const { user } = useUser();
@@ -142,7 +144,8 @@ export default function AudioRoomScreen() {
 
   const currentParticipant = currentUserId ? participants.find(p => p.userId === currentUserId) : null;
 
-  const isSpeaker = currentParticipant?.role === 'host' || currentParticipant?.role === 'speaker';
+  const isHost = currentParticipant?.role === 'host';
+  const isSpeaker = isHost || currentParticipant?.role === 'speaker';
   const isHandRaised = currentParticipant?.handRaised ?? false;
   const isMicOn = !currentParticipant?.isMuted;
 
@@ -176,40 +179,64 @@ export default function AudioRoomScreen() {
     raisedAgo: formatTimeAgo(p.handRaisedAt),
   }));
 
+  const [actionPending, setActionPending] = useState(false);
+
   const handleToggleMic = async () => {
-    if (!room) return;
+    if (!room || actionPending) return;
+    setActionPending(true);
     haptic.tick();
     try {
       await audioRoomsApi.toggleMute(room.id);
-      fetchData(); // refresh participants
+      fetchData();
     } catch (err) {
       haptic.error();
       showToast({ message: t('audioRoom.failedToToggleMute'), variant: 'error' });
+    } finally {
+      setActionPending(false);
     }
   };
 
   const handleToggleHand = async () => {
-    if (!room) return;
+    if (!room || actionPending) return;
+    setActionPending(true);
     haptic.tick();
     try {
       await audioRoomsApi.toggleHand(room.id);
-      fetchData(); // refresh participants
+      fetchData();
     } catch (err) {
       haptic.error();
       showToast({ message: t('audioRoom.failedToRaiseHand'), variant: 'error' });
+    } finally {
+      setActionPending(false);
     }
   };
 
   const handleLeave = async () => {
-    if (!room) return;
-    haptic.navigate();
-    try {
-      await audioRoomsApi.leave(room.id);
-      router.back();
-    } catch (err) {
-      haptic.error();
-      showToast({ message: t('audioRoom.failedToLeaveRoom'), variant: 'error' });
-    }
+    if (!room || actionPending) return;
+    haptic.delete();
+    Alert.alert(
+      t('audioRoom.leaveTitle'),
+      t('audioRoom.leaveConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('audioRoom.leaveButton'),
+          style: 'destructive',
+          onPress: async () => {
+            setActionPending(true);
+            try {
+              await audioRoomsApi.leave(room.id);
+              router.back();
+            } catch (err) {
+              haptic.error();
+              showToast({ message: t('audioRoom.failedToLeaveRoom'), variant: 'error' });
+            } finally {
+              setActionPending(false);
+            }
+          },
+        },
+      ],
+    );
   };
 
   const handleAcceptHand = async (userId: string) => {
@@ -282,12 +309,13 @@ export default function AudioRoomScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader title={t('tabs.audioRooms')} onBack={() => router.back()} />
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.base }}>
-          <Text style={{ color: colors.error, fontSize: fontSize.md, marginBottom: spacing.md }}>{error}</Text>
-          <Pressable onPress={fetchData}>
-            <Text style={{ color: colors.emerald }}>{t('common.retry')}</Text>
-          </Pressable>
-        </View>
+        <EmptyState
+          icon="alert-circle"
+          title={t('audioRoom.errorTitle')}
+          subtitle={error}
+          actionLabel={t('common.retry')}
+          onAction={fetchData}
+        />
       </SafeAreaView>
     );
   }
@@ -381,7 +409,7 @@ export default function AudioRoomScreen() {
                   <Animated.View
                     key={speaker.id}
                     entering={FadeInUp.delay(index * 80).duration(400)}
-                    style={styles.speakerItem}
+                    style={[styles.speakerItem, { width: (width - 80) / 3 }]}
                   >
                     <View style={styles.speakerAvatarContainer}>
                       {speaker.isSpeaking && (
@@ -441,7 +469,7 @@ export default function AudioRoomScreen() {
                   <Animated.View
                     key={listener.id}
                     entering={FadeInUp.delay(index * 50).duration(400)}
-                    style={styles.listenerItem}
+                    style={[styles.listenerItem, { width: (width - 96) / 4 }]}
                   >
                     <Avatar uri={listener.avatar} name={listener.name} size="sm" />
                     <Text style={styles.listenerName}>{listener.name}</Text>
@@ -487,19 +515,21 @@ export default function AudioRoomScreen() {
                     <Text style={styles.raisedHandName}>{hand.name}</Text>
                     <Text style={styles.raisedHandTime}>{t('audioRoom.raisedAgo', { time: hand.raisedAgo })}</Text>
                   </View>
-                  <View style={styles.raisedHandActions}>
-                    <Pressable onPress={() => handleAcceptHand(hand.userId)}>
-                      <LinearGradient
-                        colors={[colors.emerald, colors.emeraldDark]}
-                        style={styles.acceptButton}
-                      >
-                        <Text style={styles.acceptText}>{t('common.accept')}</Text>
-                      </LinearGradient>
-                    </Pressable>
-                    <Pressable onPress={() => handleDeclineHand(hand.userId)} accessibilityRole="button">
-                      <Text style={styles.declineText}>{t('common.decline')}</Text>
-                    </Pressable>
-                  </View>
+                  {isHost && (
+                    <View style={styles.raisedHandActions}>
+                      <Pressable onPress={() => handleAcceptHand(hand.userId)} style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
+                        <LinearGradient
+                          colors={[colors.emerald, colors.emeraldDark]}
+                          style={styles.acceptButton}
+                        >
+                          <Text style={styles.acceptText}>{t('common.accept')}</Text>
+                        </LinearGradient>
+                      </Pressable>
+                      <Pressable onPress={() => handleDeclineHand(hand.userId)} accessibilityRole="button" style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
+                        <Text style={styles.declineText}>{t('common.decline')}</Text>
+                      </Pressable>
+                    </View>
+                  )}
                 </Animated.View>
               ))}
             </LinearGradient>
@@ -522,9 +552,9 @@ export default function AudioRoomScreen() {
             {/* Mic Toggle */}
             <Pressable
               accessibilityRole="button"
-              style={styles.controlButton}
+              style={({ pressed }) => [styles.controlButton, pressed && { opacity: 0.7 }]}
               onPress={handleToggleMic}
-             
+              disabled={actionPending}
             >
               <LinearGradient
                 colors={isMicOn ? [colors.emerald, colors.emeraldDark] : [colors.error, colors.error]}
@@ -537,9 +567,9 @@ export default function AudioRoomScreen() {
             {/* Raise Hand */}
             <Pressable
               accessibilityRole="button"
-              style={styles.controlButton}
+              style={({ pressed }) => [styles.controlButton, pressed && { opacity: 0.7 }]}
               onPress={handleToggleHand}
-             
+              disabled={actionPending}
             >
               <LinearGradient
                 colors={isHandRaised ? [colors.gold, colors.goldLight] : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
@@ -552,7 +582,7 @@ export default function AudioRoomScreen() {
             {/* Reactions */}
             <Pressable
               accessibilityRole="button"
-              style={styles.controlButton}
+              style={({ pressed }) => [styles.controlButton, pressed && { opacity: 0.7 }]}
               onPress={() => setReactionsSheetVisible(true)}
             >
               <LinearGradient
@@ -564,7 +594,7 @@ export default function AudioRoomScreen() {
             </Pressable>
 
             {/* Leave */}
-            <Pressable style={styles.controlButton} onPress={handleLeave}>
+            <Pressable style={({ pressed }) => [styles.controlButton, pressed && { opacity: 0.7 }]} onPress={handleLeave} disabled={actionPending}>
               <LinearGradient
                 colors={[colors.error, colors.error]}
                 style={styles.controlButtonInner}
@@ -575,13 +605,15 @@ export default function AudioRoomScreen() {
           </LinearGradient>
 
           {/* End Room (Host Only) */}
-          <Pressable
-            accessibilityRole="button"
-            style={styles.endRoomButton}
-            onPress={handleEndRoom}
-          >
-            <Text style={styles.endRoomText}>{t('audioRoom.endRoom')}</Text>
-          </Pressable>
+          {isHost && (
+            <Pressable
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.endRoomButton, pressed && { opacity: 0.7 }]}
+              onPress={handleEndRoom}
+            >
+              <Text style={styles.endRoomText}>{t('audioRoom.endRoom')}</Text>
+            </Pressable>
+          )}
         </View>
         {/* Reactions BottomSheet */}
         <BottomSheet visible={reactionsSheetVisible} onClose={() => setReactionsSheetVisible(false)}>
@@ -608,7 +640,6 @@ export default function AudioRoomScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   menuButton: {
     padding: spacing.sm,
@@ -753,7 +784,6 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
   },
   speakerItem: {
-    width: (width - 80) / 3,
     alignItems: 'center',
   },
   speakerAvatarContainer: {
@@ -809,7 +839,6 @@ const styles = StyleSheet.create({
     gap: spacing.base,
   },
   listenerItem: {
-    width: (width - 96) / 4,
     alignItems: 'center',
   },
   listenerName: {
@@ -934,6 +963,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   reactionEmoji: {
-    fontSize: 28,
+    fontSize: fontSize.xl + spacing.xs,
   },
 });
