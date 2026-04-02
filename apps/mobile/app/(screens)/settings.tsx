@@ -217,10 +217,35 @@ export default function SettingsScreen() {
     }
   }, [s]);
 
-  const privacyMutation = useMutation({ mutationFn: settingsApi.updatePrivacy });
-  const notifMutation = useMutation({ mutationFn: settingsApi.updateNotifications });
-  const accessibilityMutation = useMutation({ mutationFn: settingsApi.updateAccessibility });
-  const wellbeingMutation = useMutation({ mutationFn: settingsApi.updateWellbeing });
+  const privacyMutation = useMutation({
+    mutationFn: settingsApi.updatePrivacy,
+    onError: (err: Error) => {
+      showToast({ message: err.message, variant: 'error' });
+      // Rollback: re-sync from server
+      settingsQuery.refetch();
+    },
+  });
+  const notifMutation = useMutation({
+    mutationFn: settingsApi.updateNotifications,
+    onError: (err: Error) => {
+      showToast({ message: err.message, variant: 'error' });
+      settingsQuery.refetch();
+    },
+  });
+  const accessibilityMutation = useMutation({
+    mutationFn: settingsApi.updateAccessibility,
+    onError: (err: Error) => {
+      showToast({ message: err.message, variant: 'error' });
+      settingsQuery.refetch();
+    },
+  });
+  const wellbeingMutation = useMutation({
+    mutationFn: settingsApi.updateWellbeing,
+    onError: (err: Error) => {
+      showToast({ message: err.message, variant: 'error' });
+      settingsQuery.refetch();
+    },
+  });
 
   const toggleReadReceipts = useCallback(async (v: boolean) => {
     setReadReceipts(v);
@@ -1421,9 +1446,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: 2,
   },
   sectionHeader: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.xs,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
@@ -1459,9 +1484,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     width: 32,
   },
   rowText: { flex: 1, marginEnd: spacing.md },
-  rowLabel: { color: colors.text.primary, fontSize: fontSize.base, lineHeight: lineHeight.base },
-  rowHint: { color: colors.text.tertiary, fontSize: fontSize.xs, lineHeight: lineHeight.xs, marginTop: 2 },
-  rowRightText: { color: colors.text.tertiary, fontSize: fontSize.sm, lineHeight: lineHeight.sm },
+  rowLabel: { color: tc.text.primary, fontSize: fontSize.base, fontFamily: fonts.body, lineHeight: lineHeight.base },
+  rowHint: { color: tc.text.tertiary, fontSize: fontSize.xs, fontFamily: fonts.body, lineHeight: lineHeight.xs, marginTop: 2 },
+  rowRightText: { color: tc.text.tertiary, fontSize: fontSize.sm, fontFamily: fonts.body, lineHeight: lineHeight.sm },
   rowChevron: {
     width: 28,
     height: 28,
@@ -1470,7 +1495,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     alignItems: 'center',
     justifyContent: 'center',
   },
-  destructive: { color: '#FF453A' },
+  destructive: { color: colors.error },
 
   // Divider
   divider: {
@@ -1512,7 +1537,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginHorizontal: spacing.base, marginTop: spacing.xl,
   },
   signOutLabel: {
-    color: colors.error, fontSize: fontSize.base, lineHeight: lineHeight.base, fontWeight: '600',
+    color: colors.error, fontSize: fontSize.base, fontFamily: fonts.bodySemiBold, lineHeight: lineHeight.base,
   },
   signOutGradient: {
     flexDirection: 'row',
@@ -1526,6 +1551,6 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
 
   version: {
-    color: colors.text.tertiary, fontSize: fontSize.xs, lineHeight: lineHeight.xs, textAlign: 'center', marginTop: spacing.xl,
+    color: tc.text.tertiary, fontSize: fontSize.xs, fontFamily: fonts.body, lineHeight: lineHeight.xs, textAlign: 'center', marginTop: spacing.xl,
   },
 });

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert, Share } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -12,12 +12,14 @@ import { Avatar } from '@/components/ui/Avatar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
+import { showToast } from '@/components/ui/Toast';
 import { usersApi } from '@/services/api';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ShareProfileScreen() {
   const tc = useThemeColors();
@@ -25,18 +27,13 @@ export default function ShareProfileScreen() {
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const haptic = useContextualHaptic();
+  const insets = useSafeAreaInsets();
   const [copied, setCopied] = useState(false);
-  const [isReady, setIsReady] = useState(false);
 
   const { data: user, isLoading, isError, refetch } = useQuery({
     queryKey: ['profile', 'me'],
     queryFn: () => usersApi.getMe(),
   });
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsReady(true), 300);
-    return () => clearTimeout(timer);
-  }, []);
 
   const profileUrl = user?.username ? `https://mizanly.app/@${user.username}` : '';
 
@@ -45,6 +42,7 @@ export default function ShareProfileScreen() {
     haptic.save();
     await Clipboard.setStringAsync(profileUrl);
     setCopied(true);
+    showToast({ message: t('screens.share-profile.copiedToast'), variant: 'success' });
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -58,7 +56,9 @@ export default function ShareProfileScreen() {
         title: t('screens.share-profile.shareTitle', { name: user?.displayName || user?.username }),
       });
     } catch (err) {
-      // Sharing cancelled, ignore
+      if (err instanceof Error && !err.message.includes('cancel')) {
+        showToast({ message: err.message, variant: 'error' });
+      }
     }
   };
 
@@ -67,7 +67,7 @@ export default function ShareProfileScreen() {
     router.push('/(screens)/qr-scanner');
   };
 
-  if (isLoading || !isReady) {
+  if (isLoading) {
     return (
       <View style={styles.container}>
         <GlassHeader
@@ -86,8 +86,8 @@ export default function ShareProfileScreen() {
               <Skeleton.Circle size={48} />
             </View>
           </LinearGradient>
-          <Skeleton.Rect width="50%" height={24} borderRadius={4} style={{ marginTop: spacing.xl }} />
-          <Skeleton.Rect width="30%" height={18} borderRadius={4} style={{ marginTop: spacing.sm }} />
+          <Skeleton.Rect width="50%" height={24} borderRadius={radius.sm} style={{ marginTop: spacing.xl }} />
+          <Skeleton.Rect width="30%" height={18} borderRadius={radius.sm} style={{ marginTop: spacing.sm }} />
           <View style={styles.buttonRow}>
             <Skeleton.Rect width={100} height={48} borderRadius={radius.lg} />
             <Skeleton.Rect width={100} height={48} borderRadius={radius.lg} />
@@ -143,7 +143,7 @@ export default function ShareProfileScreen() {
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
         />
 
-        <View style={styles.content}>
+        <View style={[styles.content, { paddingTop: insets.top + 60 }]}>
           {/* Glassmorphism QR Card */}
           <Animated.View entering={FadeInUp.duration(400).springify()}>
             <LinearGradient
@@ -264,7 +264,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   headerSpacer: {
     height: 100,
   },
-  headerTitle: { color: colors.text.primary, fontSize: fontSize.md, fontWeight: '700' },
+  headerTitle: { color: tc.text.primary, fontSize: fontSize.md, fontFamily: fonts.bodyBold },
   content: { flex: 1, alignItems: 'center', padding: spacing.xl },
 
   // QR Card with glassmorphism
@@ -305,7 +305,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   avatarOverlay: {
     position: 'absolute',
     top: '50%',
-    left: '50%',
+    start: '50%',
     transform: [{ translateX: -32 }, { translateY: -32 }],
     width: 64,
     height: 64,
@@ -315,7 +315,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   avatarOverlaySkeleton: {
     position: 'absolute',
     top: '50%',
-    left: '50%',
+    start: '50%',
     transform: [{ translateX: -32 }, { translateY: -32 }],
   },
   avatarRing: {
@@ -344,9 +344,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginTop: spacing.lg,
   },
   profileName: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.lg,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
   },
   usernameBadge: {
     flexDirection: 'row',
@@ -355,12 +355,14 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginTop: spacing.xs,
   },
   profileUsername: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.base,
+    fontFamily: fonts.body,
   },
   shareHint: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.sm,
+    fontFamily: fonts.body,
     textAlign: 'center',
     marginTop: spacing.lg,
     maxWidth: 300,
@@ -402,9 +404,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     elevation: 8,
   },
   buttonLabel: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.sm,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
     marginTop: spacing.xs,
   },
   buttonLabelActive: {
