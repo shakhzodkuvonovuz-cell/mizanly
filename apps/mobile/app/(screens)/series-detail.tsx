@@ -6,7 +6,6 @@ import {
   FlatList,
   Pressable,
   ScrollView,
-  Dimensions,
   Share,
 } from 'react-native';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
@@ -29,11 +28,10 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { showToast } from '@/components/ui/Toast';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { formatCount } from '@/utils/formatCount';
 import { gamificationApi } from '@/services/api';
-
-const { width: screenWidth } = Dimensions.get('window');
 
 interface Episode {
   id: string;
@@ -89,7 +87,9 @@ function SeriesDetailContent() {
     onSuccess: () => {
       haptic.success();
       queryClient.invalidateQueries({ queryKey: ['series', params.id] });
+      showToast({ message: t('series.followedToast', 'Followed!'), variant: 'success' });
     },
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const unfollowMutation = useMutation({
@@ -97,6 +97,7 @@ function SeriesDetailContent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['series', params.id] });
     },
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const handleRefresh = useCallback(() => {
@@ -106,6 +107,7 @@ function SeriesDetailContent() {
   const series = seriesQuery.data;
 
   const handleFollowToggle = () => {
+    if (followMutation.isPending || unfollowMutation.isPending) return;
     haptic.follow();
     if (series?.isFollowing) {
       unfollowMutation.mutate();
@@ -184,8 +186,9 @@ function SeriesDetailContent() {
   const renderEpisode = ({ item, index }: { item: Episode; index: number }) => (
     <Animated.View entering={FadeInUp.delay(index * 50).duration(250)}>
       <Pressable
-        style={styles.episodeRow}
+        style={({ pressed }) => [styles.episodeRow, pressed && { opacity: 0.7 }]}
         onPress={() => handleEpisodePress(item)}
+        android_ripple={{ color: 'rgba(10,123,79,0.1)' }}
         accessibilityRole="button"
         accessibilityLabel={`Episode ${item.number}: ${item.title}`}
       >
@@ -203,7 +206,7 @@ function SeriesDetailContent() {
     </Animated.View>
   );
 
-  const ListHeader = () => (
+  const ListHeader = useCallback(() => (
     <View>
       {/* Cover Hero */}
       <View style={styles.heroWrap}>
@@ -300,7 +303,7 @@ function SeriesDetailContent() {
         </Text>
       </Animated.View>
     </View>
-  );
+  ), [series, styles, tc, t, handleFollowToggle, handleAddEpisode, followMutation.isPending, unfollowMutation.isPending]);
 
   return (
     <View style={styles.container}>
@@ -448,12 +451,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: spacing.md,
   },
   seriesTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.xl,
     fontFamily: fonts.bodySemiBold,
   },
   seriesDescription: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.base,
     fontFamily: fonts.body,
     lineHeight: 22,
@@ -475,12 +478,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: spacing.xs,
   },
   statValue: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     fontFamily: fonts.bodySemiBold,
   },
   statLabel: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     fontFamily: fonts.body,
   },
@@ -510,12 +513,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: spacing.xs,
   },
   creatorName: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     fontFamily: fonts.bodySemiBold,
   },
   creatorUsername: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.sm,
     fontFamily: fonts.body,
     marginTop: 2,
@@ -541,7 +544,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   // Section
   sectionTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.md,
     fontFamily: fonts.bodySemiBold,
     marginTop: spacing.sm,
@@ -575,19 +578,19 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flex: 1,
   },
   episodeTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     fontFamily: fonts.bodySemiBold,
   },
   episodeDate: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.xs,
     fontFamily: fonts.body,
     marginTop: 2,
   },
   // Sheet
   sheetTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.lg,
     fontFamily: fonts.bodySemiBold,
     textAlign: 'center',

@@ -6,7 +6,6 @@ import {
   FlatList,
   Pressable,
   ScrollView,
-  Dimensions,
 } from 'react-native';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -26,10 +25,9 @@ import { navigate } from '@/utils/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { showToast } from '@/components/ui/Toast';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { gamificationApi } from '@/services/api';
-
-const { width: screenWidth } = Dimensions.get('window');
 
 const CATEGORY_KEYS = ['all', 'drama', 'documentary', 'tutorial', 'comedy', 'islamic'] as const;
 
@@ -95,7 +93,9 @@ function SeriesDiscoverContent() {
     onSuccess: () => {
       haptic.success();
       queryClient.invalidateQueries({ queryKey: ['series-discover'] });
+      showToast({ message: t('series.followedToast', 'Followed!'), variant: 'success' });
     },
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const unfollowMutation = useMutation({
@@ -103,6 +103,7 @@ function SeriesDiscoverContent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['series-discover'] });
     },
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const allSeries = seriesQuery.data?.pages.flatMap((p) => p.data) ?? [];
@@ -128,6 +129,7 @@ function SeriesDiscoverContent() {
   };
 
   const handleFollowToggle = (series: SeriesItem) => {
+    if (followMutation.isPending || unfollowMutation.isPending) return;
     haptic.follow();
     if (series.isFollowing) {
       unfollowMutation.mutate(series.id);
@@ -169,8 +171,9 @@ function SeriesDiscoverContent() {
   const renderSeriesCard = ({ item, index }: { item: SeriesItem; index: number }) => (
     <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
       <Pressable
-        style={styles.seriesCard}
+        style={({ pressed }) => [styles.seriesCard, pressed && { opacity: 0.8 }]}
         onPress={() => handleSeriesPress(item)}
+        android_ripple={{ color: 'rgba(10,123,79,0.1)' }}
         accessibilityRole="button"
         accessibilityLabel={item.title}
       >
@@ -361,7 +364,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderColor: colors.emerald,
   },
   chipText: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     fontFamily: fonts.bodySemiBold,
   },
@@ -415,7 +418,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.sm,
   },
   episodeBadgeText: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.xs,
     fontFamily: fonts.bodySemiBold,
   },
@@ -426,7 +429,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     end: spacing.md,
   },
   seriesTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.lg,
     fontFamily: fonts.bodySemiBold,
     textShadowColor: 'rgba(0,0,0,0.5)',
@@ -446,12 +449,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flex: 1,
   },
   creatorName: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.sm,
     fontFamily: fonts.bodySemiBold,
   },
   followersCount: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.xs,
     fontFamily: fonts.body,
     marginTop: 2,
@@ -468,12 +471,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderColor: tc.border,
   },
   followBtnText: {
-    color: '#FFFFFF',
+    color: '#fff',
     fontSize: fontSize.sm,
     fontFamily: fonts.bodySemiBold,
   },
   followBtnTextActive: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   // Skeleton
   skeletonWrap: {
