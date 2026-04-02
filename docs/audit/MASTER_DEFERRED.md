@@ -663,13 +663,83 @@ Screen code is ready but backend endpoint/feature doesn't exist.
 | RTL | 12 |
 | StatusBar | 3 |
 
-### By severity (combined R1-W7)
+---
+
+## 24. WAVE 10 — Infrastructure Deferrals (K01-K05, 27 items)
+
+> Wave 10 complete: 18 fixed, 85 already fixed, 12 NOT_A_BUG, 27 deferred.
+
+### 24A. Secrets in local .env (6 items — user action required)
+
+| # | Source | Sev | Finding |
+|---|--------|-----|---------|
+| 397 | K02 #1 | C | Real Neon DB credentials in local `.env` — rotate keys, move to secrets manager |
+| 398 | K02 #2 | C | Clerk secret key in local `.env` — same |
+| 399 | K02 #3 | C | Stripe secret key in local `.env` — same |
+| 400 | K02 #4 | C | AI API keys (Anthropic/OpenAI/Gemini) in local `.env` — same + set spend limits |
+| 401 | K02 #5 | C | R2 access keys in local `.env` — same |
+| 402 | K02 #6 | C | TOTP encryption key in local `.env` — should be in KMS |
+
+### 24B. Dead queue producers (5 items — need feature pipelines)
+
+| # | Source | Sev | Finding |
+|---|--------|-----|---------|
+| 403 | K04 #3 | H | Media processor — no producer, needs upload pipeline wiring |
+| 404 | K04 #4 | H | bulk-push handler — no producer, needs system announcement feature |
+| 405 | K04 #5 | H | track-engagement — no producer AND no storage, needs analytics pipeline |
+| 406 | K04 #14 | M | Media worker retry config — moot until #403 wired |
+| 407 | K04 #24 | I | 5 dead job type producers — same root cause as #403-405 |
+
+### 24C. CI enhancements (7 items)
+
+| # | Source | Sev | Finding |
+|---|--------|-----|---------|
+| 408 | K01 #16 | M | Coverage thresholds — needs team agreement on target % |
+| 409 | K01 #18 | M | Docker build verification in CI — adds 5+ min per run |
+| 410 | K01 #21 | M | exif-stripper CI — separate Cloudflare Worker |
+| 411 | K01 #22 | L | Branch protection rules — GitHub UI setting |
+| 412 | K01 #23 | L | Flaky test retry — medium effort |
+| 413 | K01 #27 | I | Landing page CI — static site |
+| 414 | K01 #28 | I | Go linters (golangci-lint) |
+
+### 24D. New feature crons (4 items)
+
+| # | Source | Sev | Finding |
+|---|--------|-----|---------|
+| 415 | K03 #31 | I | Expired DM note cleanup cron |
+| 416 | K03 #32 | I | Expired circle invite cleanup cron |
+| 417 | K03 #33 | I | Expired download cleanup cron + orphaned files |
+| 418 | K03 #35 | I | Cron health monitoring endpoint (`/health/crons`) |
+
+### 24E. Medium refactors (5 items)
+
+| # | Source | Sev | Finding |
+|---|--------|-----|---------|
+| 419 | K02 #9 | H | INTERNAL_SERVICE_KEY missing from local .env — user must generate |
+| 420 | K02 #11 | H | ConfigModule Joi validation schema — main.ts already validates |
+| 421 | K02 #18 | M | Dead TURN credentials in local .env — user must remove |
+| 422 | K02 #19 | M | CORS origin duplication — low priority refactor |
+| 423 | K02 #26 | I | Mixed process.env vs ConfigService — 8+ file migration |
+
+---
+
+## Updated Summary (R1 through W10)
+
+| Source | Items |
+|--------|-------|
+| R1-R3 (API audit) | 203 |
+| R4-R4E (screen audit, 42 D-files) | 189 |
+| W7 (testing gaps) | 4 |
+| W10 (infrastructure) | 27 |
+| **TOTAL** | **423** |
+
+### By severity (combined R1-W10)
 
 | Severity | Count |
 |----------|-------|
-| CRITICAL | 23 |
-| HIGH | 47 |
-| MEDIUM | 216 |
-| LOW | 77 |
-| INFO | 33 |
-| **TOTAL** | **396** |
+| CRITICAL | 29 |
+| HIGH | 51 |
+| MEDIUM | 222 |
+| LOW | 80 |
+| INFO | 41 |
+| **TOTAL** | **423** |
