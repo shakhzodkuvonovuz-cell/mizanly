@@ -1,16 +1,16 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   Pressable,
-  Dimensions,
   Linking,
   Share,
+  Platform,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -20,16 +20,18 @@ import { Avatar } from '@/components/ui/Avatar';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { eventsApi } from '@/services/eventsApi';
 import type { EventWithCounts, RsvpStatus as ApiRsvpStatus } from '@/types/events';
 import type { User } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
-
-const { width } = Dimensions.get('window');
+import { showToast } from '@/components/ui/Toast';
+import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 
 type RsvpStatus = 'going' | 'maybe' | 'not-going' | null;
 
@@ -61,9 +63,12 @@ function formatEventTime(startStr: string, endStr?: string): string {
 
 export default function EventDetailScreen() {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const queryClient = useQueryClient();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const haptic = useContextualHaptic();
+  const insets = useSafeAreaInsets();
+  const isNavigatingRef = useRef(false);
 
   const [rsvpStatus, setRsvpStatus] = useState<RsvpStatus>(null);
   const [descExpanded, setDescExpanded] = useState(false);
@@ -114,7 +119,7 @@ export default function EventDetailScreen() {
 
   const attendees = attendeesData?.data ?? [];
 
-  // RSVP mutation
+  // RSVP mutation with optimistic rollback
   const rsvpMutation = useMutation({
     mutationFn: async (status: RsvpStatus) => {
       if (!id) throw new Error('No event ID');
@@ -127,13 +132,28 @@ export default function EventDetailScreen() {
       return res;
     },
     onSuccess: () => {
+      haptic.success();
+      showToast({ message: t('events.rsvpUpdated'), variant: 'success' });
       queryClient.invalidateQueries({ queryKey: ['event', id] });
       queryClient.invalidateQueries({ queryKey: ['event-attendees', id] });
+    },
+    onError: (_err, _vars, context: { previousStatus: RsvpStatus } | undefined) => {
+      haptic.error();
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+      // Rollback optimistic update
+      if (context) {
+        setRsvpStatus(context.previousStatus);
+      }
+    },
+    onMutate: (newStatus: RsvpStatus) => {
+      const previousStatus = rsvpStatus;
+      setRsvpStatus(newStatus);
+      return { previousStatus };
     },
   });
 
   const handleRsvp = useCallback((status: RsvpStatus) => {
-    setRsvpStatus(status);
+    if (rsvpMutation.isPending) return;
     rsvpMutation.mutate(status);
   }, [rsvpMutation]);
 
@@ -169,6 +189,7 @@ export default function EventDetailScreen() {
         <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
           <GlassHeader
             title={t('events.event')}
+            showBack
             onBack={() => router.back()}
           />
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: spacing.base }}>
@@ -196,6 +217,7 @@ export default function EventDetailScreen() {
         <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
           <GlassHeader
             title={t('events.event')}
+            showBack
             onBack={() => router.back()}
           />
           <EmptyState
@@ -222,8 +244,10 @@ export default function EventDetailScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
       <GlassHeader
         title={t('events.event')}
+        showBack
         onBack={() => router.back()}
         rightAction={{ icon: 'share', onPress: () => {
+          haptic.tick();
           Share.share({
             message: `${event.title} — ${formatEventDate(event.startDate)}${event.location ? ` at ${event.location}` : ''}`,
           });
@@ -237,9 +261,18 @@ export default function EventDetailScreen() {
         {/* Cover Image Hero */}
         <Animated.View entering={FadeInUp.duration(400)}>
           <View style={styles.coverContainer}>
-            <View style={[styles.coverPlaceholder, { backgroundColor: tc.bgCard }]}>
-              <Icon name="image" size={48} color={tc.text.tertiary} />
-            </View>
+            {(event as unknown as Record<string, unknown>).coverImageUrl ? (
+              <ProgressiveImage
+                uri={(event as unknown as Record<string, unknown>).coverImageUrl as string}
+                width="100%"
+                height={220}
+                borderRadius={radius.lg}
+              />
+            ) : (
+              <View style={[styles.coverPlaceholder, { backgroundColor: tc.bgCard }]}>
+                <Icon name="image" size={48} color={tc.text.tertiary} />
+              </View>
+            )}
             <LinearGradient
               colors={['transparent', tc.bg]}
               style={styles.coverGradient}
@@ -260,11 +293,11 @@ export default function EventDetailScreen() {
           <Text style={[styles.eventTitle, { color: tc.text.primary }]}>{event.title}</Text>
 
           {/* Host Row */}
-          <View style={styles.hostRow}>
+          <View style={[styles.hostRow, { flexDirection: rtlFlexRow(isRTL) }]}>
             <Avatar uri={event.user?.avatarUrl ?? null} name={event.user?.displayName ?? 'Host'} size="md" />
             <View style={styles.hostInfo}>
-              <Text style={styles.hostText}>
-                {t('events.hostedBy')} <Text style={styles.hostName}>@{event.user?.username ?? 'unknown'}</Text>
+              <Text style={[styles.hostText, { color: tc.text.secondary }]}>
+                {t('events.hostedBy')} <Text style={[styles.hostName, { color: tc.text.primary }]}>@{event.user?.username ?? 'unknown'}</Text>
               </Text>
             </View>
             {event.user?.isVerified && <VerifiedBadge size={13} />}
@@ -288,11 +321,16 @@ export default function EventDetailScreen() {
               <Text style={styles.infoSub}>{formatEventTime(event.startDate, event.endDate)}</Text>
             </View>
             <Pressable
-              style={[styles.addToCalendar, { backgroundColor: tc.surface }]}
+              style={({ pressed }) => [styles.addToCalendar, { backgroundColor: tc.surface }, pressed && { opacity: 0.7 }]}
               onPress={() => {
-                // Open device calendar with event details
-                const startDate = new Date(event.startDate).toISOString();
-                Linking.openURL(`calshow:${new Date(event.startDate).getTime() / 1000}`);
+                haptic.tick();
+                if (Platform.OS === 'ios') {
+                  Linking.openURL(`calshow:${new Date(event.startDate).getTime() / 1000}`);
+                } else {
+                  // Android: open calendar with intent
+                  const startMs = new Date(event.startDate).getTime();
+                  Linking.openURL(`content://com.android.calendar/time/${startMs}`);
+                }
               }}
               accessibilityRole="button"
             >
@@ -319,8 +357,9 @@ export default function EventDetailScreen() {
                 <Text style={[styles.infoMain, { color: tc.text.primary }]}>{event.location}</Text>
               </View>
               <Pressable
-                style={[styles.directionsButton, { backgroundColor: tc.surface }]}
+                style={({ pressed }) => [styles.directionsButton, { backgroundColor: tc.surface }, pressed && { opacity: 0.7 }]}
                 onPress={() => {
+                  haptic.tick();
                   const query = encodeURIComponent(event.location ?? '');
                   Linking.openURL(`https://maps.google.com/?q=${query}`);
                 }}
@@ -342,7 +381,7 @@ export default function EventDetailScreen() {
             >
               <Text style={styles.descriptionText} numberOfLines={descExpanded ? undefined : 4}>{event.description}</Text>
               {!descExpanded && (
-                <Pressable onPress={() => setDescExpanded(true)} accessibilityRole="button">
+                <Pressable onPress={() => { setDescExpanded(true); haptic.tick(); }} accessibilityRole="button">
                   <Text style={styles.readMore}>{t('common.readMore')}</Text>
                 </Pressable>
               )}
@@ -357,7 +396,7 @@ export default function EventDetailScreen() {
             style={[styles.rsvpCard, { borderColor: colors.gold }]}
           >
             <Text style={[styles.rsvpLabel, { color: tc.text.primary }]}>{t('events.areYouGoing')}</Text>
-            <View style={styles.rsvpButtons}>
+            <View style={[styles.rsvpButtons, { flexDirection: rtlFlexRow(isRTL) }]}>
               {(['going', 'maybe', 'not-going'] as const).map((status) => {
                 const styles_result = getRsvpButtonStyle(status);
                 const isSelected = rsvpStatus === status;
@@ -367,9 +406,8 @@ export default function EventDetailScreen() {
                     <Pressable
                       accessibilityRole="button"
                       key={status}
-                      style={styles_result.button}
+                      style={[styles_result.button, !isSelected && { backgroundColor: tc.surface, borderColor: tc.border }]}
                       onPress={() => handleRsvp(status)}
-
                       disabled={rsvpMutation.isPending}
                     >
                       {isSelected && status === 'going' ? (
@@ -435,7 +473,7 @@ export default function EventDetailScreen() {
                   {attendees.slice(0, 5).map((attendee, index) => (
                     <View
                       key={attendee.id}
-                      style={[styles.avatarStack, { borderColor: tc.bg }, { marginLeft: index > 0 ? -12 : 0 }]}
+                      style={[styles.avatarStack, { borderColor: tc.bg }, { marginStart: index > 0 ? -12 : 0 }]}
                     >
                       <Avatar uri={attendee.avatarUrl ?? null} name={attendee.displayName ?? attendee.username ?? ''} size="md" />
                     </View>
@@ -448,8 +486,14 @@ export default function EventDetailScreen() {
                 </View>
 
                 <Pressable
-                  style={styles.seeAllButton}
-                  onPress={() => router.push(`/(screens)/event-attendees/${id}` as never)}
+                  style={({ pressed }) => [styles.seeAllButton, pressed && { opacity: 0.7 }]}
+                  onPress={() => {
+                    if (isNavigatingRef.current) return;
+                    isNavigatingRef.current = true;
+                    haptic.tick();
+                    router.push(`/(screens)/event-attendees/${id}` as never);
+                    setTimeout(() => { isNavigatingRef.current = false; }, 500);
+                  }}
                   accessibilityRole="button"
                 >
                   <Text style={styles.seeAllText}>{t('events.seeAllAttendees')}</Text>
@@ -465,10 +509,11 @@ export default function EventDetailScreen() {
       </ScrollView>
 
       {/* Bottom Bar */}
-      <View style={[styles.bottomBar, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
+      <Animated.View entering={FadeInUp.delay(100).duration(300)} style={[styles.bottomBar, { backgroundColor: tc.bg, borderTopColor: tc.border, paddingBottom: Math.max(insets.bottom, spacing.base), flexDirection: rtlFlexRow(isRTL) }]}>
         <Pressable
-          style={styles.shareEventButton}
+          style={({ pressed }) => [styles.shareEventButton, pressed && { opacity: 0.7 }]}
           onPress={() => {
+            haptic.tick();
             Share.share({
               message: `${event.title} — ${formatEventDate(event.startDate)}${event.location ? ` at ${event.location}` : ''}`,
             });
@@ -484,7 +529,7 @@ export default function EventDetailScreen() {
           </LinearGradient>
         </Pressable>
 
-        <Pressable disabled={rsvpMutation.isPending}>
+        <Pressable disabled={rsvpMutation.isPending} style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
           <LinearGradient
             colors={[colors.emerald, colors.emeraldDark]}
             style={styles.rsvpConfirmButton}
@@ -494,7 +539,7 @@ export default function EventDetailScreen() {
             </Text>
           </LinearGradient>
         </Pressable>
-      </View>
+      </Animated.View>
     </SafeAreaView>
     </ScreenErrorBoundary>
   );
@@ -517,7 +562,6 @@ const styles = StyleSheet.create({
   },
   coverPlaceholder: {
     flex: 1,
-    backgroundColor: colors.dark.bgCard,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -612,7 +656,6 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.dark.surface,
     borderRadius: radius.md,
   },
   addText: {
@@ -623,7 +666,6 @@ const styles = StyleSheet.create({
   directionsButton: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.dark.surface,
     borderRadius: radius.md,
   },
   descriptionCard: {
@@ -674,14 +716,11 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: radius.md,
     overflow: 'hidden',
-    backgroundColor: colors.dark.surface,
   },
   rsvpButtonOutline: {
     flex: 1,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.dark.borderLight,
-    backgroundColor: colors.dark.surface,
   },
   rsvpGradient: {
     flexDirection: 'row',
@@ -749,19 +788,16 @@ const styles = StyleSheet.create({
   },
   avatarStack: {
     borderWidth: 2,
-    borderColor: colors.dark.bg,
     borderRadius: radius.full,
   },
   moreAvatar: {
     width: 40,
     height: 40,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.surface,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: -12,
+    marginStart: -12,
     borderWidth: 2,
-    borderColor: colors.dark.bg,
   },
   moreText: {
     fontSize: fontSize.xs,
@@ -788,13 +824,10 @@ const styles = StyleSheet.create({
     bottom: 0,
     start: 0,
     end: 0,
-    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: spacing.base,
-    backgroundColor: colors.dark.bg,
     borderTopWidth: 1,
-    borderTopColor: colors.dark.border,
   },
   shareEventButton: {
     borderRadius: radius.full,

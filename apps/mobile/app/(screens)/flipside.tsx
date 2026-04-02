@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TextInput, Pressable,
-  FlatList, Alert,
+  FlatList, Alert, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -21,11 +21,12 @@ import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { showToast } from '@/components/ui/Toast';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { altProfileApi } from '@/services/altProfileApi';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { rtlFlexRow } from '@/utils/rtl';
 
 type AltProfile = {
   id: string;
@@ -55,7 +56,7 @@ type AltPost = {
 export default function FlipsideScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const tc = useThemeColors();
   const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
@@ -139,13 +140,13 @@ export default function FlipsideScreen() {
   // ── Handlers ──
   const handleCreate = () => {
     if (!displayName.trim()) return;
-    haptic.success();
+    haptic.tick();
     createMutation.mutate({ displayName: displayName.trim(), bio: bio.trim() || undefined });
   };
 
   const handleUpdate = () => {
     if (!displayName.trim()) return;
-    haptic.success();
+    haptic.tick();
     updateMutation.mutate({ displayName: displayName.trim(), bio: bio.trim() || undefined });
   };
 
@@ -153,7 +154,7 @@ export default function FlipsideScreen() {
     haptic.delete();
     Alert.alert(
       t('common.delete'),
-      t('flipside.description'),
+      t('flipside.deleteConfirm'),
       [
         { text: t('common.cancel'), style: 'cancel' },
         { text: t('common.delete'), style: 'destructive', onPress: () => deleteMutation.mutate() },
@@ -180,7 +181,7 @@ export default function FlipsideScreen() {
   // ── Loading ──
   if (profileQuery.isLoading) {
     return (
-      <View style={[styles.container, { backgroundColor: tc.bg }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('flipside.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -188,14 +189,14 @@ export default function FlipsideScreen() {
         <View style={{ marginTop: HEADER_HEIGHT, padding: spacing.base }}>
           <Skeleton.ProfileHeader />
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   // ── Error ──
   if (profileQuery.isError) {
     return (
-      <View style={[styles.container, { backgroundColor: tc.bg }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('flipside.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -209,7 +210,7 @@ export default function FlipsideScreen() {
             onAction={() => profileQuery.refetch()}
           />
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -217,11 +218,12 @@ export default function FlipsideScreen() {
   if (!altProfile || showCreateForm) {
     return (
       <ScreenErrorBoundary>
-        <View style={[styles.container, { backgroundColor: tc.bg }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
           <GlassHeader
             title={t('flipside.title')}
             leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
           />
+          <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={100}>
           <View style={[styles.body, { paddingTop: HEADER_HEIGHT }]}>
             {!showCreateForm && !altProfile ? (
               <View style={styles.emptyContainer}>
@@ -289,14 +291,15 @@ export default function FlipsideScreen() {
               </Animated.View>
             )}
           </View>
-        </View>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
       </ScreenErrorBoundary>
     );
   }
 
   // ── Profile exists: show it ──
   const renderPost = ({ item, index }: { item: AltPost; index: number }) => (
-    <Animated.View entering={FadeInUp.delay(index * 40).duration(300)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index * 40, 300)).duration(300)}>
       <LinearGradient
         colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
         style={styles.postCard}
@@ -319,7 +322,7 @@ export default function FlipsideScreen() {
           colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
           style={styles.profileCard}
         >
-          <View style={styles.profileHeader}>
+          <View style={[styles.profileHeader, { flexDirection: rtlFlexRow(isRTL) }]}>
             <Avatar
               uri={altProfile.avatarUrl ?? null}
               name={altProfile.displayName}
@@ -424,7 +427,7 @@ export default function FlipsideScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={[styles.container, { backgroundColor: tc.bg }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('flipside.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -495,9 +498,10 @@ export default function FlipsideScreen() {
                   />
                 }
                 onPress={() => {
+                  haptic.delete();
                   Alert.alert(
                     t('flipside.removePerson'),
-                    access.user?.displayName ?? access.userId,
+                    t('flipside.removePersonConfirm', { name: access.user?.displayName ?? access.userId }),
                     [
                       { text: t('common.cancel'), style: 'cancel' },
                       {
@@ -513,7 +517,7 @@ export default function FlipsideScreen() {
             ))
           )}
         </BottomSheet>
-      </View>
+      </SafeAreaView>
     </ScreenErrorBoundary>
   );
 }
@@ -532,10 +536,10 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.06)',
     gap: spacing.md,
   },
-  formTitle: { fontSize: fontSize.lg, fontWeight: '700' },
+  formTitle: { fontSize: fontSize.lg, fontFamily: fonts.bold },
   formSubtitle: { fontSize: fontSize.sm, lineHeight: 20 },
   field: { gap: spacing.xs },
-  label: { fontSize: fontSize.sm, fontWeight: '500' },
+  label: { fontSize: fontSize.sm, fontFamily: fonts.medium },
   input: {
     fontSize: fontSize.base,
     paddingVertical: spacing.sm,
@@ -555,9 +559,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.06)',
   },
-  profileHeader: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' },
+  profileHeader: { gap: spacing.md, alignItems: 'flex-start' },
   profileInfo: { flex: 1, gap: spacing.xs },
-  profileName: { fontSize: fontSize.lg, fontWeight: '700' },
+  profileName: { fontSize: fontSize.lg, fontFamily: fonts.bold },
   profileBio: { fontSize: fontSize.base, lineHeight: 20 },
   profileDate: { fontSize: fontSize.xs },
 
@@ -576,7 +580,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     borderRadius: radius.md,
   },
-  accessBtnText: { fontSize: fontSize.sm, fontWeight: '600' },
+  accessBtnText: { fontSize: fontSize.sm, fontFamily: fonts.semibold },
   deleteBtn: {
     padding: spacing.sm,
     borderRadius: radius.md,
@@ -600,7 +604,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 0.5,
     borderTopColor: 'rgba(255,255,255,0.06)',
   },
-  sectionTitle: { fontSize: fontSize.base, fontWeight: '700' },
+  sectionTitle: { fontSize: fontSize.base, fontFamily: fonts.bold },
 
   // Post card
   postCard: {
@@ -616,7 +620,7 @@ const styles = StyleSheet.create({
 
   // Access sheet
   accessSheetHeader: { padding: spacing.base },
-  accessSheetTitle: { fontSize: fontSize.md, fontWeight: '700' },
+  accessSheetTitle: { fontSize: fontSize.md, fontFamily: fonts.bold },
   accessEmpty: { padding: spacing.base },
   accessEmptyText: { fontSize: fontSize.base, textAlign: 'center' },
 });

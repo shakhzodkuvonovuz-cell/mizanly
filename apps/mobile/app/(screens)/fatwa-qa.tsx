@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -13,17 +14,19 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { showToast } from '@/components/ui/Toast';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { rtlFlexRow } from '@/utils/rtl';
 import { api } from '@/services/api';
 
 const MADHAB_IDS = ['any', 'hanafi', 'maliki', 'shafii', 'hanbali'] as const;
 
 export default function FatwaQAScreen() {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const haptic = useContextualHaptic();
   const queryClient = useQueryClient();
 
@@ -55,6 +58,11 @@ export default function FatwaQAScreen() {
       setActiveTab('browse');
       queryClient.invalidateQueries({ queryKey: ['fatwa-questions'] });
       haptic.success();
+      showToast({ message: t('community.questionSubmitted'), variant: 'success' });
+    },
+    onError: () => {
+      haptic.error();
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
     },
   });
 
@@ -64,7 +72,7 @@ export default function FatwaQAScreen() {
     const asker = item.asker as Record<string, unknown> | undefined;
     const isAnswered = item.status === 'answered';
     return (
-      <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
+      <Animated.View entering={FadeInUp.delay(Math.min(index * 60, 300)).duration(300)}>
         <View style={[styles.questionCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
           <View style={styles.questionHeader}>
             <Avatar uri={asker?.avatarUrl as string | null} name={asker?.displayName as string || ''} size="sm" />
@@ -97,14 +105,14 @@ export default function FatwaQAScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={[styles.container, { backgroundColor: tc.bg }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('community.fatwaQA')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
 
         {/* Tabs */}
-        <View style={styles.tabs}>
+        <View style={[styles.tabs, { flexDirection: rtlFlexRow(isRTL) }]}>
           {(['browse', 'ask'] as const).map(tab => (
             <Pressable
               accessibilityRole="button"
@@ -123,7 +131,7 @@ export default function FatwaQAScreen() {
         {activeTab === 'browse' ? (
           <>
             {/* Madhab filter */}
-            <View style={styles.filterRow}>
+            <View style={[styles.filterRow, { flexDirection: rtlFlexRow(isRTL) }]}>
               {MADHAB_IDS.map(id => (
                 <Pressable
                   accessibilityRole="button"
@@ -159,6 +167,7 @@ export default function FatwaQAScreen() {
             />
           </>
         ) : (
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={100}>
           <Animated.View entering={FadeInDown.duration(300)} style={styles.askForm}>
             <Text style={[styles.askLabel, { color: tc.text.secondary }]}>{t('community.yourQuestion')}</Text>
             <View style={styles.inputWrap}>
@@ -187,7 +196,7 @@ export default function FatwaQAScreen() {
             <Pressable
               accessibilityRole="button"
               style={[styles.submitBtn, (!question.trim() || askMutation.isPending) && { opacity: 0.5 }]}
-              onPress={() => askMutation.mutate()}
+              onPress={() => { haptic.tick(); askMutation.mutate(); }}
               disabled={!question.trim() || askMutation.isPending}
             >
               <LinearGradient colors={[colors.emerald, '#0D9B63']} style={styles.submitGradient}>
@@ -196,6 +205,7 @@ export default function FatwaQAScreen() {
               </LinearGradient>
             </Pressable>
           </Animated.View>
+          </KeyboardAvoidingView>
         )}
 
         <BottomSheet visible={madhabSheetOpen} onClose={() => setMadhabSheetOpen(false)}>
@@ -208,7 +218,7 @@ export default function FatwaQAScreen() {
             />
           ))}
         </BottomSheet>
-      </View>
+      </SafeAreaView>
     </ScreenErrorBoundary>
   );
 }
@@ -218,27 +228,27 @@ const styles = StyleSheet.create({
   tabs: { flexDirection: 'row', marginHorizontal: spacing.base, marginBottom: spacing.md, gap: spacing.sm },
   tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, paddingVertical: spacing.md, borderRadius: radius.md, backgroundColor: colors.dark.bgCard, borderWidth: 1, borderColor: colors.dark.border },
   tabActive: { borderColor: colors.emerald, backgroundColor: colors.emerald + '10' },
-  tabText: { color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '500' },
+  tabText: { color: colors.text.secondary, fontSize: fontSize.sm, fontFamily: fonts.medium },
   tabTextActive: { color: colors.emerald },
   filterRow: { flexDirection: 'row', paddingHorizontal: spacing.base, gap: spacing.sm, marginBottom: spacing.md, flexWrap: 'wrap' },
   filterChip: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.full, backgroundColor: colors.dark.bgCard, borderWidth: 1, borderColor: colors.dark.border },
   filterChipActive: { borderColor: colors.emerald, backgroundColor: colors.emerald + '10' },
-  filterChipText: { color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '500' },
+  filterChipText: { color: colors.text.secondary, fontSize: fontSize.xs, fontFamily: fonts.medium },
   filterChipTextActive: { color: colors.emerald },
   list: { paddingHorizontal: spacing.base, paddingBottom: spacing['2xl'] },
   skeletons: { gap: spacing.md },
   questionCard: { backgroundColor: colors.dark.bgCard, borderRadius: radius.lg, padding: spacing.base, borderWidth: 1, borderColor: colors.dark.border, marginBottom: spacing.md },
   questionHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
-  askerName: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '600' },
+  askerName: { color: colors.text.primary, fontSize: fontSize.sm, fontFamily: fonts.semibold },
   madhabBadge: { backgroundColor: colors.gold + '15', paddingHorizontal: spacing.sm, paddingVertical: 1, borderRadius: radius.full, alignSelf: 'flex-start', marginTop: 2 },
-  madhabBadgeText: { color: colors.gold, fontSize: fontSize.xs, fontWeight: '500', textTransform: 'capitalize' },
+  madhabBadgeText: { color: colors.gold, fontSize: fontSize.xs, fontFamily: fonts.medium, textTransform: 'capitalize' },
   statusBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: radius.full },
-  statusText: { fontSize: fontSize.xs, fontWeight: '600' },
+  statusText: { fontSize: fontSize.xs, fontFamily: fonts.semibold },
   questionText: { color: colors.text.primary, fontSize: fontSize.base, lineHeight: 22 },
   answerCard: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md, backgroundColor: colors.emerald + '08', padding: spacing.md, borderRadius: radius.md, borderWidth: 1, borderColor: colors.emerald + '20' },
   answerText: { color: colors.text.secondary, fontSize: fontSize.sm, flex: 1, lineHeight: 20 },
   askForm: { paddingHorizontal: spacing.base },
-  askLabel: { color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '600', marginBottom: spacing.sm, textTransform: 'uppercase', letterSpacing: 1 },
+  askLabel: { color: colors.text.secondary, fontSize: fontSize.sm, fontFamily: fonts.semibold, marginBottom: spacing.sm, textTransform: 'uppercase', letterSpacing: 1 },
   inputWrap: { position: 'relative' },
   questionInput: { backgroundColor: colors.dark.bgCard, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.dark.border, padding: spacing.base, color: colors.text.primary, fontSize: fontSize.base, minHeight: 150, textAlignVertical: 'top' },
   charRingWrap: { position: 'absolute', bottom: spacing.sm, end: spacing.sm },
@@ -246,5 +256,5 @@ const styles = StyleSheet.create({
   madhabSelectorText: { color: colors.text.primary, fontSize: fontSize.base },
   submitBtn: { marginTop: spacing.xl, borderRadius: radius.md, overflow: 'hidden' },
   submitGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, paddingVertical: spacing.base, borderRadius: radius.md },
-  submitText: { color: '#FFF', fontSize: fontSize.md, fontWeight: '700' },
+  submitText: { color: '#FFF', fontSize: fontSize.md, fontFamily: fonts.bold },
 });

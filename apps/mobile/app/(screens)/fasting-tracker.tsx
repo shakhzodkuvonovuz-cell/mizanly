@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Pressable,
 } from 'react-native';
@@ -9,8 +9,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -36,7 +38,7 @@ function StatCard({ label, value, color }: { label: string; value: string | numb
   const tc = useThemeColors();
   return (
     <View style={[styles.statCard, { backgroundColor: tc.bgCard }]}>
-      <Text style={[styles.statValue, color ? { color } : undefined, { color: tc.text.primary }]}>{value}</Text>
+      <Text style={[styles.statValue, { color: color ?? tc.text.primary }]}>{value}</Text>
       <Text style={[styles.statLabel, { color: tc.text.secondary }]}>{label}</Text>
     </View>
   );
@@ -63,6 +65,7 @@ function CalendarDay({ day, isFasting, isMissed, isToday, isFuture }: {
     ]}>
       <Text style={[
         styles.calDayText,
+        { color: tc.text.primary },
         isFuture && { color: tc.text.tertiary },
       ]}>
         {day > 0 ? day : ''}
@@ -76,7 +79,8 @@ export default function FastingTrackerScreen() {
   const haptic = useContextualHaptic();
   const queryClient = useQueryClient();
   const { t, isRTL } = useTranslation();
-  const today = new Date();
+  const todayRef = useRef(new Date());
+  const today = todayRef.current;
   const [currentMonth, setCurrentMonth] = useState(
     `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`,
   );
@@ -97,8 +101,13 @@ export default function FastingTrackerScreen() {
       islamicApi.logFast(data),
     onSuccess: () => {
       haptic.success();
+      showToast({ message: t('fasting.logged'), variant: 'success' });
       queryClient.invalidateQueries({ queryKey: ['fasting-log'] });
       queryClient.invalidateQueries({ queryKey: ['fasting-stats'] });
+    },
+    onError: () => {
+      haptic.error();
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
     },
   });
 
@@ -109,7 +118,8 @@ export default function FastingTrackerScreen() {
   const todayLog = logs.find(l => l.date?.startsWith(todayStr));
 
   const handleLogToday = useCallback((isFasting: boolean) => {
-    haptic.success();
+    if (logMutation.isPending) return;
+    haptic.tick();
     logMutation.mutate({ date: todayStr, isFasting, fastType: 'ramadan' });
   }, [todayStr, haptic, logMutation]);
 
@@ -230,6 +240,15 @@ export default function FastingTrackerScreen() {
               <Skeleton.Rect width="30%" height={70} borderRadius={radius.md} />
               <Skeleton.Rect width="30%" height={70} borderRadius={radius.md} />
             </View>
+          ) : statsQuery.isError ? (
+            <View style={{ paddingHorizontal: spacing.base, marginBottom: spacing.base }}>
+              <EmptyState
+                icon="alert-circle"
+                title={t('common.error')}
+                actionLabel={t('common.retry')}
+                onAction={() => statsQuery.refetch()}
+              />
+            </View>
           ) : stats ? (
             <View style={styles.statsRow}>
               <StatCard label={t('fasting.streak')} value={stats.currentStreak} color={colors.emerald} />
@@ -297,9 +316,8 @@ const styles = StyleSheet.create({
     borderColor: colors.gold,
   },
   todayTitle: {
-    color: colors.text.primary,
     fontSize: fontSize.md,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
     marginBottom: spacing.md,
   },
   todayButtons: {
@@ -317,12 +335,12 @@ const styles = StyleSheet.create({
   },
   todayBtnYes: { backgroundColor: colors.emerald },
   todayBtnNo: { backgroundColor: colors.dark.surface },
-  todayBtnText: { color: '#fff', fontWeight: '700', fontSize: fontSize.sm },
-  todayBtnTextNo: { color: colors.text.primary, fontWeight: '600', fontSize: fontSize.sm },
+  todayBtnText: { color: '#fff', fontFamily: fonts.bold, fontSize: fontSize.sm },
+  todayBtnTextNo: { fontFamily: fonts.semibold, fontSize: fontSize.sm },
   todayStatusText: {
     color: colors.emerald,
     fontSize: fontSize.base,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
     textAlign: 'center',
   },
   statsRow: {
@@ -339,13 +357,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statValue: {
-    color: colors.text.primary,
     fontSize: fontSize.xl,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
   },
   statLabel: {
-    color: colors.text.secondary,
     fontSize: fontSize.xs,
+    fontFamily: fonts.regular,
     marginTop: spacing.xs,
     textAlign: 'center',
   },
@@ -363,9 +380,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   calMonthLabel: {
-    color: colors.text.primary,
     fontSize: fontSize.base,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
   },
   calWeekRow: {
     flexDirection: 'row',
@@ -374,9 +390,8 @@ const styles = StyleSheet.create({
   calWeekLabel: {
     flex: 1,
     textAlign: 'center',
-    color: colors.text.tertiary,
     fontSize: fontSize.xs,
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
   },
   calGrid: {
     flexDirection: 'row',
@@ -388,16 +403,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: radius.sm,
-    marginBottom: 2,
+    marginBottom: 1,
   },
   calDayToday: {
     borderWidth: 2,
     borderColor: colors.gold,
   },
   calDayText: {
-    color: colors.text.primary,
     fontSize: fontSize.sm,
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
   },
   sunnahSection: {
     marginHorizontal: spacing.base,
@@ -406,9 +420,8 @@ const styles = StyleSheet.create({
     padding: spacing.base,
   },
   sectionTitle: {
-    color: colors.text.primary,
     fontSize: fontSize.base,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
     marginBottom: spacing.md,
   },
   sunnahItem: {
