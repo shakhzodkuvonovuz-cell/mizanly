@@ -202,12 +202,20 @@ export default function MembershipTiersScreen() {
   }, [fetchData]);
 
   const toggleTier = useCallback(async (id: string) => {
+    // Optimistic update: toggle immediately in UI
+    setTiers(prev => prev.map(tier =>
+      tier.id === id ? { ...tier, isActive: !tier.isActive } : tier
+    ));
+    haptic.tick();
     try {
       await monetizationApi.toggleTierActive(id);
-      // Refetch tiers to get updated state
-      fetchData();
+      fetchData(); // Sync with server
       haptic.success();
     } catch (err) {
+      // Revert optimistic update on failure
+      setTiers(prev => prev.map(tier =>
+        tier.id === id ? { ...tier, isActive: !tier.isActive } : tier
+      ));
       showToast({ message: t('monetization.errors.failedToToggleTier'), variant: 'error' });
     }
   }, [fetchData, haptic]);

@@ -315,6 +315,7 @@ function ChildCard({
   const [activityDigest, setActivityDigest] = useState(control.activityDigest);
 
   const update = (field: string, value: unknown) => {
+    if (updateMutation.isPending) return; // Prevent concurrent mutation racing
     updateMutation.mutate({ [field]: value });
   };
 

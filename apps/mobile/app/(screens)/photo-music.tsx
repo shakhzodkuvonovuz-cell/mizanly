@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList, Dimensions,
-  ScrollView, TextInput,
+  ScrollView, TextInput, Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
@@ -109,6 +109,25 @@ function PhotoMusicScreen() {
 
   // ── Remove image ──
   const removeImage = useCallback((index: number) => {
+    // Confirm removal if it's the last image (can't undo creation flow restart)
+    if (images.length === 1) {
+      Alert.alert(
+        t('photoMusic.removeLastPhotoTitle', 'Remove Photo'),
+        t('photoMusic.removeLastPhotoMessage', 'This is your only photo. Remove it?'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          {
+            text: t('common.delete'),
+            style: 'destructive',
+            onPress: () => {
+              haptic.delete();
+              setImages([]);
+            },
+          },
+        ],
+      );
+      return;
+    }
     haptic.delete();
     setImages((prev) => prev.filter((_, i) => i !== index));
     if (previewIndex >= images.length - 1 && previewIndex > 0) {
@@ -285,7 +304,7 @@ function PhotoMusicScreen() {
         </Pressable>
       )}
     </Animated.View>
-  ), [isPreviewPlaying, removeImage, t]);
+  ), [isPreviewPlaying, removeImage, t, styles, tc]);
 
   // ── Page indicator dots ──
   const renderPageDots = () => (

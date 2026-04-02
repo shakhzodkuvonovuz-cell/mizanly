@@ -212,6 +212,13 @@ describe('R4C-Tab4: membership-tiers.tsx', () => {
     expect(src).toContain("t('monetization.activeMembers'");
     expect(src).toContain("t('monetization.payoutSchedule'");
   });
+
+  test('toggle has optimistic update with revert on failure', () => {
+    const toggleSection = src.slice(src.indexOf('toggleTier'));
+    expect(toggleSection).toContain('Optimistic update');
+    expect(toggleSection).toContain('Revert optimistic update');
+    expect(toggleSection).toContain('isActive: !tier.isActive');
+  });
 });
 
 // ── mentorship.tsx ──
@@ -271,6 +278,12 @@ describe('R4C-Tab4: orders.tsx', () => {
     expect(src).toContain('doubleTapRef.current');
   });
 
+  test('has onLongPress for copying order ID', () => {
+    expect(src).toContain('handleOrderLongPress');
+    expect(src).toContain('Clipboard.setStringAsync');
+    expect(src).toContain('onLongPress');
+  });
+
   test('has staleTime on query', () => {
     expect(src).toContain('staleTime: 30_000');
   });
@@ -320,6 +333,10 @@ describe('R4C-Tab4: parental-controls.tsx', () => {
     expect(mutationCount).toBeGreaterThanOrEqual(3);
   });
 
+  test('toggle mutation has isPending guard against racing', () => {
+    expect(src).toContain('if (updateMutation.isPending) return');
+  });
+
   test('haptic on unlink and changePin', () => {
     const unlinkSection = src.slice(src.indexOf('handleUnlink'), src.indexOf('handleChangePin'));
     expect(unlinkSection).toContain('haptic.error()');
@@ -365,6 +382,17 @@ describe('R4C-Tab4: photo-music.tsx', () => {
   test('text colors use tc in createStyles', () => {
     const stylesSection = src.slice(src.indexOf('const createStyles'));
     expect(stylesSection).not.toContain('colors.text.primary');
+  });
+
+  test('last image removal has confirmation dialog', () => {
+    expect(src).toContain('removeLastPhotoTitle');
+    expect(src).toContain('Alert.alert');
+  });
+
+  test('renderImageItem includes styles and tc in deps', () => {
+    const depsLine = src.slice(src.indexOf('isPreviewPlaying, removeImage, t'));
+    expect(depsLine).toContain('styles');
+    expect(depsLine).toContain('tc');
   });
 });
 

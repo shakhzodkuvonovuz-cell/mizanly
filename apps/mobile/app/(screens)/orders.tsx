@@ -22,8 +22,10 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow } from '@/utils/rtl';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
+import { showToast } from '@/components/ui/Toast';
 import { commerceApi } from '@/services/api';
 import { navigate } from '@/utils/navigation';
+import * as Clipboard from 'expo-clipboard';
 
 type OrderStatus = 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
 
@@ -94,6 +96,12 @@ function OrdersContent() {
     navigate('/(screens)/product-detail', { id: order.productId });
   };
 
+  const handleOrderLongPress = async (order: OrderItem) => {
+    haptic.longPress();
+    await Clipboard.setStringAsync(order.id);
+    showToast({ message: t('orders.orderIdCopied', 'Order ID copied'), variant: 'success' });
+  };
+
   const getStatusConfig = (status: string) => {
     return STATUS_CONFIG[status as OrderStatus] ?? STATUS_CONFIG.pending;
   };
@@ -106,6 +114,7 @@ function OrdersContent() {
         <Pressable
           style={styles.orderCard}
           onPress={() => handleOrderPress(item)}
+          onLongPress={() => handleOrderLongPress(item)}
           accessibilityRole="button"
           accessibilityLabel={`Order ${item.id}, ${item.product.title}`}
         >
