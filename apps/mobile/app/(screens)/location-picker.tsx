@@ -77,6 +77,9 @@ function LocationPickerContent() {
       setLocation(coords);
       const addr = await reverseGeocode(coords.latitude, coords.longitude);
       setAddress(addr);
+      if (!addr) {
+        showToast({ message: t('location.geocodeFailed', 'Got coordinates but could not determine address. You may be offline.'), variant: 'info' });
+      }
       haptic.success();
     } catch {
       showToast({ message: t('location.errorMessage', 'Could not get your current location. Please try again or enter coordinates manually.'), variant: 'error' });

@@ -60,8 +60,10 @@ export default function MajlisListDetailScreen() {
   }, [timelineQuery.hasNextPage, timelineQuery.isFetchingNextPage, timelineQuery.fetchNextPage]);
 
   const keyExtractor = useCallback((item: Thread) => item.id, []);
-  const renderItem = useCallback(({ item }: { item: Thread }) => (
-    <ThreadCard thread={item} viewerId={user?.id} isOwn={user?.username === item.user.username} />
+  const renderItem = useCallback(({ item, index }: { item: Thread; index: number }) => (
+    <Animated.View entering={FadeInUp.delay(Math.min(index * 50, 300)).duration(300)}>
+      <ThreadCard thread={item} viewerId={user?.id} isOwn={user?.username === item.user.username} />
+    </Animated.View>
   ), [user?.id, user?.username]);
 
   const listEmpty = useMemo(() => (

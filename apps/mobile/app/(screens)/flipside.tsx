@@ -239,7 +239,7 @@ export default function FlipsideScreen() {
               <Animated.View entering={FadeInUp.duration(400)} style={styles.createForm}>
                 <LinearGradient
                   colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
-                  style={styles.formCard}
+                  style={[styles.formCard, { borderColor: tc.border }]}
                 >
                   <Text style={[styles.formTitle, { color: tc.text.primary }]}>
                     {t('flipside.create')}
@@ -253,7 +253,7 @@ export default function FlipsideScreen() {
                       {t('editProfile.displayName')}
                     </Text>
                     <TextInput
-                      style={[styles.input, { color: tc.text.primary, borderColor: tc.border }]}
+                      style={[styles.input, { color: tc.text.primary, borderColor: tc.border, backgroundColor: tc.surface }]}
                       value={displayName}
                       onChangeText={setDisplayName}
                       placeholder={t('editProfile.namePlaceholder')}
@@ -267,7 +267,7 @@ export default function FlipsideScreen() {
                       {t('editProfile.bio')}
                     </Text>
                     <TextInput
-                      style={[styles.input, styles.multiline, { color: tc.text.primary, borderColor: tc.border }]}
+                      style={[styles.input, styles.multiline, { color: tc.text.primary, borderColor: tc.border, backgroundColor: tc.surface }]}
                       value={bio}
                       onChangeText={setBio}
                       placeholder={t('editProfile.bioPlaceholder')}
@@ -302,7 +302,7 @@ export default function FlipsideScreen() {
     <Animated.View entering={FadeInUp.delay(Math.min(index * 40, 300)).duration(300)}>
       <LinearGradient
         colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
-        style={styles.postCard}
+        style={[styles.postCard, { borderColor: tc.border }]}
       >
         {item.content ? (
           <Text style={[styles.postContent, { color: tc.text.primary }]}>{item.content}</Text>
@@ -320,7 +320,7 @@ export default function FlipsideScreen() {
       <Animated.View entering={FadeInUp.duration(400)}>
         <LinearGradient
           colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
-          style={styles.profileCard}
+          style={[styles.profileCard, { borderColor: tc.border }]}
         >
           <View style={[styles.profileHeader, { flexDirection: rtlFlexRow(isRTL) }]}>
             <Avatar
@@ -351,7 +351,7 @@ export default function FlipsideScreen() {
                   {t('editProfile.displayName')}
                 </Text>
                 <TextInput
-                  style={[styles.input, { color: tc.text.primary, borderColor: tc.border }]}
+                  style={[styles.input, { color: tc.text.primary, borderColor: tc.border, backgroundColor: tc.surface }]}
                   value={displayName}
                   onChangeText={setDisplayName}
                   maxLength={50}
@@ -362,7 +362,7 @@ export default function FlipsideScreen() {
                   {t('editProfile.bio')}
                 </Text>
                 <TextInput
-                  style={[styles.input, styles.multiline, { color: tc.text.primary, borderColor: tc.border }]}
+                  style={[styles.input, styles.multiline, { color: tc.text.primary, borderColor: tc.border, backgroundColor: tc.surface }]}
                   value={bio}
                   onChangeText={setBio}
                   multiline
@@ -417,7 +417,7 @@ export default function FlipsideScreen() {
       </Animated.View>
 
       {/* Posts section header */}
-      <View style={styles.sectionHeader}>
+      <View style={[styles.sectionHeader, { borderTopColor: tc.border }]}>
         <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>
           {t('flipside.postAsFlipside')}
         </Text>
@@ -533,7 +533,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     gap: spacing.md,
   },
   formTitle: { fontSize: fontSize.lg, fontFamily: fonts.bold },
@@ -546,7 +546,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     borderWidth: 1,
     borderRadius: radius.sm,
-    backgroundColor: 'rgba(0,0,0,0.2)',
+    backgroundColor: colors.dark.surface,
   },
   multiline: { minHeight: 80, textAlignVertical: 'top' },
   charCountWrap: { alignItems: 'flex-end', marginTop: spacing.xs },
@@ -557,7 +557,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   profileHeader: { gap: spacing.md, alignItems: 'flex-start' },
   profileInfo: { flex: 1, gap: spacing.xs },
@@ -613,7 +613,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.04)',
+    borderColor: colors.active.white6,
   },
   postContent: { fontSize: fontSize.base, lineHeight: 22 },
   postTime: { fontSize: fontSize.xs, marginTop: spacing.sm },

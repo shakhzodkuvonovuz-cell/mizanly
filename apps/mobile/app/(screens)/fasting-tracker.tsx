@@ -44,12 +44,13 @@ function StatCard({ label, value, color }: { label: string; value: string | numb
   );
 }
 
-function CalendarDay({ day, isFasting, isMissed, isToday, isFuture }: {
+function CalendarDay({ day, isFasting, isMissed, isToday, isFuture, onPress }: {
   day: number;
   isFasting: boolean;
   isMissed: boolean;
   isToday: boolean;
   isFuture: boolean;
+  onPress?: () => void;
 }) {
   const tc = useThemeColors();
   const bg = isFasting ? colors.emerald
@@ -57,19 +58,43 @@ function CalendarDay({ day, isFasting, isMissed, isToday, isFuture }: {
     : isFuture ? 'transparent'
     : tc.surface;
 
+  const content = (
+    <>
+      <Text style={[
+        styles.calDayText,
+        { color: tc.text.primary },
+        isFuture && { color: tc.text.tertiary },
+        (isFasting || isMissed) && { color: '#fff' },
+      ]}>
+        {day > 0 ? day : ''}
+      </Text>
+    </>
+  );
+
+  if (day > 0 && !isFuture && onPress) {
+    return (
+      <Pressable
+        style={({ pressed }) => [
+          styles.calDay,
+          { backgroundColor: bg },
+          isToday && styles.calDayToday,
+          pressed && { opacity: 0.7 },
+        ]}
+        onPress={onPress}
+        accessibilityRole="button"
+      >
+        {content}
+      </Pressable>
+    );
+  }
+
   return (
     <View style={[
       styles.calDay,
       { backgroundColor: bg },
       isToday && styles.calDayToday,
     ]}>
-      <Text style={[
-        styles.calDayText,
-        { color: tc.text.primary },
-        isFuture && { color: tc.text.tertiary },
-      ]}>
-        {day > 0 ? day : ''}
-      </Text>
+      {content}
     </View>
   );
 }
@@ -122,6 +147,17 @@ export default function FastingTrackerScreen() {
     haptic.tick();
     logMutation.mutate({ date: todayStr, isFasting, fastType: 'ramadan' });
   }, [todayStr, haptic, logMutation]);
+
+  const handleLogDay = useCallback((day: number) => {
+    if (logMutation.isPending) return;
+    const [year, month] = currentMonth.split('-').map(Number);
+    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    haptic.tick();
+    // Toggle: if already fasting, mark not fasting; if not, mark fasting
+    const existingLog = logs.find(l => new Date(l.date).getDate() === day);
+    const isFasting = existingLog ? !existingLog.isFasting : true;
+    logMutation.mutate({ date: dateStr, isFasting });
+  }, [currentMonth, haptic, logMutation, logs]);
 
   const handleRefresh = useCallback(() => {
     statsQuery.refetch();
@@ -279,7 +315,7 @@ export default function FastingTrackerScreen() {
             {/* Calendar grid */}
             <View style={styles.calGrid}>
               {calendarGrid.map((cell, i) => (
-                <CalendarDay key={i} {...cell} />
+                <CalendarDay key={i} {...cell} onPress={cell.day > 0 && !cell.isFuture ? () => handleLogDay(cell.day) : undefined} />
               ))}
             </View>
           </View>
