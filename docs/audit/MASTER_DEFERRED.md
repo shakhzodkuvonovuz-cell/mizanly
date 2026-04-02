@@ -592,13 +592,96 @@ Screen code is ready but backend endpoint/feature doesn't exist.
 | Responsive/iPad | 0 | 5 | 5 |
 | **TOTAL** | **203** | **107** | **310** |
 
-### By severity (combined R1-R4)
+---
+
+## 22. ROUND 4E — Screen Audit Deferrals (D15-D40, final 11 D-files)
+
+> R4E completed Wave 4. All 42 D-files done. These are the remaining deferrals from R4E across 4 tabs + orchestrator direct work.
+
+### 22A. Architectural (cross-cutting)
+
+| # | Source | Sev | Screen | Finding |
+|---|--------|-----|--------|---------|
+| 311 | R4E-T4 | M | 8 screens | Module-scope `Dimensions.get('window')` — needs `useWindowDimensions` refactor (green-screen, product-detail, profile/[username], qibla-compass, ramadan-mode, reel/[id], reel-remix, reel-templates) |
+| 312 | R4E-T4 | M | 5+ screens | Offline/NetInfo detection — needs app-level `useNetworkStatus` hook (halal-finder, qibla-compass, quiet-mode, ramadan-mode, report) |
+| 313 | R4E-T1/T4 | M | 3+ screens | KAV inside BottomSheet — needs component-level change (waqf, watch-party, and any screen using BottomSheet with TextInput) |
+
+### 22B. Backend-blocked
+
+| # | Source | Sev | Screen | Finding |
+|---|--------|-----|--------|---------|
+| 314 | R4E-T2 D22#51 | H | manage-broadcast | `broadcastApi.getSubscribers` endpoint doesn't exist — screen shows followers instead |
+| 315 | R4E-T3 D32#38 | C | schedule-post | Backend auto-publisher worker not implemented — scheduled posts never publish |
+| 316 | R4E-T1/T2/T4 | M | 6 screens | Pagination cursor support missing on API (hadith, halal-finder, followed-topics, majlis-lists, watch-party, follow-requests) |
+| 317 | R4E-T3 D32#34 | H | schedule-live | `liveApi.create()` endpoint may not exist |
+| 318 | R4E-T1 D39#5 | M | waqf | Transaction rollback needs backend PaymentIntent cancellation endpoint |
+
+### 22C. Feature-level
+
+| # | Source | Sev | Screen | Finding |
+|---|--------|-----|--------|---------|
+| 319 | R4E-T4 D29#28 | H | quran-reading-plan | ProgressRing is decorative only — needs SVG/canvas for actual arc |
+| 320 | R4E-T4 D19#15 | H | green-screen-editor | Core segmentation needs react-native-vision-camera frame processor |
+| 321 | R4E-T3 D18#47 | H | go-live | DateTimePicker is non-functional placeholder — needs expo-date-time-picker |
+| 322 | R4E-T1 | L | whats-new | Orphaned screen — no navigation path reaches it (need link from settings) |
+
+---
+
+## 23. WAVE 7 — Testing Gap Deferrals
+
+> Wave 7 complete: 928 new tests, 6,651 total, 345 suites, 0 failures. These are the remaining items that couldn't be unit-tested.
+
+| # | Source | Sev | Scope | Finding |
+|---|--------|-----|-------|---------|
+| 323 | W7-T5 T14#1-8 | C | Integration | 8 critical TS integration paths — no jest config for `apps/api/test/integration/` |
+| 324 | W7-T5 T14#15,32 | C | Go | Store-level SQL tests need real PostgreSQL — mocked handlers only |
+| 325 | W7-T5 T14#10 | H | Integration | WebSocket gateway integration — needs real Socket.io server |
+| 326 | W7-T5 T14#9 | M | Integration | Existing integration tests use mocked services — not true integration |
+
+---
+
+## Updated Summary (R1 through W7)
+
+| Category | R1-R3 | R4 | R4E | W7 | Total |
+|----------|-------|-----|-----|-----|-------|
+| Security (plaintext/secrets) | 12 | 0 | 0 | 0 | 12 |
+| Architecture (events/god services) | 16 | 0 | 0 | 0 | 16 |
+| Theme migration (XL) | 5 | 0 | 0 | 0 | 5 |
+| Queue dead code | 7 | 0 | 0 | 0 | 7 |
+| Schema/database | 14 | 0 | 0 | 0 | 14 |
+| Payments/financial | 8 | 0 | 1 | 0 | 9 |
+| Moderation/safety | 12 | 0 | 0 | 0 | 12 |
+| Notifications | 6 | 0 | 0 | 0 | 6 |
+| Messaging/real-time | 7 | 0 | 0 | 0 | 7 |
+| Auth/privacy | 5 | 0 | 0 | 0 | 5 |
+| Search/discovery | 3 | 0 | 0 | 0 | 3 |
+| Media pipeline | 5 | 0 | 0 | 0 | 5 |
+| Community features | 5 | 0 | 0 | 0 | 5 |
+| CI/infrastructure | 20 | 0 | 0 | 0 | 20 |
+| Mobile components | 21 | 0 | 0 | 0 | 21 |
+| Type safety (as any) | 12 | 0 | 0 | 0 | 12 |
+| Pagination/patterns | 12 | 10 | 0 | 0 | 22 |
+| UI/UX | 3 | 0 | 0 | 0 | 3 |
+| Low priority/cosmetic | 22 | 19 | 0 | 0 | 41 |
+| New features | 8 | 6 | 0 | 0 | 14 |
+| Offline/network detection | 0 | 14 | 1 | 0 | 15 |
+| Optimistic updates | 0 | 7 | 0 | 0 | 7 |
+| Animation/polish | 0 | 14 | 0 | 0 | 14 |
+| Keyboard/input | 0 | 5 | 1 | 0 | 6 |
+| StatusBar | 0 | 3 | 0 | 0 | 3 |
+| Responsive/iPad | 0 | 5 | 1 | 0 | 6 |
+| Backend-blocked (R4E) | 0 | 0 | 5 | 0 | 5 |
+| Feature-level (R4E) | 0 | 0 | 4 | 0 | 4 |
+| Integration tests (W7) | 0 | 0 | 0 | 4 | 4 |
+| **TOTAL** | **203** | **107** | **12** | **4** | **326** |
+
+### By severity (combined R1-W7)
 
 | Severity | Count |
 |----------|-------|
-| CRITICAL | 19 |
-| HIGH | 29 |
-| MEDIUM | 158 |
-| LOW | 72 |
-| INFO | 32 |
-| **TOTAL** | **310** |
+| CRITICAL | 21 |
+| HIGH | 35 |
+| MEDIUM | 164 |
+| LOW | 73 |
+| INFO | 33 |
+| **TOTAL** | **326** |
