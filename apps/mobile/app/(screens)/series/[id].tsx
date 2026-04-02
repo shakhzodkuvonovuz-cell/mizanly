@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -76,7 +76,9 @@ function EpisodeRow({
   const styles = createStyles(tc);
   const router = useRouter();
 
+  const haptic = useContextualHaptic();
   const handlePress = () => {
+    haptic.navigate();
     if (episode.videoId) {
       router.push({ pathname: '/(screens)/video/[id]', params: { id: episode.videoId } });
     } else if (episode.reelId) {
@@ -108,7 +110,7 @@ function EpisodeRow({
               {new Date(episode.createdAt).toLocaleDateString()}
             </Text>
           </View>
-          <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
+          <Icon name={isRTL ? 'chevron-left' : 'chevron-right'} size="sm" color={tc.text.tertiary} />
         </View>
       </Pressable>
     </Animated.View>
@@ -163,6 +165,7 @@ function SeriesDetailScreen() {
     enabled: !!id,
   });
 
+  const followLockRef = useRef(false);
   const followMutation = useMutation({
     mutationFn: () => {
       if (data?.isFollowing) {
@@ -174,6 +177,7 @@ function SeriesDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['series', id] });
       haptic.success();
     },
+    onSettled: () => { followLockRef.current = false; },
   });
 
   const renderItem = useCallback(
@@ -260,7 +264,7 @@ function SeriesDetailScreen() {
         <View style={styles.followBtnWrap}>
           <GradientButton
             label={data.isFollowing ? t('gamification.series.following') : t('gamification.series.follow')}
-            onPress={() => followMutation.mutate()}
+            onPress={() => { if (followLockRef.current) return; followLockRef.current = true; followMutation.mutate(); }}
             variant={data.isFollowing ? 'secondary' : 'primary'}
             size="sm"
             loading={followMutation.isPending}
@@ -360,21 +364,21 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   heroOverlay: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     height: HERO_HEIGHT * 0.6,
   },
   heroContent: {
     position: 'absolute',
     bottom: spacing.base,
-    left: spacing.base,
-    right: spacing.base,
+    start: spacing.base,
+    end: spacing.base,
     gap: spacing.sm,
   },
   heroTitle: {
     fontFamily: fonts.headingBold,
     fontSize: fontSize.xl,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   completeBadge: {
     flexDirection: 'row',
@@ -408,12 +412,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   creatorName: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   creatorUsername: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   // Description
   description: {
@@ -440,10 +444,10 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   statText: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   followBtnWrap: {
-    marginLeft: 'auto',
+    marginStart: 'auto',
   },
   // Episodes
   episodesHeader: {
@@ -459,7 +463,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   episodesHeaderText: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.md,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   episodeRow: {
     flexDirection: 'row',
@@ -492,12 +496,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   episodeTitle: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   episodeDate: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
   },
   // Skeleton
   skeletonWrap: {

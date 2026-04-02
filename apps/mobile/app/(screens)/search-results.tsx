@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
-  FlatList, Image,
+  FlatList,
 } from 'react-native';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -37,7 +38,7 @@ function HashtagRow({ hashtag, onPress, index }: { hashtag: Hashtag; onPress: ()
   const styles = createStyles(tc);
   const { t } = useTranslation();
   return (
-    <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index * 50, 500)).duration(400)}>
       <Pressable
         onPress={onPress}
         accessibilityRole="button"
@@ -68,16 +69,18 @@ function ReelGridItem({ reel, onPress, index }: { reel: Reel; onPress: () => voi
   const styles = createStyles(tc);
   const { t } = useTranslation();
   return (
-    <Animated.View entering={FadeInUp.delay(index * 30).duration(400)} style={styles.reelGridItem}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index * 30, 500)).duration(400)} style={styles.reelGridItem}>
       <Pressable
         onPress={onPress}
         accessibilityRole="button"
         accessibilityLabel={t('accessibility.viewReel')}
       >
-        <Image
-          source={{ uri: reel.thumbnailUrl || reel.videoUrl }}
-          style={styles.reelGridThumbnail}
-          resizeMode="cover"
+        <ProgressiveImage
+          uri={reel.thumbnailUrl || reel.videoUrl}
+          width="100%"
+          height={200}
+          contentFit="cover"
+          style={{ width: '100%', height: '100%' }}
         />
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.7)']}
@@ -104,7 +107,7 @@ function UserRow({ user, onPress, index, onFollow }: { user: User; onPress: () =
     onFollow(user.id, !user.isFollowing);
   };
   return (
-    <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index * 50, 500)).duration(400)}>
       <LinearGradient
         colors={colors.gradient.cardDark}
         style={styles.userRow}
@@ -303,12 +306,14 @@ export default function SearchResultsScreen() {
   const hasError = isError[activeTab];
 
   const queryClient = useQueryClient();
+  const followLockRef = useRef(false);
   const followMutation = useMutation({
     mutationFn: ({ userId, follow }: { userId: string; follow: boolean }) =>
       follow ? followsApi.follow(userId) : followsApi.unfollow(userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['search', debouncedQuery] });
     },
+    onSettled: () => { followLockRef.current = false; },
   });
 
   return (
@@ -346,7 +351,7 @@ export default function SearchResultsScreen() {
                 returnKeyType="search"
               />
               {query.length > 0 && (
-                <Pressable onPress={() => { setQuery(''); setDebouncedQuery(''); }} hitSlop={8}>
+                <Pressable onPress={() => { haptic.tick(); setQuery(''); setDebouncedQuery(''); }} hitSlop={8}>
                   <Icon name="x" size="xs" color={tc.text.secondary} />
                 </Pressable>
               )}
@@ -639,7 +644,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     alignItems: 'center', justifyContent: 'center',
   },
   searchInput: {
-    flex: 1, color: colors.text.primary, fontSize: fontSize.base,
+    flex: 1, color: tc.text.primary, fontSize: fontSize.base,
     paddingVertical: spacing.sm,
   },
   tabSelector: {
@@ -661,9 +666,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   userInfo: { flex: 1 },
   userNameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  userName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
-  userHandle: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 1 },
-  userFollowers: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: 2 },
+  userName: { color: tc.text.primary, fontSize: fontSize.base, fontWeight: '700' },
+  userHandle: { color: tc.text.secondary, fontSize: fontSize.sm, marginTop: 1 },
+  userFollowers: { color: tc.text.tertiary, fontSize: fontSize.xs, marginTop: 2 },
   hashtagRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
     paddingHorizontal: spacing.md, paddingVertical: spacing.md,
@@ -676,8 +681,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     width: 40, height: 40, borderRadius: radius.md,
     alignItems: 'center', justifyContent: 'center',
   },
-  hashtagName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
-  hashtagCount: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 2 },
+  hashtagName: { color: tc.text.primary, fontSize: fontSize.base, fontWeight: '700' },
+  hashtagCount: { color: tc.text.secondary, fontSize: fontSize.sm, marginTop: 2 },
   reelGridItem: {
     flex: 1,
     aspectRatio: 0.75,
@@ -709,7 +714,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     justifyContent: 'center',
   },
   reelGridViews: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.xs,
     fontWeight: '600',
   },

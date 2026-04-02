@@ -23,6 +23,7 @@ import { showToast } from '@/components/ui/Toast';
 export default function CreatePlaylistScreen() {
   const router = useRouter();
   const tc = useThemeColors();
+  const styles = createStyles(tc);
   const params = useLocalSearchParams<{ channelId?: string }>();
   const insets = useSafeAreaInsets();
   const haptic = useContextualHaptic();
@@ -230,10 +231,10 @@ export default function CreatePlaylistScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   content: {
     paddingHorizontal: spacing.base,
@@ -255,7 +256,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: fontSize.sm,
     fontWeight: '500',
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   inputWrap: {
     flexDirection: 'row',
@@ -273,7 +274,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     height: '100%',
   },
@@ -310,11 +311,11 @@ const styles = StyleSheet.create({
   toggleTitle: {
     fontSize: fontSize.base,
     fontWeight: '500',
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   toggleDesc: {
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     marginTop: 2,
   },
   buttonWrap: {

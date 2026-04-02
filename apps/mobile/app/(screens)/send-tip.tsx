@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,7 @@ import {
   ScrollView,
   Pressable,
   TextInput,
-  Dimensions,
+  Dimensions, useWindowDimensions,
 } from 'react-native';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -31,7 +31,7 @@ import type { User } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 
-const { width } = Dimensions.get('window');
+// D33#53: Removed module-scope Dimensions.get — use useWindowDimensions in component
 
 const PRESET_AMOUNTS = [1, 2, 5, 10, 25, 50];
 const PLATFORM_FEE_PERCENT = 0.1;
@@ -96,6 +96,10 @@ export default function SendTipScreen() {
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  // D33#45: Double-tap guard for financial transactions
+  const sendLockRef = useRef(false);
+  // D33#53: Dynamic width for responsive layout
+  const { width } = useWindowDimensions();
 
   const formattedFollowers = useMemo(
     () => formatCount(creator?._count?.followers),
@@ -141,6 +145,8 @@ export default function SendTipScreen() {
   }, [haptic]);
 
   const handleSendTip = useCallback(async () => {
+    // D33#45: Double-tap lock for financial safety
+    if (sendLockRef.current) return;
     if (!creator) {
       showToast({ message: t('monetization.errors.creatorInfoNotLoaded'), variant: 'error' });
       return;
@@ -149,26 +155,32 @@ export default function SendTipScreen() {
       showToast({ message: t('monetization.errors.selectTipAmount'), variant: 'error' });
       return;
     }
+    sendLockRef.current = true;
     haptic.send();
     setIsSending(true);
     try {
-      // Create PaymentIntent for the tip via Stripe
       const paymentResult = await paymentsApi.createPaymentIntent({
         receiverId: creator.id,
         amount: tipAmount,
         currency: 'USD',
       });
-      // Payment intent created — tip record is pending on backend
-      // In production, client-side Stripe SDK would confirm the payment here
-      // using paymentResult.clientSecret
       setIsSuccess(true);
       haptic.success();
     } catch (err) {
-      showToast({ message: t('monetization.errors.failedToSendTip'), variant: 'error' });
+      // D33#55: Differentiated error feedback
+      const errMsg = err instanceof Error ? err.message : '';
+      if (errMsg.includes('network') || errMsg.includes('Network')) {
+        showToast({ message: t('monetization.errors.networkError', 'Check your connection and try again'), variant: 'error' });
+      } else if (errMsg.includes('amount') || errMsg.includes('invalid')) {
+        showToast({ message: t('monetization.errors.invalidAmount', 'Invalid tip amount'), variant: 'error' });
+      } else {
+        showToast({ message: t('monetization.errors.failedToSendTip'), variant: 'error' });
+      }
     } finally {
       setIsSending(false);
+      sendLockRef.current = false;
     }
-  }, [creator, tipAmount, message, haptic]);
+  }, [creator, tipAmount, message, haptic, t]);
 
   const handleDone = useCallback(() => {
     router.back();
@@ -369,7 +381,7 @@ export default function SendTipScreen() {
           <Animated.View entering={FadeInUp.delay(300).duration(400)}>
             <LinearGradient
               colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
-              style={[styles.summaryCard, { borderLeftWidth: 3, borderLeftColor: colors.gold }]}
+              style={[styles.summaryCard, { borderStartWidth: 3, borderStartColor: colors.gold }]}
             >
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>{t('monetization.tipAmount')}</Text>
@@ -452,13 +464,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   successTitle: {
     fontFamily: fonts.heading,
     fontSize: fontSize.xl,
-    color: colors.text.primary,
+    color: tc.text.primary,
     marginBottom: spacing.md,
   },
   successSubtitle: {
     fontFamily: fonts.body,
     fontSize: fontSize.base,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     textAlign: 'center',
     marginBottom: spacing.xl,
     lineHeight: 22,
@@ -474,7 +486,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   doneButtonText: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   creatorCard: {
     flexDirection: 'row',
@@ -505,7 +517,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   creatorName: {
     fontFamily: fonts.heading,
     fontSize: fontSize.md,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   verifiedBadge: {
     borderRadius: radius.full,
@@ -520,18 +532,18 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   creatorUsername: {
     fontFamily: fonts.body,
     fontSize: fontSize.base,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     marginBottom: spacing.xs,
   },
   followerCount: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
   },
   sectionLabel: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
     marginBottom: spacing.md,
     marginTop: spacing.sm,
   },
@@ -542,7 +554,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.md,
   },
   amountButton: {
-    width: (width - 32 - 20) / 3,
+    width: '31%',
   },
   amountGradient: {
     borderRadius: radius.md,
@@ -572,10 +584,10 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   amountText: {
     fontFamily: fonts.heading,
     fontSize: fontSize.lg,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   amountTextSelected: {
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   customAmountContainer: {
     flexDirection: 'row',
@@ -589,14 +601,14 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   currencyPrefixLarge: {
     fontFamily: fonts.body,
     fontSize: fontSize.md,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     marginHorizontal: spacing.sm,
   },
   customAmountInput: {
     flex: 1,
     fontFamily: fonts.body,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
     padding: 0,
   },
   messageCard: {
@@ -622,7 +634,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   messageInput: {
     fontFamily: fonts.body,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
     lineHeight: 22,
     minHeight: 60,
     paddingEnd: 40,
@@ -648,15 +660,15 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   summaryLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.base,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   summaryValue: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   feeValue: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
   },
   summaryDivider: {
     height: 1,
@@ -666,7 +678,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   totalLabel: {
     fontFamily: fonts.heading,
     fontSize: fontSize.md,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   totalValue: {
     fontFamily: fonts.heading,
@@ -687,6 +699,6 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   sendButtonText: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
 });

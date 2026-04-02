@@ -33,8 +33,8 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 import { showToast } from '@/components/ui/Toast';
-
-const { width } = Dimensions.get('window');
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type EventType = 'in-person' | 'online' | 'hybrid';
 type PrivacyType = 'public' | 'members' | 'invite';
@@ -45,6 +45,9 @@ export default function CreateEventScreen() {
   const router = useRouter();
   const tc = useThemeColors();
   const { t } = useTranslation();
+  const haptic = useContextualHaptic();
+  const insets = useSafeAreaInsets();
+  const styles = createStyles(tc);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [eventType, setEventType] = useState<EventType>('in-person');
@@ -138,6 +141,7 @@ export default function CreateEventScreen() {
       };
       const response = await eventsApi.create(dto);
       const eventId = (response as { id?: string }).id ?? '';
+      haptic.success();
       showToast({ message: t('events.eventCreated'), variant: 'success' });
       navigate('/(screens)/event-detail', { id: eventId });
     } catch (err) {
@@ -189,6 +193,7 @@ export default function CreateEventScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Cover Image Section */}
         <Animated.View entering={FadeInUp.duration(400)}>
@@ -603,7 +608,7 @@ export default function CreateEventScreen() {
       </ScrollView>
 
       {/* Bottom Bar */}
-      <View style={[styles.bottomBar, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
+      <View style={[styles.bottomBar, { backgroundColor: tc.bg, borderTopColor: tc.border, paddingBottom: Math.max(insets.bottom, spacing.base) }]}>
         <Pressable accessibilityRole="button" accessibilityLabel={t('events.saveDraft')} onPress={async () => {
           await AsyncStorage.setItem('event-draft', JSON.stringify({ title, description, location, eventType, privacy, isOnline, allDay, selectedCommunity }));
           showToast({ message: t('common.saved'), variant: 'success' });
@@ -689,10 +694,10 @@ export default function CreateEventScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   scrollContent: {
     padding: spacing.base,
@@ -708,7 +713,7 @@ const styles = StyleSheet.create({
   },
   coverHasImage: {
     borderStyle: 'solid',
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
   },
   coverGradient: {
     flex: 1,
@@ -722,12 +727,12 @@ const styles = StyleSheet.create({
   coverTitle: {
     fontSize: fontSize.md,
     fontFamily: fonts.semibold,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   coverHint: {
     fontSize: fontSize.sm,
     fontFamily: fonts.regular,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   coverOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -736,7 +741,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   changeButton: {
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     borderRadius: radius.md,
@@ -744,7 +749,7 @@ const styles = StyleSheet.create({
   changeText: {
     fontSize: fontSize.base,
     fontFamily: fonts.medium,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   formCard: {
     borderRadius: radius.lg,
@@ -769,23 +774,23 @@ const styles = StyleSheet.create({
   formLabel: {
     fontSize: fontSize.md,
     fontFamily: fonts.semibold,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   titleInput: {
     fontSize: fontSize.base,
     fontFamily: fonts.regular,
-    color: colors.text.primary,
+    color: tc.text.primary,
     padding: spacing.sm,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.md,
     marginBottom: spacing.xs,
   },
   descriptionInput: {
     fontSize: fontSize.base,
     fontFamily: fonts.regular,
-    color: colors.text.primary,
+    color: tc.text.primary,
     padding: spacing.sm,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.md,
     marginBottom: spacing.xs,
     minHeight: 100,
@@ -793,9 +798,9 @@ const styles = StyleSheet.create({
   locationInput: {
     fontSize: fontSize.base,
     fontFamily: fonts.regular,
-    color: colors.text.primary,
+    color: tc.text.primary,
     padding: spacing.sm,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.md,
     marginTop: spacing.md,
   },
@@ -811,7 +816,7 @@ const styles = StyleSheet.create({
   dateLabel: {
     fontSize: fontSize.base,
     fontFamily: fonts.medium,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     width: 50,
   },
   dateValue: {
@@ -822,11 +827,11 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: fontSize.base,
     fontFamily: fonts.regular,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   dateDivider: {
     height: 1,
-    backgroundColor: colors.dark.border,
+    backgroundColor: tc.border,
     marginVertical: spacing.xs,
   },
   toggleRow: {
@@ -836,12 +841,12 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: colors.dark.border,
+    borderTopColor: tc.border,
   },
   toggleLabel: {
     fontSize: fontSize.base,
     fontFamily: fonts.medium,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   reminderLabel: {
     flexDirection: 'row',
@@ -866,40 +871,40 @@ const styles = StyleSheet.create({
   pillInner: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.full,
   },
   pillText: {
     fontSize: fontSize.sm,
     fontFamily: fonts.medium,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   pillTextActive: {
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   communityDropdown: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: spacing.sm,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.md,
     marginBottom: spacing.md,
   },
   dropdownPlaceholder: {
     fontSize: fontSize.base,
     fontFamily: fonts.regular,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
   },
   dropdownValue: {
     fontSize: fontSize.base,
     fontFamily: fonts.regular,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   sectionTitle: {
     fontSize: fontSize.sm,
     fontFamily: fonts.semibold,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     marginBottom: spacing.sm,
     marginTop: spacing.xs,
   },
@@ -910,7 +915,7 @@ const styles = StyleSheet.create({
   },
   communityRowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
+    borderBottomColor: tc.border,
   },
   communityRowSelected: {
     backgroundColor: colors.active.emerald5,
@@ -923,12 +928,12 @@ const styles = StyleSheet.create({
   communityName: {
     fontSize: fontSize.base,
     fontFamily: fonts.medium,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   communityMeta: {
     fontSize: fontSize.xs,
     fontFamily: fonts.regular,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
   },
   checkCircle: {
     width: 24,
@@ -949,14 +954,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: spacing.base,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
     borderTopWidth: 1,
-    borderTopColor: colors.dark.border,
+    borderTopColor: tc.border,
   },
   draftText: {
     fontSize: fontSize.base,
     fontFamily: fonts.medium,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     padding: spacing.sm,
   },
   createButton: {
@@ -967,12 +972,12 @@ const styles = StyleSheet.create({
   createText: {
     fontSize: fontSize.base,
     fontFamily: fonts.semibold,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   sheetTitle: {
     fontSize: fontSize.lg,
     fontFamily: fonts.semibold,
-    color: colors.text.primary,
+    color: tc.text.primary,
     marginBottom: spacing.lg,
     textAlign: 'center',
   },
@@ -983,14 +988,14 @@ const styles = StyleSheet.create({
   datePickerText: {
     fontSize: fontSize.base,
     fontFamily: fonts.regular,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     marginBottom: spacing.sm,
     textAlign: 'center',
   },
   datePickerHint: {
     fontSize: fontSize.sm,
     fontFamily: fonts.regular,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     marginBottom: spacing.lg,
     textAlign: 'center',
   },
@@ -1006,6 +1011,6 @@ const styles = StyleSheet.create({
   confirmButtonText: {
     fontSize: fontSize.base,
     fontFamily: fonts.semibold,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
 });

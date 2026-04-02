@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  TextInput, FlatList, ScrollView,
+  TextInput, FlatList,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -32,6 +32,7 @@ const MIN_MEMBERS = 2;
 export default function CreateGroupScreen() {
   const router = useRouter();
   const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { user } = useUser();
   const haptic = useContextualHaptic();
   const { t } = useTranslation();
@@ -127,14 +128,14 @@ export default function CreateGroupScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top', 'bottom']}>
         {/* Header */}
         <GlassHeader
           title={t('groups.createGroup')}
           leftAction={{ icon: <Icon name="arrow-left" size="md" color={tc.text.primary} />, onPress: () => router.back() }}
         />
 
-        <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.content}>
           {/* Group name */}
           <View style={styles.section}>
             <Text style={[styles.label, { color: tc.text.secondary }]}>{t('groups.groupName')}</Text>
@@ -308,20 +309,20 @@ export default function CreateGroupScreen() {
 
           {/* Validation error */}
           {validationError ? <Text style={styles.error}>{validationError}</Text> : null}
-        </ScrollView>
+        </View>
       </SafeAreaView>
   
     </ScreenErrorBoundary>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   content: { paddingVertical: spacing.lg, paddingHorizontal: spacing.base },
 
   section: { marginBottom: spacing.xl },
   label: {
-    color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '600',
+    color: tc.text.secondary, fontSize: fontSize.sm, fontWeight: '600',
     marginBottom: spacing.sm,
   },
 
@@ -334,7 +335,7 @@ const styles = StyleSheet.create({
   avatarPicker: { alignSelf: 'center', position: 'relative', marginTop: spacing.sm },
   avatarPlaceholder: {
     width: 96, height: 96, borderRadius: radius.full,
-    backgroundColor: colors.dark.bgCard, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: tc.bgCard, alignItems: 'center', justifyContent: 'center',
   },
   avatarOverlay: {
     position: 'absolute', bottom: 0, end: 0,
@@ -348,12 +349,12 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   chip: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
-    backgroundColor: colors.dark.bgCard, paddingHorizontal: spacing.sm,
+    backgroundColor: tc.bgCard, paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs, borderRadius: radius.full,
     maxWidth: 160,
   },
   chipText: {
-    color: colors.text.primary, fontSize: fontSize.xs, fontWeight: '500',
+    color: tc.text.primary, fontSize: fontSize.xs, fontWeight: '500',
     flexShrink: 1,
   },
   chipRemove: { marginStart: 'auto' },
@@ -361,7 +362,7 @@ const styles = StyleSheet.create({
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
-    backgroundColor: colors.dark.bgCard, borderRadius: radius.full,
+    backgroundColor: tc.bgCard, borderRadius: radius.full,
     marginBottom: spacing.md,
   },
   searchInput: { flex: 1, color: colors.text.primary, fontSize: fontSize.base },
@@ -387,7 +388,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm, paddingHorizontal: spacing.base,
   },
   note: {
-    color: colors.text.tertiary, fontSize: fontSize.xs, textAlign: 'center',
+    color: tc.text.tertiary, fontSize: fontSize.xs, textAlign: 'center',
     marginTop: spacing.xl, paddingHorizontal: spacing.base,
   },
 });

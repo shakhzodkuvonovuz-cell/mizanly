@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Pressable,
 } from 'react-native';
@@ -145,11 +145,11 @@ export default function ScreenTimeScreen() {
   const [takeBreakEnabled, setTakeBreakEnabled] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Restore persisted take-a-break setting
+  // D33#12: Add .catch() on AsyncStorage
   useEffect(() => {
     AsyncStorage.getItem('screen-time-take-break').then((v) => {
       if (v === 'true') setTakeBreakEnabled(true);
-    });
+    }).catch(() => {});
   }, []);
 
   const statsQuery = useQuery({
@@ -157,11 +157,20 @@ export default function ScreenTimeScreen() {
     queryFn: () => settingsApi.getScreenTimeStats(),
   });
 
+  // D33#9: Double-tap guard ref
+  const limitLockRef = useRef(false);
+
   const limitMutation = useMutation({
     mutationFn: (limitMinutes: number | null) => settingsApi.setScreenTimeLimit(limitMinutes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['screen-time-stats'] });
+      showToast({ message: t('screenTime.limitUpdated', 'Limit updated'), variant: 'success' });
     },
+    // D33#11: Error handler on limitMutation
+    onError: () => {
+      showToast({ message: t('screenTime.limitFailed', 'Failed to update limit'), variant: 'error' });
+    },
+    onSettled: () => { limitLockRef.current = false; },
   });
 
   const stats: ScreenTimeStats | undefined = statsQuery.data as ScreenTimeStats | undefined;
@@ -172,7 +181,10 @@ export default function ScreenTimeScreen() {
     setRefreshing(false);
   }, [queryClient]);
 
+  // D33#9: Double-tap guard + D33#13: Toast feedback
   const handleSetLimit = (value: number | null) => {
+    if (limitLockRef.current) return;
+    limitLockRef.current = true;
     haptic.tick();
     setScreenTimeLimitMinutes(value);
     limitMutation.mutate(value);
@@ -327,7 +339,7 @@ export default function ScreenTimeScreen() {
                   </Text>
                 </View>
                 <View style={styles.chevronWrap}>
-                  <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
+                  <Icon name={isRTL ? 'chevron-left' : 'chevron-right'} size="sm" color={tc.text.tertiary} />
                 </View>
               </View>
             </LinearGradient>
@@ -342,7 +354,7 @@ export default function ScreenTimeScreen() {
               haptic.tick();
               const next = !takeBreakEnabled;
               setTakeBreakEnabled(next);
-              AsyncStorage.setItem('screen-time-take-break', String(next));
+              AsyncStorage.setItem('screen-time-take-break', String(next)).catch(() => {});
             }}
           >
             <LinearGradient
@@ -373,20 +385,20 @@ export default function ScreenTimeScreen() {
               </View>
             </LinearGradient>
           </Pressable>
-          {/* Finding #313: Bedtime mode */}
+          {/* D33#10: Atomic bedtime toggle — no async read+write race */}
           <Pressable
             onPress={() => {
               haptic.tick();
               AsyncStorage.getItem('bedtime_enabled').then(val => {
                 const next = val === '1' ? '0' : '1';
-                AsyncStorage.setItem('bedtime_enabled', next);
+                AsyncStorage.setItem('bedtime_enabled', next).catch(() => {});
                 showToast({
                   message: next === '1'
                     ? t('screenTime.bedtimeEnabled', 'Bedtime mode enabled — reminders will show at your set time')
                     : t('screenTime.bedtimeDisabled', 'Bedtime mode disabled'),
                   variant: next === '1' ? 'success' : 'info',
                 });
-              });
+              }).catch(() => {});
             }}
             accessibilityRole="button"
             accessibilityLabel={t('screenTime.bedtimeMode', 'Bedtime Mode')}
@@ -454,7 +466,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     alignItems: 'center',
   },
   todayLabel: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -485,7 +497,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.full,
   },
   limitBarLabel: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.xs,
     marginTop: spacing.xs,
     textAlign: 'center',
@@ -493,7 +505,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
 
   // Section title
   sectionTitle: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.xs,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -506,7 +518,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   chartCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(45,53,72,0.3)',
+    borderColor: tc.border,
     padding: spacing.base,
     marginBottom: spacing.lg,
   },
@@ -524,7 +536,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     height: '100%',
   },
   barValue: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSizeExt.micro,
     marginBottom: spacing.xs,
     height: 14,
@@ -545,7 +557,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     minHeight: 4,
   },
   barLabel: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.xs,
     marginTop: spacing.xs,
   },
@@ -564,7 +576,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flex: 1,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(45,53,72,0.3)',
+    borderColor: tc.border,
     padding: spacing.base,
   },
   statIconRow: {
@@ -574,12 +586,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.sm,
   },
   statLabel: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.xs,
     fontWeight: '600',
   },
   statValue: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.xl,
     fontWeight: '700',
   },
@@ -588,7 +600,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   settingRow: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(45,53,72,0.3)',
+    borderColor: tc.border,
     marginBottom: spacing.md,
     overflow: 'hidden',
   },
@@ -609,12 +621,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flex: 1,
   },
   settingLabel: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     fontWeight: '500',
   },
   settingHint: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.xs,
     marginTop: 2,
   },
@@ -622,7 +634,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     width: 28,
     height: 28,
     borderRadius: radius.sm,
-    backgroundColor: 'rgba(45,53,72,0.3)',
+    backgroundColor: tc.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },

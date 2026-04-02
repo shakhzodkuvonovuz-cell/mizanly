@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, Pressable } from 'react-native';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -53,8 +53,9 @@ export default function CreateClipScreen() {
       showToast({ message: t('clips.created') || 'Clip created', variant: 'success' });
       router.back();
     },
-    onError: () => {
-      showToast({ message: t('clips.createFailed') || 'Failed to create clip', variant: 'error' });
+    onError: (err: Error) => {
+      haptic.error();
+      showToast({ message: err.message || t('clips.createFailed') || 'Failed to create clip', variant: 'error' });
     },
   });
 
@@ -77,7 +78,7 @@ export default function CreateClipScreen() {
           title={t('clips.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
-        <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           {/* Thumbnail */}
           <Animated.View entering={FadeInUp.duration(300)} style={styles.thumbnailWrap}>
             {thumbnailUrl ? (
@@ -187,7 +188,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderRadius: radius.sm,
   },
-  durationText: { color: '#FFF', fontSize: fontSize.xs, fontWeight: '600', fontVariant: ['tabular-nums'] },
+  durationText: { color: '#FFF', fontSize: fontSize.xs, fontWeight: '600' as const, fontVariant: ['tabular-nums'] as const },
   timeSection: { marginBottom: spacing.xl },
   sectionLabel: { fontSize: fontSize.sm, fontWeight: '500', marginBottom: spacing.sm },
   timeControls: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },

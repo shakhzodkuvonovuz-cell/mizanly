@@ -667,9 +667,10 @@ export default function SearchScreen() {
                     </Pressable>
                     <Pressable
                       onPress={() => {
+                        haptic.delete();
                         const updated = searchHistory.filter(h => h !== item);
                         setSearchHistory(updated);
-                        AsyncStorage.setItem('search-history', JSON.stringify(updated));
+                        AsyncStorage.setItem('search-history', JSON.stringify(updated)).catch(() => {});
                       }}
                       hitSlop={8}
                     >
@@ -681,8 +682,9 @@ export default function SearchScreen() {
               />
               <Pressable
                 onPress={() => {
+                  haptic.delete();
                   setSearchHistory([]);
-                  AsyncStorage.setItem('search-history', JSON.stringify([]));
+                  AsyncStorage.setItem('search-history', JSON.stringify([])).catch(() => {});
                 }}
                 style={styles.clearButton}
                 accessibilityRole="button"
@@ -801,7 +803,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: colors.active.emerald10,
   },
   searchInput: {
-    flex: 1, color: colors.text.primary, fontSize: fontSize.base,
+    flex: 1, color: tc.text.primary, fontSize: fontSize.base,
     paddingVertical: spacing.sm,
   },
 
@@ -815,10 +817,10 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   userInfo: { flex: 1 },
   userNameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  userName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
-  userHandle: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 1 },
-  userFollowers: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: 2 },
-  followingLabel: { color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '600' },
+  userName: { color: tc.text.primary, fontSize: fontSize.base, fontWeight: '700' },
+  userHandle: { color: tc.text.secondary, fontSize: fontSize.sm, marginTop: 1 },
+  userFollowers: { color: tc.text.tertiary, fontSize: fontSize.xs, marginTop: 2 },
+  followingLabel: { color: tc.text.secondary, fontSize: fontSize.xs, fontWeight: '600' },
 
   hashtagRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
@@ -830,15 +832,15 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: colors.active.emerald10,
     alignItems: 'center', justifyContent: 'center',
   },
-  hashtagName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
-  hashtagCount: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 2 },
+  hashtagName: { color: tc.text.primary, fontSize: fontSize.base, fontWeight: '700' },
+  hashtagCount: { color: tc.text.secondary, fontSize: fontSize.sm, marginTop: 2 },
 
   discoverSection: { paddingHorizontal: spacing.base, paddingTop: spacing['2xl'] },
   discoverTitle: {
-    color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700',
+    color: tc.text.primary, fontSize: fontSize.lg, fontWeight: '700',
     marginBottom: spacing.md,
   },
-  discoverSub: { color: colors.text.secondary, fontSize: fontSize.base },
+  discoverSub: { color: tc.text.secondary, fontSize: fontSize.base },
   trendingList: { gap: spacing.xs },
   trendingItem: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
@@ -848,14 +850,14 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   trendingItemContent: { flex: 1 },
   trendRank: {
-    color: colors.text.tertiary, fontSize: fontSize.lg, fontWeight: '700',
+    color: tc.text.tertiary, fontSize: fontSize.lg, fontWeight: '700',
     width: 28, textAlign: 'center',
   },
-  trendName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
-  trendCount: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 2 },
+  trendName: { color: tc.text.primary, fontSize: fontSize.base, fontWeight: '600' },
+  trendCount: { color: tc.text.secondary, fontSize: fontSize.sm, marginTop: 2 },
   historySection: { paddingHorizontal: spacing.base, paddingTop: spacing['2xl'] },
   historyTitle: {
-    color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700',
+    color: tc.text.primary, fontSize: fontSize.lg, fontWeight: '700',
     marginBottom: spacing.md,
   },
   historyItem: {
@@ -867,8 +869,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
     flex: 1,
   },
-  historyTerm: { color: colors.text.primary, fontSize: fontSize.base },
-  historyEmpty: { color: colors.text.secondary, fontSize: fontSize.base, textAlign: 'center', paddingVertical: spacing['2xl'] },
+  historyTerm: { color: tc.text.primary, fontSize: fontSize.base },
+  historyEmpty: { color: tc.text.secondary, fontSize: fontSize.base, textAlign: 'center', paddingVertical: spacing['2xl'] },
   clearButton: {
     backgroundColor: tc.bgElevated,
     borderRadius: radius.md,
@@ -876,7 +878,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     alignItems: 'center',
     marginTop: spacing.base,
   },
-  clearButtonText: { color: colors.text.secondary, fontSize: fontSize.base, fontWeight: '600' },
+  clearButtonText: { color: tc.text.secondary, fontSize: fontSize.base, fontWeight: '600' },
   exploreSection: {
     flex: 1,
     paddingTop: spacing.md,
@@ -924,7 +926,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: spacing.xs,
   },
   reelCaption: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
   },
   reelStats: {
@@ -933,7 +935,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: spacing.sm,
   },
   reelStat: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     marginEnd: spacing.sm,
   },
@@ -943,7 +945,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: spacing.xs,
   },
   reelUsername: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
   },
   videoRow: {
@@ -966,12 +968,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: spacing.xs,
   },
   videoTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     fontWeight: '600',
   },
   videoChannel: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
   },
   videoStats: {
@@ -980,7 +982,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: spacing.sm,
   },
   videoStat: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     marginEnd: spacing.sm,
   },
@@ -1002,12 +1004,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: spacing.xs,
   },
   channelName: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     fontWeight: '700',
   },
   channelHandle: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     marginTop: 1,
   },
@@ -1018,7 +1020,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginTop: 2,
   },
   channelStat: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
   },
 });

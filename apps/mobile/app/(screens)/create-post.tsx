@@ -60,6 +60,7 @@ export default function CreatePostScreen() {
   const router = useRouter();
   const { prefillContent, prefillMedia } = useLocalSearchParams<{ prefillContent?: string; prefillMedia?: string }>();
   const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { user } = useUser();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -123,7 +124,8 @@ export default function CreatePostScreen() {
           setShowDraftBanner(true);
           setTimeout(() => setShowDraftBanner(false), 3000);
         }
-      } catch (err) {
+      } catch {
+        // D11#46: Draft may be corrupted — silently ignore
       }
     };
     loadDraft();
@@ -146,7 +148,8 @@ export default function CreatePostScreen() {
           content,
           mediaUrls: media.map(m => m.uri),
         }));
-      } catch (err) {
+      } catch {
+        // D11#47: Storage full — non-critical, skip silently
       }
     }, 2000);
   }, [content, media]);
@@ -367,14 +370,14 @@ export default function CreatePostScreen() {
             </Pressable>
             {/* Finding #384: Alt text reminder */}
             {media.length > 0 && !altText.trim() && (
-              <Pressable onPress={() => {/* scroll to alt text field */}} hitSlop={8}>
-                <Text style={{ color: colors.gold, fontSize: 11, marginEnd: 8 }}>{t('compose.addAltTextReminder', 'Add alt text?')}</Text>
+              <Pressable onPress={() => inputRef.current?.blur()} hitSlop={8}>
+                <Text style={{ color: colors.gold, fontSize: fontSize.xs, marginEnd: spacing.sm }}>{t('compose.addAltTextReminder', 'Add alt text?')}</Text>
               </Pressable>
             )}
             <GradientButton
               label={scheduledAt ? t('schedule.confirm') : t('common.share')}
               size="sm"
-              onPress={() => canPost && createMutation.mutate()}
+              onPress={() => { if (!canPost || createMutation.isPending) return; createMutation.mutate(); }}
               loading={createMutation.isPending}
               disabled={!canPost}
             />
@@ -555,7 +558,7 @@ export default function CreatePostScreen() {
             {/* Section header */}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.xs }}>
               <View style={{ width: 3, height: 14, borderRadius: 2, backgroundColor: colors.emerald }} />
-              <Text style={{ color: tc.text.primary, fontSize: fontSize.base, fontFamily: 'DMSans_700Bold', fontWeight: '700' }}>
+              <Text style={{ color: tc.text.primary, fontSize: fontSize.base, fontFamily: fonts.bodyBold, fontWeight: '700' }}>
                 {t('compose.publishSettings')}
               </Text>
             </View>
@@ -947,7 +950,7 @@ export default function CreatePostScreen() {
 
         {/* Premium gradient toolbar */}
         <LinearGradient
-          colors={['transparent', 'rgba(13,17,23,0.95)', tc.bg]}
+          colors={['transparent', tc.bg + 'F2', tc.bg]}
           locations={[0, 0.3, 1]}
           style={styles.toolbarGradient}
         >
@@ -1096,17 +1099,17 @@ export default function CreatePostScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
 
   // Header
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.dark.border,
-    backgroundColor: 'rgba(13, 17, 23, 0.92)',
+    backgroundColor: tc.bg,
   },
-  headerTitle: { color: colors.text.primary, fontSize: fontSize.md, fontWeight: '700', letterSpacing: 0.2 },
+  headerTitle: { color: tc.text.primary, fontSize: fontSize.md, fontWeight: '700', letterSpacing: 0.2 },
   draftBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1122,7 +1125,7 @@ const styles = StyleSheet.create({
   },
   draftBannerText: {
     flex: 1,
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.sm,
     fontWeight: '600',
   },
@@ -1133,18 +1136,18 @@ const styles = StyleSheet.create({
 
   // User row
   userRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
-  userName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700', marginBottom: spacing.xs },
+  userName: { color: tc.text.primary, fontSize: fontSize.base, fontWeight: '700', marginBottom: spacing.xs },
   visibilityPill: {
-    backgroundColor: colors.dark.bgElevated, borderRadius: radius.full,
+    backgroundColor: tc.bgElevated, borderRadius: radius.full,
     paddingHorizontal: spacing.sm, paddingVertical: 3,
     alignSelf: 'flex-start',
   },
-  visibilityPillText: { color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '600' },
+  visibilityPillText: { color: tc.text.secondary, fontSize: fontSize.xs, fontWeight: '600' },
 
   // Visibility dropdown
   visibilityMenu: {
-    backgroundColor: colors.dark.bgSheet, borderRadius: radius.md,
-    borderWidth: 1, borderColor: colors.dark.border,
+    backgroundColor: tc.bgSheet, borderRadius: radius.md,
+    borderWidth: 1, borderColor: tc.border,
     marginBottom: spacing.md, overflow: 'hidden',
   },
   visOption: {
@@ -1152,12 +1155,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
   },
   visOptionActive: { backgroundColor: colors.active.emerald10 },
-  visOptionText: { flex: 1, color: colors.text.secondary, fontSize: fontSize.base },
-  visOptionTextActive: { color: colors.text.primary, fontWeight: '600' },
+  visOptionText: { flex: 1, color: tc.text.secondary, fontSize: fontSize.base },
+  visOptionTextActive: { color: tc.text.primary, fontWeight: '600' },
 
   // Caption
   input: {
-    color: colors.text.primary, fontSize: fontSize.base, lineHeight: 24,
+    color: tc.text.primary, fontSize: fontSize.base, lineHeight: 24,
     minHeight: 120, textAlignVertical: 'top',
   },
   // Premium media cards
@@ -1179,7 +1182,7 @@ const styles = StyleSheet.create({
   },
   mediaThumbnail: {
     width: 100, height: 100, borderRadius: radius.md, overflow: 'hidden',
-    backgroundColor: colors.dark.bgElevated,
+    backgroundColor: tc.bgElevated,
   },
   mediaImage: {
     width: '100%',
@@ -1236,15 +1239,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(13,17,23,0.85)',
     alignItems: 'center', justifyContent: 'center', gap: spacing.md,
   },
-  uploadText: { color: colors.text.primary, fontSize: fontSize.base },
+  uploadText: { color: tc.text.primary, fontSize: fontSize.base },
 
   // Toolbar
   toolbar: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    borderTopWidth: 0.5, borderTopColor: colors.dark.border,
+    borderTopWidth: 0.5, borderTopColor: tc.border,
     paddingBottom: Platform.OS === 'ios' ? spacing.lg : spacing.sm,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   toolbarBtn: { padding: spacing.xs },
   toolbarSpacer: { flex: 1 },
@@ -1279,7 +1282,7 @@ const styles = StyleSheet.create({
 
   // Circle picker sheet
   sheetTitle: {
-    color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700',
+    color: tc.text.primary, fontSize: fontSize.base, fontWeight: '700',
     paddingHorizontal: spacing.xl, paddingBottom: spacing.sm,
   },
   skeletonList: { paddingHorizontal: spacing.xl, gap: spacing.md, paddingBottom: spacing.md },
@@ -1287,7 +1290,7 @@ const styles = StyleSheet.create({
   circleIconWrap: { width: 36, height: 36, borderRadius: radius.full, backgroundColor: colors.active.emerald10, alignItems: 'center', justifyContent: 'center' },
   circleEmoji: { fontSize: 18 },
   emptyCircles: { alignItems: 'center', paddingVertical: spacing.xl, paddingHorizontal: spacing.xl, gap: spacing.sm },
-  emptyCirclesText: { color: colors.text.secondary, fontSize: fontSize.base },
+  emptyCirclesText: { color: tc.text.secondary, fontSize: fontSize.base },
   emptyCirclesLink: { color: colors.emerald, fontSize: fontSize.base, fontWeight: '600' },
 
   // Premium toolbar styles
