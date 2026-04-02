@@ -33,7 +33,7 @@ export class MeilisearchService implements OnModuleInit {
   private readonly logger = new Logger(MeilisearchService.name);
   private readonly host: string;
   private readonly apiKey: string;
-  private readonly available: boolean;
+  private available: boolean;
 
   constructor(
     private config: ConfigService,

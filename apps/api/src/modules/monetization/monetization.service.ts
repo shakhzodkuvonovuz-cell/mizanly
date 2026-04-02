@@ -487,7 +487,7 @@ export class MonetizationService {
     if (!balance) {
       throw new BadRequestException('No balance found');
     }
-    if (balance.diamonds < diamonds) {
+    if (balance!.diamonds < diamonds) {
       throw new BadRequestException('Insufficient diamonds');
     }
 

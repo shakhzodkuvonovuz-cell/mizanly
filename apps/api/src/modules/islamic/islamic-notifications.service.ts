@@ -42,7 +42,7 @@ export class IslamicNotificationsService {
       if (mosqueData?.lat && mosqueData?.lng) {
         const { calculatePrayerTimes } = await import('./prayer-calculator');
         const computed = calculatePrayerTimes(new Date(), parseFloat(mosqueData.lat), parseFloat(mosqueData.lng));
-        times = computed;
+        times = computed as unknown as Record<string, string>;
         // Re-seed cache for next check
         await this.redis.setex(prayerTimesKey, 3600, JSON.stringify(times)).catch((err) => this.logger.debug('Prayer times cache write failed', err?.message));
       }
