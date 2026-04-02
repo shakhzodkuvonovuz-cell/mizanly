@@ -175,4 +175,87 @@ describe('FeedController', () => {
       expect(mockPersonalizedFeed.getPersonalizedFeed).toHaveBeenCalledWith(undefined, 'saf', undefined, 20, undefined, undefined);
     });
   });
+
+  // ═══ T10 Audit: Missing controller tests ═══
+
+  describe('getCommunityTrending — #28 H', () => {
+    it('should delegate to feed.getCommunityTrending', async () => {
+      (mockService as any).getCommunityTrending = jest.fn().mockResolvedValue([{ id: 'p1' }]);
+      const result = await controller.getCommunityTrending('user-1');
+      expect((mockService as any).getCommunityTrending).toHaveBeenCalledWith('user-1');
+      expect(result).toEqual([{ id: 'p1' }]);
+    });
+  });
+
+  describe('getOnThisDay — #29 H', () => {
+    it('should delegate to feed.getOnThisDay', async () => {
+      (mockService as any).getOnThisDay = jest.fn().mockResolvedValue([{ id: 'memory1' }]);
+      const result = await controller.getOnThisDay('user-1');
+      expect((mockService as any).getOnThisDay).toHaveBeenCalledWith('user-1');
+      expect(result).toEqual([{ id: 'memory1' }]);
+    });
+  });
+
+  describe('resetAlgorithm — #30 H', () => {
+    it('should delegate to feed.resetAlgorithm', async () => {
+      (mockService as any).resetAlgorithm = jest.fn().mockResolvedValue({ reset: true });
+      const result = await controller.resetAlgorithm('user-1');
+      expect((mockService as any).resetAlgorithm).toHaveBeenCalledWith('user-1');
+      expect(result).toEqual({ reset: true });
+    });
+  });
+
+  describe('getSuggestedUsers — #31 H', () => {
+    it('should delegate to feed.getSuggestedUsers with default limit', async () => {
+      mockService.getSuggestedUsers.mockResolvedValue([{ id: 'u2' }] as any);
+      const result = await controller.getSuggestedUsers('user-1');
+      expect(mockService.getSuggestedUsers).toHaveBeenCalledWith('user-1', 5);
+      expect(result).toEqual([{ id: 'u2' }]);
+    });
+
+    it('should cap limit at 50', async () => {
+      mockService.getSuggestedUsers.mockResolvedValue([] as any);
+      await controller.getSuggestedUsers('user-1', '999');
+      expect(mockService.getSuggestedUsers).toHaveBeenCalledWith('user-1', 50);
+    });
+  });
+
+  describe('getFrequentCreators — #32 H', () => {
+    it('should delegate to feed.getFrequentCreators', async () => {
+      (mockService as any).getFrequentCreators = jest.fn().mockResolvedValue([{ id: 'creator1' }]);
+      const result = await controller.getFrequentCreators('user-1');
+      expect((mockService as any).getFrequentCreators).toHaveBeenCalledWith('user-1');
+      expect(result).toEqual([{ id: 'creator1' }]);
+    });
+  });
+
+  describe('explainThread — #33 M', () => {
+    it('should delegate to transparency.explainThread', async () => {
+      mockTransparency.explainThread.mockResolvedValue({ reasons: ['Trending thread'] });
+      const result = await controller.explainThread('user-1', 'thread-1');
+      expect(mockTransparency.explainThread).toHaveBeenCalledWith('user-1', 'thread-1');
+      expect(result.reasons).toContain('Trending thread');
+    });
+  });
+
+  describe('enhancedSearch — #34 M', () => {
+    it('should delegate to transparency.enhancedSearch with parsed limit', async () => {
+      mockTransparency.enhancedSearch.mockResolvedValue({ data: [{ id: 'p1' }], meta: { hasMore: false } });
+      const result = await controller.enhancedSearch('user-1', 'islam', 'cursor1', '30');
+      expect(mockTransparency.enhancedSearch).toHaveBeenCalledWith('islam', 'cursor1', 30, 'user-1');
+      expect(result.data).toHaveLength(1);
+    });
+
+    it('should cap limit to 50', async () => {
+      mockTransparency.enhancedSearch.mockResolvedValue({ data: [], meta: { hasMore: false } });
+      await controller.enhancedSearch(undefined, 'test', undefined, '999');
+      expect(mockTransparency.enhancedSearch).toHaveBeenCalledWith('test', undefined, 50, undefined);
+    });
+
+    it('should default limit to 20', async () => {
+      mockTransparency.enhancedSearch.mockResolvedValue({ data: [], meta: { hasMore: false } });
+      await controller.enhancedSearch(undefined, 'test');
+      expect(mockTransparency.enhancedSearch).toHaveBeenCalledWith('test', undefined, 20, undefined);
+    });
+  });
 });

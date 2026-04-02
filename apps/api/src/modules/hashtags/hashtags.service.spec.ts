@@ -262,4 +262,124 @@ describe('HashtagsService', () => {
       expect(result.data).toHaveLength(0);
     });
   });
+
+  // ═══ T10 Audit: Hashtag enrichment + cursor + NotFoundException ═══
+
+  describe('getPostsByHashtag — enrichment with userId — #1 M', () => {
+    it('should call enrichPosts when userId is provided', async () => {
+      prisma.hashtag.findUnique.mockResolvedValue({ id: '1', name: 'test' });
+      const mockPosts = [{ id: 'p1', content: 'test', user: { id: 'u2' } }];
+      prisma.post.findMany.mockResolvedValue(mockPosts);
+      prisma.postReaction.findMany.mockResolvedValue([{ postId: 'p1', reaction: 'LIKE' }]);
+      prisma.savedPost.findMany.mockResolvedValue([{ postId: 'p1' }]);
+
+      const result = await service.getPostsByHashtag('test', 'u1', undefined, 20);
+      expect(result.data).toHaveLength(1);
+      // When userId is passed, enrichment should occur — the result should have enriched fields
+      expect(result.data[0]).toHaveProperty('userReaction');
+      expect(result.data[0]).toHaveProperty('isSaved');
+    });
+  });
+
+  describe('getReelsByHashtag — enrichment with userId — #2 M', () => {
+    it('should call enrichReels when userId is provided', async () => {
+      prisma.hashtag.findUnique.mockResolvedValue({ id: '1', name: 'test' });
+      const mockReels = [{ id: 'r1', caption: 'test', user: { id: 'u2' } }];
+      prisma.reel.findMany.mockResolvedValue(mockReels);
+      prisma.reelReaction.findMany.mockResolvedValue([]);
+      prisma.reelInteraction.findMany.mockResolvedValue([]);
+
+      const result = await service.getReelsByHashtag('test', 'u1', undefined, 20);
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0]).toHaveProperty('userReaction');
+      expect(result.data[0]).toHaveProperty('isSaved');
+    });
+  });
+
+  describe('getThreadsByHashtag — enrichment with userId — #3 M', () => {
+    it('should call enrichThreads when userId is provided', async () => {
+      prisma.hashtag.findUnique.mockResolvedValue({ id: '1', name: 'test' });
+      const mockThreads = [{ id: 't1', content: 'test', user: { id: 'u2' } }];
+      prisma.thread.findMany.mockResolvedValue(mockThreads);
+      prisma.threadReaction.findMany.mockResolvedValue([]);
+      prisma.threadBookmark.findMany.mockResolvedValue([]);
+
+      const result = await service.getThreadsByHashtag('test', 'u1', undefined, 20);
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0]).toHaveProperty('userReaction');
+      expect(result.data[0]).toHaveProperty('isSaved');
+    });
+  });
+
+  describe('getPostsByHashtag — cursor pagination — #4 M', () => {
+    it('should return hasMore=true and cursor when more results exist', async () => {
+      prisma.hashtag.findUnique.mockResolvedValue({ id: '1', name: 'test' });
+      // Return limit+1 posts to trigger hasMore=true
+      const posts = Array.from({ length: 21 }, (_, i) => ({
+        id: `p${i}`, content: `Post ${i}`, user: { id: 'u1' }, createdAt: new Date(),
+      }));
+      prisma.post.findMany.mockResolvedValue(posts);
+
+      const result = await service.getPostsByHashtag('test', undefined, undefined, 20);
+      expect(result.meta.hasMore).toBe(true);
+      expect(result.meta.cursor).toBe('p19');
+      expect(result.data).toHaveLength(20);
+    });
+  });
+
+  describe('getReelsByHashtag — cursor pagination — #5 M', () => {
+    it('should return hasMore=true and cursor when more results exist', async () => {
+      prisma.hashtag.findUnique.mockResolvedValue({ id: '1', name: 'test' });
+      const reels = Array.from({ length: 21 }, (_, i) => ({
+        id: `r${i}`, caption: `Reel ${i}`, user: { id: 'u1' }, createdAt: new Date(),
+      }));
+      prisma.reel.findMany.mockResolvedValue(reels);
+
+      const result = await service.getReelsByHashtag('test', undefined, undefined, 20);
+      expect(result.meta.hasMore).toBe(true);
+      expect(result.meta.cursor).toBe('r19');
+      expect(result.data).toHaveLength(20);
+    });
+  });
+
+  describe('getThreadsByHashtag — cursor pagination — #6 M', () => {
+    it('should return hasMore=true and cursor when more results exist', async () => {
+      prisma.hashtag.findUnique.mockResolvedValue({ id: '1', name: 'test' });
+      const threads = Array.from({ length: 21 }, (_, i) => ({
+        id: `t${i}`, content: `Thread ${i}`, user: { id: 'u1' }, createdAt: new Date(),
+      }));
+      prisma.thread.findMany.mockResolvedValue(threads);
+
+      const result = await service.getThreadsByHashtag('test', undefined, undefined, 20);
+      expect(result.meta.hasMore).toBe(true);
+      expect(result.meta.cursor).toBe('t19');
+      expect(result.data).toHaveLength(20);
+    });
+  });
+
+  describe('getReelsByHashtag — NotFoundException — #7 L', () => {
+    it('should throw NotFoundException when hashtag does not exist', async () => {
+      prisma.hashtag.findUnique.mockResolvedValue(null);
+      await expect(service.getReelsByHashtag('nonexistent')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getThreadsByHashtag — NotFoundException — #8 L', () => {
+    it('should throw NotFoundException when hashtag does not exist', async () => {
+      prisma.hashtag.findUnique.mockResolvedValue(null);
+      await expect(service.getThreadsByHashtag('nonexistent')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('decrementCount — negative floor — #9 L', () => {
+    it('should call updateMany to floor count at zero after decrement', async () => {
+      prisma.hashtag.update.mockResolvedValue({});
+      prisma.hashtag.updateMany = jest.fn().mockResolvedValue({ count: 0 });
+      await service.decrementCount('test', 'postsCount');
+      expect(prisma.hashtag.updateMany).toHaveBeenCalledWith({
+        where: { name: 'test', postsCount: { lt: 0 } },
+        data: { postsCount: 0 },
+      });
+    });
+  });
 });
