@@ -2,12 +2,12 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet,
   FlatList, Pressable, Dimensions,
-  type ViewStyle, type ImageStyle,
+  type ViewStyle,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Image as ExpoImage } from 'expo-image';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Audio } from 'expo-av';
@@ -40,12 +40,12 @@ export default function SoundScreen() {
   const { t, isRTL } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const haptic = useContextualHaptic();
   const [refreshing, setRefreshing] = useState(false);
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
   const soundRef = useRef<Audio.Sound | null>(null);
+  const isNavigatingRef = useRef(false);
 
   const formatNumber = formatCount;
 
@@ -111,6 +111,9 @@ export default function SoundScreen() {
   }, [trackQuery, reelsQuery]);
 
   const handleUseSound = useCallback(() => {
+    if (isNavigatingRef.current) return;
+    isNavigatingRef.current = true;
+    setTimeout(() => { isNavigatingRef.current = false; }, 500);
     haptic.navigate();
     router.push({
       pathname: '/(screens)/create-reel',
@@ -133,11 +136,11 @@ export default function SoundScreen() {
     return (
       <Animated.View entering={FadeInUp.delay(index * 50).duration(400)} style={styles.gridItem as ViewStyle}>
         <Pressable accessibilityRole="button" accessibilityLabel={`${t('screens.sound.reels', 'Reel')}, ${formatNumber(item.viewsCount)} ${t('screens.sound.plays', 'views')}`} onPress={() => handleReelPress(item)}>
-          <ExpoImage
-            source={{ uri: item.thumbnailUrl || item.videoUrl }}
-            style={styles.thumbnail as ImageStyle}
+          <ProgressiveImage
+            uri={item.thumbnailUrl || item.videoUrl || ''}
+            width={GRID_ITEM_WIDTH}
+            height={Math.round(GRID_ITEM_WIDTH / 0.75)}
             contentFit="cover"
-            transition={200}
           />
           {item.viewsCount > 0 && (
             <View style={styles.viewCountOverlay}>
@@ -231,11 +234,12 @@ export default function SoundScreen() {
                 {/* Cover art */}
                 <View style={styles.coverContainer}>
                   {track.coverUrl ? (
-                    <ExpoImage
-                      source={{ uri: track.coverUrl }}
-                      style={styles.cover as ImageStyle}
+                    <ProgressiveImage
+                      uri={track.coverUrl}
+                      width={COVER_SIZE}
+                      height={COVER_SIZE}
                       contentFit="cover"
-                      transition={200}
+                      borderRadius={radius.md}
                     />
                   ) : (
                     <LinearGradient
@@ -395,13 +399,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   trackTitle: {
     fontSize: fontSize.xl,
     fontWeight: '700',
-    color: colors.text.primary,
+    color: tc.text.primary,
     textAlign: 'center',
     marginBottom: spacing.xs,
   },
   trackArtist: {
     fontSize: fontSize.base,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     textAlign: 'center',
     marginBottom: spacing.md,
   },
@@ -421,7 +425,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   statBadgeText: {
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   useButton: {
     alignSelf: 'stretch',
@@ -448,7 +452,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   viewCountOverlay: {
     position: 'absolute',
     bottom: spacing.xs,
-    left: spacing.xs,
+    start: spacing.xs,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,

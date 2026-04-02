@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -63,6 +63,8 @@ export default function StitchCreateScreen() {
   const cameraRef = useRef<CameraView>(null);
   const [recordedUri, setRecordedUri] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isNavigatingRef = useRef(false);
+  const isRecordingLockRef = useRef(false);
 
   useEffect(() => {
     (async () => {
@@ -100,18 +102,21 @@ export default function StitchCreateScreen() {
     isVerified: false,
   };
 
-  // No data to refresh on this screen — refresh is a no-op
+  // No data to refresh on this screen — refresh is a visual-only gesture
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    setRefreshing(false);
+    setTimeout(() => setRefreshing(false), 300);
   }, []);
 
   const handleRecord = async () => {
     if (!cameraRef.current) return;
+    if (isRecordingLockRef.current) return;
+    isRecordingLockRef.current = true;
 
     if (isRecording) {
       cameraRef.current.stopRecording();
       setIsRecording(false);
+      isRecordingLockRef.current = false;
       haptic.tick();
     } else {
       setIsRecording(true);
@@ -124,9 +129,11 @@ export default function StitchCreateScreen() {
           haptic.success();
         }
       } catch (_err: unknown) {
-        // Recording was cancelled or failed
+        haptic.error();
+        showToast({ message: t('stitch.recordFailed', 'Recording failed'), variant: 'error' });
       } finally {
         setIsRecording(false);
+        isRecordingLockRef.current = false;
       }
     }
   };
@@ -349,6 +356,7 @@ export default function StitchCreateScreen() {
                     style={styles.cameraPreview}
                     facing={facing}
                     mode="video"
+                    enableTorch={flashOn}
                   />
                 </View>
 
@@ -520,10 +528,28 @@ export default function StitchCreateScreen() {
             colors={['rgba(13,17,23,0.95)', 'rgba(13,17,23,1)']}
             style={styles.bottomBarGradient}
           >
-            <Pressable accessibilityRole="button" accessibilityLabel={t('common.cancel')} style={styles.cancelButton} onPress={() => router.back()}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('common.cancel')} style={styles.cancelButton} onPress={() => {
+              if (recordedUri) {
+                Alert.alert(t('stitch.discardTitle', 'Discard recording?'), t('stitch.discardMessage', 'Your recorded video will be lost.'), [
+                  { text: t('common.cancel'), style: 'cancel' },
+                  { text: t('common.discard'), style: 'destructive', onPress: () => router.back() },
+                ]);
+              } else {
+                router.back();
+              }
+            }}>
               <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
             </Pressable>
-            <Pressable accessibilityRole="button" accessibilityLabel={t('common.next')} style={styles.nextButton} onPress={() => router.push({ pathname: '/(screens)/create-reel', params: { videoUri: recordedUri ?? '', isStitch: 'true', stitchOfId: reelId ?? '' } })}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('common.next')} style={styles.nextButton} onPress={() => {
+              if (!recordedUri) {
+                showToast({ message: t('stitch.recordOrPickVideo', 'Record or pick a video first'), variant: 'error' });
+                return;
+              }
+              if (isNavigatingRef.current) return;
+              isNavigatingRef.current = true;
+              setTimeout(() => { isNavigatingRef.current = false; }, 500);
+              router.push({ pathname: '/(screens)/create-reel', params: { videoUri: recordedUri, isStitch: 'true', stitchOfId: reelId ?? '' } });
+            }}>
               <LinearGradient
                 colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
                 style={styles.nextButtonGradient}
@@ -581,7 +607,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   creatorName: {
     fontSize: fontSize.base,
     fontWeight: '600',
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   stitchSubtitle: {
     fontSize: fontSize.xs,
@@ -601,7 +627,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   durationLabel: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     marginTop: spacing.md,
     marginBottom: spacing.sm,
   },
@@ -620,7 +646,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   durationButtonText: {
     fontSize: fontSize.base,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   durationButtonTextActive: {
     color: colors.emerald,
@@ -647,7 +673,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   progressLabel: {
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
   },
   transitionCard: {
     marginHorizontal: spacing.base,
@@ -662,7 +688,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   transitionTitle: {
     fontSize: fontSize.base,
     fontWeight: '600',
-    color: colors.text.primary,
+    color: tc.text.primary,
     marginBottom: spacing.sm,
   },
   transitionScroll: {
@@ -682,7 +708,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   transitionButtonText: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   transitionButtonTextActive: {
     color: colors.emerald,
@@ -718,11 +744,11 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   yourClipTitle: {
     fontSize: fontSize.base,
     fontWeight: '600',
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   yourClipSubtitle: {
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
   },
   cameraPreviewContainer: {
     borderRadius: radius.md,
@@ -798,7 +824,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   timerText: {
     fontSize: fontSize.md,
     fontFamily: fonts.mono,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   recordingBadge: {
     flexDirection: 'row',
@@ -832,7 +858,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   previewCardTitle: {
     fontSize: fontSize.base,
     fontWeight: '600',
-    color: colors.text.primary,
+    color: tc.text.primary,
     marginBottom: spacing.md,
   },
   sequenceContainer: {
@@ -865,12 +891,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   sequenceDurationText: {
     fontSize: fontSizeExt.tiny,
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontFamily: fonts.mono,
   },
   sequenceLabel: {
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
   },
   sequenceArrow: {
     alignItems: 'center',
@@ -898,7 +924,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   totalDurationLabel: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   totalDurationValue: {
     fontSize: fontSize.md,
@@ -924,7 +950,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     fontWeight: '600',
   },
   bottomSpacing: {
-    height: 100,
+    height: spacing['2xl'] * 3 + spacing.lg,
   },
   bottomBar: {
     position: 'absolute',
@@ -945,7 +971,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   cancelButtonText: {
     fontSize: fontSize.base,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   nextButton: {
     borderRadius: radius.md,
@@ -982,7 +1008,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   galleryButtonText: {
     fontSize: fontSize.base,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontWeight: '500',
   },
 });

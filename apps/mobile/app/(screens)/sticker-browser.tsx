@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, Pressable, ScrollView, useWindowDimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -30,7 +30,11 @@ function PackCard({ pack, onPress, onAdd, onRemove, index }: { pack: StickerPack
   const [isAdded, setIsAdded] = useState(pack.isCollected ?? false);
   const haptic = useContextualHaptic();
 
+  const isTogglingRef = useRef(false);
   const handleToggle = () => {
+    if (isTogglingRef.current) return;
+    isTogglingRef.current = true;
+    setTimeout(() => { isTogglingRef.current = false; }, 500);
     haptic.tick();
     if (isAdded) {
       setIsAdded(false);
@@ -162,7 +166,7 @@ function StickerBrowserScreenInner() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    haptic.navigate();
+    haptic.tick();
     await refetch();
     setRefreshing(false);
   }, [refetch, haptic]);
@@ -285,8 +289,8 @@ function StickerBrowserScreenInner() {
               <View style={styles.emptyWrap}>
                 <EmptyState 
                   icon="smile" 
-                  title={debouncedQuery.length > 0 ? t('screens.sticker-browser.noResults') : t('screens.sticker-browser.noResults')}
-                  subtitle={debouncedQuery.length > 0 ? t('screens.sticker-browser.noResultsSubtitle') : t('screens.sticker-browser.noResultsSubtitle')} 
+                  title={debouncedQuery.length > 0 ? t('screens.sticker-browser.noResults') : t('screens.sticker-browser.noStickers', 'No sticker packs yet')}
+                  subtitle={debouncedQuery.length > 0 ? t('screens.sticker-browser.noResultsSubtitle') : t('screens.sticker-browser.noStickersSubtitle', 'Check back later for new packs')}
                 />
               </View>
             ) : null
@@ -364,7 +368,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>, screenWidth = 375) 
   },
   searchInput: {
     flex: 1,
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     height: 40,
   },
@@ -378,7 +382,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>, screenWidth = 375) 
   sectionTitle: {
     fontSize: fontSize.md,
     fontFamily: fonts.bodySemiBold,
-    color: colors.text.primary,
+    color: tc.text.primary,
     paddingHorizontal: spacing.base,
     marginBottom: spacing.md,
   },
@@ -403,7 +407,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>, screenWidth = 375) 
   featuredTitle: {
     fontSize: fontSize.sm,
     fontFamily: fonts.bodyMedium,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   card: {
     flexDirection: 'row',
@@ -434,11 +438,11 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>, screenWidth = 375) 
   cardTitle: {
     fontSize: fontSize.base,
     fontFamily: fonts.bodySemiBold,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   cardSubtitle: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   addButton: {
     paddingHorizontal: spacing.md,
@@ -452,7 +456,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>, screenWidth = 375) 
   addButtonText: {
     fontSize: fontSize.sm,
     fontFamily: fonts.bodySemiBold,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   addedButtonText: {
     color: colors.emerald,
@@ -467,12 +471,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>, screenWidth = 375) 
   sheetTitle: {
     fontSize: fontSize.lg,
     fontFamily: fonts.bodyBold,
-    color: colors.text.primary,
+    color: tc.text.primary,
     marginBottom: spacing.xs,
   },
   sheetSubtitle: {
     fontSize: fontSize.base,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     marginBottom: spacing.xl,
   },
   grid: {

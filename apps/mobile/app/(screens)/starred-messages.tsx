@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, FlatList, Pressable,
 } from 'react-native';
@@ -59,19 +59,28 @@ export default function StarredMessagesScreen() {
     setRefreshing(false);
   };
 
+  const isUnstarringRef = useRef(false);
   const handleUnstar = async (messageId: string) => {
+    if (isUnstarringRef.current) return;
+    isUnstarringRef.current = true;
     try {
+      if (!conversationId) {
+        showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+        return;
+      }
       await messagesApi.toggleStar(conversationId, messageId);
       queryClient.invalidateQueries({ queryKey: ['starred-messages'] });
       showToast({ message: t('screens.starred-messages.unstarred'), variant: 'success' });
     } catch (err) {
       showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
       if (__DEV__) console.error('Failed to unstar message', err);
+    } finally {
+      isUnstarringRef.current = false;
     }
   };
 
   const renderMessage = ({ item, index }: { item: Message; index: number }) => (
-    <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 10) * 80).duration(400)}>
       <LinearGradient
         colors={colors.gradient.cardDark}
         style={styles.messageCard}
@@ -122,7 +131,7 @@ export default function StarredMessagesScreen() {
                 ) : (
                   <View key={reaction.id} style={styles.reactionChip}>
                     <Text style={styles.reactionEmoji}>{reaction.emoji}</Text>
-                    <Text style={styles.reactionCount}>{reaction.emoji}</Text>
+                    <Text style={styles.reactionCount}>{(reaction as unknown as { count?: number }).count ?? 1}</Text>
                   </View>
                 )
               ))}
@@ -245,8 +254,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   messageCard: {
     borderRadius: radius.md,
     marginBottom: spacing.md,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.gold,
+    borderStartWidth: 3,
+    borderStartColor: colors.gold,
     padding: spacing.md,
     borderWidth: 1,
     borderColor: colors.active.white6,
@@ -267,15 +276,15 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   senderName: {
     fontSize: fontSize.sm,
     fontWeight: '600',
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   timestamp: {
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
   },
   content: {
     fontSize: fontSize.base,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     lineHeight: 20,
   },
   mediaPlaceholder: {
@@ -289,7 +298,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   mediaText: {
     marginStart: spacing.xs,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   reactions: {
     flexDirection: 'row',
@@ -311,7 +320,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   reactionCount: {
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   conversationHeader: {
     paddingHorizontal: spacing.base,
@@ -326,7 +335,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   conversationName: {
     fontSize: fontSize.sm,
     fontWeight: '600',
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   starredCountRow: {
     flexDirection: 'row',
