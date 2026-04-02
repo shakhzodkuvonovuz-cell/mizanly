@@ -153,6 +153,7 @@ export default function ReelRemixScreen() {
   }, [haptic]);
 
   const discardRecording = useCallback(() => {
+    haptic.delete();
     Alert.alert(t('remix.discardTitle'), t('remix.discardMessage'), [
       { text: t('common.cancel') },
       {
@@ -164,7 +165,7 @@ export default function ReelRemixScreen() {
         },
       },
     ]);
-  }, [t]);
+  }, [t, haptic]);
 
   const handleCaptionChange = useCallback((text: string) => {
     setCaption(text);
@@ -178,6 +179,7 @@ export default function ReelRemixScreen() {
   const handleBack = useCallback(() => {
     const hasContent = !!recordedUri || caption.trim().length > 0;
     if (hasContent) {
+      haptic.delete();
       Alert.alert(t('remix.discardTitle'), t('remix.discardMessage'), [
         { text: t('remix.keepEditing') },
         { text: t('remix.discard'), style: 'destructive', onPress: () => router.back() },
@@ -185,12 +187,12 @@ export default function ReelRemixScreen() {
     } else {
       router.back();
     }
-  }, [recordedUri, caption, t, router]);
+  }, [recordedUri, caption, t, router, haptic]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     if (originalReelId) {
-      queryClient.invalidateQueries({ queryKey: ['reel', originalReelId] });
+      await queryClient.invalidateQueries({ queryKey: ['reel', originalReelId] });
     }
     setRefreshing(false);
   }, [originalReelId, queryClient]);

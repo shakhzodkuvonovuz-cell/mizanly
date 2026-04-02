@@ -91,9 +91,9 @@ const GridItem = memo(function GridItem({ post, onPress }: { post: Post; onPress
         )}
         {post.collaborators && post.collaborators.length > 0 && (
           <View style={{
-            position: 'absolute', top: 4, right: 4,
+            position: 'absolute', top: spacing.xs, end: spacing.xs,
             backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: radius.full,
-            padding: 3,
+            padding: spacing.xs,
           }}>
             <Icon name="users" size={10} color="#fff" />
           </View>
@@ -381,6 +381,9 @@ export default function ProfileScreen() {
       showToast({ message: t('profile.blockedMessage', { username }), variant: 'success' });
       router.back();
     },
+    onError: () => {
+      showToast({ message: t('common.error'), variant: 'error' });
+    },
   });
 
   const muteMutation = useMutation({
@@ -391,6 +394,9 @@ export default function ProfileScreen() {
     onSuccess: () => {
       setShowMenu(false);
       showToast({ message: t('profile.mutedMessage', { username }), variant: 'success' });
+    },
+    onError: () => {
+      showToast({ message: t('common.error'), variant: 'error' });
     },
   });
 
@@ -440,7 +446,7 @@ export default function ProfileScreen() {
       useStore.getState().setStoryViewerData({ groups: [group], startIndex: 0 });
       router.push('/(screens)/story-viewer');
     } catch {
-      // silently ignore — album might be empty
+      showToast({ message: t('common.error'), variant: 'error' });
     } finally {
       setLoadingHighlightId(null);
     }

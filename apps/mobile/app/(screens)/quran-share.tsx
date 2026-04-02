@@ -17,6 +17,7 @@ import { islamicApi } from '@/services/islamicApi';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { showToast } from '@/components/ui/Toast';
 import type { QuranSurah, QuranVerse } from '@/types/islamic';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
@@ -52,6 +53,7 @@ export default function QuranShareScreen() {
   const styles = createStyles(tc);
   const router = useRouter();
   const { t } = useTranslation();
+  const haptic = useContextualHaptic();
   const [selectedSurahNumber, setSelectedSurahNumber] = useState(1);
   const [currentVerse, setCurrentVerse] = useState(1);
   const [showSurahPicker, setShowSurahPicker] = useState(false);

@@ -104,6 +104,7 @@ export default function ReportScreen() {
   });
 
   const handleSubmit = () => {
+    haptic.send();
     reportMutation.mutate();
   };
 

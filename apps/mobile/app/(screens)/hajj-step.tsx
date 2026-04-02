@@ -19,13 +19,14 @@ import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { showToast } from '@/components/ui/Toast';
+import { rtlFlexRow } from '@/utils/rtl';
 
 interface ChecklistState {
   [stepIndex: string]: boolean[];
 }
 
 function HajjStepContent() {
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
   const params = useLocalSearchParams<{ step: string }>();
@@ -250,7 +251,7 @@ function HajjStepContent() {
               accessibilityLabel={item}
               accessibilityState={{ checked: checklistState[idx] ?? false }}
               key={idx}
-              style={styles.checkItem}
+              style={[styles.checkItem, { flexDirection: rtlFlexRow(isRTL) }]}
               onPress={() => { haptic.tick(); toggleCheckItem(idx); }}
             >
               <View

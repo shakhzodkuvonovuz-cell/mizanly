@@ -112,6 +112,7 @@ describe('hajj-companion', () => {
     expect(src).toContain('start: 23');
     expect(src).not.toContain('left: 23');
   });
+
 });
 
 // ── D19: hajj-step.tsx ──
@@ -139,6 +140,11 @@ describe('hajj-step', () => {
   test('success toast on step complete', () => {
     expect(src).toContain('stepCompleted');
     expect(src).toContain("variant: 'success'");
+  });
+
+  test('RTL import and checkItem uses rtlFlexRow', () => {
+    expect(src).toContain('rtlFlexRow');
+    expect(src).toContain('isRTL');
   });
 });
 
@@ -209,6 +215,23 @@ describe('profile/[username]', () => {
 
   test('uses tc.text.primary for theme-aware text', () => {
     expect(styles).toContain('tc.text.primary');
+  });
+
+  test('blockMutation has onError', () => {
+    expect(src).toMatch(/blockMutation.*onError/s);
+  });
+
+  test('muteMutation has onError', () => {
+    expect(src).toMatch(/muteMutation.*onError/s);
+  });
+
+  test('collaborator badge uses spacing tokens not raw pixels', () => {
+    expect(src).toContain('top: spacing.xs');
+    expect(src).toContain('end: spacing.xs');
+  });
+
+  test('highlight press error shows toast', () => {
+    expect(src).not.toContain('silently ignore');
   });
 });
 
@@ -329,6 +352,10 @@ describe('quran-reading-plan', () => {
     const styles = getStylesSection(src);
     expect(styles).toMatch(/sectionTitle.*tc\.text\.primary/s);
   });
+
+  test('handleCreatePlan has isPending guard', () => {
+    expect(src).toContain('createMutation.isPending');
+  });
 });
 
 // ── D29: quran-room.tsx ──
@@ -371,6 +398,10 @@ describe('quran-share', () => {
     const styles = getStylesSection(src);
     expect(styles).toMatch(/verseTranslation.*tc\.text\.secondary/s);
   });
+
+  test('has useContextualHaptic', () => {
+    expect(src).toContain('useContextualHaptic');
+  });
 });
 
 // ── D30: ramadan-mode.tsx ──
@@ -390,6 +421,12 @@ describe('ramadan-mode', () => {
 
   test('showToast on goal error', () => {
     expect(src).toContain('showToast');
+  });
+
+  test('schedule uses prayerTimesQuery data when available', () => {
+    expect(src).toContain('prayerTimesQuery.data');
+    expect(src).toMatch(/schedule.*useMemo/s);
+    expect(src).toContain('schedule.map');
   });
 });
 
@@ -433,6 +470,18 @@ describe('reel-remix', () => {
   test('captionInput uses tc.text.primary', () => {
     expect(styles).toMatch(/captionInput.*tc\.text\.primary/s);
   });
+
+  test('destructive discard has haptic', () => {
+    expect(src).toMatch(/discardRecording.*haptic\.delete/s);
+  });
+
+  test('handleBack with unsaved has haptic', () => {
+    expect(src).toMatch(/handleBack.*haptic\.delete/s);
+  });
+
+  test('onRefresh awaits invalidateQueries', () => {
+    expect(src).toContain('await queryClient.invalidateQueries');
+  });
 });
 
 // ── D30: reel-templates.tsx ──
@@ -472,5 +521,9 @@ describe('report', () => {
 
   test('fonts imported', () => {
     expect(src).toContain("fonts } from '@/theme'");
+  });
+
+  test('submit has haptic', () => {
+    expect(src).toContain('haptic.send()');
   });
 });

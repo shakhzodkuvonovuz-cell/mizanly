@@ -312,6 +312,21 @@ export default function RamadanModeScreen() {
     return () => clearInterval(interval);
   }, [prayerTimesQuery.data]);
 
+  // Build schedule from real prayer times when available, fallback to static
+  const schedule: PrayerTime[] = useMemo(() => {
+    const pt = prayerTimesQuery.data;
+    if (!pt) return RAMADAN_SCHEDULE;
+    return [
+      { name: 'screens.ramadanMode.suhoorEndsFajr', time: pt.fajr ?? RAMADAN_SCHEDULE[0].time, isHighlighted: true },
+      { name: 'screens.ramadanMode.sunrise', time: pt.sunrise ?? RAMADAN_SCHEDULE[1].time },
+      { name: 'screens.ramadanMode.dhuhr', time: pt.dhuhr ?? RAMADAN_SCHEDULE[2].time },
+      { name: 'screens.ramadanMode.asr', time: pt.asr ?? RAMADAN_SCHEDULE[3].time },
+      { name: 'screens.ramadanMode.iftarMaghrib', time: pt.maghrib ?? RAMADAN_SCHEDULE[4].time, isHighlighted: true },
+      { name: 'screens.ramadanMode.isha', time: pt.isha ?? RAMADAN_SCHEDULE[5].time },
+      { name: 'screens.ramadanMode.taraweeh', time: pt.isha ? `${parseInt(pt.isha.split(':')[0]) + 1}:00` : RAMADAN_SCHEDULE[6].time, isHighlighted: true },
+    ];
+  }, [prayerTimesQuery.data]);
+
   const onRefresh = useCallback(async () => {
     await Promise.all([
       ramadanQuery.refetch(),
@@ -416,7 +431,7 @@ export default function RamadanModeScreen() {
               colors={colors.gradient.cardDark}
               style={styles.scheduleCard}
             >
-              {RAMADAN_SCHEDULE.map((prayer, index) => (
+              {schedule.map((prayer, index) => (
                 <ScheduleItem key={prayer.name} prayer={prayer} index={index} t={t} />
               ))}
             </LinearGradient>

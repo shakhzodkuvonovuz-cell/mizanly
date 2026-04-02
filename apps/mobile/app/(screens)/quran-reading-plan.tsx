@@ -198,7 +198,7 @@ function QuranReadingPlanContent() {
   const styles = createStyles(tc);
   const router = useRouter();
   const haptic = useContextualHaptic();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const queryClient = useQueryClient();
   const [markSheetVisible, setMarkSheetVisible] = useState(false);
   const [deleteSheetVisible, setDeleteSheetVisible] = useState(false);
@@ -268,6 +268,7 @@ function QuranReadingPlanContent() {
 
   const handleCreatePlan = useCallback(
     (planType: string) => {
+      if (createMutation.isPending) return;
       haptic.navigate();
       createMutation.mutate(planType);
     },
