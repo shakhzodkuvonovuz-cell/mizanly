@@ -24,7 +24,7 @@ export default function HashtagExploreScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const haptic = useContextualHaptic();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -86,7 +86,7 @@ export default function HashtagExploreScreen() {
               {item.postsCount?.toLocaleString() || 0} <Text style={styles.countGold}>{t('common.posts')}</Text>
             </Text>
           </View>
-          <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
+          <Icon name={isRTL ? 'chevron-left' : 'chevron-right'} size="sm" color={tc.text.tertiary} />
         </Pressable>
       </LinearGradient>
     </Animated.View>

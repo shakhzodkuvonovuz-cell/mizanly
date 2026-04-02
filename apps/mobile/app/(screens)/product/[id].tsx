@@ -83,7 +83,7 @@ function ImageCarousel({ images }: { images: string[] }) {
     [],
   );
 
-  const viewabilityConfig = { viewAreaCoveragePercentThreshold: 50 };
+  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
   if (images.length === 0) {
     return (
@@ -207,8 +207,9 @@ function ProductDetailScreen() {
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['product', id],
     queryFn: async () => {
-      const res = await commerceApi.getProduct(id) as { data?: ProductDetail } & ProductDetail;
-      return (res.data ?? res) as ProductDetail;
+      const res = await commerceApi.getProduct(id);
+      const parsed = res as Record<string, unknown>;
+      return (parsed.data && typeof parsed.data === 'object' ? parsed.data : res) as ProductDetail;
     },
     enabled: !!id,
   });
@@ -517,7 +518,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   productTitle: {
     fontFamily: fonts.headingBold,
     fontSize: fontSize.xl,
-    color: colors.text.primary,
+    color: tc.text.primary,
     marginBottom: spacing.xs,
   },
   productPrice: {
@@ -561,7 +562,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   sectionTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.md,
-    color: colors.text.primary,
+    color: tc.text.primary,
     marginBottom: spacing.sm,
   },
   descriptionText: {
@@ -592,7 +593,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   sellerName: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   sellerUsername: {
     fontFamily: fonts.body,
@@ -655,7 +656,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   reviewName: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.sm,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   reviewStars: {
     flexDirection: 'row',
