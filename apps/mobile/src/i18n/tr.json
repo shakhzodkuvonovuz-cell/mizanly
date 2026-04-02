@@ -197,7 +197,8 @@
     "unsavedChangesMessage": "Kaydedilmemiş değişiklikleriniz var. Ne yapmak istersiniz?",
     "saved": "Saved",
     "rateLimited": "Yavaşla! {{seconds}} saniye sonra tekrar dene",
-    "views": "görüntüleme"
+    "views": "görüntüleme",
+    "unfollowed": "Takip bırakıldı"
   },
   "auth": {
     "signIn": "Giriş Yap",
@@ -1068,7 +1069,8 @@
     "openCompass": "Pusula Ac",
     "calculating": "Hesaplaniyor...",
     "adhanNotification": "{{prayer}} bildirimi",
-    "deviceHeading": "Cihaz yönü"
+    "deviceHeading": "Cihaz yönü",
+    "nextPrayerIn": "Sonraki: {{prayer}}"
   },
   "prayerNotifications": {
     "settings": "Namaz Bildirimleri Ayarları",
@@ -1458,7 +1460,8 @@
     "resetCounter": "Reset counter",
     "volumeSlider": "Volume slider",
     "previousMonth": "Previous month",
-    "nextMonth": "Next month"
+    "nextMonth": "Next month",
+    "watchVideo": "Videoyu izle: {{title}}"
   },
   "gif": {
     "searchPlaceholder": "Search GIFs...",

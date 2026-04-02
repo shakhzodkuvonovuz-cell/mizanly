@@ -197,7 +197,8 @@
     "unsavedChangesMessage": "لديك تغييرات غير محفوظة. ماذا تريد أن تفعل؟",
     "saved": "Saved",
     "rateLimited": "تمهّل! حاول مرة أخرى بعد {{seconds}} ثانية",
-    "views": "مشاهدات"
+    "views": "مشاهدات",
+    "unfollowed": "إلغاء المتابعة"
   },
   "auth": {
     "signIn": "تسجيل الدخول",
@@ -1068,7 +1069,8 @@
     "openCompass": "افتح البوصلة",
     "calculating": "جاري الحساب...",
     "adhanNotification": "إشعار {{prayer}}",
-    "deviceHeading": "اتجاه الجهاز"
+    "deviceHeading": "اتجاه الجهاز",
+    "nextPrayerIn": "التالي: {{prayer}} في"
   },
   "prayerNotifications": {
     "settings": "إعدادات الصلاة",
@@ -1392,7 +1394,8 @@
     "resetCounter": "Reset counter",
     "volumeSlider": "Volume slider",
     "previousMonth": "Previous month",
-    "nextMonth": "Next month"
+    "nextMonth": "Next month",
+    "watchVideo": "مشاهدة الفيديو: {{title}}"
   },
   "gif": {
     "searchPlaceholder": "البحث عن صور متحركة...",

@@ -197,7 +197,8 @@
     "unsavedChangesMessage": "You have unsaved changes. What would you like to do?",
     "saved": "Saved",
     "rateLimited": "Slow down! Try again in {{seconds}} seconds",
-    "views": "views"
+    "views": "views",
+    "unfollowed": "ان فالو"
   },
   "tabs": {
     "saf": "صف",
@@ -905,7 +906,8 @@
     "openCompass": "Open Compass",
     "calculating": "Calculating...",
     "adhanNotification": "{{prayer}} notification",
-    "deviceHeading": "Device heading"
+    "deviceHeading": "Device heading",
+    "nextPrayerIn": "اگلی: {{prayer}} میں"
   },
   "auth": {
     "signIn": "Sign In",
@@ -1465,7 +1467,8 @@
     "resetCounter": "Reset counter",
     "volumeSlider": "Volume slider",
     "previousMonth": "Previous month",
-    "nextMonth": "Next month"
+    "nextMonth": "Next month",
+    "watchVideo": "ویڈیو دیکھیں: {{title}}"
   },
   "gif": {
     "searchPlaceholder": "Search GIFs...",

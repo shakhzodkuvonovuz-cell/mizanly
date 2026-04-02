@@ -197,7 +197,8 @@
     "unsavedChangesMessage": "You have unsaved changes. What would you like to do?",
     "saved": "Saved",
     "rateLimited": "Slow down! Try again in {{seconds}} seconds",
-    "views": "tontonan"
+    "views": "tontonan",
+    "unfollowed": "Tidak diikuti"
   },
   "tabs": {
     "saf": "Saf",
@@ -294,7 +295,8 @@
     "openCompass": "Open Compass",
     "calculating": "Calculating...",
     "adhanNotification": "{{prayer}} notification",
-    "deviceHeading": "Arah peranti"
+    "deviceHeading": "Arah peranti",
+    "nextPrayerIn": "Seterusnya: {{prayer}} dalam"
   },
   "auth": {
     "signIn": "Sign In",
@@ -1464,7 +1466,8 @@
     "resetCounter": "Reset counter",
     "volumeSlider": "Volume slider",
     "previousMonth": "Previous month",
-    "nextMonth": "Next month"
+    "nextMonth": "Next month",
+    "watchVideo": "Tonton video: {{title}}"
   },
   "gif": {
     "searchPlaceholder": "Search GIFs...",

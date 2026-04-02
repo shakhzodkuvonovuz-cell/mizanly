@@ -197,7 +197,8 @@
     "unsavedChangesMessage": "You have unsaved changes. What would you like to do?",
     "saved": "Saved",
     "rateLimited": "Slow down! Try again in {{seconds}} seconds",
-    "views": "vues"
+    "views": "vues",
+    "unfollowed": "Désabonné"
   },
   "tabs": {
     "saf": "Saf",
@@ -405,7 +406,8 @@
     "openCompass": "Open Compass",
     "calculating": "Calculating...",
     "adhanNotification": "{{prayer}} notification",
-    "deviceHeading": "Direction de l'appareil"
+    "deviceHeading": "Direction de l'appareil",
+    "nextPrayerIn": "Suivant: {{prayer}} dans"
   },
   "auth": {
     "signIn": "Sign In",
@@ -1465,7 +1467,8 @@
     "resetCounter": "Reset counter",
     "volumeSlider": "Volume slider",
     "previousMonth": "Previous month",
-    "nextMonth": "Next month"
+    "nextMonth": "Next month",
+    "watchVideo": "Regarder la vidéo: {{title}}"
   },
   "gif": {
     "searchPlaceholder": "Search GIFs...",
