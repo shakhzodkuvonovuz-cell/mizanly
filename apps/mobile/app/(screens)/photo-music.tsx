@@ -27,12 +27,18 @@ import { storiesApi, uploadApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { rtlFlexRow } from '@/utils/rtl';
 import { showToast } from '@/components/ui/Toast';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import type { AudioTrack } from '@/types';
 
-const { width: SCREEN_W } = Dimensions.get('window');
-const IMAGE_SIZE = SCREEN_W - spacing.base * 2;
+// Use dynamic dimensions for responsive support (foldables, split-screen)
+let SCREEN_W = Dimensions.get('window').width;
+let IMAGE_SIZE = SCREEN_W - spacing.base * 2;
+Dimensions.addEventListener('change', ({ window }) => {
+  SCREEN_W = window.width;
+  IMAGE_SIZE = SCREEN_W - spacing.base * 2;
+});
 const MAX_IMAGES = 10;
 const MAX_CAPTION = 500;
 const DURATION_OPTIONS = [2, 3, 5, 7];
@@ -41,7 +47,7 @@ function PhotoMusicScreen() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const haptic = useContextualHaptic();
   const flatListRef = useRef<FlatList>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
@@ -146,7 +152,7 @@ function PhotoMusicScreen() {
         );
         soundRef.current = sound;
       } catch {
-        // Audio playback failed silently
+        showToast({ message: t('photoMusic.audioPlaybackFailed', 'Music preview failed'), variant: 'error' });
       }
     }
 
@@ -342,7 +348,7 @@ function PhotoMusicScreen() {
               <Text style={styles.postButtonDisabled}>{t('photoMusic.post')}</Text>
             ),
             onPress: () => {
-              if (canPost) {
+              if (canPost && !postMutation.isPending) {
                 postMutation.mutate();
               }
             },
@@ -427,7 +433,7 @@ function PhotoMusicScreen() {
             accessibilityRole="button"
             accessibilityLabel={t('photoMusic.selectMusic')}
           >
-            <View style={styles.musicBarLeft}>
+            <View style={[styles.musicBarLeft, { flexDirection: rtlFlexRow(isRTL) }]}>
               <Icon name="play" size="sm" color={colors.emerald} />
               <Text style={styles.musicBarText} numberOfLines={1}>
                 {selectedTrack
@@ -453,7 +459,7 @@ function PhotoMusicScreen() {
         {/* ── Duration Selector ── */}
         <Animated.View entering={FadeInUp.delay(150).duration(300)} style={styles.section}>
           <Text style={styles.sectionLabel}>{t('photoMusic.durationPerPhoto')}</Text>
-          <View style={styles.durationRow}>
+          <View style={[styles.durationRow, { flexDirection: rtlFlexRow(isRTL) }]}>
             {DURATION_OPTIONS.map(renderDurationPill)}
           </View>
         </Animated.View>
@@ -472,7 +478,7 @@ function PhotoMusicScreen() {
               numberOfLines={3}
               textAlignVertical="top"
             />
-            <View style={styles.captionFooter}>
+            <View style={[styles.captionFooter, { flexDirection: rtlFlexRow(isRTL) }]}>
               <Text style={styles.captionHint}>
                 {t('photoMusic.captionHint')}
               </Text>
@@ -593,7 +599,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   previewButtonText: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.sm,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   // ── Empty state ──
   emptyCarousel: {
@@ -614,7 +620,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   sectionLabel: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     marginBottom: spacing.sm,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -638,7 +644,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   musicBarText: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
     flex: 1,
   },
   // ── Duration ──
@@ -661,7 +667,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   durationText: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   durationTextActive: {
     color: colors.emerald,
@@ -678,7 +684,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   captionInput: {
     fontFamily: fonts.body,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
     minHeight: 80,
     textAlignVertical: 'top',
   },
@@ -691,7 +697,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   captionHint: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
   },
   // ── Post button header ──
   postButtonHeader: {

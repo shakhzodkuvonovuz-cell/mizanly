@@ -14,11 +14,14 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { showToast } from '@/components/ui/Toast';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { Alert } from 'react-native';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { messagesApi } from '@/services/api';
 import type { Message } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { rtlFlexRow } from '@/utils/rtl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function PinnedMessagesScreen() {
@@ -26,8 +29,10 @@ export default function PinnedMessagesScreen() {
   const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
+  const haptic = useContextualHaptic();
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
   const [refreshing, setRefreshing] = useState(false);
+  const [unpinning, setUnpinning] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   // Use the proper server-side pinned messages endpoint (isPinned field)
@@ -50,19 +55,37 @@ export default function PinnedMessagesScreen() {
     setRefreshing(false);
   };
 
-  const handleUnpin = async (messageId: string) => {
-    try {
-      await messagesApi.unpin(conversationId, messageId);
-      queryClient.invalidateQueries({ queryKey: ['pinned-messages', conversationId] });
-      showToast({ message: t('screens.pinned-messages.unpinned'), variant: 'success' });
-    } catch (err) {
-      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
-      if (__DEV__) console.error('Failed to unpin message', err);
-    }
+  const handleUnpin = (messageId: string) => {
+    if (unpinning) return; // Prevent double-tap
+    haptic.tick();
+    Alert.alert(
+      t('screens.pinned-messages.confirmUnpinTitle', 'Unpin Message'),
+      t('screens.pinned-messages.confirmUnpinMessage', 'This will unpin the message for all members.'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('screens.pinned-messages.unpin'),
+          style: 'destructive',
+          onPress: async () => {
+            setUnpinning(messageId);
+            try {
+              await messagesApi.unpin(conversationId, messageId);
+              queryClient.invalidateQueries({ queryKey: ['pinned-messages', conversationId] });
+              showToast({ message: t('screens.pinned-messages.unpinned'), variant: 'success' });
+            } catch (err) {
+              showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+              if (__DEV__) console.error('Failed to unpin message', err);
+            } finally {
+              setUnpinning(null);
+            }
+          },
+        },
+      ],
+    );
   };
 
   const renderMessage = ({ item, index }: { item: Message; index: number }) => (
-    <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 10) * 80).duration(400)}>
       <LinearGradient
         colors={colors.gradient.cardDark}
         style={styles.messageCard}
@@ -197,7 +220,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderColor: colors.active.white6,
   },
   messageInner: {
-    flexDirection: 'row',
+    flexDirection: 'row' as const,
   },
   pinIconBg: {
     width: 36,
@@ -225,16 +248,18 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   senderName: {
     fontSize: fontSize.sm,
-    fontWeight: '600',
-    color: colors.text.primary,
+    fontFamily: fonts.bodySemiBold,
+    color: tc.text.primary,
   },
   timestamp: {
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
+    fontFamily: fonts.body,
+    color: tc.text.tertiary,
   },
   content: {
     fontSize: fontSize.base,
-    color: colors.text.secondary,
+    fontFamily: fonts.body,
+    color: tc.text.secondary,
     lineHeight: 20,
   },
   mediaPlaceholder: {
@@ -248,7 +273,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   mediaText: {
     marginStart: spacing.xs,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   skeletonContainer: {
     paddingHorizontal: spacing.base,

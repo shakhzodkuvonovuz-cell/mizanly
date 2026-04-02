@@ -13,9 +13,11 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { GradientButton } from '@/components/ui/GradientButton';
+import { showToast } from '@/components/ui/Toast';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
-import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
+import { Alert } from 'react-native';
+import { colors, spacing, fontSize, radius, fontSizeExt, fonts } from '@/theme';
 import { parentalApi } from '@/services/api';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -299,6 +301,9 @@ function ChildCard({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['parental-children'] });
     },
+    onError: () => {
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+    },
   });
 
   const [restrictedMode, setRestrictedMode] = useState(control.restrictedMode);
@@ -467,8 +472,13 @@ export default function ParentalControlsScreen() {
       parentalApi.unlinkChild(childId, pin),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['parental-children'] });
+      queryClient.invalidateQueries({ queryKey: ['parental-control-check'] });
       setUnlinkChildId(null);
       setUnlinkPinSheet(false);
+      showToast({ message: t('parentalControls.unlinkSuccess', 'Account unlinked'), variant: 'success' });
+    },
+    onError: () => {
+      showToast({ message: t('parentalControls.unlinkFailed', 'Failed to unlink account'), variant: 'error' });
     },
   });
 
@@ -488,17 +498,23 @@ export default function ParentalControlsScreen() {
       setChangePinStep('current');
       setCurrentPinValue('');
       haptic.success();
+      showToast({ message: t('parentalControls.pinChanged', 'PIN changed successfully'), variant: 'success' });
+    },
+    onError: () => {
+      showToast({ message: t('parentalControls.changePinFailed', 'Failed to change PIN'), variant: 'error' });
     },
   });
 
   // Check if user has any children linked (for PIN gate vs first-time setup)
-  // Use same query key as childrenQuery so React Query deduplicates the request
+  // Use separate query key so children data isn't shared before PIN verification
   const hasControlsQuery = useQuery({
-    queryKey: ['parental-children'],
+    queryKey: ['parental-control-check'],
     queryFn: () => parentalApi.getChildren(),
   });
 
-  const hasControls = ((hasControlsQuery.data ?? []) as ParentalControl[]).length > 0;
+  const controlCheckData = (hasControlsQuery.data ?? []) as ParentalControl[];
+  const hasControls = controlCheckData.length > 0;
+  const firstChildId = controlCheckData[0]?.childUserId;
 
   // On mount, decide if we need PIN or first-time setup
   const handlePinComplete = useCallback(async (pin: string) => {
@@ -511,8 +527,7 @@ export default function ParentalControlsScreen() {
     if (pinAttempts >= 5) return;
 
     try {
-      const first = ((hasControlsQuery.data ?? []) as ParentalControl[])[0];
-      const result = await parentalApi.verifyPin(first.childUserId, pin) as { valid: boolean };
+      const result = await parentalApi.verifyPin(firstChildId!, pin) as { valid: boolean };
       if (result.valid) {
         haptic.success();
         setPinVerified(true);
@@ -530,14 +545,29 @@ export default function ParentalControlsScreen() {
       setPinError(true);
       setTimeout(() => setPinError(false), 2000);
     }
-  }, [hasControls, hasControlsQuery.data, haptic, pinAttempts]);
+  }, [hasControls, firstChildId, haptic, pinAttempts]);
 
   const handleUnlink = (childId: string) => {
-    setUnlinkChildId(childId);
-    setUnlinkPinSheet(true);
+    haptic.error();
+    Alert.alert(
+      t('parentalControls.confirmUnlinkTitle', 'Unlink Account'),
+      t('parentalControls.confirmUnlinkMessage', 'This will remove all parental controls for this account. This cannot be undone.'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('parentalControls.unlinkAccount'),
+          style: 'destructive',
+          onPress: () => {
+            setUnlinkChildId(childId);
+            setUnlinkPinSheet(true);
+          },
+        },
+      ],
+    );
   };
 
   const handleChangePin = (childId: string) => {
+    haptic.tick();
     setChangePinChildId(childId);
     setChangePinStep('current');
     setCurrentPinValue('');
@@ -547,6 +577,11 @@ export default function ParentalControlsScreen() {
   const onRefresh = useCallback(() => {
     childrenQuery.refetch();
   }, [childrenQuery]);
+
+  // Auto-verify when no controls exist (must be before early returns per Rules of Hooks)
+  useEffect(() => {
+    if (!pinVerified && !hasControls && !hasControlsQuery.isLoading) setPinVerified(true);
+  }, [pinVerified, hasControls, hasControlsQuery.isLoading]);
 
   // Loading state
   if (hasControlsQuery.isLoading) {
@@ -602,11 +637,6 @@ export default function ParentalControlsScreen() {
       </ScreenErrorBoundary>
     );
   }
-
-  // If no controls and not verified, auto-verify (in useEffect to avoid setState during render)
-  useEffect(() => {
-    if (!pinVerified && !hasControls) setPinVerified(true);
-  }, [pinVerified, hasControls]);
 
   // Main content
   return (
@@ -728,8 +758,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
 
   // PIN Pad
   pinContainer: { alignItems: 'center', gap: spacing.base },
-  pinTitle: { color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700', marginTop: spacing.md },
-  pinSubtitle: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: spacing.xs },
+  pinTitle: { color: tc.text.primary, fontSize: fontSize.lg, fontFamily: fonts.heading, marginTop: spacing.md },
+  pinSubtitle: { color: tc.text.secondary, fontSize: fontSize.sm, fontFamily: fonts.body, marginTop: spacing.xs },
   pinDots: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.xl },
   pinDot: {
     width: 16, height: 16, borderRadius: radius.full,
@@ -746,7 +776,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: tc.bgElevated,
   },
   numKeyEmpty: { backgroundColor: 'transparent' },
-  numKeyText: { color: colors.text.primary, fontSize: fontSize.xl, fontWeight: '600' },
+  numKeyText: { color: tc.text.primary, fontSize: fontSize.xl, fontFamily: fonts.bodySemiBold },
 
   // Section Header
   sectionHeader: {
@@ -754,7 +784,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingVertical: spacing.md,
   },
   sectionTitle: {
-    color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '600',
+    color: tc.text.secondary, fontSize: fontSize.sm, fontFamily: fonts.bodySemiBold,
     textTransform: 'uppercase', letterSpacing: 0.5,
   },
 
@@ -768,15 +798,15 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     padding: spacing.base,
   },
   childInfo: { flex: 1, marginStart: spacing.md },
-  childName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
-  childUsername: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 2 },
+  childName: { color: tc.text.primary, fontSize: fontSize.base, fontFamily: fonts.bodySemiBold },
+  childUsername: { color: tc.text.secondary, fontSize: fontSize.sm, fontFamily: fonts.body, marginTop: 2 },
 
   // Controls Body
   controlsBody: { paddingHorizontal: spacing.base, paddingBottom: spacing.base },
   controlDivider: { height: 1, backgroundColor: tc.border, marginVertical: spacing.md },
   controlSectionLabel: {
-    color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '600',
-    textTransform: 'uppercase', letterSpacing: 0.5,
+    color: tc.text.secondary, fontSize: fontSize.xs, fontFamily: fonts.bodySemiBold,
+    textTransform: 'uppercase' as const, letterSpacing: 0.5,
     marginTop: spacing.md, marginBottom: spacing.sm,
   },
 
@@ -785,7 +815,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingVertical: spacing.sm,
   },
-  toggleLabel: { color: colors.text.primary, fontSize: fontSize.base, flex: 1 },
+  toggleLabel: { color: tc.text.primary, fontSize: fontSize.base, fontFamily: fonts.body, flex: 1 },
   toggleTrack: {
     width: 48, height: 28, borderRadius: radius.lg,
     backgroundColor: tc.border, padding: 3, justifyContent: 'center',
@@ -806,7 +836,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   ageRatingChipActive: {
     borderColor: colors.emerald, backgroundColor: colors.active.emerald15,
   },
-  ageRatingText: { color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '600' },
+  ageRatingText: { color: tc.text.secondary, fontSize: fontSize.sm, fontFamily: fonts.bodySemiBold },
   ageRatingTextActive: { color: colors.emerald },
 
   // DM chips
@@ -822,13 +852,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     padding: spacing.base, marginTop: spacing.sm,
   },
   digestTitle: {
-    color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600',
+    color: tc.text.primary, fontSize: fontSize.base, fontFamily: fonts.bodySemiBold,
     marginBottom: spacing.md,
   },
   digestStats: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: spacing.lg },
   digestStatItem: { alignItems: 'center' },
-  digestStatValue: { color: colors.emerald, fontSize: fontSize.lg, fontWeight: '700' },
-  digestStatLabel: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: 2 },
+  digestStatValue: { color: colors.emerald, fontSize: fontSize.lg, fontFamily: fonts.heading },
+  digestStatLabel: { color: tc.text.tertiary, fontSize: fontSize.xs, marginTop: 2 },
 
   // Bar chart
   barChart: { flexDirection: 'row', justifyContent: 'space-between', height: 80, gap: spacing.xs },
@@ -838,7 +868,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.sm, overflow: 'hidden', justifyContent: 'flex-end',
   },
   barFill: { width: '100%', borderRadius: radius.sm },
-  barLabel: { color: colors.text.tertiary, fontSize: fontSizeExt.tiny, marginTop: 4 },
+  barLabel: { color: tc.text.tertiary, fontSize: fontSizeExt.tiny, marginTop: 4 },
 
   // Manage actions
   manageActions: { gap: spacing.sm, marginTop: spacing.md },
@@ -848,7 +878,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.md, borderWidth: 1, borderColor: tc.border,
   },
   manageBtnDanger: { borderColor: 'rgba(248,81,73,0.3)' },
-  manageBtnText: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '500' },
+  manageBtnText: { color: tc.text.primary, fontSize: fontSize.sm, fontFamily: fonts.bodyMedium },
   manageBtnTextDanger: { color: colors.error },
 
   // Footer

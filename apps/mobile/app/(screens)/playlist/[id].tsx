@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   FlatList,
@@ -15,7 +15,8 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Icon } from '@/components/ui/Icon';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
+import { rtlFlexRow } from '@/utils/rtl';
 import { playlistsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -55,9 +56,10 @@ const formatDuration = (sec: number) => {
 export default function PlaylistDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
   const tc = useThemeColors();
+  const doubleTapRef = React.useRef(false);
 
   const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
@@ -67,6 +69,7 @@ export default function PlaylistDetailScreen() {
     queryKey: ['playlist', playlistId],
     queryFn: () => playlistsApi.getById(playlistId!),
     enabled: !!playlistId,
+    staleTime: 30_000,
   });
 
   const itemsQuery = useInfiniteQuery({
@@ -75,6 +78,7 @@ export default function PlaylistDetailScreen() {
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last?.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
     enabled: !!playlistId,
+    staleTime: 30_000,
   });
 
   const items: PlaylistItem[] = itemsQuery.data?.pages.flatMap((p) => p?.data ?? []) ?? [];
@@ -111,22 +115,29 @@ export default function PlaylistDetailScreen() {
   const playlist = playlistQuery.data;
 
   const renderItem = ({ item, index }: { item: PlaylistItem; index: number }) => (
-    <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 10) * 50).duration(400)}>
       <Pressable
-        onPress={() => router.push(`/(screens)/video/${item.video.id}`)}
+        onPress={() => {
+          if (doubleTapRef.current) return;
+          doubleTapRef.current = true;
+          setTimeout(() => { doubleTapRef.current = false; }, 500);
+          haptic.navigate();
+          router.push(`/(screens)/video/${item.video.id}`);
+        }}
         accessibilityLabel={`Watch video: ${item.video.title}`}
         accessibilityRole="button"
       >
         <LinearGradient
           colors={colors.gradient.cardDark}
-          style={styles.videoRow}
+          style={[styles.videoRow, { flexDirection: rtlFlexRow(isRTL) }]}
         >
           <View style={styles.thumbWrap}>
             {item.video.thumbnailUrl ? (
-              <Image
-                source={{ uri: item.video.thumbnailUrl }}
-                style={styles.thumb}
-                contentFit="cover"
+              <ProgressiveImage
+                uri={item.video.thumbnailUrl}
+                width={160}
+                height={90}
+                borderRadius={radius.md}
               />
             ) : (
               <LinearGradient
@@ -166,7 +177,7 @@ export default function PlaylistDetailScreen() {
     </Animated.View>
   );
 
-  const ListHeader = () => (
+  const ListHeader = useMemo(() => () => (
     <Animated.View entering={FadeInUp.delay(0).duration(400)} style={styles.playlistHeader}>
       {playlist?.thumbnailUrl ? (
         <LinearGradient
@@ -192,7 +203,7 @@ export default function PlaylistDetailScreen() {
 
       {/* Play All + Shuffle buttons */}
       {items.length > 0 && (
-        <View style={styles.playActions}>
+        <View style={[styles.playActions, { flexDirection: rtlFlexRow(isRTL) }]}>
           <Pressable
             style={styles.playAllBtn}
             onPress={handlePlayAll}
@@ -214,7 +225,7 @@ export default function PlaylistDetailScreen() {
         </View>
       )}
     </Animated.View>
-  );
+  ), [playlist, items.length, handlePlayAll, handleShuffle, t, tc, isRTL]);
 
   if (!playlistId) {
     return (
@@ -317,7 +328,7 @@ export default function PlaylistDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
   list: { paddingBottom: spacing.xl, gap: spacing.sm, paddingTop: spacing.md },
   playlistHeader: { padding: spacing.base, gap: spacing.sm, marginBottom: spacing.md },
   thumbContainer: {
@@ -327,8 +338,8 @@ const styles = StyleSheet.create({
     borderColor: colors.active.white6,
   },
   playlistThumb: { width: '100%', height: 200, borderRadius: radius.md },
-  playlistTitle: { color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700' },
-  playlistDesc: { color: colors.text.secondary, fontSize: fontSize.sm },
+  playlistTitle: { fontSize: fontSize.lg, fontFamily: fonts.heading },
+  playlistDesc: { fontSize: fontSize.sm, fontFamily: fonts.body },
   videoCountBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -338,7 +349,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: radius.sm,
   },
-  videoCount: { color: colors.emerald, fontSize: fontSize.xs, fontWeight: '600' },
+  videoCount: { color: colors.emerald, fontSize: fontSize.xs, fontFamily: fonts.bodySemiBold },
   videoRow: {
     flexDirection: 'row',
     padding: spacing.base,
@@ -355,11 +366,11 @@ const styles = StyleSheet.create({
   },
   durationBadge: {
     position: 'absolute', bottom: 4, end: 4,
-    paddingHorizontal: 4, paddingVertical: 2, borderRadius: radius.sm,
+    paddingHorizontal: spacing.xs, paddingVertical: 2, borderRadius: radius.sm,
   },
   durationText: { color: '#fff', fontSize: fontSize.xs },
   videoInfo: { flex: 1, justifyContent: 'center', gap: 4 },
-  videoTitle: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '500' },
+  videoTitle: { fontSize: fontSize.sm, fontFamily: fonts.bodyMedium },
   channelBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -369,7 +380,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: radius.sm,
   },
-  channelName: { color: colors.gold, fontSize: fontSize.xs, fontWeight: '600' },
+  channelName: { color: colors.gold, fontSize: fontSize.xs, fontFamily: fonts.bodySemiBold },
   skeletonWrap: { padding: spacing.base, gap: spacing.md },
   playActions: {
     flexDirection: 'row',
@@ -387,9 +398,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   playAllText: {
-    color: '#fff',
+    color: colors.text.onColor,
     fontSize: fontSize.sm,
-    fontWeight: '700',
+    fontFamily: fonts.heading,
   },
   shuffleBtn: {
     flex: 1,
@@ -406,6 +417,6 @@ const styles = StyleSheet.create({
   shuffleText: {
     color: colors.emerald,
     fontSize: fontSize.sm,
-    fontWeight: '700',
+    fontFamily: fonts.heading,
   },
 });
