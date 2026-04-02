@@ -70,6 +70,7 @@ type EditSnapshot = {
 export default function VideoEditorScreen() {
   const tc = useThemeColors();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const cardGradient: readonly [string, string] = tc.isDark ? colors.gradient.cardDark : ['rgba(230,235,240,0.6)', 'rgba(240,242,245,0.3)'];
   const styles = createStyles(tc, screenWidth, screenHeight);
   const router = useRouter();
   const params = useLocalSearchParams<{ videoUri?: string; uri?: string; returnTo?: string }>();
@@ -619,7 +620,7 @@ export default function VideoEditorScreen() {
                   <LinearGradient
                     colors={playbackSpeed === speed
                       ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
-                      : colors.gradient.cardDark
+                      : cardGradient
                     }
                     style={styles.speedButtonGradient}
                   >
@@ -655,7 +656,7 @@ export default function VideoEditorScreen() {
                     <LinearGradient
                       colors={speedCurve === curve.id
                         ? ['rgba(200,150,62,0.4)', 'rgba(200,150,62,0.2)']
-                        : colors.gradient.cardDark
+                        : cardGradient
                       }
                       style={styles.effectChipGradient}
                     >
@@ -686,7 +687,7 @@ export default function VideoEditorScreen() {
                     onPress={() => { pushUndo(); setSelectedFilter(filter.id); }}
                   >
                     <LinearGradient
-                      colors={colors.gradient.cardDark}
+                      colors={cardGradient}
                       style={[
                         styles.filterButtonGradient,
                         selectedFilter === filter.id && styles.filterButtonGradientActive
@@ -846,7 +847,7 @@ export default function VideoEditorScreen() {
                   <LinearGradient
                     colors={selectedFont === font
                       ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
-                      : colors.gradient.cardDark
+                      : cardGradient
                     }
                     style={styles.fontButtonGradient}
                   >
@@ -933,7 +934,7 @@ export default function VideoEditorScreen() {
                 <LinearGradient
                   colors={isSpeaking
                     ? ['rgba(248,81,73,0.4)', 'rgba(248,81,73,0.2)']
-                    : colors.gradient.cardDark
+                    : cardGradient
                   }
                   style={styles.ttsButtonGradient}
                 >
@@ -951,7 +952,7 @@ export default function VideoEditorScreen() {
                 onPress={() => setShowEmojiPicker(true)}
               >
                 <LinearGradient
-                  colors={colors.gradient.cardDark}
+                  colors={cardGradient}
                   style={styles.ttsButtonGradient}
                 >
                   <Icon name="smile" size="sm" color={tc.text.secondary} />
@@ -985,7 +986,7 @@ export default function VideoEditorScreen() {
             {selectedTrack ? (
               <View style={styles.currentTrackCard}>
                 <LinearGradient
-                  colors={colors.gradient.cardDark}
+                  colors={cardGradient}
                   style={styles.currentTrackGradient}
                 >
                   <View style={styles.trackInfo}>
@@ -1087,7 +1088,7 @@ export default function VideoEditorScreen() {
                     <LinearGradient
                       colors={voiceEffect === effect
                         ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
-                        : colors.gradient.cardDark
+                        : cardGradient
                       }
                       style={styles.effectChipGradient}
                     >
@@ -1172,7 +1173,7 @@ export default function VideoEditorScreen() {
                 <LinearGradient
                   colors={freezeFrameAt !== null
                     ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
-                    : colors.gradient.cardDark
+                    : cardGradient
                   }
                   style={styles.freezeButtonGradient}
                 >
@@ -1489,7 +1490,7 @@ export default function VideoEditorScreen() {
         <Animated.View entering={FadeInUp.delay(100).duration(400)}>
           <View style={styles.timelineContainer}>
             <LinearGradient
-              colors={colors.gradient.cardDark}
+              colors={cardGradient}
               style={styles.timelineGradient}
             >
               {/* Time Labels — show trim range */}
@@ -1579,7 +1580,7 @@ export default function VideoEditorScreen() {
                 <LinearGradient
                   colors={selectedTool === tool.id
                     ? ['rgba(10,123,79,0.5)', 'rgba(10,123,79,0.3)']
-                    : colors.gradient.cardDark
+                    : cardGradient
                   }
                   style={styles.toolTabGradient}
                 >
@@ -1604,7 +1605,7 @@ export default function VideoEditorScreen() {
         <Animated.View entering={FadeInUp.delay(200).duration(400)}>
           <View style={styles.toolPanelContainer}>
             <LinearGradient
-              colors={colors.gradient.cardDark}
+              colors={cardGradient}
               style={styles.toolPanelGradient}
             >
               {renderToolPanel()}
@@ -1627,7 +1628,7 @@ export default function VideoEditorScreen() {
                   <LinearGradient
                     colors={selectedQuality === quality
                       ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
-                      : colors.gradient.cardDark
+                      : cardGradient
                     }
                     style={styles.qualityButtonGradient}
                   >
