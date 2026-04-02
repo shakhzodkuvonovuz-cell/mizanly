@@ -6,6 +6,7 @@ import {
   ScrollView,
   Pressable,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useUser } from '@clerk/clerk-expo';
@@ -252,7 +253,7 @@ export default function QuranRoomScreen() {
   if (error) {
     return (
       <ScreenErrorBoundary>
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container} edges={['top']}>
           <GlassHeader
             title={t('quranRoom.title')}
             leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -264,14 +265,14 @@ export default function QuranRoomScreen() {
             actionLabel={t('common.retry')}
             onAction={() => setError(null)}
           />
-        </View>
+        </SafeAreaView>
       </ScreenErrorBoundary>
     );
   }
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
           title={t('quranRoom.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -429,7 +430,7 @@ export default function QuranRoomScreen() {
             </LinearGradient>
           </Pressable>
         )}
-      </View>
+      </SafeAreaView>
     </ScreenErrorBoundary>
   );
 }
@@ -481,14 +482,14 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.base,
   },
   translationText: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.base,
     lineHeight: 24,
     textAlign: 'center',
     marginBottom: spacing.md,
   },
   verseRef: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.sm,
     textAlign: 'center',
   },
@@ -522,7 +523,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     width: '100%',
   },
   toggleText: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.base,
     flex: 1,
   },

@@ -10,9 +10,11 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { showToast } from '@/components/ui/Toast';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function QRScannerScreen() {
@@ -24,6 +26,7 @@ export default function QRScannerScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const cameraRef = useRef<CameraView>(null);
+  const haptic = useContextualHaptic();
 
   useEffect(() => {
     if (permission && !permission.granted && !permission.canAskAgain) {
@@ -48,16 +51,12 @@ export default function QRScannerScreen() {
 
     if (match) {
       const username = match[1];
+      haptic.success();
       router.replace(`/(screens)/profile/${username}`);
     } else {
-      Alert.alert(
-        t('screens.qr-scanner.invalidCode'),
-        t('screens.qr-scanner.invalidCode'),
-        [
-          { text: t('common.retry'), onPress: () => setScanned(false) },
-          { text: t('common.cancel'), style: 'cancel', onPress: () => router.back() },
-        ]
-      );
+      haptic.error();
+      showToast({ message: t('screens.qr-scanner.invalidCode'), variant: 'error' });
+      setTimeout(() => setScanned(false), 1500);
     }
   };
 
@@ -192,9 +191,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.md,
   },
   instruction: {
-    color: colors.text.primary,
+    color: '#fff',
     fontSize: fontSize.base,
-    fontWeight: '500',
+    fontFamily: fonts.bodyMedium,
   },
   scannedOverlay: {
     position: 'absolute',
@@ -214,9 +213,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     justifyContent: 'center',
   },
   scannedText: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.lg,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
     marginTop: spacing.md,
   },
   footer: {

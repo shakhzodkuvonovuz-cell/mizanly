@@ -12,11 +12,12 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { settingsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { showToast } from '@/components/ui/Toast';
 import { rtlFlexRow, rtlTextAlign, rtlMargin } from '@/utils/rtl';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 
@@ -72,6 +73,11 @@ export default function QuietModeScreen() {
     mutationFn: settingsApi.updateQuietMode,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quiet-mode'] });
+      showToast({ message: t('common.saved', { defaultValue: 'Saved' }), variant: 'success' });
+    },
+    onError: () => {
+      showToast({ message: t('common.error'), variant: 'error' });
+      haptic.error();
     },
   });
 
@@ -378,12 +384,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.sm,
   },
   heroTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.lg,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
   },
   heroSubtitle: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     lineHeight: 20,
   },
@@ -412,12 +418,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flex: 1,
   },
   toggleLabel: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
-    fontWeight: '500',
+    fontFamily: fonts.bodyMedium,
   },
   toggleHint: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.xs,
     marginTop: 2,
   },
@@ -444,7 +450,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingVertical: spacing.md,
   },
   timeLabel: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
   },
   timeButton: {
@@ -457,9 +463,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.md,
   },
   timeButtonText: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
     fontVariant: ['tabular-nums'],
   },
 
@@ -472,13 +478,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingTop: spacing.md,
   },
   autoReplyLabel: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
-    fontWeight: '500',
+    fontFamily: fonts.bodyMedium,
     flex: 1,
   },
   autoReplyInput: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
@@ -486,7 +492,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     textAlignVertical: 'top',
   },
   autoReplyHint: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.xs,
     paddingHorizontal: spacing.base,
     paddingBottom: spacing.md,
@@ -511,7 +517,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     fontWeight: '600',
   },
   infoBody: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     lineHeight: 20,
   },

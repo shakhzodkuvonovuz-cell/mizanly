@@ -24,6 +24,7 @@ import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { showToast } from '@/components/ui/Toast';
 import { islamicApi } from '@/services/islamicApi';
 import type { QuranReadingPlan } from '@/types/islamic';
 
@@ -228,6 +229,10 @@ function QuranReadingPlanContent() {
       haptic.success();
       queryClient.invalidateQueries({ queryKey: ['quran-plan'] });
     },
+    onError: () => {
+      showToast({ message: t('common.error'), variant: 'error' });
+      haptic.error();
+    },
   });
 
   const updateMutation = useMutation({
@@ -237,6 +242,10 @@ function QuranReadingPlanContent() {
       haptic.tick();
       queryClient.invalidateQueries({ queryKey: ['quran-plan'] });
     },
+    onError: () => {
+      showToast({ message: t('common.error'), variant: 'error' });
+      haptic.error();
+    },
   });
 
   const deleteMutation = useMutation({
@@ -244,6 +253,10 @@ function QuranReadingPlanContent() {
     onSuccess: () => {
       haptic.navigate();
       queryClient.invalidateQueries({ queryKey: ['quran-plan'] });
+    },
+    onError: () => {
+      showToast({ message: t('common.error'), variant: 'error' });
+      haptic.error();
     },
   });
 
@@ -558,7 +571,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   sectionTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.lg,
-    color: colors.text.primary,
+    color: tc.text.primary,
     marginBottom: spacing.md,
     marginTop: spacing.sm,
   },
@@ -573,13 +586,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   planDays: {
     fontFamily: fonts.heading,
     fontSize: fontSize.xl,
-    color: colors.text.primary,
+    color: tc.text.primary,
     marginBottom: spacing.xs,
   },
   planPages: {
     fontFamily: fonts.body,
     fontSize: fontSize.base,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     marginBottom: spacing.md,
   },
   planStartRow: {
@@ -613,7 +626,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   ringPercent: {
     fontFamily: fonts.heading,
     fontSize: 36,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   progressText: {
     fontFamily: fonts.bodySemiBold,
@@ -641,7 +654,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   statValue: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   // Daily Target
   dailyTarget: {
@@ -710,12 +723,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   historyPlanType: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   historyDates: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     marginTop: spacing.xs,
   },
 });

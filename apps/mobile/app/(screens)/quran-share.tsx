@@ -135,7 +135,7 @@ export default function QuranShareScreen() {
   // Loading state
   if (surahsLoading) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
           title={t('screens.quranShare.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -157,14 +157,14 @@ export default function QuranShareScreen() {
             <Skeleton.Rect width="100%" height={48} borderRadius={radius.lg} />
           </View>
         </ScrollView>
-      </View>
+      </SafeAreaView>
     );
   }
 
   // Empty state if no surahs loaded
   if (!surahs || surahs.length === 0) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
           title={t('screens.quranShare.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -176,13 +176,13 @@ export default function QuranShareScreen() {
           actionLabel={t('common.retry')}
           onAction={() => refetchSurahs()}
         />
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
           title={t('screens.quranShare.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -447,8 +447,8 @@ export default function QuranShareScreen() {
             }}
           />
         </BottomSheet>
-      </View>
-  
+      </SafeAreaView>
+
     </ScreenErrorBoundary>
   );
 }
@@ -499,7 +499,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: 2,
   },
   surahName: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
   },
   surahMeta: {
@@ -507,12 +507,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginEnd: spacing.sm,
   },
   surahNumber: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.sm,
     fontWeight: '500',
   },
   verseCount: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.xs,
   },
 
@@ -547,7 +547,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderColor: colors.active.white6,
   },
   verseNumberText: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     fontWeight: '600',
   },
@@ -635,7 +635,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
 
   // Translation
   verseTranslation: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.base,
     textAlign: 'center',
     lineHeight: 24,
@@ -653,7 +653,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.full,
   },
   referenceText: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.sm,
     fontWeight: '500',
   },
@@ -714,7 +714,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderColor: colors.active.white6,
   },
   copyButtonText: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.base,
     fontWeight: '500',
   },
@@ -730,7 +730,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   surahSearchInput: {
     flex: 1,
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     padding: 0,
   },
@@ -742,7 +742,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
 
   // Share Sheet
   shareSheetTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.md,
     fontWeight: '600',
     textAlign: 'center',
