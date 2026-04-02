@@ -376,7 +376,7 @@ export default function ThreadDetailScreen() {
             accessibilityLabel={t('tts.listen')}
             accessibilityRole="button"
           >
-            <Icon name="volume-x" size={16} color={colors.emerald} />
+            <Icon name="volume-2" size={16} color={colors.emerald} />
             <Text style={styles.listenText}>{t('tts.listen')}</Text>
           </Pressable>
         )}
@@ -446,7 +446,7 @@ export default function ThreadDetailScreen() {
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <FlatList
             removeClippedSubviews={true}
@@ -489,7 +489,7 @@ export default function ThreadDetailScreen() {
             {Platform.OS === 'ios' ? (
               <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
             ) : (
-              <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(13, 17, 23, 0.95)' }]} />
+              <View style={[StyleSheet.absoluteFill, { backgroundColor: tc.isDark ? 'rgba(13, 17, 23, 0.95)' : 'rgba(255, 255, 255, 0.95)' }]} />
             )}
             <View style={styles.stickyBarContent}>
               <ActionButton
@@ -556,8 +556,8 @@ export default function ThreadDetailScreen() {
                 accessibilityLabel={t('accessibility.replyInput')}
               />
               <Pressable
-                onPress={() => canSend && sendMutation.mutate()}
-                disabled={!canSend}
+                onPress={() => { if (canSend) { haptic.send(); sendMutation.mutate(); } }}
+                disabled={!canSend || sendMutation.isPending}
                 accessibilityLabel={t('accessibility.sendComment')}
                 accessibilityRole="button"
               >
@@ -597,7 +597,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
     borderTopWidth: 0.5, borderTopColor: tc.border,
   },
-  repliesTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
+  repliesTitle: { color: tc.text.primary, fontSize: fontSize.base, fontWeight: '700' },
   sortRow: {
     flexDirection: 'row',
     gap: spacing.xs,
@@ -613,7 +613,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: colors.active.emerald10,
   },
   sortButtonText: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     fontWeight: '600',
   },
@@ -644,16 +644,16 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flexDirection: 'row', alignItems: 'center',
     gap: spacing.xs, marginBottom: spacing.xs,
   },
-  replyName: { color: colors.text.primary, fontWeight: '700', fontSize: fontSize.sm },
-  replyHandle: { color: colors.text.secondary, fontSize: fontSize.xs },
-  replyTime: { color: colors.text.tertiary, fontSize: fontSize.xs, marginLeft: 'auto' },
-  replyContent: { color: colors.text.primary, fontSize: fontSize.base, lineHeight: 21 },
+  replyName: { color: tc.text.primary, fontWeight: '700', fontSize: fontSize.sm },
+  replyHandle: { color: tc.text.secondary, fontSize: fontSize.xs },
+  replyTime: { color: tc.text.tertiary, fontSize: fontSize.xs, marginLeft: 'auto' },
+  replyContent: { color: tc.text.primary, fontSize: fontSize.base, lineHeight: 21 },
   replyMedia: { width: '100%', height: 160, borderRadius: radius.md, marginTop: spacing.sm },
   replyActions: {
     flexDirection: 'row', gap: spacing.xl, marginTop: spacing.sm,
   },
   replyAction: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  replyActionCount: { color: colors.text.secondary, fontSize: fontSize.sm },
+  replyActionCount: { color: tc.text.secondary, fontSize: fontSize.sm },
   inputWrap: {
     borderTopWidth: 0.5, borderTopColor: tc.border,
     backgroundColor: tc.bg,
@@ -664,14 +664,14 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingHorizontal: spacing.base, paddingVertical: spacing.xs,
     backgroundColor: tc.bgElevated,
   },
-  replyBannerText: { color: colors.text.secondary, fontSize: fontSize.xs },
-  replyClose: { color: colors.text.secondary, fontSize: fontSize.sm },
+  replyBannerText: { color: tc.text.secondary, fontSize: fontSize.xs },
+  replyClose: { color: tc.text.secondary, fontSize: fontSize.sm },
   inputRow: {
     flexDirection: 'row', alignItems: 'flex-end',
     paddingHorizontal: spacing.base, paddingTop: spacing.sm, gap: spacing.sm,
   },
   input: {
-    flex: 1, color: colors.text.primary, fontSize: fontSize.base,
+    flex: 1, color: tc.text.primary, fontSize: fontSize.base,
     maxHeight: 100, paddingVertical: 8, paddingHorizontal: spacing.base,
     backgroundColor: tc.bgElevated, borderRadius: radius.full,
   },

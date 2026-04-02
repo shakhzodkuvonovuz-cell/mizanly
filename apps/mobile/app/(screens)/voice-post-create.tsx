@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Dimensions, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, FadeIn, useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSpring } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Audio } from 'expo-av';
@@ -39,10 +40,14 @@ export default function VoicePostCreateScreen() {
   const pulseScale = useSharedValue(1);
   const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulseScale.value }] }));
 
-  // Cleanup interval on unmount
+  // Cleanup interval and recording on unmount
   useEffect(() => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
+      if (recordingRef.current) {
+        recordingRef.current.stopAndUnloadAsync().catch(() => {});
+        recordingRef.current = null;
+      }
     };
   }, []);
 
@@ -85,7 +90,8 @@ export default function VoicePostCreateScreen() {
         }
       }, 1000);
     } catch {
-      // Permission denied or error
+      showToast({ message: t('voicePost.recordingFailed', 'Recording failed'), variant: 'error' });
+      haptic.error();
     }
   }, []);
 
@@ -137,7 +143,8 @@ export default function VoicePostCreateScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         <GlassHeader
           title={t('community.voicePost')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -212,7 +219,7 @@ export default function VoicePostCreateScreen() {
             </Animated.View>
           )}
         </View>
-      </View>
+      </SafeAreaView>
     </ScreenErrorBoundary>
   );
 }
@@ -221,15 +228,15 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   container: { flex: 1, backgroundColor: tc.bg },
   content: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: spacing.base },
   timerSection: { alignItems: 'center', marginBottom: spacing['2xl'] },
-  timer: { fontSize: 64, fontWeight: '700', color: colors.text.primary, fontVariant: ['tabular-nums'] },
-  maxDuration: { color: colors.text.tertiary, fontSize: fontSize.sm, marginTop: spacing.xs },
+  timer: { fontSize: 64, fontWeight: '700', color: tc.text.primary, fontVariant: ['tabular-nums'] },
+  maxDuration: { color: tc.text.tertiary, fontSize: fontSize.sm, marginTop: spacing.xs },
   waveform: { flexDirection: 'row', alignItems: 'center', gap: 3, height: 60, marginBottom: spacing['2xl'] },
   waveBar: { width: 4, borderRadius: 2, minHeight: 4 },
   recordSection: { alignItems: 'center', marginBottom: spacing['2xl'] },
   recordButton: { width: 88, height: 88, borderRadius: radius.full, overflow: 'hidden' },
   recordButtonActive: { borderWidth: 3, borderColor: '#F85149' },
   recordGradient: { flex: 1, justifyContent: 'center', alignItems: 'center', borderRadius: radius.full },
-  recordHint: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: spacing.md },
+  recordHint: { color: tc.text.secondary, fontSize: fontSize.sm, marginTop: spacing.md },
   postSection: { width: '100%' },
   postBtn: { borderRadius: radius.md, overflow: 'hidden' },
   postGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, paddingVertical: spacing.base, borderRadius: radius.md },

@@ -32,19 +32,24 @@ export default function TrendingAudioScreen() {
   const haptic = useContextualHaptic();
   const [refreshing, setRefreshing] = useState(false);
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const playingIdRef = useRef<string | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
+  const audioMutex = useRef(false);
 
   const playAudio = useCallback(async (id: string, uri: string) => {
+    if (audioMutex.current) return;
+    audioMutex.current = true;
     try {
-      // Stop current if playing something else
+      // Stop current if playing something
       if (soundRef.current) {
         await soundRef.current.stopAsync();
         await soundRef.current.unloadAsync();
         soundRef.current = null;
       }
 
-      if (playingId === id) {
+      if (playingIdRef.current === id) {
         // Was playing this one — toggle off
+        playingIdRef.current = null;
         setPlayingId(null);
         return;
       }
@@ -54,10 +59,12 @@ export default function TrendingAudioScreen() {
         { shouldPlay: true },
       );
       soundRef.current = sound;
+      playingIdRef.current = id;
       setPlayingId(id);
 
       sound.setOnPlaybackStatusUpdate((status) => {
         if (status.isLoaded && status.didJustFinish) {
+          playingIdRef.current = null;
           setPlayingId(null);
           sound.unloadAsync().catch(() => {});
           soundRef.current = null;
@@ -65,9 +72,12 @@ export default function TrendingAudioScreen() {
       });
     } catch (err) {
       if (__DEV__) console.warn('Audio playback failed:', err);
+      playingIdRef.current = null;
       setPlayingId(null);
+    } finally {
+      audioMutex.current = false;
     }
-  }, [playingId]);
+  }, []);
 
   useEffect(() => {
     return () => { soundRef.current?.unloadAsync().catch(() => {}); };
@@ -94,9 +104,9 @@ export default function TrendingAudioScreen() {
   const formatUsage = (count: number) => `${formatCount(count)} ${t('screens.trending-audio.reels')}`;
 
   const renderItem = ({ item, index }: { item: AudioTrack; index: number }) => (
-    <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index * 80, 400)).duration(400)}>
       <LinearGradient
-        colors={colors.gradient.cardDark}
+        colors={tc.isDark ? colors.gradient.cardDark : ['rgba(230,235,240,0.6)', 'rgba(240,242,245,0.3)'] as [string, string]}
         style={styles.row}
       >
         <Text style={[styles.rank, index < 3 && styles.rankGold]}>{index + 1}</Text>
@@ -250,13 +260,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.sm,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.active.white6,
+    borderColor: tc.border,
     gap: spacing.md,
   },
   rank: {
     fontSize: fontSize.lg,
     fontWeight: '700',
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     width: 32,
     textAlign: 'center',
   },
@@ -297,15 +307,15 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   title: {
     fontSize: fontSize.base,
     fontWeight: '600',
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   artist: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   stats: {
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     marginTop: 2,
   },
   statsGold: {
@@ -322,6 +332,6 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   useButtonText: {
     fontSize: fontSize.sm,
     fontWeight: '600',
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
 });

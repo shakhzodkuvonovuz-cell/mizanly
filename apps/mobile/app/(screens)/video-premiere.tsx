@@ -66,6 +66,19 @@ export default function VideoPremiereScreen() {
 
   const isValid = date.length >= 10 && time.length >= 5;
 
+  if (!videoId) {
+    return (
+      <ScreenErrorBoundary>
+        <View style={styles.container}>
+          <GlassHeader
+            title={t('premiere.schedule')}
+            leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back', 'Go back') }}
+          />
+        </View>
+      </ScreenErrorBoundary>
+    );
+  }
+
   return (
     <ScreenErrorBoundary>
       <View style={styles.container}>
@@ -73,7 +86,7 @@ export default function VideoPremiereScreen() {
           title={t('premiere.schedule')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back', 'Go back') }}
         />
-        <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
           {/* Video info */}
           <Animated.View entering={FadeInUp.duration(300)} style={styles.card}>
             <Icon name="video" size="md" color={colors.emerald} />
@@ -185,16 +198,16 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderColor: tc.border,
     marginBottom: spacing.xl,
   },
-  videoTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600', flex: 1 },
+  videoTitle: { color: tc.text.primary, fontSize: fontSize.base, fontWeight: '600', flex: 1 },
   section: { marginBottom: spacing.xl },
-  label: { color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '500', marginBottom: spacing.sm },
+  label: { color: tc.text.secondary, fontSize: fontSize.sm, fontWeight: '500', marginBottom: spacing.sm },
   input: {
     backgroundColor: tc.bgCard,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: tc.border,
     padding: spacing.md,
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
   },
   themeRow: { flexDirection: 'row', gap: spacing.md },
@@ -209,7 +222,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   themeCardActive: { borderColor: colors.emerald },
   themeGradient: { width: 40, height: 40, borderRadius: radius.full },
-  themeLabel: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: spacing.sm },
+  themeLabel: { color: tc.text.secondary, fontSize: fontSize.xs, marginTop: spacing.sm },
   toggleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -221,8 +234,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderColor: tc.border,
     marginBottom: spacing.xl,
   },
-  toggleLabel: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '500' },
-  toggleHint: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: 2 },
+  toggleLabel: { color: tc.text.primary, fontSize: fontSize.base, fontWeight: '500' },
+  toggleHint: { color: tc.text.tertiary, fontSize: fontSize.xs, marginTop: 2 },
   toggleBtn: {
     width: 48,
     height: 28,
@@ -236,7 +249,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     width: 24,
     height: 24,
     borderRadius: radius.full,
-    backgroundColor: colors.text.secondary,
+    backgroundColor: tc.text.secondary,
   },
   toggleKnobActive: { alignSelf: 'flex-end', backgroundColor: '#FFF' },
   submitSection: { marginTop: spacing.md },

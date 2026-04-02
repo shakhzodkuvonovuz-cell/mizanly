@@ -20,6 +20,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -101,7 +102,12 @@ function VolunteerBoardContent() {
     mutationFn: (id: string) => volunteerApi.signUp(id),
     onSuccess: () => {
       haptic.success();
+      showToast({ message: t('volunteer.signUpSuccess', 'Signed up successfully!'), variant: 'success' });
       queryClient.invalidateQueries({ queryKey: ['volunteer-opportunities'] });
+    },
+    onError: () => {
+      haptic.error();
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
     },
   });
 
@@ -123,7 +129,7 @@ function VolunteerBoardContent() {
   };
 
   const handleSignUp = (opportunity: VolunteerOpportunity) => {
-    haptic.follow();
+    haptic.tick();
     signUpMutation.mutate(opportunity.id);
   };
 
@@ -163,10 +169,10 @@ function VolunteerBoardContent() {
   const renderOpportunity = ({ item, index }: { item: VolunteerOpportunity; index: number }) => {
     const isFull = item.spotsFilled >= item.spotsTotal;
     const spotsRemaining = item.spotsTotal - item.spotsFilled;
-    const fillPercentage = Math.min((item.spotsFilled / item.spotsTotal) * 100, 100);
+    const fillPercentage = item.spotsTotal > 0 ? Math.min((item.spotsFilled / item.spotsTotal) * 100, 100) : 0;
 
     return (
-      <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
+      <Animated.View entering={FadeInUp.delay(Math.min(index * 60, 300)).duration(300)}>
         <View style={styles.opportunityCard}>
           {/* Category icon + title */}
           <View style={styles.cardHeader}>
@@ -371,7 +377,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderColor: colors.emerald,
   },
   chipText: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     fontFamily: fonts.bodySemiBold,
   },
@@ -406,7 +412,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: 2,
   },
   cardTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     fontFamily: fonts.bodySemiBold,
     lineHeight: 20,
@@ -418,7 +424,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     textTransform: 'capitalize',
   },
   cardDescription: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     fontFamily: fonts.body,
     lineHeight: 20,
@@ -435,7 +441,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: spacing.xs,
   },
   metaText: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.xs,
     fontFamily: fonts.body,
   },
@@ -449,7 +455,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     alignItems: 'center',
   },
   spotsLabel: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.xs,
     fontFamily: fonts.bodySemiBold,
   },
@@ -489,7 +495,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flex: 1,
   },
   organizerName: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     fontFamily: fonts.body,
     flex: 1,

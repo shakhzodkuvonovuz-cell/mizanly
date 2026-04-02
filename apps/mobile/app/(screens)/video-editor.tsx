@@ -91,6 +91,7 @@ export default function VideoEditorScreen() {
   const [voiceoverUri, setVoiceoverUri] = useState<string | null>(null);
   const [isRecordingVoiceover, setIsRecordingVoiceover] = useState(false);
   const recordingRef = useRef<Audio.Recording | null>(null);
+  const navTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showMusicPicker, setShowMusicPicker] = useState(false);
   const [selectedTrack, setSelectedTrack] = useState<AudioTrack | null>(null);
   const [isReversed, setIsReversed] = useState(false);
@@ -194,6 +195,9 @@ export default function VideoEditorScreen() {
       if (recordingRef.current) {
         recordingRef.current.stopAndUnloadAsync().catch(() => {});
         recordingRef.current = null;
+      }
+      if (navTimerRef.current) {
+        clearTimeout(navTimerRef.current);
       }
       Speech.stop();
       Audio.setAudioModeAsync({ allowsRecordingIOS: false }).catch(() => {});
@@ -439,7 +443,8 @@ export default function VideoEditorScreen() {
         exportProgressAnim.value = withTiming(100, { duration: 200 });
 
         showToast({ message: t('videoEditor.videoSaved'), variant: 'success' });
-        setTimeout(() => router.back(), 800);
+        const navTimer = setTimeout(() => router.back(), 800);
+        navTimerRef.current = navTimer;
       } catch {
         showToast({ message: t('videoEditor.saveFailed'), variant: 'error' });
       } finally {
@@ -1529,7 +1534,7 @@ export default function VideoEditorScreen() {
                 </GestureDetector>
 
                 {/* Playhead */}
-                <View style={[styles.playhead, { left: `${(currentTime / totalDuration) * 100}%` }]}>
+                <View style={[styles.playhead, { left: `${totalDuration > 0 ? (currentTime / totalDuration) * 100 : 0}%` }]}>
                   <View style={styles.playheadTriangle} />
                   <View style={styles.playheadLine} />
                 </View>
@@ -1761,7 +1766,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   timestampText: {
     fontSize: fontSize.xs,
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontFamily: fonts.mono,
   },
   speedBadge: {
@@ -1777,7 +1782,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   speedBadgeText: {
     fontSize: fontSize.xs,
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontFamily: fonts.mono,
   },
   playButton: {
@@ -1800,7 +1805,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   noVideoText: {
     fontSize: fontSize.sm,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
   },
   exportProgressContainer: {
     flexDirection: 'row',
@@ -1824,12 +1829,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   timeLabelStart: {
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontFamily: fonts.mono,
   },
   timeLabelEnd: {
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontFamily: fonts.mono,
   },
   waveformContainer: {
@@ -1896,7 +1901,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   dragHint: {
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     textAlign: 'center',
     marginTop: spacing.sm,
   },
@@ -1921,7 +1926,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   toolTabText: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   toolTabTextActive: {
     color: colors.emerald,
@@ -1943,11 +1948,11 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   toolPanelTitle: {
     fontSize: fontSize.md,
     fontWeight: '600',
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   toolSubTitle: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     marginTop: spacing.sm,
   },
   timeInputRow: {
@@ -1959,7 +1964,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   timeInputLabel: {
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     marginBottom: spacing.xs,
   },
   timeInput: {
@@ -1967,7 +1972,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.md,
     padding: spacing.sm,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontFamily: fonts.mono,
     textAlign: 'center',
   },
@@ -1984,7 +1989,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   splitButtonText: {
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   deleteButton: {
     borderRadius: radius.md,
@@ -2020,7 +2025,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   speedButtonText: {
     fontSize: fontSize.base,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   speedButtonTextActive: {
     color: colors.emerald,
@@ -2054,7 +2059,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   filterName: {
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   captionInput: {
     backgroundColor: tc.surface,
@@ -2085,7 +2090,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   addTextButtonText: {
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   fontScroll: {
     marginTop: spacing.sm,
@@ -2101,7 +2106,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   fontButtonText: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   fontButtonTextActive: {
     color: colors.emerald,
@@ -2135,7 +2140,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   libraryButtonText: {
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
     flex: 1,
     marginStart: spacing.sm,
   },
@@ -2167,12 +2172,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   trackName: {
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontWeight: '500',
   },
   trackArtist: {
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
   },
   removeTrackButton: {
     width: 32,
@@ -2255,7 +2260,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     position: 'absolute',
     width: 14,
     height: 14,
-    borderRadius: 7,
+    borderRadius: radius.sm,
     backgroundColor: colors.gold,
     top: -5,
     marginStart: -7,
@@ -2391,7 +2396,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   toggleSwitch: {
     width: 44,
     height: 24,
-    borderRadius: 12,
+    borderRadius: radius.md,
     backgroundColor: tc.surface,
     justifyContent: 'center',
     paddingHorizontal: 2,
@@ -2402,7 +2407,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   toggleThumb: {
     width: 20,
     height: 20,
-    borderRadius: 10,
+    borderRadius: radius.md,
     backgroundColor: tc.text.tertiary,
   },
   toggleThumbActive: {
@@ -2500,7 +2505,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   volumeLabel: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   volumeValue: {
     fontSize: fontSize.sm,
@@ -2533,7 +2538,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   qualityLabel: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     marginBottom: spacing.sm,
   },
   qualityButtons: {
@@ -2551,7 +2556,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   qualityButtonText: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   qualityButtonTextActive: {
     color: colors.emerald,
@@ -2579,7 +2584,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   cancelButtonText: {
     fontSize: fontSize.base,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   exportButton: {
     borderRadius: radius.md,

@@ -21,6 +21,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Avatar } from '@/components/ui/Avatar';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -137,10 +138,11 @@ function UpNextSection({ videoId, tc }: { videoId: string; tc: ReturnType<typeof
         >
           <View style={styles.upNextThumbnail}>
             {video.thumbnailUrl ? (
-              <Animated.Image
-                source={{ uri: video.thumbnailUrl }}
-                style={styles.upNextThumbnailImage}
-                resizeMode="cover"
+              <ProgressiveImage
+                uri={video.thumbnailUrl}
+                width={120}
+                height={68}
+                borderRadius={radius.sm}
               />
             ) : (
               <View style={[styles.upNextThumbnailImage, { backgroundColor: tc.surface, justifyContent: 'center', alignItems: 'center' }]}>
@@ -452,6 +454,7 @@ export default function VideoDetailScreen() {
   };
 
   const handleDislike = () => {
+    if (dislikeMutation.isPending || removeReactionMutation.isPending) return;
     haptic.like();
     if (video?.isDisliked) {
       removeReactionMutation.mutate();
@@ -495,7 +498,7 @@ export default function VideoDetailScreen() {
   };
 
   const handleCommentSubmit = () => {
-    if (commentText.trim()) {
+    if (commentText.trim() && !commentMutation.isPending) {
       commentMutation.mutate();
     }
   };
@@ -849,7 +852,7 @@ export default function VideoDetailScreen() {
           {Platform.OS === 'ios' ? (
             <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
           ) : (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(13, 17, 23, 0.95)' }]} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: tc.isDark ? 'rgba(13, 17, 23, 0.95)' : 'rgba(255, 255, 255, 0.95)' }]} />
           )}
           <View style={styles.stickyBarContent}>
             <ActionButton
@@ -944,7 +947,7 @@ export default function VideoDetailScreen() {
           </View>
           <BottomSheetItem
             label={t('video.saveToPlaylist')}
-            icon={<Icon name="layers" size="sm" color={tc.text.primary} />}
+            icon={<Icon name="bookmark" size="sm" color={tc.text.primary} />}
             onPress={() => {
               setShowMenu(false);
               router.push(`/(screens)/save-to-playlist?videoId=${video.id}`);
@@ -1006,13 +1009,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingTop: spacing.base,
   },
   videoTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.lg,
     fontWeight: '700',
     marginBottom: spacing.xs,
   },
   videoStats: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     marginBottom: spacing.base,
   },
@@ -1026,12 +1029,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flex: 1,
   },
   channelName: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     fontWeight: '600',
   },
   channelSubscribers: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
   },
   subscribeButton: {
@@ -1044,12 +1047,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: tc.surface,
   },
   subscribeText: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.sm,
     fontWeight: '600',
   },
   subscribedText: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   descriptionContainer: {
     backgroundColor: tc.surface,
@@ -1058,7 +1061,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.lg,
   },
   descriptionText: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.base,
     lineHeight: fontSize.lg,
   },
@@ -1082,7 +1085,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.md,
   },
   commentsTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.lg,
     fontWeight: '700',
   },
@@ -1100,17 +1103,17 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flex: 1,
   },
   commentPreviewUsername: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.sm,
     fontWeight: '600',
   },
   commentPreviewText: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     marginTop: 2,
   },
   noComments: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.sm,
     textAlign: 'center',
     paddingVertical: spacing.lg,
@@ -1127,7 +1130,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderBottomColor: tc.border,
   },
   sheetTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.lg,
     fontWeight: '700',
   },
@@ -1145,13 +1148,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   commentInput: {
     flex: 1,
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     backgroundColor: tc.surface,
     borderRadius: radius.full,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    marginRight: spacing.sm,
+    marginEnd: spacing.sm,
     maxHeight: 100,
   },
   commentItem: {
@@ -1163,12 +1166,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flex: 1,
   },
   commentUsername: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.sm,
     fontWeight: '600',
   },
   commentText: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.base,
     marginVertical: spacing.xs,
   },
@@ -1177,11 +1180,11 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: spacing.md,
   },
   commentTime: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.xs,
   },
   commentAction: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.xs,
     fontWeight: '600',
   },
@@ -1196,7 +1199,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   chapterHeaderText: {
     flex: 1,
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     fontWeight: '600',
   },
@@ -1208,13 +1211,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingLeft: spacing.xl,
   },
   chapterTime: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     minWidth: 40,
   },
   chapterTitle: {
     flex: 1,
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
   },
 
@@ -1246,7 +1249,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingTop: spacing.xl,
   },
   videoTitleCinematic: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.lg,
     fontWeight: '700',
     textShadowColor: 'rgba(0,0,0,0.5)',
@@ -1287,7 +1290,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: spacing.xs,
   },
   videoStatText: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
   },
   videoStatTextGold: {
@@ -1296,7 +1299,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     fontWeight: '600',
   },
   statDivider: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.sm,
   },
 
@@ -1320,7 +1323,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: 4,
     flex: 1,
     justifyContent: 'flex-end',
-    marginRight: spacing.sm,
+    marginEnd: spacing.sm,
   },
   timelineDot: {
     width: 6,
@@ -1381,16 +1384,16 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flex: 1,
   },
   chapterMarkerTitle: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.base,
     fontWeight: '500',
   },
   chapterMarkerTitleActive: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontWeight: '700',
   },
   chapterMarkerTime: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.xs,
   },
   nowPlayingBadge: {
@@ -1411,7 +1414,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.lg,
   },
   upNextTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.lg,
     fontWeight: '700',
     marginBottom: spacing.md,
@@ -1447,7 +1450,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: 2,
   },
   upNextDurationText: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: 10,
     fontWeight: '600',
   },
@@ -1456,18 +1459,18 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     justifyContent: 'center' as const,
   },
   upNextVideoTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.sm,
     fontWeight: '600',
     lineHeight: 18,
     marginBottom: 2,
   },
   upNextChannelName: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.xs,
   },
   upNextStats: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.xs,
     marginTop: 2,
   },

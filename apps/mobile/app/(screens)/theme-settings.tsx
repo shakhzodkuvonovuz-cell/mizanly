@@ -11,6 +11,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { useStore } from '@/store';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type ThemeOption = 'dark' | 'light' | 'system';
@@ -34,11 +35,11 @@ function ThemeRadio({ icon, label, description, isActive, onPress }: ThemeRadioP
       accessibilityState={{ selected: isActive }}
     >
       <LinearGradient
-        colors={isActive ? ['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
+        colors={isActive ? ['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)'] : tc.isDark ? ['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)'] : ['rgba(200,210,220,0.4)', 'rgba(220,230,240,0.2)']}
         style={[styles.radio, isActive && styles.radioActive]}
       >
         <LinearGradient
-          colors={isActive ? ['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)'] : ['rgba(110,119,129,0.2)', 'rgba(110,119,129,0.1)']}
+          colors={isActive ? ['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)'] : tc.isDark ? ['rgba(110,119,129,0.2)', 'rgba(110,119,129,0.1)'] : ['rgba(150,160,170,0.2)', 'rgba(150,160,170,0.1)']}
           style={styles.radioIconBg}
         >
           {icon}
@@ -99,6 +100,7 @@ export default function ThemeSettingsScreen() {
   const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
+  const haptic = useContextualHaptic();
   const { theme, setTheme } = useStore();
   const systemTheme = useColorScheme() ?? 'dark';
   const [isReady, setIsReady] = useState(false);
@@ -146,7 +148,7 @@ export default function ThemeSettingsScreen() {
               accessibilityLabel: t('accessibility.goBack')
             }}
           />
-          <View style={{ paddingTop: 100 }}>
+          <View style={{ paddingTop: spacing['2xl'] * 3 }}>
             <ThemeSettingsSkeleton />
           </View>
         </SafeAreaView>
@@ -170,7 +172,7 @@ export default function ThemeSettingsScreen() {
           {/* Preview swatch with glassmorphism */}
           <Animated.View entering={FadeInUp.duration(500)}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
+              colors={tc.isDark ? ['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)'] : ['rgba(200,210,220,0.5)', 'rgba(220,230,240,0.3)']}
               style={styles.previewCard}
             >
               <View style={styles.previewHeader}>
@@ -183,10 +185,10 @@ export default function ThemeSettingsScreen() {
                 <Text style={styles.previewTitle}>{t('screens.theme-settings.preview')}</Text>
               </View>
               <View style={styles.swatchRow}>
-                <ColorSwatch bg={themeColors.bg} border={themeColors.border} text={colors.text.primary} />
-                <ColorSwatch bg={themeColors.bgElevated} border={themeColors.border} text={colors.text.primary} />
-                <ColorSwatch bg={themeColors.bgCard} border={themeColors.border} text={colors.text.primary} />
-                <ColorSwatch bg={themeColors.surface} border={themeColors.border} text={colors.text.primary} />
+                <ColorSwatch bg={themeColors.bg} border={themeColors.border} text={tc.text.primary} />
+                <ColorSwatch bg={themeColors.bgElevated} border={themeColors.border} text={tc.text.primary} />
+                <ColorSwatch bg={themeColors.bgCard} border={themeColors.border} text={tc.text.primary} />
+                <ColorSwatch bg={themeColors.surface} border={themeColors.border} text={tc.text.primary} />
               </View>
               <Text style={styles.previewHint}>
                 {effectiveTheme === 'dark' ? t('screens.theme-settings.darkHint', 'Dark theme uses deep backgrounds with emerald highlights.') :
@@ -209,7 +211,7 @@ export default function ThemeSettingsScreen() {
             </View>
             <Animated.View entering={FadeInUp.delay(100).duration(500)}>
               <LinearGradient
-                colors={colors.gradient.cardDark}
+                colors={tc.isDark ? colors.gradient.cardDark : ['rgba(230,235,240,0.6)', 'rgba(240,242,245,0.3)'] as [string, string]}
                 style={styles.card}
               >
                 {options.map((opt, index) => (
@@ -220,7 +222,7 @@ export default function ThemeSettingsScreen() {
                       label={opt.label}
                       description={opt.description}
                       isActive={theme === opt.value}
-                      onPress={() => setTheme(opt.value)}
+                      onPress={() => { haptic.tick(); setTheme(opt.value); }}
                     />
                   </React.Fragment>
                 ))}
@@ -249,7 +251,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   bodyContent: {
     paddingBottom: 60,
-    paddingTop: 100,
+    paddingTop: spacing['2xl'] * 3,
   },
   // Preview card with glassmorphism
   previewCard: {
@@ -258,7 +260,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.lg,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: tc.border,
   },
   previewHeader: {
     flexDirection: 'row',
@@ -274,7 +276,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     justifyContent: 'center',
   },
   previewTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.md,
     fontWeight: '600',
   },
@@ -304,7 +306,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     fontWeight: '700',
   },
   previewHint: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     lineHeight: 18,
   },
@@ -327,7 +329,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     justifyContent: 'center',
   },
   sectionTitle: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.xs,
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -338,7 +340,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.lg,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: colors.active.white6,
+    borderColor: tc.border,
     padding: spacing.sm,
   },
   // Radio buttons with premium styling
@@ -367,7 +369,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginEnd: spacing.md,
   },
   radioLabel: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     fontWeight: '500',
   },
@@ -376,7 +378,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     fontWeight: '600',
   },
   radioDescription: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.xs,
     marginTop: 2,
   },
@@ -393,7 +395,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginHorizontal: spacing.md,
   },
   note: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.xs,
     textAlign: 'center',
     marginTop: spacing.xl,

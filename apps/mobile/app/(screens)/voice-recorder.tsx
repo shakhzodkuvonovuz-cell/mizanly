@@ -66,7 +66,7 @@ export default function VoiceRecorderScreen() {
     setState('recording');
     setTime(0);
     setLevels([]);
-    haptic.send();
+    haptic.tick();
     const timeRef = { value: 0 };
     timer.current = setInterval(() => {
       timeRef.value += 1;
@@ -195,10 +195,10 @@ export default function VoiceRecorderScreen() {
           leftAction={{ icon: 'arrow-left', onPress: cancel, accessibilityLabel: t('common.back') }}
         />
 
-        <View style={[s.content, { paddingTop: insets.top + 52 }]}>
+        <View style={[s.content, { paddingTop: 52 }]}>
           <Animated.View entering={FadeInUp.delay(0).duration(400)} style={s.glassCard}>
             <LinearGradient
-              colors={colors.gradient.cardDark}
+              colors={tc.isDark ? colors.gradient.cardDark : ['rgba(230,235,240,0.6)', 'rgba(240,242,245,0.3)'] as [string, string]}
               style={s.cardGradient}
             >
               <View style={s.timerContainer}>
@@ -307,7 +307,7 @@ const createS = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   cardGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.active.white6,
+    borderColor: tc.border,
     padding: spacing['2xl'],
     alignItems: 'center',
   },
