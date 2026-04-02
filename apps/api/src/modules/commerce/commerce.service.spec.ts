@@ -670,4 +670,75 @@ describe('CommerceService', () => {
       expect(mockStripeInstance.paymentIntents.cancel).toHaveBeenCalledWith('pi_test_123');
     });
   });
+
+  describe('createOrder — Stripe PI creation failure — M11', () => {
+    it('should throw BadRequestException when Stripe PI creation fails', async () => {
+      prisma.product.findUnique.mockResolvedValue(mockProduct);
+      mockStripeInstance.paymentIntents.create.mockRejectedValueOnce(new Error('Card network error'));
+      await expect(service.createOrder('buyer-1', { productId: 'prod-1' }))
+        .rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('getMyOrders — cursor pagination — L14', () => {
+    it('should pass cursor for pagination', async () => {
+      prisma.order.findMany.mockResolvedValue([]);
+      await service.getMyOrders('u1', 'cursor-order-1');
+      expect(prisma.order.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cursor: { id: 'cursor-order-1' },
+          skip: 1,
+        }),
+      );
+    });
+  });
+
+  describe('getBusinesses — category filter — L19', () => {
+    it('should filter by category when provided', async () => {
+      prisma.halalBusiness.findMany.mockResolvedValue([]);
+      await service.getBusinesses(undefined, 20, 'restaurant');
+      expect(prisma.halalBusiness.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ category: 'restaurant' }),
+        }),
+      );
+    });
+  });
+
+  describe('getZakatFunds — category filter + pagination — L24', () => {
+    it('should filter by category when provided', async () => {
+      prisma.zakatFund.findMany.mockResolvedValue([]);
+      await service.getZakatFunds(undefined, 20, 'EDUCATION');
+      expect(prisma.zakatFund.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ category: 'EDUCATION' }),
+        }),
+      );
+    });
+
+    it('should support cursor pagination', async () => {
+      prisma.zakatFund.findMany.mockResolvedValue([]);
+      await service.getZakatFunds('cursor-zf-1', 10);
+      expect(prisma.zakatFund.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cursor: { id: 'cursor-zf-1' },
+          skip: 1,
+        }),
+      );
+    });
+  });
+
+  describe('contributeTreasury — H27 (disabled)', () => {
+    it('should throw NotImplementedException', async () => {
+      await expect(service.contributeTreasury('u1', 'treasury-1', 100))
+        .rejects.toThrow(NotImplementedException);
+    });
+  });
+
+  describe('contributeWaqf — H29 (disabled)', () => {
+    it('should throw NotImplementedException', async () => {
+      await expect(service.contributeWaqf('u1', 'wf-1', 100))
+        .rejects.toThrow(NotImplementedException);
+    });
+  });
 });

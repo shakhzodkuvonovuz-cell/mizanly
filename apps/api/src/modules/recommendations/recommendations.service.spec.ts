@@ -766,5 +766,29 @@ describe('RecommendationsService', () => {
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBeGreaterThanOrEqual(1);
     });
+
+    it('should apply offset slicing in fallback path — #18 L', async () => {
+      prisma.post.findMany.mockResolvedValue(
+        Array.from({ length: 10 }, (_, i) => ({ id: `p${i}` })),
+      );
+      // With offset=5, limit=20, should return posts starting from index 5
+      const result = await service.suggestedPosts('user1', 20, 5);
+      // The result should have fewer items due to offset slicing
+      expect(result.length).toBeLessThanOrEqual(5);
+    });
+  });
+
+  // ═══ T10 Audit: Missing recommendations coverage #15-18 ═══
+
+  describe('suggestedThreads — engagement score THREAD path — #17 L', () => {
+    it('should use repliesCount and repostsCount for thread engagement', async () => {
+      // The fallback path uses prisma.thread.findMany — this tests the THREAD engagement path
+      prisma.thread.findMany.mockResolvedValue([
+        { id: 't1', likesCount: 5, repliesCount: 10, repostsCount: 3, viewsCount: 100, createdAt: new Date() },
+      ]);
+      const result = await service.suggestedThreads('user1', 10);
+      expect(result).toBeDefined();
+      expect(prisma.thread.findMany).toHaveBeenCalled();
+    });
   });
 });

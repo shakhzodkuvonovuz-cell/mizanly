@@ -137,4 +137,52 @@ describe('GiftsService', () => {
       expect(result.data[0].count).toBe(5);
     });
   });
+
+  // ═══ T08 Audit: Missing gifts coverage ═══
+
+  describe('purchaseCoins — max 100K guard — M3', () => {
+    it('should throw for amount > 100,000', async () => {
+      await expect(service.purchaseCoins('u1', 100001)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should accept exactly 100,000', async () => {
+      prisma.coinTransaction.create.mockResolvedValue({ id: 'tx-1' });
+      prisma.coinBalance.upsert.mockResolvedValue({ coins: 0, diamonds: 0 });
+      const result = await service.purchaseCoins('u1', 100000);
+      expect(result.pendingPurchase).toBe(100000);
+    });
+  });
+
+  describe('sendGift — negative balance integrity guard — M5', () => {
+    it('should throw when balance goes negative after deduction', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'receiver', isBanned: false, isDeactivated: false });
+      // $transaction passes tx=prisma, so updateMany/findUnique are on prisma itself
+      prisma.coinBalance.updateMany.mockResolvedValue({ count: 1 }); // deduction succeeds
+      prisma.coinBalance.findUnique.mockResolvedValue({ coins: -5 }); // but balance is negative!
+
+      await expect(service.sendGift('sender', {
+        receiverId: 'receiver', giftType: 'rose',
+      })).rejects.toThrow('Balance integrity violation');
+    });
+  });
+
+  describe('getHistory — limit clamping — L8', () => {
+    it('should clamp limit to minimum 1', async () => {
+      prisma.giftRecord.findMany.mockResolvedValue([]);
+      prisma.coinTransaction.findMany.mockResolvedValue([]);
+      await service.getHistory('u1', undefined, 0);
+      expect(prisma.giftRecord.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ take: 1 }),
+      );
+    });
+
+    it('should clamp limit to maximum 50', async () => {
+      prisma.giftRecord.findMany.mockResolvedValue([]);
+      prisma.coinTransaction.findMany.mockResolvedValue([]);
+      await service.getHistory('u1', undefined, 999);
+      expect(prisma.giftRecord.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ take: 50 }),
+      );
+    });
+  });
 });

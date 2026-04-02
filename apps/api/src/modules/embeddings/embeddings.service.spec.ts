@@ -714,4 +714,126 @@ describe('EmbeddingsService', () => {
       }
     });
   });
+
+  // ═══ T10 Audit: Missing embeddings coverage #10-14 ═══
+
+  describe('embedReel — #10 M', () => {
+    it('should embed a reel using caption + hashtags + audioTitle', async () => {
+      prisma.reel.findUnique.mockResolvedValue({
+        id: 'reel-1', caption: 'Beautiful recitation', hashtags: ['quran'], mentions: [], audioTitle: 'Al-Fatiha',
+      });
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ embedding: { values: Array(768).fill(0.3) } }),
+      });
+      prisma.$executeRaw.mockResolvedValue(undefined);
+
+      const result = await service.embedReel('reel-1');
+      expect(result).toBe(true);
+      expect(prisma.$executeRaw).toHaveBeenCalled();
+    });
+
+    it('should return false for non-existent reel', async () => {
+      prisma.reel.findUnique.mockResolvedValue(null);
+      const result = await service.embedReel('missing');
+      expect(result).toBe(false);
+    });
+
+    it('should return false when caption is empty', async () => {
+      prisma.reel.findUnique.mockResolvedValue({
+        id: 'reel-2', caption: '', hashtags: [], mentions: [], audioTitle: null,
+      });
+      const result = await service.embedReel('reel-2');
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('embedThread — #11 M', () => {
+    it('should embed a thread using content + hashtags', async () => {
+      prisma.thread.findUnique.mockResolvedValue({
+        id: 'thread-1', content: 'Important discussion', hashtags: ['ummah'], mentions: [],
+      });
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ embedding: { values: Array(768).fill(0.4) } }),
+      });
+      prisma.$executeRaw.mockResolvedValue(undefined);
+
+      const result = await service.embedThread('thread-1');
+      expect(result).toBe(true);
+      expect(prisma.$executeRaw).toHaveBeenCalled();
+    });
+
+    it('should return false for non-existent thread', async () => {
+      prisma.thread.findUnique.mockResolvedValue(null);
+      const result = await service.embedThread('missing');
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('embedVideo — #12 M', () => {
+    it('should embed a video using title + description + tags + category', async () => {
+      prisma.video.findUnique.mockResolvedValue({
+        id: 'video-1', title: 'Ramadan Lecture', description: 'Full lecture on fasting', tags: ['ramadan'], category: 'Education',
+      });
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ embedding: { values: Array(768).fill(0.5) } }),
+      });
+      prisma.$executeRaw.mockResolvedValue(undefined);
+
+      const result = await service.embedVideo('video-1');
+      expect(result).toBe(true);
+      expect(prisma.$executeRaw).toHaveBeenCalled();
+    });
+
+    it('should return false for non-existent video', async () => {
+      prisma.video.findUnique.mockResolvedValue(null);
+      const result = await service.embedVideo('missing');
+      expect(result).toBe(false);
+    });
+
+    it('should build text from title + description (different from post)', async () => {
+      prisma.video.findUnique.mockResolvedValue({
+        id: 'video-2', title: 'Hajj Guide', description: 'Step by step', tags: [], category: null,
+      });
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ embedding: { values: Array(768).fill(0.1) } }),
+      });
+      prisma.$executeRaw.mockResolvedValue(undefined);
+
+      await service.embedVideo('video-2');
+      const fetchBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(fetchBody.content.parts[0].text).toContain('Hajj Guide');
+      expect(fetchBody.content.parts[0].text).toContain('Step by step');
+    });
+  });
+
+  describe('generateEmbedding — API unavailable — #13 L', () => {
+    it('should return null when API key is not set', async () => {
+      // Create service without API key
+      const module2 = await Test.createTestingModule({
+        providers: [
+          EmbeddingsService,
+          { provide: PrismaService, useValue: prisma },
+          { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue(null) } },
+        ],
+      }).compile();
+      const svcNoKey = module2.get<EmbeddingsService>(EmbeddingsService);
+
+      const result = await svcNoKey.generateEmbedding('test text');
+      expect(result).toBeNull();
+      // Should NOT call fetch when API unavailable
+    });
+  });
+
+  describe('storeEmbedding — error path — #14 L', () => {
+    it('should propagate $executeRaw errors', async () => {
+      prisma.$executeRaw.mockRejectedValue(new Error('vector dimension mismatch'));
+      await expect(
+        service.storeEmbedding('content-1', 'POST' as any, [0.1, 0.2]),
+      ).rejects.toThrow('vector dimension mismatch');
+    });
+  });
 });

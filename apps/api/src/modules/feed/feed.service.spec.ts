@@ -830,4 +830,68 @@ describe('FeedService', () => {
       expect(result.size).toBe(0);
     });
   });
+
+  describe('getTrendingFeed — multi-tier window expansion — #25 M', () => {
+    const makePost = (id: string, likes: number, minutesAgo: number) => ({
+      id, postType: 'IMAGE', content: `Post ${id}`, visibility: 'PUBLIC',
+      mediaUrls: [], mediaTypes: [], thumbnailUrl: null, mediaWidth: null, mediaHeight: null,
+      hashtags: [], mentions: [], locationName: null,
+      likesCount: likes, commentsCount: 0, sharesCount: 0, savesCount: 0, viewsCount: 0,
+      hideLikesCount: false, commentsDisabled: false, isSensitive: false, isFeatured: false,
+      blurhash: null, isRemoved: false,
+      createdAt: new Date(Date.now() - minutesAgo * 60000), updatedAt: new Date(),
+      user: { id: 'u1', username: 'user1', displayName: 'User 1', avatarUrl: null, isVerified: false },
+      circle: null,
+    });
+
+    beforeEach(() => {
+      (prisma as any).post = { findMany: jest.fn() };
+      (prisma as any).block = { findMany: jest.fn().mockResolvedValue([]) };
+      (prisma as any).mute = { findMany: jest.fn().mockResolvedValue([]) };
+      (prisma as any).restrict = { findMany: jest.fn().mockResolvedValue([]) };
+      (prisma as any).contentFilterSetting = { findUnique: jest.fn().mockResolvedValue(null) };
+      prisma.feedDismissal = { ...prisma.feedDismissal, findMany: jest.fn().mockResolvedValue([]) };
+    });
+
+    it('should expand window when first tier returns < 100 posts', async () => {
+      // First call (24h): returns only 5 posts — less than 100
+      // Second call (48h): returns 150 posts — enough
+      (prisma as any).post.findMany
+        .mockResolvedValueOnce(Array.from({ length: 5 }, (_, i) => makePost(`p${i}`, 10, i * 60)))
+        .mockResolvedValueOnce(Array.from({ length: 150 }, (_, i) => makePost(`p${i}`, 10, i * 60)));
+
+      const result = await service.getTrendingFeed(undefined, 20);
+      // Should have made 2 calls (expanded from 24h to 48h)
+      expect((prisma as any).post.findMany).toHaveBeenCalledTimes(2);
+      expect(result.data.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('getTrendingFeed — content filter integration — #26 M', () => {
+    beforeEach(() => {
+      (prisma as any).post = { findMany: jest.fn().mockResolvedValue([]) };
+      (prisma as any).block = { findMany: jest.fn().mockResolvedValue([]) };
+      (prisma as any).mute = { findMany: jest.fn().mockResolvedValue([]) };
+      (prisma as any).restrict = { findMany: jest.fn().mockResolvedValue([]) };
+      (prisma as any).contentFilterSetting = { findUnique: jest.fn() };
+      prisma.feedDismissal = { ...prisma.feedDismissal, findMany: jest.fn().mockResolvedValue([]) };
+    });
+
+    it('should include content filter in where clause when user has settings', async () => {
+      (prisma as any).contentFilterSetting.findUnique.mockResolvedValue({
+        hideMusic: true, strictnessLevel: 'STRICT',
+      });
+
+      await service.getTrendingFeed(undefined, 20, 'u1');
+
+      expect((prisma as any).post.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            audioTrackId: null,
+            contentWarning: null,
+          }),
+        }),
+      );
+    });
+  });
 });

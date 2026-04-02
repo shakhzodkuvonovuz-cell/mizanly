@@ -805,4 +805,30 @@ describe('MonetizationService', () => {
       );
     });
   });
+
+  // ═══ T08 Audit: Missing monetization coverage ═══
+
+  describe('getReceivedTips — cursor pagination — L3', () => {
+    it('should pass cursor to findMany for pagination', async () => {
+      mockPrismaService.tip.findMany.mockResolvedValue([]);
+      await service.getReceivedTips('user1', 'cursor-tip-1');
+      expect(mockPrismaService.tip.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cursor: { id: 'cursor-tip-1' },
+          skip: 1,
+        }),
+      );
+    });
+
+    it('should return hasMore when more results exist', async () => {
+      // Return limit+1 items to trigger hasMore
+      const tips = Array.from({ length: 21 }, (_, i) => ({
+        id: `tip-${i}`, receiverId: 'user1', sender: { id: 'sender', username: 's' },
+      }));
+      mockPrismaService.tip.findMany.mockResolvedValue(tips);
+      const result = await service.getReceivedTips('user1');
+      expect(result.meta.hasMore).toBe(true);
+      expect(result.data).toHaveLength(20);
+    });
+  });
 });
