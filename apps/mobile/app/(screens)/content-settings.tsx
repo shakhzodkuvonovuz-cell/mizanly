@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  ScrollView,
+  ScrollView, StatusBar,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -11,12 +11,14 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { settingsApi } from '@/services/api';
 import type { Settings } from '@/types';
 import { useStore, useSafFeedType, useMajlisFeedType } from '@/store';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -126,11 +128,13 @@ export default function ContentSettingsScreen() {
   const setMajlisFeedType = useStore((s) => s.setMajlisFeedType);
   const { t } = useTranslation();
   const tc = useThemeColors();
+  const haptic = useContextualHaptic();
 
   // Settings from API
   const settingsQuery = useQuery({
     queryKey: ['settings'],
     queryFn: () => settingsApi.get(),
+    staleTime: 30_000,
   });
   const s = settingsQuery.data;
 
@@ -162,6 +166,7 @@ export default function ContentSettingsScreen() {
   });
 
   const handleUpdateSensitiveContent = (v: boolean) => {
+    haptic.tick();
     setSensitiveContent(v);
     wellbeingMutation.mutate({ sensitiveContent: v });
   };
@@ -200,13 +205,19 @@ export default function ContentSettingsScreen() {
   if (settingsQuery.isError) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.base }}>
-          <Text style={{ color: colors.error, fontSize: fontSize.base, marginBottom: spacing.md }}>
-            {t('settings.loadError')}
-          </Text>
-          <Pressable onPress={() => settingsQuery.refetch()} accessibilityRole="button" accessibilityLabel={t('common.tryAgain')}>
-            <Text style={{ color: colors.emerald, fontSize: fontSize.base }}>{t('common.tryAgain')}</Text>
-          </Pressable>
+        <StatusBar barStyle="light-content" />
+        <GlassHeader
+          title={t('settings.contentPreferences')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+        />
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <EmptyState
+            icon="alert-circle"
+            title={t('settings.loadError', 'Failed to load settings')}
+            subtitle={t('common.error.checkConnection', 'Check your connection and try again')}
+            actionLabel={t('common.retry')}
+            onAction={() => settingsQuery.refetch()}
+          />
         </View>
       </SafeAreaView>
     );
@@ -215,7 +226,12 @@ export default function ContentSettingsScreen() {
   if (settingsQuery.isLoading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
-        <View style={{ flex: 1, padding: spacing.base, gap: spacing.lg }}>
+        <StatusBar barStyle="light-content" />
+        <GlassHeader
+          title={t('settings.contentPreferences')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+        />
+        <View style={{ flex: 1, padding: spacing.base, gap: spacing.lg, paddingTop: 100 }}>
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton.Rect key={i} width="100%" height={48} />
           ))}
@@ -227,9 +243,10 @@ export default function ContentSettingsScreen() {
   return (
     <ScreenErrorBoundary>
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
+        <StatusBar barStyle="light-content" />
         <GlassHeader
           title={t('settings.contentPreferences')}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+          leftAction={{ icon: 'arrow-left', onPress: () => { haptic.tick(); router.back(); }, accessibilityLabel: t('common.back') }}
         />
 
         <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
@@ -238,7 +255,7 @@ export default function ContentSettingsScreen() {
             <SectionHeader title="feedPreferences" />
             <LinearGradient
               colors={colors.gradient.cardDark}
-              style={styles.card}
+              style={[styles.card, { borderColor: tc.border }]}
             >
               <Pressable
                 style={styles.rowPressable}
@@ -270,7 +287,7 @@ export default function ContentSettingsScreen() {
                   <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
                 </View>
               </Pressable>
-              <View style={styles.divider} />
+              <View style={[styles.divider, { backgroundColor: tc.border }]} />
               <Pressable
                 style={styles.rowPressable}
                 onPress={() => setMajlisPickerVisible(true)}
@@ -309,7 +326,7 @@ export default function ContentSettingsScreen() {
             <SectionHeader title="contentFilters" />
             <LinearGradient
               colors={colors.gradient.cardDark}
-              style={styles.card}
+              style={[styles.card, { borderColor: tc.border }]}
             >
               <Row
                 label={t('settings.filterSensitiveContent')}
@@ -318,7 +335,7 @@ export default function ContentSettingsScreen() {
                 onToggle={handleUpdateSensitiveContent}
                 icon="eye"
               />
-              <View style={styles.divider} />
+              <View style={[styles.divider, { backgroundColor: tc.border }]} />
               {/* Not yet persisted — requires backend support */}
               <View style={{ opacity: 0.5 }}>
                 <Row
@@ -336,7 +353,7 @@ export default function ContentSettingsScreen() {
             <SectionHeader title="blockedKeywords" />
             <LinearGradient
               colors={colors.gradient.cardDark}
-              style={styles.card}
+              style={[styles.card, { borderColor: tc.border }]}
             >
               <Row
                 label={t('settings.manageBlockedKeywords')}
@@ -352,7 +369,7 @@ export default function ContentSettingsScreen() {
             <SectionHeader title="digitalWellbeing" />
             <LinearGradient
               colors={colors.gradient.cardDark}
-              style={styles.card}
+              style={[styles.card, { borderColor: tc.border }]}
             >
               <Pressable
                 style={styles.rowPressable}

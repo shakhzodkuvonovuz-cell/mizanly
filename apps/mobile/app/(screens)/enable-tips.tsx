@@ -6,7 +6,9 @@ import {
   ScrollView,
   Pressable,
   TextInput,
-  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -26,8 +28,6 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { showToast } from '@/components/ui/Toast';
-
-const { width } = Dimensions.get('window');
 
 const PRESET_AMOUNTS = [1, 2, 5, 10];
 const MAX_MESSAGE_LENGTH = 150;
@@ -148,15 +148,61 @@ export default function EnableTipsScreen() {
     });
   }, [haptic, t]);
 
+  if (loading && !refreshing) {
+    return (
+      <ScreenErrorBoundary>
+        <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
+          <StatusBar barStyle="light-content" />
+          <GlassHeader
+            title={t('screens.enableTips.title')}
+            leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+          />
+          <View style={{ padding: spacing.base, paddingTop: 100, gap: spacing.lg }}>
+            <Skeleton.Rect width="100%" height={180} borderRadius={radius.lg} />
+            <Skeleton.Rect width="100%" height={120} borderRadius={radius.lg} />
+            <Skeleton.Rect width="100%" height={100} borderRadius={radius.lg} />
+          </View>
+        </SafeAreaView>
+      </ScreenErrorBoundary>
+    );
+  }
+
+  if (error) {
+    return (
+      <ScreenErrorBoundary>
+        <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
+          <StatusBar barStyle="light-content" />
+          <GlassHeader
+            title={t('screens.enableTips.title')}
+            leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+          />
+          <View style={{ flex: 1, justifyContent: 'center' }}>
+            <EmptyState
+              icon="alert-circle"
+              title={error}
+              actionLabel={t('common.retry')}
+              onAction={fetchData}
+            />
+          </View>
+        </SafeAreaView>
+      </ScreenErrorBoundary>
+    );
+  }
+
   return (
     <ScreenErrorBoundary>
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
+        <StatusBar barStyle="light-content" />
         <GlassHeader
           title={t('screens.enableTips.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
           rightActions={[{ icon: 'gift', onPress: () => {}, accessibilityLabel: t('screens.enableTips.tipsLabel') }]}
         />
 
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
         <ScrollView
           refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           contentContainerStyle={styles.scrollContent}
@@ -419,12 +465,17 @@ export default function EnableTipsScreen() {
           {/* Save Button */}
           {isEnabled && (
             <Animated.View entering={FadeInUp.delay(500).duration(400)}>
-              <Pressable onPress={handleSave} accessibilityRole="button" accessibilityLabel={t('screens.enableTips.saveSettings')}>
+              <Pressable
+                onPress={handleSave}
+                disabled={submitting}
+                accessibilityRole="button"
+                accessibilityLabel={t('screens.enableTips.saveSettings')}
+              >
                 <LinearGradient
                   colors={[colors.emerald, colors.emeraldDark]}
-                  style={styles.saveButton}
+                  style={[styles.saveButton, submitting && { opacity: 0.6 }]}
                 >
-                  <Text style={[styles.saveButtonText, { color: tc.text.primary }]}>{t('screens.enableTips.saveSettings')}</Text>
+                  <Text style={[styles.saveButtonText, { color: '#fff' }]}>{t('screens.enableTips.saveSettings')}</Text>
                 </LinearGradient>
               </Pressable>
             </Animated.View>
@@ -433,8 +484,9 @@ export default function EnableTipsScreen() {
           {/* Bottom spacing */}
           <View style={{ height: spacing.xxl }} />
         </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
-  
+
     </ScreenErrorBoundary>
   );
 }

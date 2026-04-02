@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet, Share } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, Share, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,12 +8,12 @@ import type { IconName } from '@/components/ui/Icon';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { EidFrame } from '@/components/islamic/EidFrame';
 import type { Occasion } from '@/components/islamic/EidFrame';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
@@ -49,8 +49,10 @@ export default function EidCardsScreen() {
   const [selectedOccasion, setSelectedOccasion] = useState<Occasion | null>(null);
   const [previewVisible, setPreviewVisible] = useState(false);
   const tc = useThemeColors();
+  const haptic = useContextualHaptic();
 
   const handleOccasionPress = (id: Occasion) => {
+    haptic.tick();
     setSelectedOccasion(id);
     setPreviewVisible(true);
   };
@@ -79,14 +81,14 @@ export default function EidCardsScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top', 'bottom']}>
+        <StatusBar barStyle="light-content" />
         <GlassHeader
           title={t('eidCards.title')}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+          leftAction={{ icon: 'arrow-left', onPress: () => { haptic.tick(); router.back(); } }}
         />
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          refreshControl={<BrandedRefreshControl refreshing={false} onRefresh={() => {}} />}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: spacing.xl }]}
         >
           <View style={styles.grid}>
             {occasions.map((occ, index) => (
@@ -95,7 +97,8 @@ export default function EidCardsScreen() {
                   accessibilityRole="button"
                   accessibilityLabel={`${occ.name} - ${occ.nameAr}`}
                   onPress={() => handleOccasionPress(occ.id)}
-                  style={styles.cardOuter}
+                  style={({ pressed }) => [styles.cardOuter, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
+                  android_ripple={{ color: 'rgba(255,255,255,0.1)' }}
                 >
                   <LinearGradient
                     colors={CARD_GRADIENTS[occ.id] || ['#0A7B4F', '#065535']}
@@ -192,6 +195,7 @@ const styles = StyleSheet.create({
   },
   cardName: {
     color: 'rgba(255,255,255,0.75)',
+    fontFamily: fonts.body,
     fontSize: fontSize.sm,
     marginTop: 2,
   },

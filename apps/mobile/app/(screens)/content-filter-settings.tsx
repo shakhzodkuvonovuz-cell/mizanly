@@ -6,6 +6,7 @@ import {
   ScrollView,
   Switch,
   Pressable,
+  StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -14,11 +15,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, radius, fontSize } from '@/theme';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { showToast } from '@/components/ui/Toast';
 import { islamicApi } from '@/services/islamicApi';
 import type { ContentFilterSetting } from '@/types/islamic';
 
@@ -44,6 +48,7 @@ function ContentFilterSettingsContent() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
+  const haptic = useContextualHaptic();
 
   const settingsQuery = useQuery({
     queryKey: ['content-filter-settings'],
@@ -68,43 +73,56 @@ function ContentFilterSettingsContent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['content-filter-settings'] });
     },
+    onError: (err: Error) => {
+      // Rollback optimistic local state on failure
+      setLocalLevel(null);
+      setLocalBlurHaram(null);
+      setLocalHideMusic(null);
+      setLocalHideMixedGender(null);
+      showToast({ message: err.message || t('common.error'), variant: 'error' });
+    },
   });
 
   const handleLevelChange = useCallback(
     (level: StrictnessLevel) => {
+      haptic.tick();
       setLocalLevel(level);
       mutation.mutate({ strictnessLevel: level });
     },
-    [mutation],
+    [mutation, haptic],
   );
 
   const handleToggleBlurHaram = useCallback(
     (val: boolean) => {
+      haptic.tick();
       setLocalBlurHaram(val);
       mutation.mutate({ blurHaram: val });
     },
-    [mutation],
+    [mutation, haptic],
   );
 
   const handleToggleHideMusic = useCallback(
     (val: boolean) => {
+      haptic.tick();
       setLocalHideMusic(val);
       mutation.mutate({ hideMusic: val });
     },
-    [mutation],
+    [mutation, haptic],
   );
 
   const handleToggleHideMixedGender = useCallback(
     (val: boolean) => {
+      haptic.tick();
       setLocalHideMixedGender(val);
       mutation.mutate({ hideMixedGender: val });
     },
-    [mutation],
+    [mutation, haptic],
   );
 
   if (settingsQuery.isLoading) {
     return (
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
+        <StatusBar barStyle="light-content" />
         <GlassHeader
           title={t('contentFilter.title')}
           leftAction={{
@@ -126,8 +144,34 @@ function ContentFilterSettingsContent() {
     );
   }
 
+  if (settingsQuery.isError) {
+    return (
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
+        <StatusBar barStyle="light-content" />
+        <GlassHeader
+          title={t('contentFilter.title')}
+          leftAction={{
+            icon: 'arrow-left',
+            onPress: () => router.back(),
+            accessibilityLabel: t('common.back'),
+          }}
+        />
+        <View style={{ flex: 1, justifyContent: 'center', paddingTop: insets.top + 72 }}>
+          <EmptyState
+            icon="alert-circle"
+            title={t('common.error.loadContent', 'Failed to load')}
+            subtitle={t('common.error.checkConnection', 'Check your connection and try again')}
+            actionLabel={t('common.retry')}
+            onAction={() => settingsQuery.refetch()}
+          />
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: tc.bg }]}>
+      <StatusBar barStyle="light-content" />
       <GlassHeader
         title={t('contentFilter.title')}
         leftAction={{
@@ -166,10 +210,11 @@ function ContentFilterSettingsContent() {
                 end={{ x: 1, y: 1 }}
                 style={[
                   styles.levelCard,
+                  { borderColor: tc.border },
                   isSelected && styles.levelCardSelected,
                 ]}
               >
-                <View style={styles.levelIconWrap}>
+                <View style={[styles.levelIconWrap, { backgroundColor: tc.surface }]}>
                   <Icon
                     name={level.iconName}
                     size="md"
@@ -180,6 +225,7 @@ function ContentFilterSettingsContent() {
                   <Text
                     style={[
                       styles.levelTitle,
+                      { color: tc.text.primary },
                       isSelected && styles.levelTitleSelected,
                     ]}
                   >
@@ -207,7 +253,7 @@ function ContentFilterSettingsContent() {
           colors={colors.gradient.cardDark}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.toggleCard}
+          style={[styles.toggleCard, { borderColor: tc.border }]}
         >
           <View style={styles.toggleRow}>
             <Icon name="eye-off" size="sm" color={tc.text.secondary} />
@@ -216,11 +262,11 @@ function ContentFilterSettingsContent() {
               value={currentBlurHaram}
               onValueChange={handleToggleBlurHaram}
               trackColor={{ false: tc.border, true: colors.emerald }}
-              thumbColor="#fff"
+              thumbColor={tc.bgCard}
             />
           </View>
 
-          <View style={styles.separator} />
+          <View style={[styles.separator, { backgroundColor: tc.border }]} />
 
           <View style={styles.toggleRow}>
             <Icon name="volume-x" size="sm" color={tc.text.secondary} />
@@ -229,11 +275,11 @@ function ContentFilterSettingsContent() {
               value={currentHideMusic}
               onValueChange={handleToggleHideMusic}
               trackColor={{ false: tc.border, true: colors.emerald }}
-              thumbColor="#fff"
+              thumbColor={tc.bgCard}
             />
           </View>
 
-          <View style={styles.separator} />
+          <View style={[styles.separator, { backgroundColor: tc.border }]} />
 
           <View style={styles.toggleRow}>
             <Icon name="users" size="sm" color={tc.text.secondary} />
@@ -244,7 +290,7 @@ function ContentFilterSettingsContent() {
               value={currentHideMixedGender}
               onValueChange={handleToggleHideMixedGender}
               trackColor={{ false: tc.border, true: colors.emerald }}
-              thumbColor="#fff"
+              thumbColor={tc.bgCard}
             />
           </View>
         </LinearGradient>

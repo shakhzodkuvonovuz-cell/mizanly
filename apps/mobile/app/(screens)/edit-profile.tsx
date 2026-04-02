@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
-  ScrollView, Switch, Platform, KeyboardAvoidingView,
+  ScrollView, Platform, KeyboardAvoidingView, Alert, StatusBar,
 } from 'react-native';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter } from 'expo-router';
@@ -24,6 +24,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi, uploadApi, profileLinksApi } from '@/services/api';
 import type { ProfileLink, User } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { showToast } from '@/components/ui/Toast';
 
 type UpdateProfilePayload = {
@@ -40,6 +41,8 @@ export default function EditProfileScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+
+  const haptic = useContextualHaptic();
 
   const meQuery = useQuery({
     queryKey: ['me'],
@@ -170,6 +173,34 @@ export default function EditProfileScreen() {
     },
   });
 
+  const isDirty = useMemo(() => {
+    if (!me) return false;
+    return (
+      displayName !== (me.displayName ?? '') ||
+      bio !== (me.bio ?? '') ||
+      website !== (me.website ?? '') ||
+      location !== ((me as User & { location?: string }).location ?? '') ||
+      isPrivate !== (me.isPrivate ?? false) ||
+      avatarUri !== undefined ||
+      coverUri !== undefined
+    );
+  }, [me, displayName, bio, website, location, isPrivate, avatarUri, coverUri]);
+
+  const handleBack = () => {
+    if (isDirty) {
+      Alert.alert(
+        t('common.unsavedChanges', 'Unsaved Changes'),
+        t('common.discardChangesMessage', 'You have unsaved changes. Are you sure you want to go back?'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('common.discard', 'Discard'), style: 'destructive', onPress: () => router.back() },
+        ],
+      );
+    } else {
+      router.back();
+    }
+  };
+
   if (meQuery.isLoading) {
     return (
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
@@ -212,21 +243,26 @@ export default function EditProfileScreen() {
   return (
     <ScreenErrorBoundary>
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
+        <StatusBar barStyle="light-content" />
         <GlassHeader
           title={t('profile.editProfile')}
-          leftAction={{ icon: 'x', onPress: () => router.back(), accessibilityLabel: t('common.cancel') }}
+          leftAction={{ icon: 'x', onPress: handleBack, accessibilityLabel: t('common.cancel') }}
         />
         {/* Save button overlay on GlassHeader right area */}
         <View style={[styles.saveButtonWrap, { top: insets.top + 4 }]} pointerEvents="box-none">
           <GradientButton
             label={t('common.save')}
             size="sm"
-            onPress={() => saveMutation.mutate()}
+            onPress={() => { haptic.save(); saveMutation.mutate(); }}
             loading={saveMutation.isPending || uploading}
             disabled={saveMutation.isPending || uploading}
           />
         </View>
 
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
         <ScrollView
           style={[styles.body, { paddingTop: HEADER_HEIGHT }]}
           keyboardShouldPersistTaps="handled"
@@ -238,7 +274,7 @@ export default function EditProfileScreen() {
           }
         >
           {/* Cover photo with premium gradient overlay */}
-          <Pressable onPress={pickCover}>
+          <Pressable onPress={pickCover} accessibilityRole="button" accessibilityLabel={t('editProfile.changeCover', 'Change cover photo')}>
             {currentCover ? (
               <Animated.View entering={FadeIn.duration(400)}>
                 <ProgressiveImage uri={currentCover} width="100%" height={160} />
@@ -279,12 +315,13 @@ export default function EditProfileScreen() {
 
           {/* Avatar with glassmorphism overlay */}
           <Animated.View entering={FadeInUp.delay(100).duration(500)} style={styles.avatarWrap}>
-            <Pressable onPress={pickAvatar}>
+            <Pressable onPress={pickAvatar} accessibilityRole="button" accessibilityLabel={t('editProfile.changeAvatar', 'Change avatar')}>
               <View style={styles.avatarContainer}>
                 <Avatar uri={currentAvatar} name={displayName || me?.displayName} size="2xl" />
                 <LinearGradient
                   colors={['rgba(10,123,79,0.9)', 'rgba(8,95,39,0.95)']}
                   style={[styles.avatarEdit, { borderColor: tc.bg }]}
+
                 >
                   <Icon name="camera" size="sm" color="#fff" />
                 </LinearGradient>
@@ -453,9 +490,11 @@ export default function EditProfileScreen() {
                   <Text style={[styles.fieldHint, { color: tc.text.tertiary }]}>{t('editProfile.privateAccountHint')}</Text>
                 </View>
                 <Pressable
-                  accessibilityRole="button"
+                  accessibilityRole="switch"
+                  accessibilityLabel={t('editProfile.privateAccount')}
+                  accessibilityState={{ checked: isPrivate }}
                   style={[styles.toggleTrack, { backgroundColor: tc.border }, isPrivate && styles.toggleTrackActive]}
-                  onPress={() => setIsPrivate(!isPrivate)}
+                  onPress={() => { haptic.tick(); setIsPrivate(!isPrivate); }}
                 >
                   <View style={[styles.toggleThumb, isPrivate && styles.toggleThumbActive]}>
                     <LinearGradient
@@ -583,8 +622,9 @@ export default function EditProfileScreen() {
             </LinearGradient>
           </Animated.View>
         </ScrollView>
+        </KeyboardAvoidingView>
       </View>
-  
+
     </ScreenErrorBoundary>
   );
 }
