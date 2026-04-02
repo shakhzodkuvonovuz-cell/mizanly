@@ -30,11 +30,13 @@ import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
-import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
+import { colors, spacing, fontSize, radius, fontSizeExt, fonts } from '@/theme';
 import { liveApi } from '@/services/api';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { rtlFlexRow } from '@/utils/rtl';
 import { showToast } from '@/components/ui/Toast';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -62,6 +64,7 @@ export default function LiveViewerScreen() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
+  const haptic = useContextualHaptic();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useUser();
@@ -129,6 +132,7 @@ export default function LiveViewerScreen() {
 
   // Floating reactions animation
   const addFloatingReaction = (emoji: string) => {
+    haptic.tick();
     const reactionId = Date.now().toString();
     const startX = ((emoji.charCodeAt(0) * 2654435761 + Date.now()) % (SCREEN_WIDTH - 100)) + 50;
     setFloatingReactions(prev => [...prev, { id: reactionId, emoji, startX }]);
@@ -214,6 +218,7 @@ export default function LiveViewerScreen() {
   });
 
   const handleRaiseHand = () => {
+    haptic.tick();
     const participant = participants.find((p: LiveParticipant) => p.userId === user?.id);
     if (participant?.raisedHand) {
       lowerHandMutation.mutate();
@@ -223,13 +228,15 @@ export default function LiveViewerScreen() {
   };
 
   const handleSendChat = () => {
-    if (chatMessage.trim()) {
+    if (chatMessage.trim() && !sendChatMutation.isPending) {
+      haptic.tick();
       sendChatMutation.mutate();
     }
   };
 
   const handleShare = useCallback(async () => {
     if (!live?.id) return;
+    haptic.tick();
     try {
       await Share.share({
         message: t('screens.live.shareMessage', { title: live.title }),
@@ -254,9 +261,16 @@ export default function LiveViewerScreen() {
   const handleRemoveParticipant = (participantId: string) => {
     Alert.alert(t('screens.live.removeParticipant'), t('screens.live.removeParticipantConfirm'), [
       { text: t('common.cancel'), style: 'cancel' },
-      { text: t('common.remove'), style: 'destructive', onPress: () => liveApi.removeParticipant(id, participantId).catch(() => {
-        showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
-      }) },
+      { text: t('common.remove'), style: 'destructive', onPress: () => {
+        haptic.delete();
+        liveApi.removeParticipant(id, participantId).then(() => {
+          haptic.success();
+          showToast({ message: t('screens.live.participantRemoved', 'Participant removed'), variant: 'success' });
+          queryClient.invalidateQueries({ queryKey: ['live-participants', id] });
+        }).catch(() => {
+          showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+        });
+      } },
     ]);
   };
 
@@ -304,7 +318,7 @@ export default function LiveViewerScreen() {
     const canModerate = live?.isHost;
 
     return (
-      <View style={styles.participantItem}>
+      <View style={[styles.participantItem, { flexDirection: rtlFlexRow(isRTL) }]}>
         <View style={styles.avatarWithBadge}>
           <Avatar uri={item.user.avatarUrl} name={item.user.username} size="md" />
           {isHost && (
@@ -530,7 +544,7 @@ export default function LiveViewerScreen() {
         <View style={[styles.bottomOverlay, { paddingBottom: insets.bottom + spacing.base }]}>
           {/* Host info row */}
           {hostParticipant && (
-            <View style={styles.overlayHostRow}>
+            <View style={[styles.overlayHostRow, { flexDirection: rtlFlexRow(isRTL) }]}>
               <Avatar uri={hostParticipant.user.avatarUrl} name={hostParticipant.user.username} size="sm" />
               <Text style={styles.overlayHostName}>{hostParticipant.user.username}</Text>
               <View style={styles.overlayLiveDot} />
@@ -541,7 +555,7 @@ export default function LiveViewerScreen() {
           <Text style={styles.overlayTitle} numberOfLines={2}>{live.title}</Text>
 
           {/* Stats */}
-          <View style={styles.liveStats}>
+          <View style={[styles.liveStats, { flexDirection: rtlFlexRow(isRTL) }]}>
             <Icon name="eye" size="xs" color={colors.gold} />
             <Text style={styles.liveStatsTextGold}>
               {live.viewersCount.toLocaleString()} {t('screens.live.watching')}
@@ -553,7 +567,7 @@ export default function LiveViewerScreen() {
           </View>
 
           {/* Quick actions row */}
-          <View style={styles.overlayActionRow}>
+          <View style={[styles.overlayActionRow, { flexDirection: rtlFlexRow(isRTL) }]}>
             <Pressable style={styles.overlayActionButton} onPress={handleRaiseHand} accessibilityRole="button" accessibilityLabel={isHandRaised ? t('screens.live.lowerHand') : t('screens.live.raiseHand')}>
               <View style={[styles.overlayActionCircle, isHandRaised && styles.overlayActionCircleActive]}>
                 <Icon name="edit" size="md" color={isHandRaised ? '#fff' : tc.text.primary} />
@@ -729,14 +743,15 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     height: '50%',
   },
   audioLabel: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.lg,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     marginBottom: spacing.xs,
   },
   audioHint: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
+    fontFamily: fonts.body,
   },
   audioVisualizerFullscreen: {
     flex: 1,
@@ -763,9 +778,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.xs,
   },
   overlayHostName: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.sm,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   overlayLiveDot: {
     width: 6,
@@ -774,9 +789,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: colors.emerald,
   },
   overlayTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.lg,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     marginBottom: spacing.xs,
     textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 0, height: 1 },
@@ -810,15 +825,15 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   overlayActionLabel: {
     color: 'rgba(255,255,255,0.8)',
     fontSize: 10,
-    fontWeight: '500',
+    fontFamily: fonts.bodyMedium,
   },
   overlayReactionEmoji: {
     fontSize: 20,
   },
   liveTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.lg,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     marginBottom: spacing.xs,
   },
   liveStats: {
@@ -828,11 +843,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.lg,
   },
   liveStatsText: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
+    fontFamily: fonts.body,
   },
   liveStatsDot: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.sm,
   },
   hostRow: {
@@ -845,14 +861,14 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flex: 1,
   },
   hostName: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   hostStatus: {
     color: colors.emerald,
     fontSize: fontSize.sm,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   descriptionContainer: {
     backgroundColor: tc.surface,
@@ -861,9 +877,10 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.lg,
   },
   descriptionText: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.base,
     lineHeight: fontSize.lg,
+    fontFamily: fonts.body,
   },
   actionRow: {
     flexDirection: 'row',
@@ -879,9 +896,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: spacing.xs,
   },
   actionLabel: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
-    fontWeight: '500',
+    fontFamily: fonts.bodyMedium,
   },
   speakersSection: {
     marginBottom: spacing.lg,
@@ -890,9 +907,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.xl,
   },
   sectionTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
     marginBottom: spacing.sm,
   },
   avatarsScroll: {
@@ -904,9 +921,10 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginEnd: spacing.lg,
   },
   avatarName: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     marginTop: spacing.xs,
+    fontFamily: fonts.body,
   },
   skeletonContent: {
     paddingHorizontal: spacing.base,
@@ -920,9 +938,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderBottomColor: tc.border,
   },
   sheetTitle: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.lg,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
   },
   participantList: {
     paddingHorizontal: spacing.base,
@@ -940,14 +958,15 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginStart: spacing.sm,
   },
   participantName: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   participantRole: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.sm,
     marginTop: spacing.xs,
+    fontFamily: fonts.body,
   },
   participantActions: {
     flexDirection: 'row',
@@ -965,9 +984,10 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     justifyContent: 'center',
   },
   chatPlaceholder: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.base,
     textAlign: 'center',
+    fontFamily: fonts.body,
   },
   chatInputRow: {
     flexDirection: 'row',
@@ -979,8 +999,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   chatInput: {
     flex: 1,
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
+    fontFamily: fonts.body,
     backgroundColor: tc.surface,
     borderRadius: radius.full,
     paddingHorizontal: spacing.md,
@@ -1016,7 +1037,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   liveBadgeText: {
     color: '#fff',
     fontSize: fontSize.xs,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     letterSpacing: 0.5,
   },
   viewerCountBadge: {
@@ -1031,7 +1052,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   viewerCountText: {
     color: '#fff',
     fontSize: fontSize.xs,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
 
   // Floating reactions
@@ -1154,7 +1175,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   liveStatsTextGold: {
     color: colors.gold,
     fontSize: fontSize.sm,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   chatMessagesContainer: {
     flex: 1,
@@ -1176,7 +1197,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   welcomeText: {
     color: colors.emerald,
     fontSize: fontSize.sm,
-    fontWeight: '500',
+    fontFamily: fonts.bodyMedium,
   },
   chatMessageRow: {
     flexDirection: 'row',
@@ -1199,13 +1220,14 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   chatUsername: {
     color: colors.gold,
     fontSize: fontSize.xs,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
     marginBottom: 2,
   },
   chatMessageText: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
     lineHeight: fontSize.lg,
+    fontFamily: fonts.body,
   },
   chatHeaderGlow: {
     position: 'absolute',

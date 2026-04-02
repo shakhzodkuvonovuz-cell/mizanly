@@ -25,7 +25,7 @@ import { Icon } from '@/components/ui/Icon';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { storiesApi } from '@/services/api';
 import { showToast } from '@/components/ui/Toast';
 import { PollSticker, QuizSticker, QuestionSticker, CountdownSticker, SliderSticker } from '@/components/story';
@@ -434,17 +434,20 @@ const StoryGroupPage = memo(function StoryGroupPage({
   });
 
   const handleTapLeft = () => {
+    haptic.tick();
     cancelAnimation(progressValue);
     progressValue.value = 0;
     if (storyIndex > 0) {
       setStoryIndex(storyIndex - 1);
     } else {
-      // First story in group — go to previous group
       onGoPrevGroup();
     }
   };
 
-  const handleTapRight = () => advance();
+  const handleTapRight = () => {
+    haptic.tick();
+    advance();
+  };
 
   const handleStoryReaction = (emoji: string) => {
     haptic.tick();
@@ -511,7 +514,7 @@ const StoryGroupPage = memo(function StoryGroupPage({
               accessibilityLabel={t('accessibility.closeStory')}
               accessibilityRole="button"
             >
-              <Icon name="x" size="sm" color={colors.text.primary} />
+              <Icon name="x" size="sm" color="#fff" />
             </Pressable>
           </View>
         </SafeAreaView>
@@ -584,7 +587,7 @@ const StoryGroupPage = memo(function StoryGroupPage({
         </SafeAreaView>
       ) : (
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.bottomBar}
         >
           <SafeAreaView edges={['bottom']}>
@@ -602,7 +605,7 @@ const StoryGroupPage = memo(function StoryGroupPage({
                   accessibilityLabel={t('accessibility.storyReplyInput')}
                 />
                 <Pressable
-                  onPress={() => replyMutation.mutate()}
+                  onPress={() => { if (!replyMutation.isPending) replyMutation.mutate(); }}
                   disabled={!replyText.trim() || replyMutation.isPending}
                   hitSlop={8}
                   style={replyMutation.isPending ? { opacity: 0.5 } : undefined}
@@ -872,7 +875,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
     paddingHorizontal: spacing.sm, paddingVertical: spacing.sm,
   },
-  userName: { color: '#fff', fontSize: fontSize.sm, fontWeight: '700', flex: 1 },
+  userName: { color: '#fff', fontSize: fontSize.sm, fontFamily: fonts.bodyBold, flex: 1 },
   timeAgo: { color: 'rgba(255,255,255,0.7)', fontSize: fontSize.xs },
   closeBtn: { padding: spacing.xs, backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: radius.full },
 
@@ -885,7 +888,7 @@ const styles = StyleSheet.create({
     position: 'absolute', top: '40%', start: spacing.xl, end: spacing.xl,
     alignItems: 'center',
   },
-  overlayText: { fontSize: fontSize.xl, fontWeight: '700', textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.8)', textShadowRadius: 4, textShadowOffset: { width: 0, height: 1 } },
+  overlayText: { fontSize: fontSize.xl, fontFamily: fonts.bodyBold, textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.8)', textShadowRadius: 4, textShadowOffset: { width: 0, height: 1 } },
   reactionsRow: {
     position: 'absolute',
     zIndex: 1,
@@ -940,10 +943,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.3)',
   },
-  viewsBtnText: { color: '#fff', fontSize: fontSize.sm, fontWeight: '600' },
+  viewsBtnText: { color: '#fff', fontSize: fontSize.sm, fontFamily: fonts.bodySemiBold },
 
   viewersTitle: {
-    color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700',
+    color: colors.text.primary, fontSize: fontSize.base, fontFamily: fonts.bodyBold,
     paddingHorizontal: spacing.xl, paddingBottom: spacing.md,
   },
   viewersSkeleton: {
@@ -957,7 +960,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl, paddingVertical: spacing.sm,
   },
   viewerInfo: { flex: 1 },
-  viewerName: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '600' },
+  viewerName: { color: colors.text.primary, fontSize: fontSize.sm, fontFamily: fonts.bodySemiBold },
   viewerUsername: { color: colors.text.secondary, fontSize: fontSize.xs },
   viewersEmpty: {
     color: colors.text.tertiary, textAlign: 'center',

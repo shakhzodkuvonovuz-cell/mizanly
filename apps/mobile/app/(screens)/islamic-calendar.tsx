@@ -15,6 +15,8 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fontSizeExt, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { rtlFlexRow } from '@/utils/rtl';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { eventsApi } from '@/services/eventsApi';
@@ -205,6 +207,7 @@ function EventCard({
         colors={event.type === 'eid' ? ['rgba(200,150,62,0.2)', 'rgba(28,35,51,0.15)'] : ['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
         style={[
           styles.eventCardGradient,
+          { flexDirection: isRTL ? 'row-reverse' : 'row' },
           event.type === 'eid' && styles.eventCardEid,
         ]}
       >
@@ -286,6 +289,7 @@ function CommunityEventCard({
 export default function IslamicCalendarScreen() {
   const router = useRouter();
   const { t, isRTL } = useTranslation();
+  const haptic = useContextualHaptic();
   const [refreshing, setRefreshing] = useState(false);
 
   // Get today's real Hijri date
@@ -336,22 +340,24 @@ export default function IslamicCalendarScreen() {
   );
 
   const handlePrevMonth = useCallback(() => {
+    haptic.tick();
     if (currentMonth === 0) {
       setCurrentMonth(11);
       setCurrentYear(y => y - 1);
     } else {
       setCurrentMonth(m => m - 1);
     }
-  }, [currentMonth]);
+  }, [currentMonth, haptic]);
 
   const handleNextMonth = useCallback(() => {
+    haptic.tick();
     if (currentMonth === 11) {
       setCurrentMonth(0);
       setCurrentYear(y => y + 1);
     } else {
       setCurrentMonth(m => m + 1);
     }
-  }, [currentMonth]);
+  }, [currentMonth, haptic]);
 
   const monthEvents = useMemo(
     () => ISLAMIC_EVENTS.filter(e => e.month === currentMonth),
@@ -452,14 +458,14 @@ export default function IslamicCalendarScreen() {
               </View>
 
               {/* Weekday Headers */}
-              <View style={styles.weekdayHeader}>
+              <View style={[styles.weekdayHeader, { flexDirection: rtlFlexRow(isRTL) }]}>
                 {WEEKDAY_KEYS.map((dayKey) => (
                   <Text key={dayKey} style={[styles.weekdayText, { color: tc.text.tertiary }]}>{t(dayKey)}</Text>
                 ))}
               </View>
 
               {/* Calendar Grid */}
-              <View style={styles.calendarGrid}>
+              <View style={[styles.calendarGrid, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                 {days.map((dayData, index) => (
                   <CalendarDay
                     key={index}
@@ -468,7 +474,7 @@ export default function IslamicCalendarScreen() {
                     hasEvent={dayData.hasEvent}
                     eventType={dayData.eventType}
                     index={index}
-                    onPress={dayData.event ? () => setSelectedEvent(dayData.event ?? null) : undefined}
+                    onPress={dayData.event ? () => { haptic.tick(); setSelectedEvent(dayData.event ?? null); } : undefined}
                   />
                 ))}
               </View>
@@ -549,7 +555,7 @@ export default function IslamicCalendarScreen() {
                     key={event.id}
                     accessibilityRole="button"
                     accessibilityLabel={event.title}
-                    onPress={() => navigate(`/(screens)/event-detail?id=${event.id}`)}
+                    onPress={() => { haptic.navigate(); navigate(`/(screens)/event-detail?id=${event.id}`); }}
                   >
                     <CommunityEventCard event={event} index={index} t={t} />
                   </Pressable>
@@ -559,21 +565,21 @@ export default function IslamicCalendarScreen() {
           )}
 
           {/* Quick Links */}
-          <View style={styles.quickLinks}>
-            <Pressable accessibilityRole="button" accessibilityLabel={t('screens.islamicCalendar.prayerTimes')} style={styles.quickLink} onPress={() => navigate('/(screens)/prayer-times')}>
+          <View style={[styles.quickLinks, { flexDirection: rtlFlexRow(isRTL) }]}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('screens.islamicCalendar.prayerTimes')} style={styles.quickLink} onPress={() => { haptic.navigate(); navigate('/(screens)/prayer-times'); }}>
               <LinearGradient
                 colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
-                style={styles.quickLinkGradient}
+                style={[styles.quickLinkGradient, { flexDirection: rtlFlexRow(isRTL) }]}
               >
                 <Icon name="clock" size="sm" color={colors.emerald} />
                 <Text style={[styles.quickLinkText, { color: tc.text.primary }]}>{t('screens.islamicCalendar.prayerTimes')}</Text>
               </LinearGradient>
             </Pressable>
 
-            <Pressable accessibilityRole="button" accessibilityLabel={t('screens.islamicCalendar.quran')} style={styles.quickLink} onPress={() => navigate('/(screens)/quran-share')}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('screens.islamicCalendar.quran')} style={styles.quickLink} onPress={() => { haptic.navigate(); navigate('/(screens)/quran-share'); }}>
               <LinearGradient
                 colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
-                style={styles.quickLinkGradient}
+                style={[styles.quickLinkGradient, { flexDirection: rtlFlexRow(isRTL) }]}
               >
                 <Icon name="book-open" size="sm" color={colors.gold} />
                 <Text style={[styles.quickLinkText, { color: tc.text.primary }]}>{t('screens.islamicCalendar.quran')}</Text>
@@ -627,13 +633,12 @@ export default function IslamicCalendarScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 100,
+    paddingTop: 110,
     paddingHorizontal: spacing.base,
     paddingBottom: spacing['3xl'],
   },
@@ -651,7 +656,7 @@ const styles = StyleSheet.create({
   currentHijriDate: {
     color: '#fff',
     fontSize: fontSize.xl,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     marginBottom: spacing.xs,
   },
   currentHijriSub: {
@@ -741,9 +746,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
   },
   weekdayText: {
-    color: colors.text.tertiary,
     fontSize: fontSize.xs,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
     width: 40,
     textAlign: 'center',
   },
@@ -790,15 +794,15 @@ const styles = StyleSheet.create({
   dayTextToday: {
     color: '#fff',
     fontSize: fontSize.base,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
   },
   dayTextEvent: {
     color: colors.emerald,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   dayTextEid: {
     color: colors.gold,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
   },
   eventDot: {
     width: 4,
@@ -866,9 +870,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sectionTitle: {
-    color: colors.text.primary,
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   eventCard: {
     marginBottom: spacing.sm,
@@ -876,7 +879,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   eventCardGradient: {
-    flexDirection: 'row',
     alignItems: 'center',
     padding: spacing.md,
     borderRadius: radius.lg,
@@ -899,17 +901,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   eventName: {
-    color: colors.text.primary,
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   eventNameEid: {
     color: colors.gold,
   },
   eventDate: {
-    color: colors.text.tertiary,
     fontSize: fontSize.xs,
     marginTop: 2,
+    fontFamily: fonts.body,
   },
   eventBadge: {
     backgroundColor: colors.active.emerald20,
@@ -923,7 +924,7 @@ const styles = StyleSheet.create({
   eventBadgeText: {
     color: colors.emerald,
     fontSize: fontSizeExt.micro,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
   },
   eventBadgeTextEid: {
     color: colors.gold,
@@ -940,7 +941,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   quickLinkGradient: {
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
@@ -950,9 +950,8 @@ const styles = StyleSheet.create({
     borderColor: colors.active.white6,
   },
   quickLinkText: {
-    color: colors.text.primary,
     fontSize: fontSize.base,
-    fontWeight: '500',
+    fontFamily: fonts.bodyMedium,
   },
 
   // Event Detail BottomSheet
@@ -972,7 +971,7 @@ const styles = StyleSheet.create({
   eventSheetTitle: {
     color: colors.text.primary,
     fontSize: fontSize.lg,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     textAlign: 'center',
     marginBottom: spacing.xs,
   },
