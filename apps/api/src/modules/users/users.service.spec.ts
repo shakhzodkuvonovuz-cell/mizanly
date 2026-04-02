@@ -1585,7 +1585,6 @@ describe('UsersService', () => {
       prisma.$queryRaw.mockResolvedValue([]);
 
       await service.getMutualFollowers('me', 'target-1', 100);
-      // The service caps at 50 — we verify it doesn't crash
     });
   });
 
@@ -1605,7 +1604,7 @@ describe('UsersService', () => {
     it('should process users in batches and create stats', async () => {
       prisma.user.findMany
         .mockResolvedValueOnce([{ id: 'u1', followersCount: 100 }])
-        .mockResolvedValueOnce([]); // end of cursor pagination
+        .mockResolvedValueOnce([]);
       prisma.creatorStat = { upsert: jest.fn().mockResolvedValue({}) };
       redis.set = jest.fn().mockResolvedValue('OK');
 
@@ -1621,25 +1620,20 @@ describe('UsersService', () => {
 
   describe('sendWeeklyScreenTimeDigest cron (T01 #28)', () => {
     it('should send digest for users with time limits', async () => {
-      redis.set = jest.fn().mockResolvedValue('OK'); // NX succeeds
+      redis.set = jest.fn().mockResolvedValue('OK');
       prisma.userSettings = {
         ...prisma.userSettings,
-        findMany: jest.fn().mockResolvedValue([
-          { userId: 'u1', dailyTimeLimit: 60 },
-        ]),
+        findMany: jest.fn().mockResolvedValue([{ userId: 'u1', dailyTimeLimit: 60 }]),
       };
       prisma.notification = { create: jest.fn().mockResolvedValue({}) };
       prisma.screenTimeLog = { findMany: jest.fn().mockResolvedValue([]) };
 
       await service.sendWeeklyScreenTimeDigest();
-      // Should not throw; verifies the cron runs without error
     });
 
     it('should skip if already sent this week', async () => {
-      redis.set = jest.fn().mockResolvedValue(null); // NX fails - already sent
-
+      redis.set = jest.fn().mockResolvedValue(null);
       await service.sendWeeklyScreenTimeDigest();
-      // Should return early, no prisma calls for user data
     });
   });
 });
