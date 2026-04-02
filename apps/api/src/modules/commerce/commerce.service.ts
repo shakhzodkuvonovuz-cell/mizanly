@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException, ConflictException, NotImplementedException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../config/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { ProductCategory, HalalCategory, ZakatCategory, VolunteerCategory, OrderStatus, ProductStatus, SubscriptionPlan, SubscriptionStatus } from '@prisma/client';
@@ -195,7 +196,7 @@ export class CommerceService {
 
     // Use a transaction to atomically check stock and create order
     // This prevents overselling under concurrent orders
-    let order: { id: string; totalAmount: unknown; currency: string; status: string; stripePaymentId: string | null; product: unknown; [key: string]: unknown };
+    let order: Prisma.OrderGetPayload<{ include: { product: true } }>;
     try {
       order = await this.prisma.$transaction(async (tx) => {
         // Atomically decrement stock only if sufficient

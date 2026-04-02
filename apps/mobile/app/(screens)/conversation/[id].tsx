@@ -174,6 +174,8 @@ type PendingMessage = {
     messageType?: string;
     mediaUrl?: string;
   };
+  // Sealed sender envelope for 1:1 retries
+  sealedEnvelope?: { recipientId: string; ephemeralKey: string; sealedCiphertext: string };
 };
 
 type ListItem =
@@ -887,7 +889,7 @@ export default function ConversationScreen() {
       ).catch(() => {});
       return '[This message was not end-to-end encrypted]';
     }
-    const senderId = message.senderId ?? (message as any).sender?.id;
+    const senderId = message.senderId ?? message.sender?.id;
     if (!senderId) return '[Encrypted message]';
 
     let decrypted: string;
@@ -966,7 +968,7 @@ export default function ConversationScreen() {
       // Cache and index for search.
       // C7: Disappearing messages — if conversation has a timer, set expiresAt.
       const convo = convoQuery.data;
-      const disappearSec = (convo as any)?.disappearingDuration as number | undefined;
+      const disappearSec = convo?.disappearingDuration;
       const createdAtMs = new Date(message.createdAt).getTime();
       const expiresAt = disappearSec && disappearSec > 0
         ? createdAtMs + disappearSec * 1000
@@ -1014,7 +1016,7 @@ export default function ConversationScreen() {
 
   // C7: Disappearing message enforcement — periodic cleanup of expired cached messages.
   useEffect(() => {
-    const disappearSec = (convoQuery.data as any)?.disappearingDuration as number | undefined;
+    const disappearSec = convoQuery.data?.disappearingDuration;
     if (!disappearSec || disappearSec <= 0) return;
     const interval = setInterval(() => {
       setDecryptedContents(prev => new Map(prev)); // Force re-render → cache filters expired
@@ -1127,7 +1129,7 @@ export default function ConversationScreen() {
           emitEncryptedMessage({
             e2ePayload: p.e2ePayload,
             replyToId: p.replyToId,
-            sealedEnvelope: (p as any).sealedEnvelope,
+            sealedEnvelope: p.sealedEnvelope,
           });
         }
       });

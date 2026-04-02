@@ -516,7 +516,7 @@ export default function VideoEditorScreen() {
         showToast({ message: t('videoEditor.exportComplete'), variant: 'success' });
         // Pass exported URI back — if returnTo is specified, navigate there with the URI
         if (params.returnTo) {
-          router.replace({ pathname: params.returnTo as any, params: { videoUri: result.outputUri, edited: 'true' } });
+          (router as { replace: (opts: { pathname: string; params: Record<string, string> }) => void }).replace({ pathname: params.returnTo, params: { videoUri: result.outputUri, edited: 'true' } });
         } else {
           router.back();
         }
@@ -1408,7 +1408,7 @@ export default function VideoEditorScreen() {
           accessibilityRole="button"
           accessibilityLabel={t('videoEditor.autoCaptions')}
           onPress={() => {
-            if (videoUri) router.push({ pathname: '/(screens)/caption-editor' as any, params: { videoUri } });
+            if (videoUri) (router as { push: (opts: { pathname: string; params: Record<string, string> }) => void }).push({ pathname: '/(screens)/caption-editor', params: { videoUri } });
           }}
           style={styles.quickActionBtn}
         >

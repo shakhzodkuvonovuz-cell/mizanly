@@ -502,7 +502,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
           ...(dto.clientMessageId ? { clientMessageId: dto.clientMessageId } : {}),
           ...(dto.encryptedLastMessagePreview ? { encryptedLastMessagePreview: Uint8Array.from(Buffer.from(dto.encryptedLastMessagePreview, 'base64')) } : {}),
           _skipRedisPublish: true, // Prevent double broadcast — gateway emits directly
-        } as any,
+        },
       );
     } catch (err) {
       // X02-#13 FIX: Preserve error context — distinguish permission vs validation vs internal errors
@@ -673,11 +673,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
           ...(data.e2eCounter !== undefined ? { e2eCounter: data.e2eCounter } : {}),
           ...(data.e2ePreviousCounter !== undefined ? { e2ePreviousCounter: data.e2ePreviousCounter } : {}),
           ...(data.clientMessageId ? { clientMessageId: data.clientMessageId } : {}),
-          // Codex-V7-F2: Persist sealed envelope fields for later unsealing from history
-          ...(data.ephemeralKey ? { e2eSealedEphemeralKey: data.ephemeralKey } : {}),
-          ...(data.sealedCiphertext ? { e2eSealedCiphertext: data.sealedCiphertext } : {}),
           _skipRedisPublish: true,
-        } as any,
+        },
       );
     } catch {
       // Codex-V7-F3 FIX: Persistence failure = message NOT delivered durably.
