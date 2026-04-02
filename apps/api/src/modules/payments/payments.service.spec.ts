@@ -732,6 +732,30 @@ describe('PaymentsService', () => {
     });
   });
 
+  // ═══ T08 Audit: Private helper methods ═══
+
+  describe('getOrCreateStripeCustomer — user not found — M#2', () => {
+    it('should throw NotFoundException when user does not exist', async () => {
+      redis.get.mockResolvedValue(null); // No cached customer
+      prisma.user.findUnique.mockResolvedValue(null); // User not found
+      // createPaymentIntent calls getOrCreateStripeCustomer internally
+      // But first it validates amount and self-tip, then receiver lookup, then customer
+      // Use createCoinPurchaseIntent which calls it directly after validation
+      await expect(service.createCoinPurchaseIntent('nonexistent-user', 500))
+        .rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getOrCreateStripeCustomer — Stripe API failure — M#3', () => {
+    it('should throw BadRequestException when Stripe customer creation fails', async () => {
+      redis.get.mockResolvedValue(null); // No cached customer
+      prisma.user.findUnique.mockResolvedValue({ id: 'u1', email: 'test@test.com', username: 'test', displayName: 'Test' });
+      mockStripeInstance.customers.create.mockRejectedValueOnce(new Error('Stripe API down'));
+      await expect(service.createCoinPurchaseIntent('u1', 500))
+        .rejects.toThrow(BadRequestException);
+    });
+  });
+
   // --- R2 Tab4 Part 2: Premium endDate extension tests (X03-#16) ---
 
   describe('handlePremiumPaymentSucceeded — endDate extension', () => {

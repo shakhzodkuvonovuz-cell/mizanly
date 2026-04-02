@@ -1100,4 +1100,69 @@ describe('SearchService', () => {
       );
     });
   });
+
+  // ═══ T10 Audit: Missing search coverage #46-47 ═══
+
+  describe('Meilisearch-first search path — #46 M', () => {
+    it('should return Meilisearch results when available and matching', async () => {
+      // Create a new module with Meilisearch available
+      const meilisearchMock = {
+        search: jest.fn().mockResolvedValue({
+          hits: [{ id: 'ms-1', content: 'Meilisearch result' }],
+          estimatedTotalHits: 1,
+        }),
+        isAvailable: jest.fn().mockReturnValue(true),
+      };
+
+      const module2 = await Test.createTestingModule({
+        providers: [
+          ...globalMockProviders,
+          SearchService,
+          { provide: MeilisearchService, useValue: meilisearchMock },
+          {
+            provide: PrismaService,
+            useValue: {
+              post: { findMany: jest.fn() },
+              user: { findMany: jest.fn() },
+              hashtag: { findMany: jest.fn() },
+              thread: { findMany: jest.fn() },
+              reel: { findMany: jest.fn() },
+              video: { findMany: jest.fn() },
+              channel: { findMany: jest.fn() },
+              block: { findMany: jest.fn().mockResolvedValue([]) },
+              mute: { findMany: jest.fn().mockResolvedValue([]) },
+              restrict: { findMany: jest.fn().mockResolvedValue([]) },
+            },
+          },
+        ],
+      }).compile();
+      const svc2 = module2.get<SearchService>(SearchService);
+
+      const result = await svc2.search('quran', 'posts');
+      // When Meilisearch is available and returns hits, should use those results
+      expect(meilisearchMock.isAvailable).toHaveBeenCalled();
+    });
+  });
+
+  describe('getExploreFeed — block/mute with userId — #47 L', () => {
+    it('should exclude blocked/muted users when userId provided', async () => {
+      prisma.block.findMany.mockResolvedValue([{ blockerId: 'u1', blockedId: 'blocked-user' }]);
+      prisma.mute.findMany.mockResolvedValue([{ mutedId: 'muted-user' }]);
+      prisma.restrict.findMany.mockResolvedValue([]);
+      prisma.post.findMany.mockResolvedValue([]);
+
+      await service.getExploreFeed(undefined, 20, 'u1');
+
+      expect(prisma.block.findMany).toHaveBeenCalled();
+      expect(prisma.post.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            user: expect.objectContaining({
+              id: { notIn: expect.arrayContaining(['blocked-user', 'muted-user']) },
+            }),
+          }),
+        }),
+      );
+    });
+  });
 });

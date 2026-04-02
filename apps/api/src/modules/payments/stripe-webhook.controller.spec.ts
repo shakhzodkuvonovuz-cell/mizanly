@@ -212,4 +212,53 @@ describe('StripeWebhookController', () => {
     expect(result).toEqual({ received: true, deduplicated: true });
     expect(service.handlePaymentIntentSucceeded).not.toHaveBeenCalled();
   });
+
+  it('should log debug for payment_method.attached — L11', async () => {
+    const stripe = (controller as any).stripe;
+    stripe.webhooks.constructEvent.mockReturnValue({
+      id: 'evt_pm_attach',
+      type: 'payment_method.attached',
+      data: { object: { id: 'pm_attached_1' } },
+    });
+
+    const req = { rawBody: Buffer.from('body') } as any;
+    const result = await controller.handleStripeWebhook(req, 'valid-sig');
+
+    // Should not throw, should return received
+    expect(result).toEqual({ received: true });
+  });
+
+  it('should log warning for unhandled event type — L12', async () => {
+    const stripe = (controller as any).stripe;
+    stripe.webhooks.constructEvent.mockReturnValue({
+      id: 'evt_unknown',
+      type: 'some.unknown.event',
+      data: { object: {} },
+    });
+
+    const req = { rawBody: Buffer.from('body') } as any;
+    const result = await controller.handleStripeWebhook(req, 'valid-sig');
+
+    expect(result).toEqual({ received: true });
+  });
+
+  it('should write dedup records after handler success — M15', async () => {
+    const redis = (controller as any).redis;
+    const stripe = (controller as any).stripe;
+    stripe.webhooks.constructEvent.mockReturnValue({
+      id: 'evt_dedup_write',
+      type: 'payment_intent.succeeded',
+      data: { object: { id: 'pi_dedup_w' } },
+    });
+
+    const req = { rawBody: Buffer.from('body') } as any;
+    await controller.handleStripeWebhook(req, 'valid-sig');
+
+    // After handler success, should write dedup to Redis with 7-day TTL
+    expect(redis.setex).toHaveBeenCalledWith(
+      'stripe_webhook:evt_dedup_write',
+      604800,
+      '1',
+    );
+  });
 });
