@@ -77,6 +77,21 @@ describe('donate', () => {
     expect(src).toContain('listHeader = useMemo');
   });
 
+  test('offline check before payment', () => {
+    expect(src).toContain('isOffline');
+    expect(src).toContain('checkConnection');
+  });
+
+  test('mounted ref cleanup for async safety', () => {
+    expect(src).toContain('isMountedRef');
+  });
+
+  test('uses useInfiniteQuery for donations list', () => {
+    expect(src).toContain('useInfiniteQuery');
+    expect(src).toContain('getNextPageParam');
+    expect(src).toContain('onEndReached');
+  });
+
   test('no fontWeight + fontFamily conflict on goldenBannerText', () => {
     expect(styles).not.toMatch(/goldenBannerText[\s\S]*?fontWeight.*fontFamily/);
     expect(src).toContain('fonts.bodySemiBold');
@@ -210,11 +225,12 @@ describe('duet-create', () => {
     expect(src).toContain('if (!recordedUri) return');
   });
 
-  test('no unused reanimated imports (withSpring/withRepeat/useAnimatedStyle)', () => {
+  test('no unused withSpring import (withRepeat+useAnimatedStyle now used for pulse)', () => {
     const importLine = src.match(/import.*from 'react-native-reanimated'/)?.[0] ?? '';
     expect(importLine).not.toContain('withSpring');
-    expect(importLine).not.toContain('withRepeat');
-    expect(importLine).not.toContain('useAnimatedStyle');
+    // withRepeat and useAnimatedStyle are now used for recording dot pulse animation
+    expect(importLine).toContain('withRepeat');
+    expect(importLine).toContain('useAnimatedStyle');
   });
 
   test('no BrandedRefreshControl (removed fake refresh)', () => {
@@ -229,6 +245,16 @@ describe('duet-create', () => {
 
   test('mute button has haptic', () => {
     expect(src).toContain("haptic.tick(); setIsMuted");
+  });
+
+  test('recording dot has pulse animation', () => {
+    expect(src).toContain('dotPulseStyle');
+    expect(src).toContain('dotOpacity');
+  });
+
+  test('uses useWindowDimensions not module-level Dimensions', () => {
+    expect(src).toContain('useWindowDimensions');
+    expect(src).not.toMatch(/^const.*Dimensions\.get/m);
   });
 
   test('uses spacing[\'2xl\'] not spacing.xxl', () => {
@@ -323,6 +349,10 @@ describe('watch-party', () => {
     expect(styles).toContain('fonts.bodySemiBold');
     expect(styles).toContain('fonts.bodyBold');
   });
+
+  test('double-tap guard on card and join', () => {
+    expect(src).toContain('isNavigatingRef.current');
+  });
 });
 
 // ── whats-new.tsx ──
@@ -337,6 +367,11 @@ describe('whats-new', () => {
   test('emerald opacity uses hex 1F not 12', () => {
     expect(src).toContain('${colors.emerald}1F');
     expect(src).not.toContain('${colors.emerald}12');
+  });
+
+  test('settings.whatsNew i18n key exists', () => {
+    const en = readI18n('en') as { settings: Record<string, string> };
+    expect(en.settings.whatsNew).toBeTruthy();
   });
 });
 
@@ -382,8 +417,8 @@ describe('_layout', () => {
     expect(src).toContain('headerShown: false');
   });
 
-  test('has animation configured', () => {
-    expect(src).toContain("animation: 'slide_from_right'");
+  test('RTL-aware animation direction', () => {
+    expect(src).toContain("isRTL ? 'slide_from_left' : 'slide_from_right'");
   });
 });
 
@@ -453,6 +488,11 @@ describe('xp-history', () => {
 
   test('back button double-tap guard', () => {
     expect(src).toContain('isGoingBackRef');
+  });
+
+  test('load more indicator when hasNextPage', () => {
+    expect(src).toContain('historyQuery.hasNextPage');
+    expect(src).toContain('scrollForMore');
   });
 });
 

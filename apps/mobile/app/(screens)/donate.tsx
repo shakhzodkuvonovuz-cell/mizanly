@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { showToast } from '@/components/ui/Toast';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Icon } from '@/components/ui/Icon';
@@ -27,6 +27,7 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { islamicApi } from '@/services/islamicApi';
 import { paymentsApi } from '@/services/paymentsApi';
 import { rtlFlexRow } from '@/utils/rtl';
+import { useStore } from '@/store';
 import type { CharityCampaign, CharityDonation } from '@/types/islamic';
 
 const PRESET_AMOUNTS = [500, 1000, 2500, 5000]; // in cents
@@ -52,6 +53,12 @@ function DonateScreenContent() {
   const queryClient = useQueryClient();
   const haptic = useContextualHaptic();
   const isProcessingRef = useRef(false);
+  const isMountedRef = useRef(true);
+  const isOffline = useStore((s) => s.isOffline);
+
+  useEffect(() => {
+    return () => { isMountedRef.current = false; };
+  }, []);
 
   const [selectedAmount, setSelectedAmount] = useState<number | null>(1000);
   const [customAmount, setCustomAmount] = useState('');
@@ -67,9 +74,11 @@ function DonateScreenContent() {
     enabled: !!params.campaignId,
   });
 
-  const donationsQuery = useQuery({
+  const donationsQuery = useInfiniteQuery({
     queryKey: ['my-donations'],
-    queryFn: () => islamicApi.getMyDonations(),
+    queryFn: ({ pageParam }) => islamicApi.getMyDonations(pageParam as string | undefined),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last) => last.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
   });
 
   const donateMutation = useMutation({
@@ -103,6 +112,10 @@ function DonateScreenContent() {
   const handleDonate = async () => {
     const amount = getAmount();
     if (amount < 100) return;
+    if (isOffline) {
+      showToast({ message: t('common.checkConnection', 'Please check your connection'), variant: 'error' });
+      return;
+    }
     // Double-tap guard via ref — blocks re-entry before state update
     if (isProcessingRef.current) return;
     isProcessingRef.current = true;
@@ -140,7 +153,7 @@ function DonateScreenContent() {
       const message = err instanceof Error ? err.message : t('charity.donateFailed', 'Donation failed');
       showToast({ message, variant: 'error' });
     } finally {
-      setIsProcessing(false);
+      if (isMountedRef.current) setIsProcessing(false);
       isProcessingRef.current = false;
     }
   };
@@ -205,7 +218,7 @@ function DonateScreenContent() {
     </View>
   );
 
-  const donations = (donationsQuery.data as { data: CharityDonation[] } | undefined)?.data || [];
+  const donations: CharityDonation[] = donationsQuery.data?.pages.flatMap((p) => p.data) ?? [];
 
   const listHeader = useMemo(() => (
     <View>
@@ -354,7 +367,7 @@ function DonateScreenContent() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top', 'bottom']}>
       <GlassHeader title={t('charity.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back() }} />
-      {donationsQuery.isLoading && donations.length === 0 ? (
+      {donationsQuery.isLoading ? (
         <View style={styles.skeletonContainer}>
           <Skeleton.Rect width="100%" height={48} borderRadius={radius.md} />
           <Skeleton.Rect width="100%" height={48} borderRadius={radius.md} />
@@ -381,6 +394,12 @@ function DonateScreenContent() {
               subtitle={t('charity.noDonationsSubtitle', { defaultValue: 'Make your first donation above' })}
             />
           }
+          onEndReached={() => {
+            if (donationsQuery.hasNextPage && !donationsQuery.isFetchingNextPage) {
+              donationsQuery.fetchNextPage();
+            }
+          }}
+          onEndReachedThreshold={0.4}
           contentContainerStyle={styles.listContent}
           refreshControl={
             <BrandedRefreshControl refreshing={donationsQuery.isFetching && !donationsQuery.isLoading} onRefresh={handleRefresh} />

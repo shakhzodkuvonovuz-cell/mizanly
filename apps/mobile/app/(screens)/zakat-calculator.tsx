@@ -607,7 +607,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   scrollContent: {
     padding: spacing.base,
-    paddingTop: 100,
+    paddingTop: 96,
   },
   infoBanner: {
     alignItems: 'center',

@@ -20,6 +20,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { showToast } from '@/components/ui/Toast';
 import { api } from '@/services/api';
 import { paymentsApi } from '@/services/paymentsApi';
+import { useStore } from '@/store';
 
 const WAQF_PRESET_AMOUNTS = [10, 25, 50, 100, 250, 500];
 
@@ -35,6 +36,7 @@ export default function WaqfScreen() {
   const [selectedAmount, setSelectedAmount] = useState(50);
   const [customAmount, setCustomAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const isOffline = useStore((s) => s.isOffline);
 
   const contributionAmount = customAmount ? parseFloat(customAmount) || 0 : selectedAmount;
 
@@ -48,6 +50,10 @@ export default function WaqfScreen() {
 
   const handleContribute = useCallback(async () => {
     if (!selectedFund || contributionAmount <= 0) return;
+    if (isOffline) {
+      showToast({ message: t('common.checkConnection', 'Please check your connection'), variant: 'error' });
+      return;
+    }
     haptic.send();
     setIsProcessing(true);
     showToast({ message: t('community.waqfProcessing', 'Processing contribution...'), variant: 'info' });

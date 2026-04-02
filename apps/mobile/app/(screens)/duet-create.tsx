@@ -1,8 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, useWindowDimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Audio } from 'expo-av';
@@ -23,9 +23,7 @@ import { navigate } from '@/utils/navigation';
 import { formatTime } from '@/utils/formatTime';
 import { rtlFlexRow } from '@/utils/rtl';
 
-// screenHeight at module scope: used in StyleSheet.create which needs static values.
-// Stale after rotation — acceptable for this screen (camera always portrait).
-const { height: screenHeight } = Dimensions.get('window');
+// screenHeight moved to useWindowDimensions() inside the component for rotation safety
 
 type LayoutMode = 'side-by-side' | 'top-bottom' | 'react';
 
@@ -61,6 +59,7 @@ const sliderStyles = StyleSheet.create({
 export default function DuetCreateScreen() {
   const router = useRouter();
   const { t, isRTL } = useTranslation();
+  const { height: screenHeight } = useWindowDimensions();
   const [isRecording, setIsRecording] = useState(false);
   const isRecordingRef = useRef(false);
   const [recordTime, setRecordTime] = useState(0);
@@ -177,6 +176,17 @@ export default function DuetCreateScreen() {
     }
   };
 
+  // Pulsing recording dot animation
+  const dotOpacity = useSharedValue(1);
+  useEffect(() => {
+    if (isRecording) {
+      dotOpacity.value = withRepeat(withTiming(0.3, { duration: 600 }), -1, true);
+    } else {
+      dotOpacity.value = 1;
+    }
+  }, [isRecording, dotOpacity]);
+  const dotPulseStyle = useAnimatedStyle(() => ({ opacity: dotOpacity.value }));
+
   const isTimeRunningOut = recordTime >= 50;
 
   if (!permission?.granted) {
@@ -251,7 +261,7 @@ export default function DuetCreateScreen() {
                 style={styles.previewGradient}
               >
                 {layoutMode === 'side-by-side' && (
-                  <View style={styles.sideBySideLayout}>
+                  <View style={[styles.sideBySideLayout, { height: screenHeight * 0.35 }]}>
                     {/* Original Panel */}
                     <View style={styles.previewPanel}>
                       <View style={styles.panelLabelContainer}>
@@ -308,7 +318,7 @@ export default function DuetCreateScreen() {
                 )}
 
                 {layoutMode === 'top-bottom' && (
-                  <View style={styles.topBottomLayout}>
+                  <View style={[styles.topBottomLayout, { height: screenHeight * 0.35 }]}>
                     <View style={styles.topBottomPanel}>
                       <View style={styles.panelLabelContainer}>
                         <LinearGradient
@@ -356,7 +366,7 @@ export default function DuetCreateScreen() {
                 )}
 
                 {layoutMode === 'react' && (
-                  <View style={styles.reactLayout}>
+                  <View style={[styles.reactLayout, { height: screenHeight * 0.35 }]}>
                     <View style={styles.reactOriginalPanel}>
                       <View style={styles.panelLabelContainer}>
                         <LinearGradient
@@ -457,7 +467,7 @@ export default function DuetCreateScreen() {
                 </Text>
                 {isRecording && (
                   <View style={styles.recordingIndicator}>
-                    <View style={styles.recordingDot} />
+                    <Animated.View style={[styles.recordingDot, dotPulseStyle]} />
                     <Text style={styles.recordingText}>{t('duet.recording')}</Text>
                   </View>
                 )}
@@ -713,15 +723,12 @@ const styles = StyleSheet.create({
   },
   sideBySideLayout: {
     flexDirection: 'row',
-    height: screenHeight * 0.35,
     gap: spacing.sm,
   },
   topBottomLayout: {
-    height: screenHeight * 0.35,
     gap: spacing.sm,
   },
   reactLayout: {
-    height: screenHeight * 0.35,
     position: 'relative',
   },
   previewPanel: {

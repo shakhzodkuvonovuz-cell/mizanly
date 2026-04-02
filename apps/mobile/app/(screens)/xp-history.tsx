@@ -231,6 +231,10 @@ function XPHistoryScreen() {
     <View style={styles.footerLoader}>
       <Skeleton.Rect width={200} height={40} borderRadius={radius.md} />
     </View>
+  ) : historyQuery.hasNextPage ? (
+    <View style={styles.footerLoader}>
+      <Text style={{ color: tc.text.tertiary, fontSize: fontSize.xs }}>{t('common.scrollForMore', 'Scroll for more')}</Text>
+    </View>
   ) : null;
 
   return (

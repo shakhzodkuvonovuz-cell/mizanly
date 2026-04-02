@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, TextInput, Share } from 'react-native';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
@@ -36,6 +36,7 @@ export default function WatchPartyScreen() {
   const [debouncedVideoSearch, setDebouncedVideoSearch] = useState('');
   const [videoPickerOpen, setVideoPickerOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isNavigatingRef = useRef(false);
 
   // Debounce video search
   useEffect(() => {
@@ -117,8 +118,11 @@ export default function WatchPartyScreen() {
           accessibilityLabel={item.title as string}
           style={styles.partyCard}
           onPress={() => {
+            if (isNavigatingRef.current) return;
+            isNavigatingRef.current = true;
             haptic.tick();
             router.push(`/(screens)/watch-party/${item.id}` as never);
+            setTimeout(() => { isNavigatingRef.current = false; }, 500);
           }}
         >
           <View style={styles.partyHeader}>
@@ -148,8 +152,11 @@ export default function WatchPartyScreen() {
             <Pressable
               style={styles.joinBtn}
               onPress={() => {
+                if (isNavigatingRef.current) return;
+                isNavigatingRef.current = true;
                 haptic.navigate();
                 router.push(`/(screens)/watch-party/${item.id}` as never);
+                setTimeout(() => { isNavigatingRef.current = false; }, 500);
               }}
               accessibilityRole="button"
               accessibilityLabel={t('community.joinParty')}
