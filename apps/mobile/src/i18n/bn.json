@@ -1867,7 +1867,8 @@
       "wantsToSpeak": "Wants to speak",
       "notFoundTitle": "Stream not found",
       "notFoundSubtitle": "This live stream may have ended or been removed",
-      "welcomeToStream": "Welcome to the stream!"
+      "welcomeToStream": "Welcome to the stream!",
+      "participantRemoved": "অংশগ্রহণকারী সরানো হয়েছে"
     },
     "majlis-lists": {
       "title": "Majlis Lists",
@@ -4296,5 +4297,13 @@
       "rule3": "Be transparent about sponsored content",
       "rule4": "One account per person"
     }
+  },
+  "quran": {
+    "meccan": "মক্কী",
+    "medinan": "মাদানী",
+    "verses": "আয়াত"
+  },
+  "storage": {
+    "loadError": "স্টোরেজ আকার পড়তে ব্যর্থ"
   }
 }

@@ -1868,7 +1868,8 @@
       "wantsToSpeak": "Wants to speak",
       "notFoundTitle": "Stream not found",
       "notFoundSubtitle": "This live stream may have ended or been removed",
-      "welcomeToStream": "Welcome to the stream!"
+      "welcomeToStream": "Welcome to the stream!",
+      "participantRemoved": "Participant removed"
     },
     "majlis-lists": {
       "title": "Majlis Lists",
@@ -4295,5 +4296,13 @@
       "rule3": "Be transparent about sponsored content",
       "rule4": "One account per person"
     }
+  },
+  "quran": {
+    "meccan": "Meccan",
+    "medinan": "Medinan",
+    "verses": "verses"
+  },
+  "storage": {
+    "loadError": "Failed to read storage sizes"
   }
 }

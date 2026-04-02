@@ -1861,7 +1861,8 @@
       "wantsToSpeak": "Konuşmak istiyor",
       "notFoundTitle": "Yayın bulunamadı",
       "notFoundSubtitle": "Bu canlı yayın sona ermiş veya kaldırılmış olabilir",
-      "welcomeToStream": "Yayına hoş geldiniz!"
+      "welcomeToStream": "Yayına hoş geldiniz!",
+      "participantRemoved": "Katılımcı kaldırıldı"
     },
     "majlis-lists": {
       "title": "Meclis Listeleri",
@@ -4290,5 +4291,13 @@
       "rule3": "Be transparent about sponsored content",
       "rule4": "One account per person"
     }
+  },
+  "quran": {
+    "meccan": "Mekki",
+    "medinan": "Medeni",
+    "verses": "ayet"
+  },
+  "storage": {
+    "loadError": "Depolama boyutları okunamadı"
   }
 }

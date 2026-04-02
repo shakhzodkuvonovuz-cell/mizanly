@@ -1582,7 +1582,8 @@
       "wantsToSpeak": "يريد التحدث",
       "notFoundTitle": "البث غير موجود",
       "notFoundSubtitle": "ربما انتهى هذا البث المباشر أو تمت إزالته",
-      "welcomeToStream": "مرحباً بك في البث!"
+      "welcomeToStream": "مرحباً بك في البث!",
+      "participantRemoved": "تمت إزالة المشارك"
     },
     "majlis-lists": {
       "title": "قوائم المجلس",
@@ -4290,5 +4291,13 @@
       "rule3": "Be transparent about sponsored content",
       "rule4": "One account per person"
     }
+  },
+  "quran": {
+    "meccan": "مكية",
+    "medinan": "مدنية",
+    "verses": "آيات"
+  },
+  "storage": {
+    "loadError": "فشل في قراءة أحجام التخزين"
   }
 }
