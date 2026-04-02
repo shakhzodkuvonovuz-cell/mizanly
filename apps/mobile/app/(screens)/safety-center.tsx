@@ -1,3 +1,4 @@
+import { useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,6 +9,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { showToast } from '@/components/ui/Toast';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 
 interface SafetyItem {
@@ -22,6 +24,7 @@ function SafetyCenterContent() {
   const { t } = useTranslation();
   const tc = useThemeColors();
   const haptic = useContextualHaptic();
+  const isNavigatingRef = useRef(false);
 
   const items: SafetyItem[] = [
     {
@@ -58,7 +61,9 @@ function SafetyCenterContent() {
       icon: 'phone',
       title: t('safety.crisisResources', 'Crisis Resources'),
       subtitle: t('safety.crisisResourcesSub', 'If you or someone you know needs help'),
-      action: () => Linking.openURL('https://findahelpline.com/'),
+      action: () => Linking.openURL('https://findahelpline.com/').catch(() => {
+        showToast({ message: t('safety.crisisLinkOffline', 'Unable to open link. Please check your connection.'), variant: 'error' });
+      }),
     },
   ];
 
@@ -75,12 +80,19 @@ function SafetyCenterContent() {
         {items.map((item, i) => (
           <Animated.View key={item.title} entering={FadeInUp.delay(i * 60).duration(250)}>
             <Pressable
-              style={[styles.itemRow, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
-              onPress={() => { haptic.navigate(); item.action(); }}
+              style={({ pressed }) => [styles.itemRow, { backgroundColor: tc.bgCard, borderColor: tc.border }, pressed && { opacity: 0.7 }]}
+              android_ripple={{ color: 'rgba(255,255,255,0.1)' }}
+              onPress={() => {
+                if (isNavigatingRef.current) return;
+                isNavigatingRef.current = true;
+                haptic.navigate();
+                item.action();
+                setTimeout(() => { isNavigatingRef.current = false; }, 500);
+              }}
               accessibilityRole="button"
               accessibilityLabel={item.title}
             >
-              <View style={[styles.iconWrap, { backgroundColor: `${colors.emerald}12` }]}>
+              <View style={[styles.iconWrap, { backgroundColor: colors.active.emerald10 }]}>
                 <Icon name={item.icon} size="md" color={colors.emerald} />
               </View>
               <View style={styles.textWrap}>
@@ -102,10 +114,10 @@ export default function SafetyCenterScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { padding: spacing.base, gap: spacing.sm },
+  scroll: { padding: spacing.base, gap: spacing.sm, paddingBottom: spacing['2xl'] },
   intro: { fontFamily: fonts.body, fontSize: fontSize.sm, lineHeight: 20, marginBottom: spacing.md },
   itemRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.base, borderRadius: radius.md, borderWidth: 1 },
-  iconWrap: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  iconWrap: { width: 44, height: 44, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   textWrap: { flex: 1, gap: 2 },
   title: { fontFamily: fonts.bodyMedium, fontSize: fontSize.base },
   subtitle: { fontFamily: fonts.body, fontSize: fontSize.xs, lineHeight: 16 },

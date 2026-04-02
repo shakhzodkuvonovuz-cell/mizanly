@@ -17,11 +17,12 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { restrictsApi } from '@/services/api';
 import { showToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 
 interface RestrictedUser {
@@ -42,6 +43,7 @@ export default function RestrictedScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const haptic = useContextualHaptic();
 
   const query = useInfiniteQuery({
     queryKey: ['restricted'],
@@ -50,14 +52,22 @@ export default function RestrictedScreen() {
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last: RestrictedPage) =>
       last.meta?.hasMore ? (last.meta.cursor ?? undefined) : undefined,
+    staleTime: 30_000,
   });
 
   const restricted = query.data?.pages.flatMap((p) => p.data) ?? [];
 
   const unrestrictMutation = useMutation({
     mutationFn: (userId: string) => restrictsApi.unrestrict(userId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['restricted'] }),
-    onError: (err: Error) => showToast({ message: err.message || t('common.error'), variant: 'error' }),
+    onSuccess: () => {
+      haptic.success();
+      showToast({ message: t('screens.restricted.unrestrictSuccess', 'User unrestricted'), variant: 'success' });
+      queryClient.invalidateQueries({ queryKey: ['restricted'] });
+    },
+    onError: (err: Error) => {
+      haptic.error();
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+    },
   });
 
   const [refreshing, setRefreshing] = useState(false);
@@ -68,9 +78,10 @@ export default function RestrictedScreen() {
   };
 
   const confirmUnrestrict = (user: RestrictedUser) => {
+    haptic.tick();
     Alert.alert(
       t('screens.restricted.unrestrict'),
-      t('screens.restricted.info'),
+      t('screens.restricted.unrestrictConfirm', `Are you sure you want to unrestrict @${user.username}?`),
       [
         { text: t('common.cancel'), style: 'cancel' },
         {
@@ -115,7 +126,7 @@ export default function RestrictedScreen() {
           }}
         />
 
-        <Text style={styles.infoText}>{t('screens.restricted.info')}</Text>
+        <Text style={[styles.infoText, { color: tc.text.secondary }]}>{t('screens.restricted.info')}</Text>
 
         {query.isLoading ? (
           <View style={styles.skeletonList}>
@@ -148,7 +159,7 @@ export default function RestrictedScreen() {
               />
             }
             renderItem={({ item, index }) => (
-              <Animated.View entering={FadeInUp.delay(index * 30).duration(300)}>
+              <Animated.View entering={FadeInUp.delay(Math.min(index, 10) * 30).duration(300)}>
                 <View style={styles.row}>
                   <Avatar
                     uri={item.avatarUrl}
@@ -156,10 +167,10 @@ export default function RestrictedScreen() {
                     size="md"
                   />
                   <View style={styles.info}>
-                    <Text style={styles.name}>{item.displayName}</Text>
+                    <Text style={[styles.name, { color: tc.text.primary }]}>{item.displayName}</Text>
                     <View style={styles.usernameBadge}>
                       <Icon name="eye-off" size={10} color={colors.gold} />
-                      <Text style={styles.username}>@{item.username}</Text>
+                      <Text style={[styles.username, { color: tc.text.secondary }]}>@{item.username}</Text>
                     </View>
                   </View>
                   <GradientButton
@@ -209,8 +220,8 @@ export default function RestrictedScreen() {
 const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: { flex: 1, backgroundColor: tc.bg },
   infoText: {
-    color: colors.text.secondary,
     fontSize: fontSize.sm,
+    fontFamily: fonts.body,
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
     lineHeight: 18,
@@ -240,9 +251,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   info: { flex: 1 },
   name: {
-    color: colors.text.primary,
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   usernameBadge: {
     flexDirection: 'row',
@@ -251,7 +261,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginTop: 2,
   },
   username: {
-    color: colors.text.secondary,
     fontSize: fontSize.sm,
+    fontFamily: fonts.body,
   },
 });

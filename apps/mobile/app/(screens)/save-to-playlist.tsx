@@ -12,18 +12,20 @@ import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { channelsApi, playlistsApi } from '@/services/api';
 import { showToast } from '@/components/ui/Toast';
 import type { Playlist } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function SaveToPlaylistScreen() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
+  const haptic = useContextualHaptic();
   const { videoId } = useLocalSearchParams<{ videoId: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -36,6 +38,7 @@ export default function SaveToPlaylistScreen() {
   const channelsQuery = useQuery({
     queryKey: ['my-channels'],
     queryFn: () => channelsApi.getMyChannels(),
+    staleTime: 60_000,
   });
 
   const channels = channelsQuery.data || [];
@@ -101,6 +104,8 @@ export default function SaveToPlaylistScreen() {
   });
 
   const togglePlaylist = useCallback(async (playlist: Playlist) => {
+    if (!videoId) return;
+    haptic.tick();
     const currentlyIn = inPlaylistMap[playlist.id] || false;
     setLoadingPlaylistIds(prev => new Set(prev).add(playlist.id));
     try {
@@ -111,6 +116,7 @@ export default function SaveToPlaylistScreen() {
         await addMutation.mutateAsync({ playlistId: playlist.id });
         setInPlaylistMap(prev => ({ ...prev, [playlist.id]: true }));
       }
+      haptic.success();
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ['playlist-inclusion', playlist.id, videoId] });
       queryClient.invalidateQueries({ queryKey: ['playlist-items', playlist.id] });
@@ -272,7 +278,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   createText: {
     color: colors.emerald,
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   content: {
     paddingHorizontal: spacing.base,
@@ -314,9 +320,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flex: 1,
   },
   playlistName: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   playlistNameActive: {
     color: colors.emerald,
@@ -328,8 +334,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginTop: 2,
   },
   playlistMeta: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.sm,
+    fontFamily: fonts.body,
   },
   checkBg: {
     width: 36,

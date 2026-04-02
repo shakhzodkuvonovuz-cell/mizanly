@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   Pressable,
   Alert,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
@@ -18,10 +20,11 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { reportsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { showToast } from '@/components/ui/Toast';
 
@@ -64,18 +67,13 @@ interface CreateReportDto {
 export default function ReportScreen() {
   const { t, isRTL } = useTranslation();
   const tc = useThemeColors();
+  const haptic = useContextualHaptic();
   const params = useLocalSearchParams<{ contentType: string; id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [selectedReason, setSelectedReason] = useState<ReportReason | ''>('');
   const [details, setDetails] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Brief loading state while params resolve
-    const timer = setTimeout(() => setIsLoading(false), 300);
-    return () => clearTimeout(timer);
-  }, []);
+  const isNavigatingRef = useRef(false);
 
   const contentType = params.contentType as ContentType;
   const contentId = params.id;
@@ -100,41 +98,48 @@ export default function ReportScreen() {
       return reportsApi.create(dto);
     },
     onSuccess: () => {
+      haptic.success();
       showToast({ message: t('screens.reports-detail.successMessage'), variant: 'success' });
       router.back();
     },
     onError: (error: Error) => {
-      showToast({ message: error.message, variant: 'error' });
+      haptic.error();
+      showToast({ message: error.message || t('common.somethingWentWrong'), variant: 'error' });
     },
   });
 
-  const handleSubmit = () => {
-    reportMutation.mutate();
-  };
+  const handleSubmit = useCallback(() => {
+    if (reportMutation.isPending) return;
+    haptic.delete();
+    Alert.alert(
+      t('screens.reports-detail.confirmTitle', 'Submit Report'),
+      t('screens.reports-detail.confirmMessage', 'Are you sure you want to submit this report?'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('screens.reports-detail.submitReport'),
+          style: 'destructive',
+          onPress: () => reportMutation.mutate(),
+        },
+      ],
+    );
+  }, [reportMutation, haptic, t]);
 
   const isValid = selectedReason && contentType && contentId && isValidType;
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('screens.reports-detail.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
         />
 
-        {isLoading ? (
-          <View style={{ padding: spacing.base, gap: spacing.lg, paddingTop: insets.top + 52 + spacing.base }}>
-            <Skeleton.Text width="70%" />
-            {Array.from({ length: 6 }).map((_, i) => (
-              <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-                <Skeleton.Circle size={20} />
-                <Skeleton.Rect width={120} height={14} />
-              </View>
-            ))}
-            <Skeleton.Rect width="100%" height={100} borderRadius={radius.md} />
-            <Skeleton.Rect width="100%" height={44} borderRadius={radius.md} />
-          </View>
-        ) : (
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
+          keyboardVerticalOffset={0}
+        >
         <ScrollView
           style={styles.content}
           contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 52 + spacing.base }]}
@@ -157,8 +162,8 @@ export default function ReportScreen() {
               <Animated.View key={reason.value} entering={FadeInUp.delay(100 + index * 40).duration(400)}>
                 <Pressable
                   accessibilityRole="button"
-                  style={[styles.reasonItem, selectedReason === reason.value && styles.reasonItemSelected]}
-                  onPress={() => setSelectedReason(reason.value)}
+                  style={({ pressed }) => [styles.reasonItem, selectedReason === reason.value && styles.reasonItemSelected, pressed && { opacity: 0.7 }]}
+                  onPress={() => { haptic.tick(); setSelectedReason(reason.value); }}
                 >
                   <LinearGradient
                     colors={selectedReason === reason.value ? ['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)'] : colors.gradient.cardDark}
@@ -175,7 +180,7 @@ export default function ReportScreen() {
                         />
                       )}
                     </LinearGradient>
-                    <Text style={[styles.reasonLabel, selectedReason === reason.value && styles.reasonLabelSelected]}>
+                    <Text style={[styles.reasonLabel, { color: tc.text.primary }, selectedReason === reason.value && styles.reasonLabelSelected]}>
                       {reason.label}
                     </Text>
                   </LinearGradient>
@@ -190,7 +195,7 @@ export default function ReportScreen() {
               colors={colors.gradient.cardDark}
               style={styles.detailsCard}
             >
-              <Text style={[styles.detailsLabel, { color: tc.text.primary }]}>{t('screens.reports-detail.additionalDetails')}</Text>
+              <Text style={[styles.detailsLabel, { color: tc.text.primary }]}>{t('screens.reports-detail.additionalDetails', 'Additional Details')}</Text>
               <TextInput
                 style={[styles.detailsInput, { color: tc.text.primary, backgroundColor: tc.bgElevated, borderColor: tc.border }]}
                 placeholder={t('screens.reports-detail.detailsPlaceholder')}
@@ -216,9 +221,9 @@ export default function ReportScreen() {
             />
           </Animated.View>
         </ScrollView>
-        )}
+        </KeyboardAvoidingView>
       </View>
-  
+
     </ScreenErrorBoundary>
   );
 }
@@ -226,14 +231,13 @@ export default function ReportScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   content: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: spacing.base,
-    paddingBottom: spacing.base,
+    paddingBottom: spacing['2xl'],
   },
   promptCard: {
     flexDirection: 'row',
@@ -246,9 +250,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   prompt: {
-    color: colors.text.primary,
     fontSize: fontSize.lg,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     flex: 1,
   },
   reasonList: {
@@ -283,13 +286,13 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
   },
   reasonLabel: {
-    color: colors.text.primary,
     fontSize: fontSize.base,
+    fontFamily: fonts.body,
     flex: 1,
   },
   reasonLabelSelected: {
     color: colors.emerald,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   detailsCard: {
     borderRadius: radius.lg,
@@ -299,18 +302,15 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   detailsLabel: {
-    color: colors.text.primary,
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
     marginBottom: spacing.sm,
   },
   detailsInput: {
-    backgroundColor: colors.dark.bgElevated,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.dark.border,
-    color: colors.text.primary,
     fontSize: fontSize.base,
+    fontFamily: fonts.body,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     minHeight: 100,

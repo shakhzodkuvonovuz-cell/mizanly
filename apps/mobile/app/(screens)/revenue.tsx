@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -19,8 +19,10 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { api } from '@/services/api';
 import { navigate } from '@/utils/navigation';
+import { showToast } from '@/components/ui/Toast';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 
 // ── Local types ──
@@ -79,6 +81,9 @@ function RevenueContent() {
   const styles = createStyles(tc);
   const router = useRouter();
   const { t } = useTranslation();
+  const haptic = useContextualHaptic();
+  const isNavigatingRef = useRef(false);
+  const isLoadingMoreRef = useRef(false);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -100,7 +105,7 @@ function RevenueContent() {
       setCursor(txPage.meta.cursor);
       setHasMore(txPage.meta.hasMore);
     } catch {
-      // Keep existing data on error
+      showToast({ message: t('common.somethingWentWrong', 'Something went wrong'), variant: 'error' });
     } finally {
       if (isRefresh) setRefreshing(false);
       else setLoading(false);
@@ -117,7 +122,8 @@ function RevenueContent() {
   }, [fetchData]);
 
   const loadMore = useCallback(async () => {
-    if (!hasMore || !cursor) return;
+    if (!hasMore || !cursor || isLoadingMoreRef.current) return;
+    isLoadingMoreRef.current = true;
     try {
       const res = await revenueApi.getTransactions(cursor);
       const txPage = res as { data: Transaction[]; meta: { cursor?: string; hasMore: boolean } };
@@ -125,9 +131,11 @@ function RevenueContent() {
       setCursor(txPage.meta.cursor);
       setHasMore(txPage.meta.hasMore);
     } catch {
-      // Ignore load more errors
+      showToast({ message: t('common.somethingWentWrong', 'Something went wrong'), variant: 'error' });
+    } finally {
+      isLoadingMoreRef.current = false;
     }
-  }, [hasMore, cursor]);
+  }, [hasMore, cursor, t]);
 
   const renderHeader = useCallback(() => {
     if (!overview) return null;
@@ -149,7 +157,7 @@ function RevenueContent() {
             </Text>
             <View style={styles.trendRow}>
               <Icon
-                name={overview.trendUp ? 'trending-up' : 'trending-up'}
+                name={overview.trendUp ? 'trending-up' : 'trending-down'}
                 size="sm"
                 color={overview.trendUp ? '#FFFFFF' : colors.error}
               />
@@ -342,7 +350,13 @@ function RevenueContent() {
         <GradientButton
           label={t('revenue.cashOut', 'Cash Out')}
           icon="send"
-          onPress={() => navigate('/(screens)/cashout')}
+          onPress={() => {
+            if (isNavigatingRef.current) return;
+            isNavigatingRef.current = true;
+            haptic.navigate();
+            navigate('/(screens)/cashout');
+            setTimeout(() => { isNavigatingRef.current = false; }, 500);
+          }}
           fullWidth
           size="lg"
         />
@@ -434,12 +448,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   breakdownAmount: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.md,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   breakdownLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     marginTop: 2,
     textAlign: 'center',
   },
@@ -472,12 +486,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   splitTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   splitDesc: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     marginTop: 2,
   },
 
@@ -485,7 +499,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   sectionTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.md,
-    color: colors.text.primary,
+    color: tc.text.primary,
     marginTop: spacing.xl,
     marginBottom: spacing.md,
   },
@@ -511,12 +525,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   txDescription: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   txDate: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     marginTop: 2,
   },
   txAmount: {
