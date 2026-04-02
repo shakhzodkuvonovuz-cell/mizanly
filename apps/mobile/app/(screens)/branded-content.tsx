@@ -20,6 +20,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { promotionsApi } from '@/services/promotionsApi';
 
 function BrandedContentContent() {
@@ -27,6 +28,7 @@ function BrandedContentContent() {
   const tc = useThemeColors();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const haptic = useContextualHaptic();
   const { postId } = useLocalSearchParams<{ postId: string }>();
 
   const [isPaidPartnership, setIsPaidPartnership] = useState(false);
@@ -34,7 +36,9 @@ function BrandedContentContent() {
   const [saving, setSaving] = useState(false);
 
   const handleSave = useCallback(async () => {
-    if (!postId) return;
+    if (!postId || saving) return;
+    if (isPaidPartnership && !partnerName.trim()) return;
+    haptic.tick();
     setSaving(true);
     try {
       if (isPaidPartnership && partnerName.trim()) {
@@ -42,14 +46,16 @@ function BrandedContentContent() {
       } else if (!isPaidPartnership) {
         await promotionsApi.removeBranded(postId);
       }
+      haptic.success();
       showToast({ message: t('branded.savedMessage'), variant: 'success' });
       router.back();
     } catch {
+      haptic.error();
       showToast({ message: t('branded.saveError'), variant: 'error' });
     } finally {
       setSaving(false);
     }
-  }, [postId, isPaidPartnership, partnerName, router, t]);
+  }, [postId, isPaidPartnership, partnerName, router, t, saving, haptic]);
 
   if (!postId) {
     return (
@@ -91,7 +97,7 @@ function BrandedContentContent() {
             </View>
             <Switch
               value={isPaidPartnership}
-              onValueChange={setIsPaidPartnership}
+              onValueChange={(val) => { haptic.tick(); setIsPaidPartnership(val); }}
               trackColor={{ false: tc.surface, true: colors.active.emerald20 }}
               thumbColor={isPaidPartnership ? colors.emerald : tc.text.tertiary}
               accessibilityRole="switch"
@@ -123,6 +129,7 @@ function BrandedContentContent() {
           <View style={styles.previewPost}>
             <View style={styles.previewHeader}>
               <View style={[styles.previewAvatar, { backgroundColor: tc.surface }]} />
+
               <View style={styles.previewNameCol}>
                 <Text style={[styles.previewName, { color: tc.text.primary }]}>{t('branded.yourName')}</Text>
                 {isPaidPartnership && partnerName.trim() ? (
@@ -143,6 +150,7 @@ function BrandedContentContent() {
               </View>
             </View>
             <View style={[styles.previewImagePlaceholder, { backgroundColor: tc.surface }]}>
+
               <Icon name="image" size="xl" color={tc.text.tertiary} />
             </View>
           </View>
@@ -152,7 +160,7 @@ function BrandedContentContent() {
         <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.infoCard}>
           <Icon name="flag" size="md" color={colors.gold} />
           <View style={styles.infoContent}>
-            <Text style={styles.infoTitle}>{t('branded.disclosureTitle')}</Text>
+            <Text style={[styles.infoTitle, { color: colors.gold }]}>{t('branded.disclosureTitle')}</Text>
             <Text style={[styles.infoText, { color: tc.text.secondary }]}>{t('branded.disclosureText')}</Text>
           </View>
         </Animated.View>
@@ -185,7 +193,6 @@ export default function BrandedContentScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   scroll: {
     flex: 1,
@@ -195,10 +202,8 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
   },
   toggleCard: {
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
     padding: spacing.base,
   },
   toggleRow: {
@@ -214,49 +219,38 @@ const styles = StyleSheet.create({
   toggleLabel: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
   },
   toggleSub: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
     lineHeight: 16,
   },
   inputCard: {
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
     padding: spacing.base,
     gap: spacing.sm,
   },
   inputLabel: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
   },
   textInput: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.base,
-    color: colors.text.primary,
-    backgroundColor: colors.dark.surface,
     borderRadius: radius.md,
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
     borderWidth: 1,
-    borderColor: colors.dark.border,
   },
   sectionTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
     marginBottom: spacing.md,
   },
   previewCard: {
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
     padding: spacing.base,
   },
   previewPost: {
@@ -271,16 +265,14 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.surface,
   },
   previewNameCol: {
     flex: 1,
-    gap: 2,
+    gap: spacing.xs,
   },
   previewName: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.sm,
-    color: colors.text.primary,
   },
   partnershipBadge: {
     flexDirection: 'row',
@@ -290,12 +282,10 @@ const styles = StyleSheet.create({
   partnershipText: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
   },
   previewImagePlaceholder: {
     height: 180,
     borderRadius: radius.md,
-    backgroundColor: colors.dark.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -316,12 +306,10 @@ const styles = StyleSheet.create({
   infoTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.sm,
-    color: colors.gold,
   },
   infoText: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
     lineHeight: 16,
   },
   buttonWrapper: {

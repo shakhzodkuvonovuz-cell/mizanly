@@ -20,6 +20,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { promotionsApi } from '@/services/promotionsApi';
 
 const BUDGET_OPTIONS = [5, 10, 25, 50];
@@ -36,6 +37,7 @@ function BoostPostContent() {
   const tc = useThemeColors();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const haptic = useContextualHaptic();
   const { postId } = useLocalSearchParams<{ postId: string }>();
 
   const [selectedBudget, setSelectedBudget] = useState<number>(10);
@@ -49,17 +51,19 @@ function BoostPostContent() {
     : selectedBudget;
 
   const handleSelectBudget = useCallback((amount: number) => {
+    haptic.tick();
     setIsCustom(false);
     setSelectedBudget(amount);
     setCustomBudget('');
-  }, []);
+  }, [haptic]);
 
   const handleCustomBudget = useCallback(() => {
     setIsCustom(true);
   }, []);
 
   const handleBoost = useCallback(async () => {
-    if (!postId || activeBudget <= 0) return;
+    if (!postId || activeBudget <= 0 || boosting) return;
+    haptic.tick();
     setBoosting(true);
     try {
       await promotionsApi.boostPost({
@@ -67,14 +71,16 @@ function BoostPostContent() {
         budget: activeBudget,
         duration: selectedDuration,
       });
+      haptic.success();
       showToast({ message: t('boost.successMessage'), variant: 'success' });
       router.back();
     } catch {
+      haptic.error();
       showToast({ message: t('boost.errorMessage'), variant: 'error' });
     } finally {
       setBoosting(false);
     }
-  }, [postId, activeBudget, selectedDuration, router, t]);
+  }, [postId, activeBudget, selectedDuration, router, t, boosting, haptic]);
 
   if (!postId) {
     return (
@@ -103,7 +109,7 @@ function BoostPostContent() {
         style={styles.scroll}
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: insets.bottom + spacing.xl },
+          { paddingTop: insets.top + 60, paddingBottom: insets.bottom + spacing.xl },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -134,7 +140,7 @@ function BoostPostContent() {
                 <Pressable
                   key={amount}
                   onPress={() => handleSelectBudget(amount)}
-                  style={[styles.pill, active && styles.pillActive]}
+                  style={({ pressed }) => [styles.pill, { backgroundColor: tc.surface, borderColor: tc.border }, active && styles.pillActive, pressed && { opacity: 0.7 }]}
                   accessibilityRole="button"
                   accessibilityState={{ selected: active }}
                 >
@@ -145,8 +151,8 @@ function BoostPostContent() {
               );
             })}
             <Pressable
-              onPress={handleCustomBudget}
-              style={[styles.pill, isCustom && styles.pillActive]}
+              onPress={() => { haptic.tick(); handleCustomBudget(); }}
+              style={({ pressed }) => [styles.pill, { backgroundColor: tc.surface, borderColor: tc.border }, isCustom && styles.pillActive, pressed && { opacity: 0.7 }]}
               accessibilityRole="button"
               accessibilityState={{ selected: isCustom }}
             >
@@ -160,7 +166,7 @@ function BoostPostContent() {
             <Animated.View entering={FadeIn.duration(300)} style={[styles.customInputRow, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
               <Text style={styles.currencySign}>$</Text>
               <TextInput
-                style={styles.customInput}
+                style={[styles.customInput, { color: tc.text.primary }]}
                 value={customBudget}
                 onChangeText={setCustomBudget}
                 keyboardType="number-pad"
@@ -182,8 +188,8 @@ function BoostPostContent() {
               return (
                 <Pressable
                   key={days}
-                  onPress={() => setSelectedDuration(days)}
-                  style={[styles.pill, active && styles.pillActive]}
+                  onPress={() => { haptic.tick(); setSelectedDuration(days); }}
+                  style={({ pressed }) => [styles.pill, { backgroundColor: tc.surface, borderColor: tc.border }, active && styles.pillActive, pressed && { opacity: 0.7 }]}
                   accessibilityRole="button"
                   accessibilityState={{ selected: active }}
                 >
@@ -228,7 +234,7 @@ function BoostPostContent() {
             label={t('boost.boostNow')}
             onPress={handleBoost}
             loading={boosting}
-            disabled={activeBudget <= 0}
+            disabled={activeBudget <= 0 || boosting}
             fullWidth
             size="lg"
             icon="trending-up"
@@ -268,11 +274,9 @@ export default function BoostPostScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   scroll: {
     flex: 1,
-    marginTop: 100,
   },
   content: {
     paddingHorizontal: spacing.base,
@@ -280,10 +284,8 @@ const styles = StyleSheet.create({
     gap: spacing.xl,
   },
   previewCard: {
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
     padding: spacing.base,
   },
   previewHeader: {
@@ -295,7 +297,6 @@ const styles = StyleSheet.create({
   previewLabel: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
   },
   previewBody: {
     flexDirection: 'row',
@@ -306,7 +307,6 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: radius.md,
-    backgroundColor: colors.dark.surface,
   },
   previewMeta: {
     flex: 1,
@@ -315,17 +315,14 @@ const styles = StyleSheet.create({
   previewId: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.sm,
-    color: colors.text.primary,
   },
   previewHint: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
   },
   sectionTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
     marginBottom: spacing.md,
   },
   pillRow: {
@@ -337,9 +334,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.surface,
     borderWidth: 1,
-    borderColor: colors.dark.border,
   },
   pillActive: {
     backgroundColor: colors.active.emerald20,
@@ -348,7 +343,6 @@ const styles = StyleSheet.create({
   pillText: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
   },
   pillTextActive: {
     color: colors.emerald,
@@ -357,10 +351,8 @@ const styles = StyleSheet.create({
   customInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.dark.border,
     paddingHorizontal: spacing.base,
     marginTop: spacing.md,
   },
@@ -374,14 +366,12 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.base,
-    color: colors.text.primary,
     paddingVertical: spacing.md,
   },
   reachCard: {
     borderRadius: radius.lg,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: colors.dark.border,
   },
   reachGradient: {
     flexDirection: 'row',
@@ -396,17 +386,10 @@ const styles = StyleSheet.create({
   reachTitle: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
-  },
-  reachValue: {
-    fontFamily: fonts.bodySemiBold,
-    fontSize: fontSize.lg,
-    color: colors.emerald,
   },
   reachHonestText: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
     lineHeight: 16,
   },
   infoRow: {
@@ -418,17 +401,14 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
     lineHeight: 16,
   },
   buttonWrapper: {
     marginTop: spacing.sm,
   },
   summary: {
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
     padding: spacing.base,
   },
   summaryRow: {
@@ -437,7 +417,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.dark.border,
   },
   summaryRowLast: {
     borderBottomWidth: 0,
@@ -445,12 +424,10 @@ const styles = StyleSheet.create({
   summaryLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
   },
   summaryValue: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.sm,
-    color: colors.text.primary,
   },
   summaryTotal: {
     fontFamily: fonts.bodySemiBold,
