@@ -6,9 +6,9 @@ import {
   FlatList,
   Pressable,
   TextInput,
-  Dimensions,
   Linking,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -30,7 +30,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
-const { width } = Dimensions.get('window');
+// width now retrieved via useWindowDimensions() inside components
 
 const PRAYER_ORDER = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
 
@@ -146,7 +146,10 @@ function MosqueCard({ mosque, index }: { mosque: Mosque; index: number }) {
     <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
       <Pressable
         accessibilityRole="button"
-        onPress={() => router.push({ pathname: '/(screens)/mosque-detail' as never, params: { id: mosque.id } })}
+        onPress={() => {
+          haptic.tick();
+          showToast({ message: t('islamic.mosqueDetailComingSoon', 'Mosque details coming soon'), variant: 'info' });
+        }}
       >
       <LinearGradient
         colors={colors.gradient.cardDark}
@@ -194,9 +197,8 @@ function MosqueCard({ mosque, index }: { mosque: Mosque; index: number }) {
         {/* Directions Button */}
         <Pressable
           accessibilityRole="button"
+          style={({ pressed }) => [styles.directionsButton, pressed && { opacity: 0.7 }]}
           onPress={() => { haptic.navigate(); openDirections(mosque.lat, mosque.lng, mosque.name); }}
-
-          style={styles.directionsButton}
         >
           <LinearGradient
             colors={[colors.emerald, colors.emeraldDark]}
@@ -223,6 +225,7 @@ export default function MosqueFinderScreen() {
   const [mosques, setMosques] = useState<Mosque[]>([]);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const tc = useThemeColors();
+  const { width } = useWindowDimensions();
 
   const fetchData = useCallback(async () => {
     try {
@@ -436,11 +439,14 @@ export default function MosqueFinderScreen() {
 
                   <View style={styles.qiblaContent}>
                     <Text style={[styles.qiblaTitle, { color: tc.text.primary }]}>{t('islamic.qiblaDirection')}</Text>
-                    <Text style={styles.qiblaDirection}>
-                      {userLocation
-                        ? `${computeQiblaBearing(userLocation.lat, userLocation.lng).degrees}° ${computeQiblaBearing(userLocation.lat, userLocation.lng).direction}`
-                        : '--°'}
-                    </Text>
+                    {(() => {
+                      const qibla = userLocation ? computeQiblaBearing(userLocation.lat, userLocation.lng) : null;
+                      return (
+                        <Text style={styles.qiblaDirection}>
+                          {qibla ? `${qibla.degrees}° ${qibla.direction}` : '--°'}
+                        </Text>
+                      );
+                    })()}
                     <Text style={[styles.qiblaHint, { color: tc.text.secondary }]}>{t('islamic.qiblaHint')}</Text>
                   </View>
 

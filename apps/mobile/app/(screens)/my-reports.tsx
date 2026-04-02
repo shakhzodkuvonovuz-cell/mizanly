@@ -14,7 +14,7 @@ import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
+import { colors, spacing, fontSize, radius, fontSizeExt, fonts } from '@/theme';
 import { reportsApi } from '@/services/api';
 import type { Report, ReportStatus } from '@/types';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
@@ -47,10 +47,9 @@ export default function MyReportsScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    haptic.tick();
     await refetch();
     setRefreshing(false);
-  }, [refetch, haptic]);
+  }, [refetch]);
 
   const reports = data?.pages.flatMap((page: { data: Report[] }) => page.data) ?? [];
 
@@ -77,7 +76,7 @@ export default function MyReportsScreen() {
     const statusIcon: IconName = item.status === 'RESOLVED' ? 'check' : item.status === 'PENDING' ? 'clock' : 'flag';
 
     return (
-      <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+      <Animated.View entering={FadeInUp.delay(Math.min(index, 10) * 50).duration(400)}>
         <LinearGradient
           colors={colors.gradient.cardDark}
           style={styles.card}
@@ -115,13 +114,13 @@ export default function MyReportsScreen() {
           title={t('screens.my-reports.title')} 
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} 
         />
-        <View style={{ height: insets.top + 52 }} />
-        <EmptyState 
-          icon="flag" 
+        <View style={{ height: insets.top + 52 + spacing.md }} />
+        <EmptyState
+          icon="flag"
           title={t('screens.my-reports.errorTitle')}
           subtitle={t('screens.my-reports.errorSubtitle')}
-          actionLabel={t('common.retry')} 
-          onAction={() => refetch()} 
+          actionLabel={t('common.retry')}
+          onAction={() => refetch()}
         />
       </View>
     );
@@ -134,7 +133,7 @@ export default function MyReportsScreen() {
           title={t('screens.my-reports.title')} 
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} 
         />
-        <View style={{ height: insets.top + 52 }} />
+        <View style={{ height: insets.top + 52 + spacing.md }} />
         <View style={{ padding: spacing.base, gap: spacing.md }}>
           <Skeleton.Rect width="100%" height={90} borderRadius={radius.md} />
           <Skeleton.Rect width="100%" height={90} borderRadius={radius.md} />
@@ -184,9 +183,8 @@ export default function MyReportsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: colors.dark.bg 
+  container: {
+    flex: 1,
   },
   listContent: {
     paddingHorizontal: spacing.base,
@@ -207,7 +205,7 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: spacing.xs,
     gap: spacing.sm,
   },
   statusIconBg: {
@@ -220,8 +218,7 @@ const styles = StyleSheet.create({
   reason: {
     flex: 1,
     fontSize: fontSize.base,
-    fontWeight: '600',
-    color: colors.text.primary,
+    fontFamily: fonts.bodySemiBold,
     textTransform: 'capitalize',
   },
   badge: {
@@ -231,18 +228,18 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: fontSizeExt.tiny,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     textTransform: 'uppercase',
   },
   target: {
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    fontFamily: fonts.body,
     marginStart: 32,
   },
   date: {
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
-    marginTop: 4,
+    fontFamily: fonts.body,
+    marginTop: spacing.xs,
     marginStart: 32,
   },
 });

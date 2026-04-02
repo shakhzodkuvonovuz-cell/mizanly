@@ -158,12 +158,12 @@ export default function MorningBriefingScreen() {
   }, [isPlayingAyah, t]);
 
   const handlePlayHadith = useCallback(() => {
-    haptic.navigate();
+    haptic.tick();
     showToast({ message: t('islamic.audioRecitationComingSoon', { defaultValue: 'Audio recitation coming soon' }), variant: 'info' });
   }, [haptic, t]);
 
   const handlePlayDua = useCallback(() => {
-    haptic.navigate();
+    haptic.tick();
     showToast({ message: t('islamic.audioRecitationComingSoon', { defaultValue: 'Audio recitation coming soon' }), variant: 'info' });
   }, [haptic, t]);
 
@@ -196,6 +196,9 @@ export default function MorningBriefingScreen() {
     mutationFn: (taskType: string) => islamicApi.completeDailyTask(taskType),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['daily-briefing'] });
+    },
+    onError: () => {
+      showToast({ message: t('common.somethingWentWrong', 'Something went wrong'), variant: 'error' });
     },
   });
 
@@ -255,7 +258,7 @@ export default function MorningBriefingScreen() {
               {/* Header: Greeting + Hijri Date */}
               <Animated.View entering={FadeInUp.duration(400)}>
                 <Text style={[styles.greeting, { color: tc.text.primary }]}>{greeting}</Text>
-                <Text style={styles.hijriDate}>{briefing.hijriDate}</Text>
+                <Text style={[styles.hijriDate, { color: colors.gold }]}>{briefing.hijriDate}</Text>
               </Animated.View>
 
               {/* Progress overview */}
@@ -271,14 +274,14 @@ export default function MorningBriefingScreen() {
                         total: String(briefing.totalTasks),
                       })}
                     </Text>
-                    {briefing.tasksCompleted < briefing.totalTasks && (
+                    {(briefing.totalTasks ?? 0) > 0 && briefing.tasksCompleted < briefing.totalTasks && (
                       <Text style={styles.bonusXPText}>
                         {t('dailyBriefing.bonusXP', { xp: '50' })}
                       </Text>
                     )}
                   </View>
                   <View style={styles.progressBarBg}>
-                    <View style={[styles.progressBarFill, { width: `${(briefing.tasksCompleted / briefing.totalTasks) * 100}%` }]} />
+                    <View style={[styles.progressBarFill, { width: `${briefing.totalTasks > 0 ? (briefing.tasksCompleted / briefing.totalTasks) * 100 : 0}%` }]} />
                   </View>
                 </LinearGradient>
               </Animated.View>
@@ -325,12 +328,12 @@ export default function MorningBriefingScreen() {
                       <Icon name="play" size="sm" color={colors.gold} />
                     </Pressable>
                   </View>
-                  {briefing.hadithOfTheDay.arabic ? (
+                  {briefing.hadithOfTheDay?.arabic ? (
                     <Text style={[styles.arabicText, { color: tc.text.primary }]}>{briefing.hadithOfTheDay.arabic}</Text>
                   ) : null}
-                  <Text style={[styles.contentText, { color: tc.text.secondary }]}>{briefing.hadithOfTheDay.text}</Text>
+                  <Text style={[styles.contentText, { color: tc.text.secondary }]}>{briefing.hadithOfTheDay?.text}</Text>
                   <Text style={[styles.sourceText, { color: tc.text.tertiary }]}>
-                    — {briefing.hadithOfTheDay.source} ({briefing.hadithOfTheDay.narrator})
+                    — {briefing.hadithOfTheDay?.source} ({briefing.hadithOfTheDay?.narrator})
                   </Text>
                 </LinearGradient>
               </Animated.View>
@@ -354,10 +357,10 @@ export default function MorningBriefingScreen() {
                       <Icon name="play" size="sm" color={colors.emerald} />
                     </Pressable>
                   </View>
-                  <Text style={[styles.arabicText, { color: tc.text.primary }]}>{briefing.duaOfTheDay.arabic}</Text>
-                  <Text style={[styles.transliterationText, { color: tc.text.secondary }]}>{briefing.duaOfTheDay.transliteration}</Text>
-                  <Text style={[styles.contentText, { color: tc.text.secondary }]}>{briefing.duaOfTheDay.translation}</Text>
-                  <Text style={[styles.sourceText, { color: tc.text.tertiary }]}>— {briefing.duaOfTheDay.source}</Text>
+                  <Text style={[styles.arabicText, { color: tc.text.primary }]}>{briefing.duaOfTheDay?.arabic}</Text>
+                  <Text style={[styles.transliterationText, { color: tc.text.secondary }]}>{briefing.duaOfTheDay?.transliteration}</Text>
+                  <Text style={[styles.contentText, { color: tc.text.secondary }]}>{briefing.duaOfTheDay?.translation}</Text>
+                  <Text style={[styles.sourceText, { color: tc.text.tertiary }]}>— {briefing.duaOfTheDay?.source}</Text>
                 </LinearGradient>
               </Animated.View>
 
@@ -377,11 +380,11 @@ export default function MorningBriefingScreen() {
                     )}
                   </View>
                   <Text style={[styles.dhikrPhrase, { color: tc.text.primary }]}>
-                    "{briefing.dhikrChallenge.text}" × {briefing.dhikrChallenge.target}
+                    "{briefing.dhikrChallenge?.text}" × {briefing.dhikrChallenge?.target ?? 33}
                   </Text>
                   <DhikrCounter
-                    target={briefing.dhikrChallenge.target}
-                    initialCount={briefing.dhikrChallenge.completed}
+                    target={briefing.dhikrChallenge?.target ?? 33}
+                    initialCount={briefing.dhikrChallenge?.completed ?? 0}
                     onComplete={() => handleCompleteTask('dhikr')}
                   />
                 </LinearGradient>
@@ -391,10 +394,11 @@ export default function MorningBriefingScreen() {
               <Animated.View entering={FadeInUp.delay(600).duration(400)}>
                 <Pressable
                   onPress={() => {
-                    if (!completedTasks.includes('quran')) {
+                    if (!completedTasks.includes('quran') && !completeMutation.isPending) {
                       handleCompleteTask('quran');
                     }
                   }}
+                  disabled={completedTasks.includes('quran') || completeMutation.isPending}
                   accessibilityLabel={t('dailyBriefing.ayahOfTheDay')}
                   accessibilityRole="button"
                 >
@@ -408,8 +412,10 @@ export default function MorningBriefingScreen() {
                       <Pressable
                         onPress={(e) => {
                           e.stopPropagation?.();
-                          haptic.navigate();
-                          playAyahAudio(briefing.ayahOfTheDay.surah, briefing.ayahOfTheDay.ayahNumber);
+                          haptic.tick();
+                          if (briefing.ayahOfTheDay?.surah && briefing.ayahOfTheDay?.ayahNumber) {
+                            playAyahAudio(briefing.ayahOfTheDay.surah, briefing.ayahOfTheDay.ayahNumber);
+                          }
                         }}
                         hitSlop={8}
                         accessibilityLabel={isPlayingAyah ? t('common.stop', { defaultValue: 'Stop' }) : t('common.listen', { defaultValue: 'Listen' })}
@@ -428,10 +434,10 @@ export default function MorningBriefingScreen() {
                         </View>
                       )}
                     </View>
-                    <Text style={styles.surahRef}>
-                      {briefing.ayahOfTheDay.surah}:{briefing.ayahOfTheDay.ayahNumber}
+                    <Text style={[styles.surahRef, { color: colors.gold }]}>
+                      {briefing.ayahOfTheDay?.surah}:{briefing.ayahOfTheDay?.ayahNumber}
                     </Text>
-                    <Text style={[styles.contentText, { color: tc.text.secondary }]}>{briefing.ayahOfTheDay.translation}</Text>
+                    <Text style={[styles.contentText, { color: tc.text.secondary }]}>{briefing.ayahOfTheDay?.translation}</Text>
                   </LinearGradient>
                 </Pressable>
               </Animated.View>
@@ -487,7 +493,7 @@ export default function MorningBriefingScreen() {
               </Animated.View>
 
               {/* All tasks complete celebration */}
-              {briefing.tasksCompleted >= briefing.totalTasks && (
+              {(briefing.totalTasks ?? 0) > 0 && briefing.tasksCompleted >= briefing.totalTasks && (
                 <Animated.View entering={FadeInUp.delay(800).duration(400)}>
                   <LinearGradient
                     colors={[colors.emerald, colors.emeraldDark]}
@@ -715,7 +721,6 @@ const styles = StyleSheet.create({
   reflectionInput: {
     fontFamily: fonts.body,
     fontSize: fontSize.base,
-    color: colors.text.primary,
     backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: radius.md,
     padding: spacing.md,
@@ -723,7 +728,6 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.dark.border,
   },
   reflectionSubmit: {
     backgroundColor: colors.emerald,

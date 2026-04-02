@@ -15,7 +15,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { mutesApi } from '@/services/api';
 
 interface MutedUser {
@@ -32,6 +32,7 @@ interface MutedUser {
 import type { PaginatedResponse } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
@@ -40,11 +41,14 @@ export default function MutedScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
+  const haptic = useContextualHaptic();
+
   const query = useInfiniteQuery({
     queryKey: ['muted'],
     queryFn: ({ pageParam }) => mutesApi.getMuted(pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last: PaginatedResponse<MutedUser>) => last.meta?.hasMore ? (last.meta.cursor ?? undefined) : undefined,
+    staleTime: 30_000,
   });
 
   const muted = query.data?.pages.flatMap((p) => p.data) ?? [];
@@ -59,8 +63,15 @@ export default function MutedScreen() {
 
   const unmuteMutation = useMutation({
     mutationFn: (userId: string) => mutesApi.unmute(userId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['muted'] }),
-    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
+    onSuccess: () => {
+      haptic.success();
+      showToast({ message: t('screens.muted.unmuteSuccess', 'User unmuted'), variant: 'success' });
+      queryClient.invalidateQueries({ queryKey: ['muted'] });
+    },
+    onError: () => {
+      haptic.error();
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+    },
   });
 
   if (query.isError) {
@@ -117,7 +128,7 @@ export default function MutedScreen() {
           renderItem={({ item, index }) => {
             const u = item.muted;
             return (
-                <Animated.View entering={FadeInUp.delay(index * 30).duration(300)}>
+                <Animated.View entering={FadeInUp.delay(Math.min(index, 10) * 30).duration(300)}>
                   <LinearGradient
                     colors={colors.gradient.cardDark}
                     style={styles.row}
@@ -135,14 +146,8 @@ export default function MutedScreen() {
                       variant="secondary"
                       size="sm"
                       onPress={() => {
-                        Alert.alert(
-                          t('screens.muted.unmuteConfirmTitle', 'Unmute'),
-                          t('screens.muted.unmuteConfirmMessage', `Are you sure you want to unmute @${u.username}?`),
-                          [
-                            { text: t('common.cancel'), style: 'cancel' },
-                            { text: t('screens.muted.unmute'), style: 'destructive', onPress: () => unmuteMutation.mutate(u.id) },
-                          ],
-                        );
+                        haptic.tick();
+                        unmuteMutation.mutate(u.id);
                       }}
                       loading={unmuteMutation.isPending && unmuteMutation.variables === u.id}
                       disabled={unmuteMutation.isPending && unmuteMutation.variables === u.id}
@@ -178,13 +183,12 @@ export default function MutedScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
-  list: { padding: spacing.base, gap: spacing.sm, paddingBottom: 40 },
+  container: { flex: 1 },
+  list: { padding: spacing.base, gap: spacing.sm, paddingBottom: spacing['2xl'] },
   skeletonList: { padding: spacing.base, gap: spacing.md },
   skeletonRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
     padding: spacing.md,
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     borderWidth: 0.5,
     borderColor: colors.active.white6,
@@ -199,12 +203,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   info: { flex: 1 },
-  name: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
+  name: { fontSize: fontSize.base, fontFamily: fonts.bodySemiBold },
   mutedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
     marginTop: 2,
   },
-  username: { color: colors.text.secondary, fontSize: fontSize.sm },
+  username: { fontSize: fontSize.sm, fontFamily: fonts.body },
 });

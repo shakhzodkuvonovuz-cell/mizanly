@@ -14,27 +14,30 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { usersApi, followsApi } from '@/services/api';
 import type { User, PaginatedResponse } from '@/types';
 import { useStore } from '@/store';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { showToast } from '@/components/ui/Toast';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
-function UserRow({ user, isMe, isFollowing, onToggleFollow, onPress, index }: {
+function UserRow({ user, isMe, isFollowing, onToggleFollow, onPress, index, isToggling }: {
   user: User;
   isMe: boolean;
   isFollowing: boolean;
   onToggleFollow: (userId: string, follow: boolean) => void;
   onPress: () => void;
   index: number;
+  isToggling?: boolean;
 }) {
   const { t } = useTranslation();
   const tc = useThemeColors();
   return (
-    <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 10) * 50).duration(400)}>
       <Pressable accessibilityRole="button" onPress={onPress}>
         <LinearGradient
           colors={colors.gradient.cardDark}
@@ -54,6 +57,7 @@ function UserRow({ user, isMe, isFollowing, onToggleFollow, onPress, index }: {
               onPress={() => onToggleFollow(user.id, !isFollowing)}
               variant={isFollowing ? 'secondary' : 'primary'}
               size="sm"
+              disabled={isToggling}
             />
           )}
         </LinearGradient>
@@ -69,6 +73,7 @@ export default function MutualFollowersScreen() {
   const queryClient = useQueryClient();
   const user = useStore((s) => s.user);
   const currentUserId = user?.id;
+  const haptic = useContextualHaptic();
 
   const targetUsername = Array.isArray(username) ? username[0] : username;
   const [refreshing, setRefreshing] = useState(false);
@@ -90,7 +95,7 @@ export default function MutualFollowersScreen() {
   const followMutation = useMutation({
     mutationFn: (targetUserId: string) => followsApi.follow(targetUserId),
     onSuccess: (_, targetUserId) => {
-      // Update cached mutual followers list optimistically
+      haptic.success();
       queryClient.setQueryData<InfiniteData<PaginatedResponse<User>>>(
         ['mutual-followers', targetUsername],
         (old) => {
@@ -107,11 +112,16 @@ export default function MutualFollowersScreen() {
         }
       );
     },
+    onError: () => {
+      haptic.error();
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+    },
   });
 
   const unfollowMutation = useMutation({
     mutationFn: (targetUserId: string) => followsApi.unfollow(targetUserId),
     onSuccess: (_, targetUserId) => {
+      haptic.success();
       queryClient.setQueryData<InfiniteData<PaginatedResponse<User>>>(
         ['mutual-followers', targetUsername],
         (old) => {
@@ -127,6 +137,10 @@ export default function MutualFollowersScreen() {
           };
         }
       );
+    },
+    onError: () => {
+      haptic.error();
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
     },
   });
 
@@ -237,6 +251,7 @@ export default function MutualFollowersScreen() {
               onToggleFollow={handleToggleFollow}
               onPress={() => router.push(`/(screens)/profile/${item.username}`)}
               index={index}
+              isToggling={followMutation.isPending || unfollowMutation.isPending}
             />
           )}
           onEndReached={handleEndReached}
@@ -277,7 +292,7 @@ export default function MutualFollowersScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -298,8 +313,8 @@ const styles = StyleSheet.create({
   },
   info: { flex: 1 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  name: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
-  handle: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 1 },
+  name: { fontSize: fontSize.base, fontFamily: fonts.bodySemiBold },
+  handle: { fontSize: fontSize.sm, fontFamily: fonts.body, marginTop: 1 },
   skeletonList: { padding: spacing.base, gap: spacing.lg, paddingTop: spacing.lg },
   skeletonRow: {
     flexDirection: 'row',
