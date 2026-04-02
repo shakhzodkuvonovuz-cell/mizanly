@@ -16,6 +16,7 @@ import { Icon } from '@/components/ui/Icon';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { rtlFlexRow } from '@/utils/rtl';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -25,7 +26,7 @@ const BREATHING_CYCLE_MS = 8000; // 4s in, 4s out
 export default function WindDownScreen() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
@@ -84,7 +85,7 @@ export default function WindDownScreen() {
   return (
     <ScreenErrorBoundary>
       <LinearGradient
-        colors={[tc.bg, '#0A1628', '#061118']}
+        colors={[tc.bg, tc.bgCard, tc.bg]}
         style={styles.container}
         accessibilityLabel={t('windDown.title')}
       >
@@ -111,7 +112,7 @@ export default function WindDownScreen() {
           </View>
 
           {/* Message */}
-          <View style={styles.messageContainer}>
+          <View style={[styles.messageContainer, { flexDirection: rtlFlexRow(isRTL) }]}>
             <Icon name="clock" size="sm" color={colors.gold} />
             <Text style={styles.message}>{t('windDown.message')}</Text>
           </View>
@@ -133,7 +134,7 @@ export default function WindDownScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t('windDown.continueScrolling')}
-              style={styles.closeBtn}
+              style={({ pressed }) => [styles.closeBtn, pressed && { opacity: 0.7 }]}
               onPress={() => {
                 haptic.navigate();
                 router.back();
@@ -153,14 +154,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   safeArea: { flex: 1, justifyContent: 'space-between', paddingHorizontal: spacing.xl },
   header: { alignItems: 'center', marginTop: spacing['2xl'] },
   title: {
-    color: colors.text.primary,
+    color: tc.text.primary,
     fontSize: fontSize.xl,
-    fontWeight: '700',
     fontFamily: fonts.headingBold,
     marginBottom: spacing.sm,
   },
   subtitle: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     textAlign: 'center',
     lineHeight: 22,
@@ -204,7 +204,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.xl,
   },
   message: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: fontSize.sm,
     textAlign: 'center',
   },
@@ -217,7 +217,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingVertical: spacing.md,
   },
   closeBtnText: {
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     fontSize: fontSize.sm,
     fontWeight: '500',
   },

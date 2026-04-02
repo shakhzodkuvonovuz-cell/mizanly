@@ -29,7 +29,7 @@ import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { islamicApi } from '@/services/islamicApi';
 
-const { width } = Dimensions.get('window');
+// Dimensions.get('window') width removed — was unused dead code
 
 // Fallback metal prices used when backend is unreachable (approx. market values)
 const FALLBACK_GOLD_PRICE_PER_GRAM = 92;
@@ -205,9 +205,7 @@ export default function ZakatCalculatorScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    setCurrentStep(1);
-    setAssets({ cash: '', gold: '', investments: '', inventory: '', property: '' });
-    setDeductions({ debts: '', expenses: '' });
+    // Only refresh metal prices — do NOT destroy user input
     await refetchPrices();
     setRefreshing(false);
   }, [refetchPrices]);
@@ -600,7 +598,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   infoText: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     flex: 1,
     lineHeight: 20,
   },
@@ -633,15 +631,15 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   stepNumber: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
   },
   stepNumberActive: {
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   stepLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
   },
   stepLabelActive: {
     color: colors.emerald,
@@ -657,7 +655,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   stepTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.md,
-    color: colors.text.primary,
+    color: tc.text.primary,
     marginBottom: spacing.md,
   },
   inputCard: {
@@ -692,7 +690,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   inputLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     marginBottom: spacing.xs,
   },
   inputWrapper: {
@@ -702,20 +700,20 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   inputPrefix: {
     fontFamily: fonts.body,
     fontSize: fontSize.md,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     marginEnd: spacing.xs,
   },
   inputSuffix: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
     marginStart: spacing.xs,
   },
   textInput: {
     flex: 1,
     fontFamily: fonts.body,
     fontSize: fontSize.md,
-    color: colors.text.primary,
+    color: tc.text.primary,
     padding: 0,
   },
   previewCard: {
@@ -740,21 +738,21 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   previewLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   boldLabel: {
     fontFamily: fonts.bodySemiBold,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   previewValue: {
     fontFamily: fonts.heading,
     fontSize: fontSize.lg,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   previewValueSmall: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   negativeValue: {
     color: colors.error,
@@ -773,7 +771,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   nextButtonText: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   buttonRow: {
     flexDirection: 'row',
@@ -794,7 +792,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   backButtonText: {
     fontFamily: fonts.body,
     fontSize: fontSize.base,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   calculateButton: {
     flex: 0.7,
@@ -810,7 +808,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   calculateButtonText: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   resultCard: {
     borderRadius: radius.lg,
@@ -828,12 +826,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   calculationLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.base,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   calculationValue: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   calculationDivider: {
     height: 1,
@@ -860,7 +858,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   nisabTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.sm,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   nisabRow: {
     flexDirection: 'row',
@@ -870,12 +868,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   nisabLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   nisabValue: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.sm,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
   },
   zakatDueContainer: {
     backgroundColor: colors.active.emerald15,
@@ -886,7 +884,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   zakatDueLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     marginBottom: spacing.xs,
   },
   zakatDueValue: {
@@ -905,7 +903,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   belowNisabText: {
     fontFamily: fonts.body,
     fontSize: fontSize.base,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     flex: 1,
     lineHeight: 22,
   },
@@ -922,7 +920,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   educationText: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     flex: 1,
     lineHeight: 20,
   },
@@ -940,11 +938,11 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   actionButtonHalfText: {
     fontFamily: fonts.body,
     fontSize: fontSize.base,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   shareButtonText: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
 });

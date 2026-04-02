@@ -23,6 +23,7 @@ import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { gamificationApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 import type { IconName } from '@/components/ui/Icon';
 import { formatCount } from '@/utils/formatCount';
@@ -78,7 +79,7 @@ function LevelBadge({ xpData, isRTL }: { xpData: XPData; isRTL: boolean }) {
     <Animated.View entering={FadeIn.duration(500)}>
       <LinearGradient
         colors={['rgba(10,123,79,0.15)', 'rgba(200,150,62,0.08)']}
-        style={styles.levelCard}
+        style={[styles.levelCard, { flexDirection: rtlFlexRow(isRTL) }]}
       >
         {/* Level Circle */}
         <View style={styles.levelCircleWrap}>
@@ -180,6 +181,7 @@ function XPHistoryScreen() {
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const haptic = useContextualHaptic();
 
   const xpQuery = useQuery({
     queryKey: ['xp'],
@@ -244,6 +246,14 @@ function XPHistoryScreen() {
       <View style={styles.content}>
         {isLoading ? (
           <LoadingSkeleton />
+        ) : (xpQuery.isError || historyQuery.isError) ? (
+          <EmptyState
+            icon="alert-circle"
+            title={t('common.error')}
+            subtitle={t('common.tryAgain')}
+            actionLabel={t('common.retry')}
+            onAction={() => { xpQuery.refetch(); historyQuery.refetch(); }}
+          />
         ) : events.length === 0 ? (
           <EmptyState
             icon="trending-up"
@@ -289,7 +299,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   content: {
     flex: 1,
-    paddingTop: 100,
+    paddingTop: 96,
   },
   listContent: {
     paddingHorizontal: spacing.base,
@@ -304,7 +314,6 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderColor: colors.emerald,
     gap: spacing.md,
     marginBottom: spacing.base,
-    flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
   },
@@ -335,7 +344,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   levelTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.lg,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   totalXP: {
     fontFamily: fonts.bodyMedium,
@@ -360,7 +369,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   progressLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   // Event rows
   eventRow: {
@@ -385,12 +394,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   eventReason: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   eventTime: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
   },
   xpBadge: {
     backgroundColor: colors.active.emerald10,
