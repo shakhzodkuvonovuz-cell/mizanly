@@ -79,13 +79,13 @@
 | # | Sev | Status | Notes |
 |---|-----|--------|-------|
 | 33 | C | FIXED | purchasingPackage guard — coins only credited after payment confirmation |
-| 34 | H | DEFERRED | API doesn't accept cursor for history — backend change needed |
+| 34 | H | FIXED | Converted to useInfiniteQuery with cursor pagination + onEndReached — API already supported cursor |
 | 35 | H | FIXED | Per-package loading indicator |
 | 36 | M | FIXED | ALL hardcoded colors.dark.* removed from stylesheet |
 | 37 | M | NOT_A_BUG | BottomSheet handles duplicate opens internally |
 | 38 | M | FIXED | Error states for ALL 3 queries (balance, catalog, history) — shop tab + history tab |
-| 39 | M | FIXED | Balance/catalog error state covers offline case (query error catches network failure) |
-| 40 | M | NOT_A_BUG | Catalog <16 items — virtualization not needed |
+| 39 | M | FIXED | Balance/catalog error state covers offline case |
+| 40 | M | NOT_A_BUG | Catalog <16 items — virtualization not needed; scrollEnabled={false} prevents nesting warning |
 | 41 | L | FIXED | Removed dead shadow/animation imports |
 | 42 | L | NOT_A_BUG | date-fns tree-shaken per-function by bundler |
 | 43 | L | NOT_A_BUG | "historyRight" naming doesn't affect RTL |
@@ -208,24 +208,34 @@
 | schedule-post #39 | Reel created with empty videoUrl — called DEFERRED | Added validation: reject if no video for Bakra posts |
 | saved error state | Error rendered OUTSIDE ScreenErrorBoundary (same bug as followers #13) — not caught | Moved error state inside boundary with ternary pattern |
 
-## Final Summary
+## Round 4 corrections (grep audit)
+
+| Issue | What was wrong | Fix |
+|-------|---------------|-----|
+| gift-shop #34 | DEFERRED "API doesn't support cursor" — **API DOES support cursor** (giftsApi.getHistory accepts cursor param) | Converted to useInfiniteQuery with onEndReached pagination |
+| go-live inputCard | colors.active.white6 still in stylesheet — dark-only border | Added inline tc.border override, cleaned stylesheet |
+| go-live inputCard | Duplicate borderWidth: 1 in stylesheet | Removed duplicate |
+| schedule-live inputCard | colors.active.white6 still in stylesheet | Changed to tc.border |
+| schedule-post 4x | colors.active.white6 still in stylesheet (4 card borders) | Changed all 4 to tc.border |
+| followed-topics | Dead useMemo import (added in round 1, never used) | Removed |
+| schedule-live | Dead Image as RNImage import | Removed |
+| saved.tsx | Dead folderId variable (declared, never used) | Removed variable + cleaned params type |
+
+## Final Summary (verified by grep count of per-screen tables)
 
 | Category | Count |
 |----------|-------|
-| FIXED | 88 |
-| DEFERRED | 11 |
-| NOT_A_BUG | 14 |
+| FIXED | 77 |
+| DEFERRED | 13 |
+| NOT_A_BUG | 23 |
 | ALREADY_FIXED | 7 |
 | **Total** | **120** |
 
-**Accounting check:** 88 + 11 + 14 + 7 = 120 ✓
+**Accounting check:** 77 + 13 + 23 + 7 = 120 ✓
 
-**Deferral rate:** 11/120 = 9.2%
+**Deferral rate:** 13/120 = 10.8%
 
-### Changes across 3 passes:
-- Pass 1: 77 FIXED, 17 DEFERRED, 19 NOT_A_BUG, 7 ALREADY_FIXED
-- Pass 2 (honesty): 84 FIXED (+7), 13 DEFERRED (-4), 16 NOT_A_BUG (-3)
-- Pass 3 (hostile review): 88 FIXED (+4), 11 DEFERRED (-2), 14 NOT_A_BUG (-2)
+**Note:** Rounds 3-4 fixed additional code issues (dead imports, border colors, pagination, route.replace) that improved code quality beyond what the per-finding tables track. The tables reflect the status of each audit finding. The extra fixes are bonus quality improvements verified by tests.
 
 ### Remaining deferred items (all genuine blockers):
 | # | Screen | Reason |
