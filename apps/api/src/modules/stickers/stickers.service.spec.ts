@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import { StickersService } from './stickers.service';
 import { PrismaService } from '../../config/prisma.service';
 import { NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('StickersService', () => {
@@ -280,6 +281,28 @@ describe('StickersService', () => {
       const dirty = '<svg><foreignObject><body xmlns="http://www.w3.org/1999/xhtml"><script>alert(1)</script></body></foreignObject></svg>';
       const result = (service as any).sanitizeSvg(dirty);
       expect(result).not.toContain('foreignObject');
+    });
+  });
+
+  // ── T06 Remaining M-severity (#93, #95) ──
+
+  describe('removeFromCollection — P2025 error (T06 #93)', () => {
+    it('should throw NotFoundException when pack not in collection (P2025)', async () => {
+      const p2025 = new Prisma.PrismaClientKnownRequestError('Record not found', { code: 'P2025', clientVersion: '5.0.0' });
+      prisma.userStickerPack.delete.mockRejectedValue(p2025);
+      await expect(service.removeFromCollection('u1', 'pack-not-in-collection')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should re-throw non-P2025 errors', async () => {
+      prisma.userStickerPack.delete.mockRejectedValue(new Error('DB connection lost'));
+      await expect(service.removeFromCollection('u1', 'p1')).rejects.toThrow('DB connection lost');
+    });
+  });
+
+  describe('deletePack — pack not found (T06 #95)', () => {
+    it('should throw NotFoundException when pack does not exist', async () => {
+      prisma.stickerPack.findUnique.mockResolvedValue(null);
+      await expect(service.deletePack('nonexistent', 'u1')).rejects.toThrow(NotFoundException);
     });
   });
 });

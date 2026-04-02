@@ -149,5 +149,76 @@ describe('WebhooksController', () => {
         controller.handleClerkWebhook(req, 'id', 'ts', 'sig'),
       ).rejects.toThrow(BadRequestException);
     });
+
+    // ── T01 Webhook Tests (#9-13) ──
+
+    it('should call trackLogin on session.created event (T01 #9)', async () => {
+      const eventData = { type: 'session.created', data: { id: 'sess_1', user_id: 'clerk_user_1' } };
+      mockVerify.mockReturnValue(eventData);
+      (authService as any).trackLogin = jest.fn().mockResolvedValue(undefined);
+
+      const result = await controller.handleClerkWebhook(makeReq(eventData) as any, 'id-9', 'ts', 'sig');
+
+      expect((authService as any).trackLogin).toHaveBeenCalledWith('clerk_user_1');
+      expect(result).toEqual({ received: true });
+    });
+
+    it('should publish session revocation on session.revoked (T01 #10)', async () => {
+      const eventData = { type: 'session.revoked', data: { id: 'sess_2', user_id: 'clerk_user_2' } };
+      mockVerify.mockReturnValue(eventData);
+      (authService as any).findByClerkId = jest.fn().mockResolvedValue({ id: 'internal-user-2' });
+      const mockPublish = jest.fn().mockResolvedValue(1);
+      (authService as any).getRedis = jest.fn().mockReturnValue({ publish: mockPublish });
+
+      const result = await controller.handleClerkWebhook(makeReq(eventData) as any, 'id-10', 'ts', 'sig');
+
+      expect((authService as any).findByClerkId).toHaveBeenCalledWith('clerk_user_2');
+      expect(mockPublish).toHaveBeenCalledWith('user:session_revoked', JSON.stringify({ userId: 'internal-user-2' }));
+      expect(result).toEqual({ received: true });
+    });
+
+    it('should skip and return deduplicated on duplicate svix-id (T01 #11)', async () => {
+      const eventData = { type: 'user.created', data: { id: 'c1', email_addresses: [{ email_address: 'x@x.com' }] } };
+      mockVerify.mockReturnValue(eventData);
+      // Redis returns non-null → already processed
+      const redis = (controller as any).redis;
+      redis.get.mockResolvedValue('1');
+
+      const result = await controller.handleClerkWebhook(makeReq(eventData) as any, 'dup-id', 'ts', 'sig');
+
+      expect(result).toEqual({ received: true, deduplicated: true });
+      expect(authService.syncClerkUser).not.toHaveBeenCalled();
+    });
+
+    it('should log warning for unhandled event type (T01 #12)', async () => {
+      const eventData = { type: 'unknown.event', data: { id: 'x' } };
+      mockVerify.mockReturnValue(eventData);
+
+      const result = await controller.handleClerkWebhook(makeReq(eventData) as any, 'id-12', 'ts', 'sig');
+
+      expect(result).toEqual({ received: true });
+      // Should not throw — just logs and returns
+    });
+
+    it('should sync username on user.updated with username change (T01 #13)', async () => {
+      const eventData = {
+        type: 'user.updated',
+        data: {
+          id: 'clerk_user_1',
+          email_addresses: [{ email_address: 'test@x.com' }],
+          first_name: 'Test',
+          last_name: '',
+          username: 'new_username',
+        },
+      };
+      mockVerify.mockReturnValue(eventData);
+      authService.syncClerkUser.mockResolvedValue(undefined as any);
+
+      await controller.handleClerkWebhook(makeReq(eventData) as any, 'id-13', 'ts', 'sig');
+
+      expect(authService.syncClerkUser).toHaveBeenCalledWith('clerk_user_1', expect.objectContaining({
+        username: 'new_username',
+      }));
+    });
   });
 });

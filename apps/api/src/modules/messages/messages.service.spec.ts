@@ -39,6 +39,7 @@ describe('MessagesService', () => {
             },
             message: {
               findMany: jest.fn(),
+              findFirst: jest.fn().mockResolvedValue(null),
               findUnique: jest.fn(),
               create: jest.fn(),
               update: jest.fn(),
@@ -53,6 +54,12 @@ describe('MessagesService', () => {
             messageReaction: {
               upsert: jest.fn(),
               deleteMany: jest.fn(),
+            },
+            follow: {
+              findUnique: jest.fn().mockResolvedValue(null),
+            },
+            userSettings: {
+              findUnique: jest.fn().mockResolvedValue(null),
             },
             user: {
               findUnique: jest.fn(),
@@ -1999,6 +2006,95 @@ describe('MessagesService', () => {
       jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
       prisma.conversation.findUnique.mockResolvedValue(null);
       await expect(service.leaveGroup('c-bad', 'u1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // T06 Remaining M-severity gaps (#69-72, #74, #80)
+  // ═══════════════════════════════════════════════════════
+
+  describe('sendMessage — DM restriction (T06 #70)', () => {
+    it('should reject when recipient set messagePermission to nobody', async () => {
+      prisma.conversationMember.findUnique.mockResolvedValue({
+        userId: 'sender-1', isMuted: false, isArchived: false, isBanned: false,
+        conversation: { isGroup: false, slowModeSeconds: null, disappearingDuration: null, isE2E: false, members: [{ userId: 'recipient-1' }] },
+      });
+      prisma.block.findFirst.mockResolvedValue(null);
+      prisma.follow.findUnique.mockResolvedValue(null);
+      prisma.userSettings.findUnique.mockResolvedValue({ messagePermission: 'nobody' });
+      prisma.user.findUnique.mockResolvedValue({ isPrivate: false });
+
+      await expect(service.sendMessage('conv-1', 'sender-1', { content: 'hi' })).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should reject non-follower when permission is followers-only', async () => {
+      prisma.conversationMember.findUnique.mockResolvedValue({
+        userId: 'sender-1', isMuted: false, isArchived: false, isBanned: false,
+        conversation: { isGroup: false, slowModeSeconds: null, disappearingDuration: null, isE2E: false, members: [{ userId: 'recipient-1' }] },
+      });
+      prisma.block.findFirst.mockResolvedValue(null);
+      prisma.follow.findUnique.mockResolvedValue(null); // not following
+      prisma.userSettings.findUnique.mockResolvedValue({ messagePermission: 'followers' });
+      prisma.user.findUnique.mockResolvedValue({ isPrivate: false });
+
+      await expect(service.sendMessage('conv-1', 'sender-1', { content: 'hi' })).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('sendMessage — slow mode (T06 #71)', () => {
+    it('should reject message during slow mode cooldown', async () => {
+      prisma.conversationMember.findUnique.mockResolvedValue({
+        userId: 'sender-1', isMuted: false, isArchived: false, isBanned: false,
+        conversation: { isGroup: true, slowModeSeconds: 60, disappearingDuration: null, isE2E: false, members: [] },
+      });
+      prisma.block.findFirst.mockResolvedValue(null);
+      // Last message was 10 seconds ago — within 60-second slow mode
+      prisma.message.findFirst.mockResolvedValue({ createdAt: new Date(Date.now() - 10000) });
+
+      await expect(service.sendMessage('conv-1', 'sender-1', { content: 'too fast' })).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('sendMessage — E2E enforcement (T06 #72)', () => {
+    it('should reject plaintext in E2E conversation', async () => {
+      prisma.conversationMember.findUnique.mockResolvedValue({
+        userId: 'sender-1', isMuted: false, isArchived: false, isBanned: false,
+        conversation: { isGroup: false, slowModeSeconds: null, disappearingDuration: null, isE2E: true, members: [] },
+      });
+      prisma.block.findFirst.mockResolvedValue(null);
+
+      await expect(service.sendMessage('conv-1', 'sender-1', { content: 'plaintext bad' })).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('deleteMessage — not found (T06 #74)', () => {
+    it('should throw NotFoundException when message not found', async () => {
+      prisma.message.findUnique.mockResolvedValue(null);
+      await expect(service.deleteMessage('bad-msg', 'u1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('sendViewOnceMessage service test (T06 #3)', () => {
+    it('should create view-once message in non-E2E conversation', async () => {
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
+      prisma.conversationMember.findMany.mockResolvedValue([]);
+      prisma.conversation.findUnique.mockResolvedValue({ isE2E: false, disappearingDuration: null });
+
+      const result = await service.sendViewOnceMessage('conv-1', 'user-1', {
+        mediaUrl: 'https://img.com/photo.jpg',
+        messageType: 'IMAGE',
+      });
+      expect(result.id).toBe('msg-tx');
+    });
+
+    it('should reject view-once in E2E conversation', async () => {
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
+      prisma.conversationMember.findMany.mockResolvedValue([]);
+      prisma.conversation.findUnique.mockResolvedValue({ isE2E: true });
+
+      await expect(service.sendViewOnceMessage('conv-1', 'user-1', {
+        mediaUrl: 'https://img.com/photo.jpg',
+      })).rejects.toThrow(BadRequestException);
     });
   });
 });

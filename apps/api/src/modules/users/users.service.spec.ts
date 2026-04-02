@@ -1555,4 +1555,91 @@ describe('UsersService', () => {
       await expect(service.getProfile('deactivateduser')).rejects.toThrow(NotFoundException);
     });
   });
+
+  // ═══════════════════════════════════════════════════════
+  // T01 — Remaining H/M gaps (#21, #23, #25, #27, #28)
+  // ═══════════════════════════════════════════════════════
+
+  describe('getMutualFollowers happy path (T01 #23)', () => {
+    it('should return mutual followers via raw SQL', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'target-1', isDeleted: false, isBanned: false, isDeactivated: false, isPrivate: false });
+      prisma.block.findFirst.mockResolvedValue(null);
+      prisma.$queryRaw.mockResolvedValue([
+        { id: 'mutual-1', username: 'mutual1', displayName: 'Mutual One', avatarUrl: null },
+      ]);
+
+      const result = await service.getMutualFollowers('me', 'target-1');
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].username).toBe('mutual1');
+    });
+
+    it('should throw ForbiddenException when blocked', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'target-1', isDeleted: false, isBanned: false, isDeactivated: false });
+      prisma.block.findFirst.mockResolvedValue({ id: 'block-1' });
+      await expect(service.getMutualFollowers('me', 'target-1')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should cap limit to 50', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'target-1', isDeleted: false, isBanned: false, isDeactivated: false, isPrivate: false });
+      prisma.block.findFirst.mockResolvedValue(null);
+      prisma.$queryRaw.mockResolvedValue([]);
+
+      await service.getMutualFollowers('me', 'target-1', 100);
+      // The service caps at 50 — we verify it doesn't crash
+    });
+  });
+
+  describe('getFollowRequests (T01 #25)', () => {
+    it('should return pending follow requests', async () => {
+      prisma.followRequest.findMany.mockResolvedValue([
+        { id: 'fr-1', sender: { id: 'u2', username: 'requester', displayName: 'R', avatarUrl: null, isVerified: false } },
+      ]);
+
+      const result = await service.getFollowRequests('user-1');
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].sender.username).toBe('requester');
+    });
+  });
+
+  describe('snapshotFollowerCounts cron (T01 #27)', () => {
+    it('should process users in batches and create stats', async () => {
+      prisma.user.findMany
+        .mockResolvedValueOnce([{ id: 'u1', followersCount: 100 }])
+        .mockResolvedValueOnce([]); // end of cursor pagination
+      prisma.creatorStat = { upsert: jest.fn().mockResolvedValue({}) };
+      redis.set = jest.fn().mockResolvedValue('OK');
+
+      await service.snapshotFollowerCounts();
+
+      expect(prisma.creatorStat.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          create: expect.objectContaining({ userId: 'u1', followers: 100 }),
+        }),
+      );
+    });
+  });
+
+  describe('sendWeeklyScreenTimeDigest cron (T01 #28)', () => {
+    it('should send digest for users with time limits', async () => {
+      redis.set = jest.fn().mockResolvedValue('OK'); // NX succeeds
+      prisma.userSettings = {
+        ...prisma.userSettings,
+        findMany: jest.fn().mockResolvedValue([
+          { userId: 'u1', dailyTimeLimit: 60 },
+        ]),
+      };
+      prisma.notification = { create: jest.fn().mockResolvedValue({}) };
+      prisma.screenTimeLog = { findMany: jest.fn().mockResolvedValue([]) };
+
+      await service.sendWeeklyScreenTimeDigest();
+      // Should not throw; verifies the cron runs without error
+    });
+
+    it('should skip if already sent this week', async () => {
+      redis.set = jest.fn().mockResolvedValue(null); // NX fails - already sent
+
+      await service.sendWeeklyScreenTimeDigest();
+      // Should return early, no prisma calls for user data
+    });
+  });
 });

@@ -1248,4 +1248,42 @@ describe('ChatGateway', () => {
       }));
     });
   });
+
+  // ═══════════════════════════════════════════════════════
+  // T06 Gateway — handleConnection deactivated/deleted (T06 #100)
+  // ═══════════════════════════════════════════════════════
+
+  describe('handleConnection — deactivated user (T06 #100)', () => {
+    it('should disconnect deactivated user', async () => {
+      const client = {
+        id: 'socket-deactivated',
+        handshake: { ...mockSocket.handshake, auth: { token: 'fake-token' } },
+        disconnect: jest.fn(),
+        emit: jest.fn(),
+        join: jest.fn(),
+        data: {} as any,
+      };
+      (verifyToken as jest.Mock).mockResolvedValue({ sub: 'clerk-deactivated' });
+      prisma.user.findUnique.mockResolvedValue({ id: 'u-deact', username: 'deact', isBanned: false, isDeactivated: true, isDeleted: false });
+
+      await gateway.handleConnection(client as any);
+      expect(client.disconnect).toHaveBeenCalled();
+    });
+
+    it('should disconnect deleted user', async () => {
+      const client = {
+        id: 'socket-deleted',
+        handshake: { ...mockSocket.handshake, auth: { token: 'fake-token' } },
+        disconnect: jest.fn(),
+        emit: jest.fn(),
+        join: jest.fn(),
+        data: {} as any,
+      };
+      (verifyToken as jest.Mock).mockResolvedValue({ sub: 'clerk-deleted' });
+      prisma.user.findUnique.mockResolvedValue({ id: 'u-del', username: 'del', isBanned: false, isDeactivated: false, isDeleted: true });
+
+      await gateway.handleConnection(client as any);
+      expect(client.disconnect).toHaveBeenCalled();
+    });
+  });
 });
