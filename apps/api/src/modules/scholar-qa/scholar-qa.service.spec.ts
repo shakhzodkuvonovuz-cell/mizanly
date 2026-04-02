@@ -199,4 +199,68 @@ describe('ScholarQAService', () => {
       }));
     });
   });
+
+  // T11 rows 74-77
+  describe('schedule — ForbiddenException when not verified', () => {
+    it('should throw ForbiddenException when scholar verification not found', async () => {
+      prisma.scholarVerification.findFirst.mockResolvedValue(null);
+      const { ForbiddenException } = require('@nestjs/common');
+      await expect(service.schedule('u1', {
+        title: 'Test', category: 'fiqh',
+        scheduledAt: '2026-04-01T18:00:00Z',
+      })).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('voteQuestion — self-vote prevention', () => {
+    beforeEach(() => {
+      prisma.scholarQuestion.findUnique = jest.fn();
+      prisma.scholarQuestionVote = {
+        findUnique: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockResolvedValue({}),
+      };
+    });
+
+    it('should throw BadRequestException when voting on own question', async () => {
+      prisma.scholarQuestion.findUnique.mockResolvedValue({ id: 'q-1', votes: 5, userId: 'u1' });
+      await expect(service.voteQuestion('u1', 'q-1')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('voteQuestion — ConflictException for double vote', () => {
+    beforeEach(() => {
+      prisma.scholarQuestion.findUnique = jest.fn();
+      prisma.scholarQuestionVote = {
+        findUnique: jest.fn(),
+        create: jest.fn(),
+      };
+      prisma.scholarQuestion.update = jest.fn();
+    });
+
+    it('should throw ConflictException when already voted', async () => {
+      prisma.scholarQuestion.findUnique.mockResolvedValue({ id: 'q-1', votes: 5, userId: 'other-user' });
+      prisma.scholarQuestionVote.findUnique.mockResolvedValue({ userId: 'u1', questionId: 'q-1' });
+      const { ConflictException } = require('@nestjs/common');
+      await expect(service.voteQuestion('u1', 'q-1')).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('voteQuestion — P2002 race condition', () => {
+    beforeEach(() => {
+      prisma.scholarQuestion.findUnique = jest.fn();
+      prisma.scholarQuestionVote = {
+        findUnique: jest.fn().mockResolvedValue(null),
+        create: jest.fn(),
+      };
+      prisma.scholarQuestion.update = jest.fn();
+    });
+
+    it('should throw ConflictException on P2002 duplicate', async () => {
+      prisma.scholarQuestion.findUnique.mockResolvedValue({ id: 'q-1', votes: 5, userId: 'other-user' });
+      const p2002 = { code: 'P2002', message: 'Unique constraint' };
+      prisma.$transaction.mockRejectedValue(p2002);
+      const { ConflictException } = require('@nestjs/common');
+      await expect(service.voteQuestion('u1', 'q-1')).rejects.toThrow(ConflictException);
+    });
+  });
 });

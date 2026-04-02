@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HalalService } from './halal.service';
 import { PrismaService } from '../../config/prisma.service';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 
 describe('HalalService', () => {
   let service: HalalService;
@@ -179,6 +179,47 @@ describe('HalalService', () => {
           where: expect.objectContaining({ cuisineType: 'Turkish' }),
         }),
       );
+    });
+  });
+
+  // T11 rows 69-72
+  describe('addReview — ConflictException for duplicate', () => {
+    it('should throw ConflictException when user already reviewed', async () => {
+      mockPrisma.halalRestaurant.findUnique.mockResolvedValueOnce({ id: 'r1' });
+      mockPrisma.halalRestaurantReview.findUnique.mockResolvedValueOnce({ id: 'rev-existing', userId: 'u1' });
+      await expect(service.addReview('u1', 'r1', 4)).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('verifyHalal — ConflictException for already verified', () => {
+    it('should throw ConflictException when user already voted', async () => {
+      mockPrisma.halalRestaurant.findUnique.mockResolvedValueOnce({ id: 'r1', verifyVotes: 3, isVerified: false });
+      mockPrisma.halalRestaurantReview.findUnique.mockResolvedValueOnce({ id: 'rev-existing', userId: 'u1' });
+      await expect(service.verifyHalal('u1', 'r1')).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('findNearby — pagination hasMore', () => {
+    it('should set hasMore true when more restaurants exist', async () => {
+      const items = Array.from({ length: 21 }, (_, i) => ({
+        id: `r${i}`, latitude: 24.7 + i * 0.001, longitude: 46.6 + i * 0.001, createdAt: new Date(),
+      }));
+      mockPrisma.halalRestaurant.findMany.mockResolvedValue(items);
+      const result = await service.findNearby(24.7, 46.6);
+      expect(result.meta.hasMore).toBe(true);
+      expect(result.data).toHaveLength(20);
+    });
+  });
+
+  describe('getReviews — pagination hasMore', () => {
+    it('should set hasMore true when more reviews exist', async () => {
+      const reviews = Array.from({ length: 21 }, (_, i) => ({
+        id: `rev-${i}`, rating: 4, createdAt: new Date(Date.now() - i * 1000),
+      }));
+      mockPrisma.halalRestaurantReview.findMany.mockResolvedValue(reviews);
+      const result = await service.getReviews('r1');
+      expect(result.meta.hasMore).toBe(true);
+      expect(result.data).toHaveLength(20);
     });
   });
 });

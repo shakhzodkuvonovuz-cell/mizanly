@@ -1954,4 +1954,80 @@ describe('IslamicService', () => {
       expect(Array.isArray(result)).toBe(true);
     });
   });
+
+  // ═══════════════════════════════════════════════════════
+  // T11 rows 50-52: toggleHadithBookmark, followMosque, getFollowedMosqueTimes
+  // ═══════════════════════════════════════════════════════
+
+  describe('toggleHadithBookmark', () => {
+    beforeEach(() => {
+      prisma.hadithBookmark = {
+        findUnique: jest.fn(),
+        create: jest.fn(),
+        delete: jest.fn(),
+      };
+    });
+
+    it('should create bookmark when none exists', async () => {
+      prisma.hadithBookmark.findUnique.mockResolvedValue(null);
+      prisma.hadithBookmark.create.mockResolvedValue({ id: 'bk-1', userId: 'u1', hadithId: 1 });
+
+      const result = await service.toggleHadithBookmark('u1', 1);
+      expect(result).toEqual({ bookmarked: true });
+      expect(prisma.hadithBookmark.create).toHaveBeenCalledWith({
+        data: { userId: 'u1', hadithId: 1 },
+      });
+    });
+
+    it('should delete bookmark when already exists', async () => {
+      prisma.hadithBookmark.findUnique.mockResolvedValue({ id: 'bk-1', userId: 'u1', hadithId: 1 });
+      prisma.hadithBookmark.delete.mockResolvedValue({});
+
+      const result = await service.toggleHadithBookmark('u1', 1);
+      expect(result).toEqual({ bookmarked: false });
+      expect(prisma.hadithBookmark.delete).toHaveBeenCalledWith({
+        where: { id: 'bk-1' },
+      });
+    });
+
+    it('should throw NotFoundException for invalid hadith ID', async () => {
+      await expect(service.toggleHadithBookmark('u1', 0)).rejects.toThrow(NotFoundException);
+      await expect(service.toggleHadithBookmark('u1', 999)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('followMosque', () => {
+    beforeEach(() => {
+      prisma.followedMosque = {
+        upsert: jest.fn().mockResolvedValue({ id: 'fm-1', userId: 'u1', mosqueName: 'Al-Masjid' }),
+      };
+    });
+
+    it('should upsert followed mosque', async () => {
+      const result = await service.followMosque('u1', 'Al-Masjid', 24.7, 46.6);
+      expect(result).toBeDefined();
+    });
+  });
+
+  describe('getFollowedMosqueTimes', () => {
+    beforeEach(() => {
+      prisma.followedMosque = {
+        findUnique: jest.fn(),
+      };
+    });
+
+    it('should return hasMosque false when no followed mosque', async () => {
+      prisma.followedMosque.findUnique.mockResolvedValue(null);
+      const result = await service.getFollowedMosqueTimes('u1');
+      expect(result).toEqual(expect.objectContaining({ hasMosque: false }));
+    });
+
+    it('should return prayer times for followed mosque', async () => {
+      prisma.followedMosque.findUnique.mockResolvedValue({
+        id: 'fm-1', userId: 'u1', mosqueName: 'Al-Masjid', lat: 24.7, lng: 46.6,
+      });
+      const result = await service.getFollowedMosqueTimes('u1');
+      expect(result).toBeDefined();
+    });
+  });
 });

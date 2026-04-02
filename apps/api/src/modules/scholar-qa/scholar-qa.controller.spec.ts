@@ -113,4 +113,23 @@ describe('ScholarQAController', () => {
       expect(service.endSession).toHaveBeenCalledWith(userId, 'qa-1');
     });
   });
+
+  // T11 row 73: markAnswered controller test
+  describe('markAnswered', () => {
+    it('should call scholarQAService.markAnswered with scholarId and questionId', async () => {
+      service.markAnswered.mockResolvedValue({ isAnswered: true } as any);
+      const result = await controller.markAnswered(userId, 'q-1');
+      expect(service.markAnswered).toHaveBeenCalledWith(userId, 'q-1');
+      expect(result).toEqual(expect.objectContaining({ isAnswered: true }));
+    });
+  });
+
+  describe('getById', () => {
+    it('should call scholarQAService.getById with id', async () => {
+      service.getById.mockResolvedValue({ id: 'qa-1', title: 'Fiqh Q&A' } as any);
+      const result = await controller.getById('qa-1');
+      expect(service.getById).toHaveBeenCalledWith('qa-1');
+      expect(result).toEqual(expect.objectContaining({ id: 'qa-1' }));
+    });
+  });
 });

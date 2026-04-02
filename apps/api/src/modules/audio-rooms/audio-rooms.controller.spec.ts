@@ -187,4 +187,59 @@ describe('AudioRoomsController', () => {
       expect(service.listParticipants).toHaveBeenCalledWith(roomId, undefined, undefined, undefined, 50);
     });
   });
+
+  // T11 rows 100-105: Missing audio-rooms controller tests
+  describe('getActiveRooms', () => {
+    it('should call audioRoomsService.getActiveRooms with cursor', async () => {
+      service.getActiveRooms = jest.fn().mockResolvedValue({ data: [{ id: 'room-1' }], meta: { hasMore: false } });
+      const result = await controller.getActiveRooms('cursor-1');
+      expect(service.getActiveRooms).toHaveBeenCalledWith('cursor-1');
+      expect(result.data).toHaveLength(1);
+    });
+  });
+
+  describe('getUpcomingRooms', () => {
+    it('should call audioRoomsService.getUpcomingRooms with cursor', async () => {
+      service.getUpcomingRooms = jest.fn().mockResolvedValue({ data: [], meta: { hasMore: false } });
+      const result = await controller.getUpcomingRooms('cursor-1');
+      expect(service.getUpcomingRooms).toHaveBeenCalledWith('cursor-1');
+      expect(result.data).toEqual([]);
+    });
+  });
+
+  describe('listRecordings', () => {
+    it('should call audioRoomsService.listRecordings with userId', async () => {
+      service.listRecordings = jest.fn().mockResolvedValue([{ id: 'room-1', recordingUrl: 'url' }]);
+      const result = await controller.listRecordings(userId);
+      expect(service.listRecordings).toHaveBeenCalledWith(userId);
+      expect(result).toHaveLength(1);
+    });
+  });
+
+  describe('getRecording', () => {
+    it('should call audioRoomsService.getRecording with roomId', async () => {
+      service.getRecording = jest.fn().mockResolvedValue({ id: roomId, recordingUrl: 'url' });
+      const result = await controller.getRecording(roomId);
+      expect(service.getRecording).toHaveBeenCalledWith(roomId);
+      expect(result).toEqual(expect.objectContaining({ recordingUrl: 'url' }));
+    });
+  });
+
+  describe('startRecording', () => {
+    it('should call audioRoomsService.startRecording with id and userId', async () => {
+      service.startRecording = jest.fn().mockResolvedValue({ isRecording: true });
+      const result = await controller.startRecording(roomId, userId);
+      expect(service.startRecording).toHaveBeenCalledWith(roomId, userId);
+      expect(result).toEqual(expect.objectContaining({ isRecording: true }));
+    });
+  });
+
+  describe('stopRecording', () => {
+    it('should call audioRoomsService.stopRecording with id, userId, and url', async () => {
+      service.stopRecording = jest.fn().mockResolvedValue({ isRecording: false, recordingUrl: 'https://rec.mp3' });
+      const result = await controller.stopRecording(roomId, userId, { recordingUrl: 'https://rec.mp3' } as any);
+      expect(service.stopRecording).toHaveBeenCalledWith(roomId, userId, 'https://rec.mp3');
+      expect(result).toEqual(expect.objectContaining({ isRecording: false }));
+    });
+  });
 });

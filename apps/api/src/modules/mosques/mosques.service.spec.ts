@@ -142,4 +142,41 @@ describe('MosquesService', () => {
       expect(result).toHaveLength(1);
     });
   });
+
+  // T11 rows 65-68
+  describe('join — ConflictException', () => {
+    it('should throw ConflictException when already a member', async () => {
+      prisma.mosqueCommunity.findUnique.mockResolvedValue({ id: 'mosque-1' });
+      prisma.mosqueMembership.findUnique.mockResolvedValue({ userId: 'u1', mosqueId: 'mosque-1' });
+
+      const { ConflictException } = require('@nestjs/common');
+      await expect(service.join('u1', 'mosque-1')).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('createPost — with mediaUrls', () => {
+    it('should create post with media URLs', async () => {
+      prisma.mosqueMembership.findUnique.mockResolvedValue({ userId: 'u1', mosqueId: 'mosque-1' });
+      prisma.mosquePost.create.mockResolvedValue({ id: 'post-1', content: 'New post', mediaUrls: ['https://img.com/1.jpg'] });
+      const result = await service.createPost('u1', 'mosque-1', 'New post', ['https://img.com/1.jpg']);
+      expect(result.mediaUrls).toContain('https://img.com/1.jpg');
+      expect(prisma.mosquePost.create).toHaveBeenCalledWith({
+        data: { mosqueId: 'mosque-1', userId: 'u1', content: 'New post', mediaUrls: ['https://img.com/1.jpg'] },
+      });
+    });
+  });
+
+  describe('getMembers — pagination hasMore', () => {
+    it('should set hasMore true when more members exist', async () => {
+      const members = Array.from({ length: 51 }, (_, i) => ({
+        user: { id: `u${i}`, username: `user${i}`, displayName: `User ${i}`, avatarUrl: null },
+        createdAt: new Date(),
+      }));
+      prisma.mosqueMembership.findMany = jest.fn().mockResolvedValue(members);
+
+      const result = await service.getMembers('mosque-1');
+      expect(result.meta.hasMore).toBe(true);
+      expect(result.data).toHaveLength(50);
+    });
+  });
 });

@@ -337,4 +337,58 @@ describe('BroadcastService', () => {
       await expect(service.unsubscribe('ch1', 'u1')).rejects.toThrow(ForbiddenException);
     });
   });
+
+  // T11 rows 115-119: Missing broadcast service tests
+
+  describe('subscribe — idempotency', () => {
+    it('should return existing member when already subscribed', async () => {
+      prisma.broadcastChannel.findUnique.mockResolvedValue({ id: 'ch1' });
+      prisma.channelMember.findUnique.mockResolvedValue({ channelId: 'ch1', userId: 'u1', role: 'SUBSCRIBER' });
+      const result = await service.subscribe('ch1', 'u1');
+      expect(result).toEqual(expect.objectContaining({ channelId: 'ch1', userId: 'u1' }));
+    });
+
+    it('should throw NotFoundException for non-existent channel', async () => {
+      prisma.broadcastChannel.findUnique.mockResolvedValue(null);
+      await expect(service.subscribe('nonexistent', 'u1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('sendMessage — empty message rejection', () => {
+    it('should reject message with no content and no media', async () => {
+      prisma.channelMember.findUnique.mockResolvedValue({ role: 'OWNER' });
+      await expect(service.sendMessage('ch1', 'u1', { content: '' })).rejects.toThrow(BadRequestException);
+    });
+
+    it('should accept message with media but no content', async () => {
+      prisma.channelMember.findUnique.mockResolvedValue({ role: 'OWNER' });
+      prisma.broadcastMessage.create.mockResolvedValue({ id: 'msg1', mediaUrl: 'https://img.com/1.jpg' });
+      prisma.$executeRaw.mockResolvedValue(1);
+      prisma.channelMember.findMany.mockResolvedValue([]);
+      const result = await service.sendMessage('ch1', 'u1', { mediaUrl: 'https://img.com/1.jpg' });
+      expect(result.id).toBe('msg1');
+    });
+  });
+
+  describe('discover — cursor pagination with hasMore', () => {
+    it('should set hasMore true when more channels exist', async () => {
+      const channels = Array.from({ length: 21 }, (_, i) => ({
+        id: `ch${i}`, name: `Channel ${i}`, subscribersCount: 100 - i,
+      }));
+      prisma.broadcastChannel.findMany.mockResolvedValue(channels);
+      const result = await service.discover();
+      expect(result.meta.hasMore).toBe(true);
+      expect(result.data).toHaveLength(20);
+    });
+
+    it('should set hasMore false when exactly at limit', async () => {
+      const channels = Array.from({ length: 5 }, (_, i) => ({
+        id: `ch${i}`, name: `Channel ${i}`, subscribersCount: 100 - i,
+      }));
+      prisma.broadcastChannel.findMany.mockResolvedValue(channels);
+      const result = await service.discover();
+      expect(result.meta.hasMore).toBe(false);
+      expect(result.data).toHaveLength(5);
+    });
+  });
 });

@@ -160,4 +160,75 @@ describe('LiveController', () => {
       expect(service.updateRecording).toHaveBeenCalledWith('session-1', 'user-1', 'url');
     });
   });
+
+  // T11 rows 78-85: Missing live controller tests
+  describe('inviteGuest', () => {
+    it('should call service.inviteGuest with liveId, guestUserId, and hostId', async () => {
+      mockService.inviteGuest = jest.fn().mockResolvedValue({ status: 'INVITED' });
+      await controller.inviteGuest('session-1', 'host-1', { guestUserId: 'guest-1' } as any);
+      expect(mockService.inviteGuest).toHaveBeenCalledWith('session-1', 'guest-1', 'host-1');
+    });
+  });
+
+  describe('acceptGuest', () => {
+    it('should call service.acceptGuestInvite with liveId and userId', async () => {
+      mockService.acceptGuestInvite = jest.fn().mockResolvedValue({ status: 'ACCEPTED' });
+      await controller.acceptGuest('session-1', 'guest-1');
+      expect(mockService.acceptGuestInvite).toHaveBeenCalledWith('session-1', 'guest-1');
+    });
+  });
+
+  describe('removeGuest', () => {
+    it('should call service.removeGuest with liveId, guestUserId, and hostId', async () => {
+      mockService.removeGuest = jest.fn().mockResolvedValue({ status: 'REMOVED' });
+      await controller.removeGuest('session-1', 'guest-1', 'host-1');
+      expect(mockService.removeGuest).toHaveBeenCalledWith('session-1', 'guest-1', 'host-1');
+    });
+  });
+
+  describe('listGuests', () => {
+    it('should call service.listGuests with liveId', async () => {
+      mockService.listGuests = jest.fn().mockResolvedValue([{ userId: 'guest-1', status: 'ACCEPTED' }]);
+      const result = await controller.listGuests('session-1');
+      expect(mockService.listGuests).toHaveBeenCalledWith('session-1');
+      expect(result).toHaveLength(1);
+    });
+  });
+
+  describe('startRehearsal', () => {
+    it('should call service.startRehearsal with userId and body', async () => {
+      mockService.startRehearsal = jest.fn().mockResolvedValue({ id: 'session-2', isRehearsal: true });
+      const body = { title: 'Rehearsal Test' };
+      const result = await controller.startRehearsal('host-1', body as any);
+      expect(mockService.startRehearsal).toHaveBeenCalledWith('host-1', body);
+      expect(result).toEqual(expect.objectContaining({ isRehearsal: true }));
+    });
+  });
+
+  describe('goLive', () => {
+    it('should call service.goLiveFromRehearsal with id and userId', async () => {
+      mockService.goLiveFromRehearsal = jest.fn().mockResolvedValue({ isRehearsal: false });
+      const result = await controller.goLive('session-1', 'host-1');
+      expect(mockService.goLiveFromRehearsal).toHaveBeenCalledWith('session-1', 'host-1');
+      expect(result).toEqual(expect.objectContaining({ isRehearsal: false }));
+    });
+  });
+
+  describe('endRehearsal', () => {
+    it('should call service.endRehearsal with id and userId', async () => {
+      mockService.endRehearsal = jest.fn().mockResolvedValue({ status: 'ENDED' });
+      const result = await controller.endRehearsal('session-1', 'host-1');
+      expect(mockService.endRehearsal).toHaveBeenCalledWith('session-1', 'host-1');
+      expect(result).toEqual(expect.objectContaining({ status: 'ENDED' }));
+    });
+  });
+
+  describe('setSubscribersOnly', () => {
+    it('should call service.setSubscribersOnly with id, userId, and boolean', async () => {
+      mockService.setSubscribersOnly = jest.fn().mockResolvedValue({ isSubscribersOnly: true });
+      const result = await controller.setSubscribersOnly('session-1', 'host-1', { subscribersOnly: true } as any);
+      expect(mockService.setSubscribersOnly).toHaveBeenCalledWith('session-1', 'host-1', true);
+      expect(result).toEqual(expect.objectContaining({ isSubscribersOnly: true }));
+    });
+  });
 });

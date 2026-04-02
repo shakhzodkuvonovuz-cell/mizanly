@@ -278,4 +278,197 @@ describe('LiveService', () => {
       expect(result.recordingUrl).toBe('https://cdn.example.com/rec.mp4');
     });
   });
+
+  // T11 rows 86-99: Missing live service tests
+
+  describe('inviteGuest', () => {
+    beforeEach(() => {
+      prisma.liveGuest = {
+        count: jest.fn().mockResolvedValue(0),
+        upsert: jest.fn().mockResolvedValue({ liveId: 'live1', userId: 'guest1', status: 'INVITED', user: { id: 'guest1' } }),
+      };
+    });
+
+    it('should invite guest when host and under max', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', hostId: 'host1', status: 'LIVE' });
+      const result = await service.inviteGuest('live1', 'guest1', 'host1');
+      expect(result.status).toBe('INVITED');
+      expect(prisma.liveGuest.upsert).toHaveBeenCalled();
+    });
+
+    it('should reject when max 4 guests reached', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', hostId: 'host1', status: 'LIVE' });
+      prisma.liveGuest.count.mockResolvedValue(4);
+      await expect(service.inviteGuest('live1', 'guest5', 'host1')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject when non-host invites', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', hostId: 'host1', status: 'LIVE' });
+      await expect(service.inviteGuest('live1', 'guest1', 'not-host')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should reject when session not live', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', hostId: 'host1', status: 'SCHEDULED' });
+      await expect(service.inviteGuest('live1', 'guest1', 'host1')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('acceptGuestInvite', () => {
+    beforeEach(() => {
+      prisma.liveGuest = {
+        count: jest.fn().mockResolvedValue(0),
+        findUnique: jest.fn(),
+        update: jest.fn().mockResolvedValue({ status: 'ACCEPTED', user: { id: 'guest1' } }),
+      };
+      prisma.$transaction = jest.fn().mockImplementation((fn) => fn(prisma));
+    });
+
+    it('should accept a pending invite', async () => {
+      prisma.liveGuest.findUnique.mockResolvedValue({ liveId: 'live1', userId: 'guest1', status: 'INVITED' });
+      const result = await service.acceptGuestInvite('live1', 'guest1');
+      expect(result.status).toBe('ACCEPTED');
+    });
+
+    it('should reject when no pending invite', async () => {
+      prisma.liveGuest.findUnique.mockResolvedValue(null);
+      await expect(service.acceptGuestInvite('live1', 'guest1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should reject when max 4 already accepted', async () => {
+      prisma.liveGuest.findUnique.mockResolvedValue({ liveId: 'live1', userId: 'guest1', status: 'INVITED' });
+      prisma.liveGuest.count.mockResolvedValue(4);
+      await expect(service.acceptGuestInvite('live1', 'guest1')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('removeGuest', () => {
+    beforeEach(() => {
+      prisma.liveGuest = {
+        update: jest.fn().mockResolvedValue({ status: 'REMOVED' }),
+      };
+    });
+
+    it('should remove guest as host', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', hostId: 'host1' });
+      const result = await service.removeGuest('live1', 'guest1', 'host1');
+      expect(result.status).toBe('REMOVED');
+    });
+
+    it('should reject when non-host removes', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', hostId: 'host1' });
+      await expect(service.removeGuest('live1', 'guest1', 'not-host')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('listGuests', () => {
+    beforeEach(() => {
+      prisma.liveGuest = {
+        findMany: jest.fn().mockResolvedValue([
+          { userId: 'g1', status: 'ACCEPTED', user: { id: 'g1' } },
+          { userId: 'g2', status: 'INVITED', user: { id: 'g2' } },
+        ]),
+      };
+    });
+
+    it('should return guests for a session', async () => {
+      const result = await service.listGuests('live1');
+      expect(result).toHaveLength(2);
+      expect(prisma.liveGuest.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: { liveId: 'live1', status: { in: ['INVITED', 'ACCEPTED'] } },
+      }));
+    });
+  });
+
+  describe('startRehearsal', () => {
+    it('should create a rehearsal session', async () => {
+      prisma.liveSession.create.mockResolvedValue({ id: 'live2', isRehearsal: true, status: 'LIVE' });
+      const result = await service.startRehearsal('host1', { title: 'Test Rehearsal' });
+      expect(result.isRehearsal).toBe(true);
+      expect(prisma.liveSession.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ isRehearsal: true, hostId: 'host1' }),
+      }));
+    });
+  });
+
+  describe('goLiveFromRehearsal', () => {
+    it('should transition rehearsal to public live', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', hostId: 'host1', isRehearsal: true, status: 'LIVE' });
+      prisma.liveSession.update.mockResolvedValue({ id: 'live1', isRehearsal: false });
+      const result = await service.goLiveFromRehearsal('live1', 'host1');
+      expect(result.isRehearsal).toBe(false);
+    });
+
+    it('should reject when not in rehearsal mode', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', hostId: 'host1', isRehearsal: false, status: 'LIVE' });
+      await expect(service.goLiveFromRehearsal('live1', 'host1')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('endRehearsal', () => {
+    it('should end a rehearsal session', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', hostId: 'host1', isRehearsal: true, status: 'LIVE' });
+      prisma.liveParticipant.updateMany.mockResolvedValue({});
+      prisma.liveSession.update.mockResolvedValue({ id: 'live1', status: 'ENDED' });
+      const result = await service.endRehearsal('live1', 'host1');
+      expect(result.status).toBe('ENDED');
+    });
+
+    it('should reject when not in rehearsal mode', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', hostId: 'host1', isRehearsal: false, status: 'LIVE' });
+      await expect(service.endRehearsal('live1', 'host1')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject when already ended', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', hostId: 'host1', isRehearsal: true, status: 'ENDED' });
+      await expect(service.endRehearsal('live1', 'host1')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('setSubscribersOnly', () => {
+    it('should toggle subscribers-only mode', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', hostId: 'host1' });
+      prisma.liveSession.update.mockResolvedValue({ id: 'live1', isSubscribersOnly: true });
+      const result = await service.setSubscribersOnly('live1', 'host1', true);
+      expect(result.isSubscribersOnly).toBe(true);
+    });
+
+    it('should reject non-host', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', hostId: 'host1' });
+      await expect(service.setSubscribersOnly('live1', 'not-host', true)).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('join — subscribers-only enforcement', () => {
+    beforeEach(() => {
+      prisma.follow = { findUnique: jest.fn() };
+    });
+
+    it('should reject non-follower when subscribers-only', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({
+        id: 'live1', hostId: 'host1', status: 'LIVE', isSubscribersOnly: true,
+        currentViewers: 0, participants: [],
+      });
+      prisma.follow.findUnique.mockResolvedValue(null);
+      await expect(service.join('live1', 'viewer1')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('join — host short-circuit', () => {
+    it('should return joined for host without creating participant', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({
+        id: 'live1', hostId: 'host1', status: 'LIVE', isSubscribersOnly: false,
+        currentViewers: 5, participants: [],
+      });
+      const result = await service.join('live1', 'host1');
+      expect(result.joined).toBe(true);
+      expect(prisma.liveParticipant.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('startLive — CANCELLED rejection', () => {
+    it('should reject starting a cancelled session', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', hostId: 'host1', status: 'CANCELLED' });
+      await expect(service.startLive('live1', 'host1')).rejects.toThrow(BadRequestException);
+    });
+  });
 });
