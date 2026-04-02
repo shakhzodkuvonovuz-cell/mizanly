@@ -236,40 +236,37 @@ export default function SavedScreen() {
     if (activeTab === 'videos') savedVideosQuery.refetch();
   };
 
-  if (isError) {
-    return (
-      <View style={styles.container}>
-        <GlassHeader
-          title={t('screens.saved.title')}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
-        />
-        <View style={styles.headerSpacer} />
-        <TabSelector
-          tabs={[
-            { key: 'posts', label: t('screens.saved.tabPosts') },
-            { key: 'threads', label: t('screens.saved.tabThreads') },
-            { key: 'reels', label: t('screens.saved.tabReels') },
-            { key: 'videos', label: t('screens.saved.tabVideos') },
-          ]}
-          activeKey={activeTab}
-          onTabChange={(key) => setActiveTab(key as typeof activeTab)}
-          variant="underline"
-        />
-        <View style={styles.errorContainer}>
-          <EmptyState
-            icon="flag"
-            title={t('screens.saved.errorTitle')}
-            subtitle={t('screens.saved.errorSubtitle')}
-            actionLabel={t('common.retry')}
-            onAction={refetchCurrent}
-          />
-        </View>
-      </View>
-    );
-  }
-
   return (
     <ScreenErrorBoundary>
+      {isError ? (
+        <View style={styles.container}>
+          <GlassHeader
+            title={t('screens.saved.title')}
+            leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
+          />
+          <View style={styles.headerSpacer} />
+          <TabSelector
+            tabs={[
+              { key: 'posts', label: t('screens.saved.tabPosts') },
+              { key: 'threads', label: t('screens.saved.tabThreads') },
+              { key: 'reels', label: t('screens.saved.tabReels') },
+              { key: 'videos', label: t('screens.saved.tabVideos') },
+            ]}
+            activeKey={activeTab}
+            onTabChange={(key) => setActiveTab(key as typeof activeTab)}
+            variant="underline"
+          />
+          <View style={styles.errorContainer}>
+            <EmptyState
+              icon="flag"
+              title={t('screens.saved.errorTitle')}
+              subtitle={t('screens.saved.errorSubtitle')}
+              actionLabel={t('common.retry')}
+              onAction={refetchCurrent}
+            />
+          </View>
+        </View>
+      ) :
       <View style={styles.container}>
         <GlassHeader
           title={t('screens.saved.title')}
@@ -470,8 +467,7 @@ export default function SavedScreen() {
             contentContainerStyle={{ paddingBottom: 100 }}
           />
         )}
-      </View>
-  
+      </View>}
     </ScreenErrorBoundary>
   );
 }

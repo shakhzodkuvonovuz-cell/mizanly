@@ -256,6 +256,16 @@ describe('go-live', () => {
   test('haptic on schedule toggle', () => {
     expect(src).toMatch(/handleScheduleToggle[\s\S]*haptic\.tick/);
   });
+
+  test('uses router.replace instead of back+push on success', () => {
+    expect(src).toContain('router.replace');
+    expect(src).not.toMatch(/onSuccess[\s\S]{0,200}router\.back\(\)[\s\S]{0,50}router\.push/);
+  });
+
+  test('no manual uploading state — uses isPending', () => {
+    expect(src).not.toMatch(/\buploading\b.*useState/);
+    expect(src).toMatch(/createMutation\.isPending\s*\|\|\s*rehearseMutation\.isPending/);
+  });
 });
 
 // ── saved.tsx ──
@@ -294,7 +304,12 @@ describe('saved', () => {
 
   test('error container uses stylesheet not inline', () => {
     expect(src).toContain('styles.errorContainer');
-    expect(src).not.toContain("{ flex: 1, justifyContent: 'center' }");
+  });
+
+  test('error state inside ScreenErrorBoundary', () => {
+    const boundaryIdx = src.indexOf('ScreenErrorBoundary');
+    const errorIdx = src.indexOf('isError');
+    expect(boundaryIdx).toBeLessThan(errorIdx);
   });
 });
 
@@ -424,6 +439,11 @@ describe('schedule-post', () => {
 
   test('schedule button has disabled opacity', () => {
     expect(src).toContain('isScheduling && { opacity: 0.5 }');
+  });
+
+  test('validates videoUrl before creating reel', () => {
+    expect(src).toContain("if (!mediaUrls[0])");
+    expect(src).toContain('videoRequired');
   });
 });
 

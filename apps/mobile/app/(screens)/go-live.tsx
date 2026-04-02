@@ -50,14 +50,13 @@ export default function GoLiveScreen() {
   const [scheduleDate, setScheduleDate] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showLiveTypePicker, setShowLiveTypePicker] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  // uploading derived from mutation isPending — no manual state needed
 
   // Schedule date time handling
   const [tempDate, setTempDate] = useState(new Date());
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      setUploading(true);
       const payload = {
         title: title.trim(),
         description: description.trim() || undefined,
@@ -68,14 +67,11 @@ export default function GoLiveScreen() {
     },
     onSuccess: (live) => {
       haptic.success();
-      setUploading(false);
       showToast({ message: t('live.streamStarted'), variant: 'success' });
-      router.back();
-      router.push(`/(screens)/live/${live.id}`);
+      router.replace(`/(screens)/live/${live.id}`);
     },
     onError: (err: Error) => {
       haptic.error();
-      setUploading(false);
       showToast({ message: err.message || t('live.failedToStartStream'), variant: 'error' });
     },
   });
@@ -100,17 +96,13 @@ export default function GoLiveScreen() {
 
   const rehearseMutation = useMutation({
     mutationFn: async () => {
-      setUploading(true);
       return liveApi.rehearse({ title: title.trim(), description: description.trim() || undefined, liveType });
     },
     onSuccess: (live) => {
-      setUploading(false);
       showToast({ message: t('live.rehearsalStarted'), variant: 'success' });
-      router.back();
-      router.push(`/(screens)/live/${live.id}`);
+      router.replace(`/(screens)/live/${live.id}`);
     },
     onError: (err: Error) => {
-      setUploading(false);
       showToast({ message: err.message || t('live.failedToStartRehearsal'), variant: 'error' });
     },
   });
@@ -317,7 +309,7 @@ export default function GoLiveScreen() {
         </BottomSheet>
 
         {/* Upload overlay */}
-        {uploading && (
+        {(createMutation.isPending || rehearseMutation.isPending) && (
           <View style={styles.uploadOverlay}>
             <Skeleton.Circle size={64} />
             <Text style={[styles.uploadText, { color: tc.text.primary }]}>{t('live.preparingStream')}</Text>

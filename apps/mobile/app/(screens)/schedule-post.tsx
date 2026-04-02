@@ -140,8 +140,13 @@ export default function SchedulePostScreen() {
           scheduledAt: scheduledAt.toISOString(),
         });
       } else if (space === 'Bakra') {
+        if (!mediaUrls[0]) {
+          showToast({ message: t('screens.schedule-post.videoRequired', 'Video is required for Bakra posts'), variant: 'error' });
+          setIsScheduling(false);
+          return;
+        }
         await reelsApi.create({
-          videoUrl: mediaUrls[0] || '',
+          videoUrl: mediaUrls[0],
           duration: 0, // Will be set by the video processing pipeline
           caption: postData.content,
           scheduledAt: scheduledAt.toISOString(),
