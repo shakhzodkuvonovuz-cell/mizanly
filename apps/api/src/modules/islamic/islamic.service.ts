@@ -2018,6 +2018,7 @@ export class IslamicService {
 
       if (!arabicText) {
         this.logger.warn(`Quran API returned empty text for ${surah}:${verse} — verse of the day skipped`);
+        Sentry.captureMessage(`Verse of the day: empty arabicText for ${surah}:${verse}`, 'warning');
         return;
       }
 

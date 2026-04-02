@@ -5,7 +5,7 @@ Prisma ORM, PostgreSQL (Neon), Redis (Upstash), Clerk auth, Cloudflare R2
 
 ## Build & Test
 ```bash
-cd apps/api && pnpm test                    # API tests
+cd apps/api && npm test                     # API tests
 cd apps/mobile && npx tsc --noEmit          # Mobile typecheck
 cd apps/mobile && npx jest --config src/services/signal/__tests__/jest.config.js  # Signal tests
 cd apps/mobile && npx jest --config src/hooks/__tests__/jest.config.js            # LiveKit call tests (49 tests)

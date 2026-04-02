@@ -1,4 +1,4 @@
-import { Global, Module } from '@nestjs/common';
+import { Global, Module, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bullmq';
 import { QueueService } from './queue.service';
@@ -51,7 +51,7 @@ const queueProviders = QUEUE_DEFINITIONS.map(({ name, token }) => ({
         );
       }
       // Development only: no-op queue stub (Redis not required locally)
-      const logger = new (require('@nestjs/common').Logger)(`Queue:${name}`);
+      const logger = new Logger(`Queue:${name}`);
       logger.warn(`Queue '${name}' running in no-op mode — REDIS_URL not set. Jobs will be silently dropped.`);
       return {
         add: async (_jobName: string, data: unknown): Promise<{ id: string }> => {
@@ -69,6 +69,7 @@ const queueProviders = QUEUE_DEFINITIONS.map(({ name, token }) => ({
 
     return new Queue(name, {
       connection: { url: redisUrl },
+      prefix: 'mizanly',
       defaultJobOptions: {
         removeOnComplete: { count: 1000, age: 86400 }, // keep 1000 or 24h
         removeOnFail: { count: 5000, age: 604800 },    // keep 5000 or 7d

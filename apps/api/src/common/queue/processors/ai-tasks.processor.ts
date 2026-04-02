@@ -53,10 +53,15 @@ export class AiTasksProcessor implements OnModuleInit, OnModuleDestroy {
       },
       {
         connection: { url: redisUrl },
+        prefix: 'mizanly',
         concurrency: 3,
+        lockDuration: 120000,
         limiter: {
           max: 10,
           duration: 60000, // 10 AI calls per minute to stay within rate limits
+        },
+        settings: {
+          stalledInterval: 120000,
         },
       },
     );

@@ -1,13 +1,11 @@
 import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 import { CircuitBreakerService } from '../../common/services/circuit-breaker.service';
 
 // Expo push notification API (no SDK needed, just HTTP)
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 const MAX_BATCH_SIZE = 100;
-
-// Access token for authenticated Expo push requests (prevents abuse/rate-limiting)
-const EXPO_ACCESS_TOKEN = process.env.EXPO_ACCESS_TOKEN || '';
 
 // ── Push notification i18n templates ────────────────────────────
 // TODO: User model has no `locale` field yet. When added (e.g. `locale String @default("en")`),
@@ -68,13 +66,16 @@ interface ExpoPushTicket {
 @Injectable()
 export class PushService {
   private readonly logger = new Logger(PushService.name);
+  private readonly expoAccessToken: string;
 
   constructor(
     private prisma: PrismaService,
     private circuitBreaker: CircuitBreakerService,
+    private config: ConfigService,
   ) {
-    if (!EXPO_ACCESS_TOKEN) {
-      this.logger.warn('EXPO_ACCESS_TOKEN not set — push notifications will use unauthenticated mode (higher rate limits from Expo)');
+    this.expoAccessToken = this.config.get<string>('this.expoAccessToken', '');
+    if (!this.expoAccessToken) {
+      this.logger.warn('this.expoAccessToken not set — push notifications will use unauthenticated mode (higher rate limits from Expo)');
     }
   }
 
@@ -149,8 +150,8 @@ export class PushService {
         };
         // Include Expo access token for authenticated push requests
         // (reduces rate-limiting risk and prevents token abuse)
-        if (EXPO_ACCESS_TOKEN) {
-          headers['Authorization'] = `Bearer ${EXPO_ACCESS_TOKEN}`;
+        if (this.expoAccessToken) {
+          headers['Authorization'] = `Bearer ${this.expoAccessToken}`;
         }
         const response = await this.circuitBreaker.exec('expo-push', () =>
           fetch(EXPO_PUSH_URL, {

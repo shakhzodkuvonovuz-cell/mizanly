@@ -113,6 +113,7 @@ export class QueueService implements OnModuleDestroy {
 
     const job = await this.circuitBreaker.exec('redis', () =>
       this.webhooksQueue.add('deliver', this.withCorrelation(jobData), {
+        jobId: `wh:${data.webhookId}:${data.event}:${timestamp}`,
         attempts: 5,
         backoff: { type: 'custom' },
       }),

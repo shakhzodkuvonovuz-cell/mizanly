@@ -212,7 +212,14 @@ export class TwoFactorService {
   ) {
     this.encryptionKey = this.config.get<string>('TOTP_ENCRYPTION_KEY');
     this.oldEncryptionKey = this.config.get<string>('TOTP_ENCRYPTION_KEY_OLD');
+    const isProduction = this.config.get<string>('NODE_ENV') === 'production';
     if (!this.encryptionKey) {
+      if (isProduction) {
+        throw new Error(
+          'TOTP_ENCRYPTION_KEY is required in production — 2FA secrets would be stored unencrypted. ' +
+          'Generate: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"',
+        );
+      }
       this.logger.warn(
         'TOTP_ENCRYPTION_KEY not set — TOTP secrets will be stored unencrypted. ' +
         'Generate a 32-byte hex key: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"',

@@ -7,6 +7,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /e2e-server ./cmd/server
 
 FROM alpine:3.21@sha256:c3f8e73fdb79deaebaa2037150150191b9dcbfba68b4a46d70103204c53f4709
+LABEL maintainer="Mizanly <eng@mizanly.app>" description="E2E Key Server — Signal Protocol key distribution"
 RUN apk add --no-cache ca-certificates
 COPY --from=builder /e2e-server /e2e-server
 # [G06-#3 fix] Run as non-root user

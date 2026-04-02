@@ -8,6 +8,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /server ./cmd/server/
 
 FROM alpine:3.21@sha256:c3f8e73fdb79deaebaa2037150150191b9dcbfba68b4a46d70103204c53f4709
+LABEL maintainer="Mizanly <eng@mizanly.app>" description="LiveKit Call Server — voice/video call management"
 RUN apk --no-cache add ca-certificates
 COPY --from=builder /server /server
 # [G06-#3 fix] Run as non-root user

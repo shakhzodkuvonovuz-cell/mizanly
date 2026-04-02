@@ -53,13 +53,16 @@ export class NotificationProcessor implements OnModuleInit, OnModuleDestroy {
       },
       {
         connection: { url: redisUrl },
+        prefix: 'mizanly',
         concurrency: 5,
+        lockDuration: 60000,
         settings: {
           backoffStrategy: (attemptsMade: number) => {
             // Custom backoff: 1s, 10s, 60s
             const delays = [1000, 10000, 60000];
             return delays[Math.min(attemptsMade - 1, delays.length - 1)];
           },
+          stalledInterval: 60000,
         },
       },
     );

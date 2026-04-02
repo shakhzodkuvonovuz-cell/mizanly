@@ -811,7 +811,12 @@ export class UsersService {
   async sendWeeklyScreenTimeDigest() {
     try {
       // Dedup: prevent duplicate digests if cron restarts mid-execution
-      const weekId = `${new Date().getFullYear()}-W${Math.ceil((Date.now() - new Date(new Date().getFullYear(), 0, 1).getTime()) / 604800000)}`;
+      // ISO week number calculation (handles year boundaries correctly)
+      const now = new Date();
+      const jan4 = new Date(now.getFullYear(), 0, 4); // Jan 4 is always in ISO week 1
+      const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+      const weekNum = Math.ceil(((now.getTime() - jan4.getTime()) / msPerWeek) + 1);
+      const weekId = `${now.getFullYear()}-W${weekNum}`;
       const dedupKey = `digest_sent:screen_time:${weekId}`;
       const alreadySent = await this.redis.set(dedupKey, '1', 'EX', 8 * 24 * 3600, 'NX');
       if (!alreadySent) {

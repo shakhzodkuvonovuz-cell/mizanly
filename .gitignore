@@ -42,6 +42,9 @@ apps/mobile/.expo/
 apps/mobile/ios/
 apps/mobile/android/
 
+# Firebase config (contains API keys — restrict in Firebase Console)
+apps/mobile/google-services.json
+
 # Misc
 *.tsbuildinfo
 

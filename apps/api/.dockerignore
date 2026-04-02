@@ -6,3 +6,5 @@ dist
 coverage
 *.spec.ts
 test
+*.md
+.dockerignore

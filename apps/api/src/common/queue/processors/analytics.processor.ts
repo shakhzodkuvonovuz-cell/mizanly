@@ -63,7 +63,12 @@ export class AnalyticsProcessor implements OnModuleInit, OnModuleDestroy {
       },
       {
         connection: { url: redisUrl },
+        prefix: 'mizanly',
         concurrency: 5,
+        lockDuration: 30000,
+        settings: {
+          stalledInterval: 30000,
+        },
       },
     );
 

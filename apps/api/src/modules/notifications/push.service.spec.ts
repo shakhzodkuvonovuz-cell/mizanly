@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 import { PushService } from './push.service';
 import { CircuitBreakerService } from '../../common/services/circuit-breaker.service';
@@ -33,6 +34,15 @@ describe('PushService', () => {
             exec: jest.fn().mockImplementation((_name: string, fn: () => Promise<unknown>) => fn()),
             getBreaker: jest.fn(),
             getStatus: jest.fn().mockReturnValue({}),
+          },
+        },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn().mockImplementation((key: string, defaultVal?: string) => {
+              if (key === 'EXPO_ACCESS_TOKEN') return 'test-token';
+              return defaultVal ?? '';
+            }),
           },
         },
       ],

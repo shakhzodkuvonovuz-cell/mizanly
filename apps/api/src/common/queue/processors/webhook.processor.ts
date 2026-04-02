@@ -51,13 +51,16 @@ export class WebhookProcessor implements OnModuleInit, OnModuleDestroy {
       },
       {
         connection: { url: redisUrl },
+        prefix: 'mizanly',
         concurrency: 25,
+        lockDuration: 30000,
         settings: {
           backoffStrategy: (attemptsMade: number) => {
             // Custom backoff: 1s, 5s, 30s, 5min, 30min
             const delays = [1000, 5000, 30000, 300000, 1800000];
             return delays[Math.min(attemptsMade - 1, delays.length - 1)];
           },
+          stalledInterval: 30000,
         },
       },
     );

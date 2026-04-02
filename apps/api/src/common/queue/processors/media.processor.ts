@@ -39,12 +39,28 @@ interface MediaJobData {
 export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(MediaProcessor.name);
   private worker: Worker | null = null;
+  private s3Client: InstanceType<typeof import('@aws-sdk/client-s3').S3Client> | null = null;
 
   constructor(
     private config: ConfigService,
     private prisma: PrismaService,
     @Inject(forwardRef(() => QueueService)) private queueService: QueueService,
   ) {}
+
+  private async getS3Client() {
+    if (this.s3Client) return this.s3Client;
+    const r2AccountId = this.config.get<string>('R2_ACCOUNT_ID') || this.config.get<string>('CLOUDFLARE_ACCOUNT_ID');
+    const r2AccessKey = this.config.get<string>('R2_ACCESS_KEY_ID') || this.config.get<string>('CLOUDFLARE_R2_ACCESS_KEY');
+    const r2SecretKey = this.config.get<string>('R2_SECRET_ACCESS_KEY') || this.config.get<string>('CLOUDFLARE_R2_SECRET_KEY');
+    if (!r2AccountId || !r2AccessKey || !r2SecretKey) return null;
+    const { S3Client } = await import('@aws-sdk/client-s3');
+    this.s3Client = new S3Client({
+      region: 'auto',
+      endpoint: `https://${r2AccountId}.r2.cloudflarestorage.com`,
+      credentials: { accessKeyId: r2AccessKey, secretAccessKey: r2SecretKey },
+    });
+    return this.s3Client;
+  }
 
   onModuleInit() {
     const redisUrl = this.config.get<string>('REDIS_URL');
@@ -81,7 +97,12 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
       },
       {
         connection: { url: redisUrl },
+        prefix: 'mizanly',
         concurrency: 3,
+        lockDuration: 120000,
+        settings: {
+          stalledInterval: 120000,
+        },
       },
     );
 
@@ -133,9 +154,15 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
 
     try {
       const sharp = await import('sharp');
-      const response = await fetch(mediaUrl);
+      const response = await fetch(mediaUrl, { signal: AbortSignal.timeout(30000) });
       if (!response.ok) {
         throw new Error(`Failed to fetch image: ${response.status}`);
+      }
+
+      // Reject files > 50MB to prevent OOM
+      const contentLength = Number(response.headers.get('content-length') || '0');
+      if (contentLength > 50 * 1024 * 1024) {
+        throw new Error(`Image too large: ${contentLength} bytes (max 50MB)`);
       }
 
       const buffer = Buffer.from(await response.arrayBuffer());
@@ -153,10 +180,8 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
         { name: 'large', width: 1200, height: 1200 },
       ];
 
-      // Upload each resized variant to R2
-      const r2AccountId = this.config.get<string>('R2_ACCOUNT_ID') || this.config.get<string>('CLOUDFLARE_ACCOUNT_ID');
-      const r2AccessKey = this.config.get<string>('R2_ACCESS_KEY_ID') || this.config.get<string>('CLOUDFLARE_R2_ACCESS_KEY');
-      const r2SecretKey = this.config.get<string>('R2_SECRET_ACCESS_KEY') || this.config.get<string>('CLOUDFLARE_R2_SECRET_KEY');
+      // Upload each resized variant to R2 (reuse singleton S3Client)
+      const s3 = await this.getS3Client();
       const r2Bucket = this.config.get<string>('R2_BUCKET_NAME') || 'mizanly-media';
 
       for (const size of sizes) {
@@ -165,16 +190,10 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
           .jpeg({ quality: 80 })
           .toBuffer();
 
-        // Upload to R2 if credentials are available
-        if (r2AccountId && r2AccessKey && r2SecretKey) {
+        if (s3) {
           const variantKey = mediaKey.replace(/(\.[^.]+)$/, `-${size.name}$1`);
           try {
-            const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
-            const s3 = new S3Client({
-              region: 'auto',
-              endpoint: `https://${r2AccountId}.r2.cloudflarestorage.com`,
-              credentials: { accessKeyId: r2AccessKey, secretAccessKey: r2SecretKey },
-            });
+            const { PutObjectCommand } = await import('@aws-sdk/client-s3');
             await s3.send(new PutObjectCommand({
               Bucket: r2Bucket,
               Key: variantKey,
@@ -207,9 +226,15 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
     try {
       const sharp = await import('sharp');
       const { encode } = await import('blurhash');
-      const response = await fetch(mediaUrl);
+      const response = await fetch(mediaUrl, { signal: AbortSignal.timeout(30000) });
       if (!response.ok) {
         throw new Error(`Failed to fetch image: ${response.status}`);
+      }
+
+      // Reject files > 50MB to prevent OOM
+      const contentLength = Number(response.headers.get('content-length') || '0');
+      if (contentLength > 50 * 1024 * 1024) {
+        throw new Error(`Image too large for BlurHash: ${contentLength} bytes (max 50MB)`);
       }
 
       const buffer = Buffer.from(await response.arrayBuffer());
@@ -228,13 +253,13 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
       if (contentId && contentType) {
         const updateData = { blurhash };
         if (contentType === 'reel') {
-          await this.prisma.reel.update({ where: { id: contentId }, data: updateData }).catch((e) => this.logger.debug('Blurhash/status update failed', e?.message));
+          await this.prisma.reel.update({ where: { id: contentId }, data: updateData }).catch((e) => this.logger.warn(`BlurHash DB write failed for reel/${contentId}`, e?.message));
         } else if (contentType === 'post') {
-          await this.prisma.post.update({ where: { id: contentId }, data: updateData }).catch((e) => this.logger.debug('Blurhash/status update failed', e?.message));
+          await this.prisma.post.update({ where: { id: contentId }, data: updateData }).catch((e) => this.logger.warn(`BlurHash DB write failed for post/${contentId}`, e?.message));
         } else if (contentType === 'story') {
-          await this.prisma.story.update({ where: { id: contentId }, data: updateData }).catch((e) => this.logger.debug('Blurhash/status update failed', e?.message));
+          await this.prisma.story.update({ where: { id: contentId }, data: updateData }).catch((e) => this.logger.warn(`BlurHash DB write failed for story/${contentId}`, e?.message));
         } else if (contentType === 'video') {
-          await this.prisma.video.update({ where: { id: contentId }, data: { blurhash } }).catch((e) => this.logger.debug('Blurhash/status update failed', e?.message));
+          await this.prisma.video.update({ where: { id: contentId }, data: { blurhash } }).catch((e) => this.logger.warn(`BlurHash DB write failed for video/${contentId}`, e?.message));
         }
       }
 

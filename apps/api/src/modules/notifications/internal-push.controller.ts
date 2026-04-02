@@ -47,6 +47,12 @@ export class InternalPushController {
     configService: ConfigService,
   ) {
     this.serviceKey = configService.get<string>('INTERNAL_SERVICE_KEY', '');
+    if (!this.serviceKey) {
+      this.logger.warn(
+        'INTERNAL_SERVICE_KEY not set — all internal push requests will be rejected (401). ' +
+        'Set this env var to enable Go → NestJS server-to-server push notifications.',
+      );
+    }
   }
 
   @Post('push-to-users')
