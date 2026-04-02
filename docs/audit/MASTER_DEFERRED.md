@@ -594,36 +594,34 @@ Screen code is ready but backend endpoint/feature doesn't exist.
 
 ---
 
-## 22. ROUND 4E — Screen Audit Deferrals (D15-D40, final 11 D-files)
+## 22. WAVE 4 — ALL Screen Audit Deferrals (R4 through R4E, 42 D-files, 189 unique items)
 
-> R4E completed Wave 4. All 42 D-files done. These are the remaining deferrals from R4E across 4 tabs + orchestrator direct work.
+> Full extraction from 22 progress files across 5 rounds. Deduplicated by screen+finding.
+> **Detailed breakdown:** `docs/audit/SCREEN_DEFERRALS_EXTRACTED.md`
 
-### 22A. Architectural (cross-cutting)
+| Category | Count | Biggest Win |
+|----------|-------|-------------|
+| Offline/NetInfo | 32 | Build `useNetworkStatus` hook → unblocks all 32 |
+| Backend-blocked | 30 | API pagination cursors, missing endpoints, auto-publisher |
+| Dimensions/Responsive | 22 | Replace module-scope `Dimensions.get` with `useWindowDimensions` |
+| Animation/Polish | 17 | Entrance animations, layout shift, stagger caps |
+| Schema/Architecture | 16 | Prisma migrations, god component extraction |
+| Other | 15 | Mixed (accessibility, performance, edge cases) |
+| Optimistic updates | 14 | Complex rollback on paginated InfiniteQuery data |
+| Feature not built | 14 | Green screen, go-live picker, ProgressRing, map views |
+| Keyboard | 14 | KAV inside BottomSheet, complex scroll-to-input |
+| RTL | 12 | Per-element flexDirection decisions in complex screens |
+| StatusBar | 3 | `expo-status-bar` style configuration |
+| **TOTAL** | **189** | |
 
-| # | Source | Sev | Screen | Finding |
-|---|--------|-----|--------|---------|
-| 311 | R4E-T4 | M | 8 screens | Module-scope `Dimensions.get('window')` — needs `useWindowDimensions` refactor (green-screen, product-detail, profile/[username], qibla-compass, ramadan-mode, reel/[id], reel-remix, reel-templates) |
-| 312 | R4E-T4 | M | 5+ screens | Offline/NetInfo detection — needs app-level `useNetworkStatus` hook (halal-finder, qibla-compass, quiet-mode, ramadan-mode, report) |
-| 313 | R4E-T1/T4 | M | 3+ screens | KAV inside BottomSheet — needs component-level change (waqf, watch-party, and any screen using BottomSheet with TextInput) |
-
-### 22B. Backend-blocked
-
-| # | Source | Sev | Screen | Finding |
-|---|--------|-----|--------|---------|
-| 314 | R4E-T2 D22#51 | H | manage-broadcast | `broadcastApi.getSubscribers` endpoint doesn't exist — screen shows followers instead |
-| 315 | R4E-T3 D32#38 | C | schedule-post | Backend auto-publisher worker not implemented — scheduled posts never publish |
-| 316 | R4E-T1/T2/T4 | M | 6 screens | Pagination cursor support missing on API (hadith, halal-finder, followed-topics, majlis-lists, watch-party, follow-requests) |
-| 317 | R4E-T3 D32#34 | H | schedule-live | `liveApi.create()` endpoint may not exist |
-| 318 | R4E-T1 D39#5 | M | waqf | Transaction rollback needs backend PaymentIntent cancellation endpoint |
-
-### 22C. Feature-level
-
-| # | Source | Sev | Screen | Finding |
-|---|--------|-----|--------|---------|
-| 319 | R4E-T4 D29#28 | H | quran-reading-plan | ProgressRing is decorative only — needs SVG/canvas for actual arc |
-| 320 | R4E-T4 D19#15 | H | green-screen-editor | Core segmentation needs react-native-vision-camera frame processor |
-| 321 | R4E-T3 D18#47 | H | go-live | DateTimePicker is non-functional placeholder — needs expo-date-time-picker |
-| 322 | R4E-T1 | L | whats-new | Orphaned screen — no navigation path reaches it (need link from settings) |
+### By severity
+| Sev | Count |
+|-----|-------|
+| C | 4 |
+| H | 18 |
+| M | 99 |
+| L | 51 |
+| I | 17 |
 
 ---
 
@@ -642,46 +640,36 @@ Screen code is ready but backend endpoint/feature doesn't exist.
 
 ## Updated Summary (R1 through W7)
 
-| Category | R1-R3 | R4 | R4E | W7 | Total |
-|----------|-------|-----|-----|-----|-------|
-| Security (plaintext/secrets) | 12 | 0 | 0 | 0 | 12 |
-| Architecture (events/god services) | 16 | 0 | 0 | 0 | 16 |
-| Theme migration (XL) | 5 | 0 | 0 | 0 | 5 |
-| Queue dead code | 7 | 0 | 0 | 0 | 7 |
-| Schema/database | 14 | 0 | 0 | 0 | 14 |
-| Payments/financial | 8 | 0 | 1 | 0 | 9 |
-| Moderation/safety | 12 | 0 | 0 | 0 | 12 |
-| Notifications | 6 | 0 | 0 | 0 | 6 |
-| Messaging/real-time | 7 | 0 | 0 | 0 | 7 |
-| Auth/privacy | 5 | 0 | 0 | 0 | 5 |
-| Search/discovery | 3 | 0 | 0 | 0 | 3 |
-| Media pipeline | 5 | 0 | 0 | 0 | 5 |
-| Community features | 5 | 0 | 0 | 0 | 5 |
-| CI/infrastructure | 20 | 0 | 0 | 0 | 20 |
-| Mobile components | 21 | 0 | 0 | 0 | 21 |
-| Type safety (as any) | 12 | 0 | 0 | 0 | 12 |
-| Pagination/patterns | 12 | 10 | 0 | 0 | 22 |
-| UI/UX | 3 | 0 | 0 | 0 | 3 |
-| Low priority/cosmetic | 22 | 19 | 0 | 0 | 41 |
-| New features | 8 | 6 | 0 | 0 | 14 |
-| Offline/network detection | 0 | 14 | 1 | 0 | 15 |
-| Optimistic updates | 0 | 7 | 0 | 0 | 7 |
-| Animation/polish | 0 | 14 | 0 | 0 | 14 |
-| Keyboard/input | 0 | 5 | 1 | 0 | 6 |
-| StatusBar | 0 | 3 | 0 | 0 | 3 |
-| Responsive/iPad | 0 | 5 | 1 | 0 | 6 |
-| Backend-blocked (R4E) | 0 | 0 | 5 | 0 | 5 |
-| Feature-level (R4E) | 0 | 0 | 4 | 0 | 4 |
-| Integration tests (W7) | 0 | 0 | 0 | 4 | 4 |
-| **TOTAL** | **203** | **107** | **12** | **4** | **326** |
+| Source | Items |
+|--------|-------|
+| R1-R3 (API audit) | 203 |
+| R4-R4E (screen audit, 42 D-files) | 189 |
+| W7 (testing gaps) | 4 |
+| **TOTAL** | **396** |
+
+### Screen deferrals by category (189 items — see `SCREEN_DEFERRALS_EXTRACTED.md`)
+
+| Category | Count |
+|----------|-------|
+| Offline/NetInfo | 32 |
+| Backend-blocked | 30 |
+| Dimensions/Responsive | 22 |
+| Animation/Polish | 17 |
+| Schema/Architecture | 16 |
+| Other | 15 |
+| Optimistic updates | 14 |
+| Feature not built | 14 |
+| Keyboard | 14 |
+| RTL | 12 |
+| StatusBar | 3 |
 
 ### By severity (combined R1-W7)
 
 | Severity | Count |
 |----------|-------|
-| CRITICAL | 21 |
-| HIGH | 35 |
-| MEDIUM | 164 |
-| LOW | 73 |
+| CRITICAL | 23 |
+| HIGH | 47 |
+| MEDIUM | 216 |
+| LOW | 77 |
 | INFO | 33 |
-| **TOTAL** | **326** |
+| **TOTAL** | **396** |
