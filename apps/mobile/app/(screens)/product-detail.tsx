@@ -78,7 +78,7 @@ interface ProductDetail {
   createdAt: string;
 }
 
-function renderStars(rating: number, size: 'xs' | 'sm' = 'xs') {
+function renderStars(rating: number, size: 'xs' | 'sm' = 'xs', inactiveColor: string = colors.gold + '40') {
   const stars: React.ReactNode[] = [];
   const full = Math.floor(rating);
   for (let i = 0; i < 5; i++) {
@@ -87,7 +87,7 @@ function renderStars(rating: number, size: 'xs' | 'sm' = 'xs') {
         key={`star-${i}`}
         name={i < full ? 'heart-filled' : 'heart'}
         size={size}
-        color={i < full ? colors.gold : colors.text.tertiary}
+        color={i < full ? colors.gold : inactiveColor}
       />
     );
   }
@@ -106,6 +106,7 @@ function ProductDetailContent() {
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
+  const isNavigatingRef = useRef(false);
 
   const productQuery = useQuery({
     queryKey: ['product', params.id],
@@ -278,7 +279,7 @@ function ProductDetailContent() {
             ${(product.price / 100).toFixed(2)}
           </Text>
           <View style={styles.ratingRow}>
-            {renderStars(product.rating, 'sm')}
+            {renderStars(product.rating, 'sm', tc.text.tertiary)}
             <Text style={styles.ratingText}>
               {product.rating.toFixed(1)} ({formatCount(product.reviewCount)} {t('product.reviews', 'reviews')})
             </Text>
@@ -309,7 +310,12 @@ function ProductDetailContent() {
         <Animated.View entering={FadeInUp.delay(200).duration(300)} style={styles.sellerCard}>
           <Pressable
             style={styles.sellerInner}
-            onPress={() => navigate(`/(screens)/profile/${product.seller.username}`)}
+            onPress={() => {
+              if (isNavigatingRef.current) return;
+              isNavigatingRef.current = true;
+              navigate(`/(screens)/profile/${product.seller.username}`);
+              setTimeout(() => { isNavigatingRef.current = false; }, 500);
+            }}
             accessibilityRole="button"
             accessibilityLabel={t('accessibility.viewProfile', { name: product.seller.displayName })}
           >
@@ -373,7 +379,7 @@ function ProductDetailContent() {
                   <View style={styles.reviewHeaderInfo}>
                     <Text style={styles.reviewAuthor}>{review.user.displayName}</Text>
                     <View style={styles.reviewStars}>
-                      {renderStars(review.rating)}
+                      {renderStars(review.rating, 'xs', tc.text.tertiary)}
                     </View>
                   </View>
                   <Text style={styles.reviewDate}>

@@ -143,7 +143,7 @@ const STATUS_COLORS: Record<string, string> = {
   memorized: colors.emerald,
   in_progress: colors.gold,
   needs_review: colors.extended.orange,
-  not_started: colors.dark.surface,
+  not_started: 'rgba(110,119,129,0.3)',
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -343,22 +343,22 @@ export default function HifzTrackerScreen() {
           <BottomSheetItem
             label={t('hifz.notStarted')}
             icon={<View style={[styles.sheetDot, { backgroundColor: tc.surface }]} />}
-            onPress={() => updateMutation.mutate({ surahNum: statusSheet.surahNum, status: 'not_started' })}
+            onPress={() => { if (!updateMutation.isPending) updateMutation.mutate({ surahNum: statusSheet.surahNum, status: 'not_started' }); }}
           />
           <BottomSheetItem
             label={t('hifz.inProgress')}
             icon={<View style={[styles.sheetDot, { backgroundColor: colors.gold }]} />}
-            onPress={() => updateMutation.mutate({ surahNum: statusSheet.surahNum, status: 'in_progress' })}
+            onPress={() => { if (!updateMutation.isPending) updateMutation.mutate({ surahNum: statusSheet.surahNum, status: 'in_progress' }); }}
           />
           <BottomSheetItem
             label={t('hifz.memorized')}
             icon={<View style={[styles.sheetDot, { backgroundColor: colors.emerald }]} />}
-            onPress={() => updateMutation.mutate({ surahNum: statusSheet.surahNum, status: 'memorized' })}
+            onPress={() => { if (!updateMutation.isPending) updateMutation.mutate({ surahNum: statusSheet.surahNum, status: 'memorized' }); }}
           />
           <BottomSheetItem
             label={t('hifz.needsReview')}
             icon={<View style={[styles.sheetDot, { backgroundColor: colors.extended.orange }]} />}
-            onPress={() => updateMutation.mutate({ surahNum: statusSheet.surahNum, status: 'needs_review' })}
+            onPress={() => { if (!updateMutation.isPending) updateMutation.mutate({ surahNum: statusSheet.surahNum, status: 'needs_review' }); }}
           />
         </BottomSheet>
       </SafeAreaView>

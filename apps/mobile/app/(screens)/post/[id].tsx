@@ -14,6 +14,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useUser } from '@clerk/clerk-expo';
 import { formatDistanceToNowStrict } from 'date-fns';
@@ -477,6 +478,7 @@ export default function PostDetailScreen() {
   const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null);
   const [commentSort, setCommentSort] = useState<'top' | 'latest'>('top');
   const sendPress = useAnimatedPress({ scaleTo: 0.85 });
+  const insets = useSafeAreaInsets();
   const { t, isRTL } = useTranslation();
   const tts = useTTS();
   const haptic = useContextualHaptic();
@@ -598,7 +600,7 @@ export default function PostDetailScreen() {
           title={t('common.error')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
-        <View style={styles.headerSpacer} />
+        <View style={{ height: insets.top + 56 }} />
         <EmptyState
           icon="slash"
           title={t('common.error')}
@@ -702,12 +704,12 @@ export default function PostDetailScreen() {
           { icon: 'share', onPress: handleShare, accessibilityLabel: t('common.share') },
         ]}
       />
-      <View style={styles.headerSpacer} />
+      <View style={{ height: insets.top + 56 }} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={0}
+        keyboardVerticalOffset={insets.top + 56}
       >
         <FlatList
           removeClippedSubviews={true}
@@ -862,7 +864,7 @@ export default function PostDetailScreen() {
 
 const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: { flex: 1, backgroundColor: tc.bg },
-  headerSpacer: { height: 100 },
+  headerSpacer: {},
   loader: { marginTop: 60 },
   listenButton: {
     flexDirection: 'row',
@@ -951,7 +953,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: tc.bgElevated,
   },
   replyBannerText: { color: tc.text.secondary, fontSize: fontSize.xs },
-  replyClose: { color: colors.text.secondary, fontSize: fontSize.sm },
+  replyClose: { color: tc.text.secondary, fontSize: fontSize.sm },
   inputRow: {
     flexDirection: 'row', alignItems: 'flex-end',
     paddingHorizontal: spacing.base, paddingTop: spacing.sm, gap: spacing.sm,

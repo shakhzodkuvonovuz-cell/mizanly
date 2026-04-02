@@ -77,6 +77,16 @@ describe('post/[id]', () => {
   test('createStyles uses tc.text.primary not colors.text.primary for comments', () => {
     const styles = getStylesSection(src);
     expect(styles).not.toContain('color: colors.text.primary');
+    expect(styles).not.toContain('color: colors.text.secondary');
+  });
+
+  test('uses safe area insets for header spacer', () => {
+    expect(src).toContain('useSafeAreaInsets');
+    expect(src).toContain('insets.top + 56');
+  });
+
+  test('KeyboardAvoidingView uses safe area offset', () => {
+    expect(src).toContain('keyboardVerticalOffset={insets.top + 56}');
   });
 
   test('createStyles uses tc.text.secondary for comment meta', () => {
@@ -153,6 +163,10 @@ describe('post-insights', () => {
   test('GlassHeader has accessibility label', () => {
     expect(src).toContain("accessibilityLabel: t('common.back'");
   });
+
+  test('has haptic on refresh', () => {
+    expect(src).toContain('haptic.tick()');
+  });
 });
 
 // ── prayer-times.tsx ──
@@ -194,6 +208,19 @@ describe('prayer-times', () => {
     expect(src).toContain("actionLabel={t('common.retry')}");
     expect(src).toContain('onAction={fetchData}');
   });
+
+  test('has RTL support with rtlFlexRow', () => {
+    expect(src).toContain('rtlFlexRow(isRTL)');
+  });
+
+  test('imports rtlFlexRow', () => {
+    expect(src).toContain("import { rtlFlexRow }");
+  });
+
+  test('RTL applied to location, qibla, section, method, settings rows', () => {
+    const rtlCount = (src.match(/rtlFlexRow\(/g) || []).length;
+    expect(rtlCount).toBeGreaterThanOrEqual(6);
+  });
 });
 
 // ── product-detail.tsx ──
@@ -230,6 +257,14 @@ describe('product-detail', () => {
 
   test('share button wired to Share.share', () => {
     expect(src).toContain('Share.share');
+  });
+
+  test('seller profile has double-tap guard', () => {
+    expect(src).toContain('isNavigatingRef.current');
+  });
+
+  test('renderStars passes theme color for inactive stars', () => {
+    expect(src).toContain('tc.text.tertiary)');
   });
 });
 
@@ -341,6 +376,14 @@ describe('hifz-tracker', () => {
     expect(src).toContain('colors.extended.orange');
   });
 
+  test('BottomSheetItem guards with isPending', () => {
+    expect(src).toContain('if (!updateMutation.isPending)');
+  });
+
+  test('no colors.dark.surface in STATUS_COLORS', () => {
+    expect(src).not.toContain('colors.dark.surface');
+  });
+
   test('SurahRow uses inline tc colors', () => {
     expect(src).toContain('{ color: tc.text.primary }');
     expect(src).toContain('{ color: tc.text.secondary }');
@@ -388,6 +431,12 @@ describe('image-editor', () => {
   test('inline tc colors applied to text elements', () => {
     expect(src).toContain('{ color: tc.text.secondary }');
     expect(src).toContain('{ color: tc.text.tertiary }');
+  });
+
+  test('has discard confirmation dialog', () => {
+    expect(src).toContain('Alert.alert');
+    expect(src).toContain('hasChanges');
+    expect(src).toContain("style: 'destructive'");
   });
 });
 

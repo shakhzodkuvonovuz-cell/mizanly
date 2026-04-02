@@ -21,6 +21,7 @@ import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { formatCount } from '@/utils/formatCount';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { rtlFlexRow } from '@/utils/rtl';
 import { creatorApi } from '@/services/creatorApi';
@@ -63,6 +64,7 @@ function PostInsightsContent() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t, isRTL } = useTranslation();
+  const haptic = useContextualHaptic();
   const params = useLocalSearchParams<{ postId: string; postType: string }>();
 
   const [loading, setLoading] = useState(true);
@@ -138,10 +140,11 @@ function PostInsightsContent() {
   }, [loadData]);
 
   const handleRefresh = useCallback(async () => {
+    haptic.tick();
     setRefreshing(true);
     await loadData();
     setRefreshing(false);
-  }, [loadData]);
+  }, [loadData, haptic]);
 
   const formatNumber = formatCount;
 

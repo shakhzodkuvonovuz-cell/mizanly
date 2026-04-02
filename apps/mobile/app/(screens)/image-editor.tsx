@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, Dimensions,
-  Image as RNImage, StatusBar,
+  Image as RNImage, StatusBar, Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, {
@@ -70,9 +70,22 @@ export default function ImageEditorScreen() {
     router.back();
   }, [router]);
 
+  const hasChanges = selectedFilter !== 'normal' || aspectRatio !== 'free' || brightness !== 50 || contrast !== 50 || saturation !== 50;
+
   const handleCancel = useCallback(() => {
-    router.back();
-  }, [router]);
+    if (hasChanges) {
+      Alert.alert(
+        t('screens.imageEditor.discardTitle', 'Discard changes?'),
+        t('screens.imageEditor.discardMessage', 'Your edits will be lost.'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('common.discard', 'Discard'), style: 'destructive', onPress: () => router.back() },
+        ]
+      );
+    } else {
+      router.back();
+    }
+  }, [router, hasChanges, t]);
 
   const getFilterStyle = (filter: FilterType) => {
     const f = FILTERS.find(f => f.id === filter);

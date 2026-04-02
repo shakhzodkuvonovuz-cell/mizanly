@@ -29,6 +29,7 @@ import { formatHijriDate } from '@/utils/hijri';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
+import { rtlFlexRow } from '@/utils/rtl';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -128,7 +129,7 @@ function PrayerCard({
 }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
-  const { t } = useTranslation();
+  const { t, isRTL: prayerIsRTL } = useTranslation();
   const haptic = useContextualHaptic();
   const pulseAnim = useSharedValue(1);
   const [notifyEnabled, setNotifyEnabled] = useState(true);
@@ -191,7 +192,7 @@ function PrayerCard({
           />
         )}
 
-        <View style={styles.prayerContent}>
+        <View style={[styles.prayerContent, { flexDirection: rtlFlexRow(prayerIsRTL) }]}>
           <LinearGradient
             colors={isCurrent
               ? ['rgba(10,123,79,0.5)', 'rgba(200,150,62,0.3)']
@@ -276,7 +277,7 @@ export default function PrayerTimesScreen() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -538,7 +539,7 @@ export default function PrayerTimesScreen() {
               colors={colors.gradient.cardDark}
               style={styles.locationCard}
             >
-              <View style={styles.locationRow}>
+              <View style={[styles.locationRow, { flexDirection: rtlFlexRow(isRTL) }]}>
                 <Icon name="map-pin" size="sm" color={colors.emerald} />
                 <Text style={styles.locationText}>{userLocation ? t('islamic.locationCoords', { lat: userLocation.lat.toFixed(2), lng: userLocation.lng.toFixed(2) }) : t('islamic.detectingLocation')}</Text>
               </View>
@@ -565,7 +566,7 @@ export default function PrayerTimesScreen() {
                   {prayerList[currentPrayerIndex]?.arabic || ''}
                 </Text>
 
-                <View style={styles.currentPrayerTimeRow}>
+                <View style={[styles.currentPrayerTimeRow, { flexDirection: rtlFlexRow(isRTL) }]}>
                   <Icon name="clock" size="sm" color="rgba(255,255,255,0.8)" />
                   <Text style={styles.currentPrayerTime}>
                     {prayerList[currentPrayerIndex]?.time || ''}
@@ -595,7 +596,7 @@ export default function PrayerTimesScreen() {
               colors={['rgba(200,150,62,0.15)', 'rgba(200,150,62,0.05)']}
               style={styles.qiblaCompactGradient}
             >
-              <View style={styles.qiblaCompactRow}>
+              <View style={[styles.qiblaCompactRow, { flexDirection: rtlFlexRow(isRTL) }]}>
                 {/* Live rotating compass arrow */}
                 <View style={[styles.qiblaArrowContainer, { transform: [{ rotate: `${compassRotation}deg` }] }]}>
                   <Icon name="map-pin" size="sm" color={colors.gold} />
@@ -629,7 +630,7 @@ export default function PrayerTimesScreen() {
 
           {/* All Prayers List */}
           <View style={styles.prayerListContainer}>
-            <View style={styles.sectionHeader}>
+            <View style={[styles.sectionHeader, { flexDirection: rtlFlexRow(isRTL) }]}>
               <LinearGradient
                 colors={['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)']}
                 style={styles.sectionIconBg}
@@ -658,7 +659,7 @@ export default function PrayerTimesScreen() {
           >
             <LinearGradient
               colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
-              style={styles.methodCard}
+              style={[styles.methodCard, { flexDirection: rtlFlexRow(isRTL) }]}
             >
               <View style={styles.methodIconBg}>
                 <Icon name="settings" size="sm" color={colors.gold} />
@@ -704,7 +705,7 @@ export default function PrayerTimesScreen() {
           <Text style={styles.settingsTitle}>{t('prayerNotifications.settings')}</Text>
 
           {/* DND during prayer */}
-          <View style={styles.settingsRow}>
+          <View style={[styles.settingsRow, { flexDirection: rtlFlexRow(isRTL) }]}>
             <View style={styles.settingsRowText}>
               <Text style={styles.settingsLabel}>{t('prayerNotifications.dndDuringPrayer')}</Text>
               <Text style={styles.settingsDescription}>{t('prayerNotifications.dndDescription')}</Text>
@@ -718,7 +719,7 @@ export default function PrayerTimesScreen() {
           </View>
 
           {/* Adhan alerts */}
-          <View style={styles.settingsRow}>
+          <View style={[styles.settingsRow, { flexDirection: rtlFlexRow(isRTL) }]}>
             <View style={styles.settingsRowText}>
               <Text style={styles.settingsLabel}>{t('prayerNotifications.adhanAlerts')}</Text>
               <Text style={styles.settingsDescription}>{t('prayerNotifications.adhanDescription')}</Text>
