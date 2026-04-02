@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Switch, ScrollView } from 'react-native';
+import { useState, useRef } from 'react';
+import { View, Text, StyleSheet, TextInput, Switch, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -46,6 +46,7 @@ export default function CreatePlaylistScreen() {
 
   const channelId = params.channelId || (channels?.[0]?.id);
 
+  const createLockRef = useRef(false);
   const createMutation = useMutation({
     mutationFn: (data: { channelId: string; title: string; description?: string; isPublic: boolean }) =>
       playlistsApi.create(data),
@@ -58,9 +59,11 @@ export default function CreatePlaylistScreen() {
       haptic.error();
       showToast({ message: t('createPlaylist.createError'), variant: 'error' });
     },
+    onSettled: () => { createLockRef.current = false; },
   });
 
   const handleCreate = () => {
+    if (createLockRef.current) return;
     if (!title.trim()) {
       showToast({ message: t('createPlaylist.titleRequired'), variant: 'error' });
       return;
@@ -69,6 +72,7 @@ export default function CreatePlaylistScreen() {
       showToast({ message: t('createPlaylist.channelNotFound'), variant: 'error' });
       return;
     }
+    createLockRef.current = true;
     createMutation.mutate({
       channelId,
       title: title.trim(),
@@ -121,6 +125,7 @@ export default function CreatePlaylistScreen() {
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} 
         />
       
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
           contentContainerStyle={[
             styles.content,
@@ -225,8 +230,9 @@ export default function CreatePlaylistScreen() {
             />
           </Animated.View>
         </ScrollView>
+        </KeyboardAvoidingView>
       </View>
-  
+
     </ScreenErrorBoundary>
   );
 }

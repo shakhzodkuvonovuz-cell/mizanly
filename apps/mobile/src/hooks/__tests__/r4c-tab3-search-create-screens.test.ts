@@ -83,10 +83,17 @@ describe('R4C-Tab3: search.tsx', () => {
   });
 
   test('AsyncStorage writes have .catch()', () => {
-    // Search history saves should have .catch() — check that at least one exists
-    // The regex needs to account for multi-line setItem calls
     const hasCatch = src.includes('setItem') && src.includes('.catch(() => {})');
     expect(hasCatch).toBe(true);
+  });
+
+  test('explore query has staleTime to prevent excess refetch', () => {
+    expect(src).toContain('staleTime: 30_000');
+  });
+
+  test('tab bar has animated entrance', () => {
+    expect(src).toContain('Animated.View');
+    expect(src).toContain('FadeInUp.duration(200)');
   });
 });
 
@@ -133,6 +140,13 @@ describe('R4C-Tab3: search-results.tsx', () => {
   test('clear button has haptic feedback', () => {
     expect(src).toContain('haptic.tick()');
   });
+
+  test('header spacer uses dynamic insets not fixed height', () => {
+    expect(src).toContain('insets.top + 52');
+    // Should NOT have the old fixed headerSpacer style
+    const stylesSection = src.slice(src.indexOf('const createStyles'));
+    expect(stylesSection).not.toContain('headerSpacer');
+  });
 });
 
 // ── send-tip.tsx ──
@@ -175,6 +189,15 @@ describe('R4C-Tab3: send-tip.tsx', () => {
   test('amountButton uses percentage width', () => {
     const stylesSection = src.slice(src.indexOf('const createStyles'));
     expect(stylesSection).toContain("width: '31%'");
+  });
+
+  test('has KeyboardAvoidingView', () => {
+    expect(src).toContain('KeyboardAvoidingView');
+  });
+
+  test('resets success state on blur via useFocusEffect', () => {
+    expect(src).toContain('useFocusEffect');
+    expect(src).toContain('setIsSuccess(false)');
   });
 });
 
@@ -275,6 +298,19 @@ describe('R4C-Tab3: create-event.tsx', () => {
   test('no dead Dimensions.get import', () => {
     expect(src).not.toContain("const { width } = Dimensions.get('window')");
   });
+
+  test('communities fetched via useQuery not useEffect', () => {
+    expect(src).toContain("useQuery");
+    expect(src).toContain("queryKey: ['my-communities']");
+    // Should NOT have the old manual fetch pattern
+    expect(src).not.toContain('setCommunities(');
+    expect(src).not.toContain('setCommunitiesLoading(');
+  });
+
+  test('community dropdown is not a Pressable', () => {
+    // The dropdown display should be a plain View, not interactive Pressable
+    expect(src).not.toContain("accessibilityLabel={t('events.postToCommunity')} style={[styles.communityDropdown");
+  });
 });
 
 // ── create-group.tsx ──
@@ -302,6 +338,11 @@ describe('R4C-Tab3: create-group.tsx', () => {
   test('SafeAreaView includes bottom edge', () => {
     expect(src).toContain("edges={['top', 'bottom']}");
   });
+
+  test('has double-tap guard ref on create mutation', () => {
+    expect(src).toContain('createLockRef');
+    expect(src).toContain('if (createLockRef.current) return');
+  });
 });
 
 // ── create-playlist.tsx ──
@@ -321,6 +362,15 @@ describe('R4C-Tab3: create-playlist.tsx', () => {
     const stylesSection = src.slice(src.indexOf('const createStyles'));
     expect(stylesSection).not.toContain('colors.text.primary');
     expect(stylesSection).not.toContain('colors.text.secondary');
+  });
+
+  test('has double-tap guard ref on create mutation', () => {
+    expect(src).toContain('createLockRef');
+    expect(src).toContain('if (createLockRef.current) return');
+  });
+
+  test('has KeyboardAvoidingView', () => {
+    expect(src).toContain('KeyboardAvoidingView');
   });
 });
 

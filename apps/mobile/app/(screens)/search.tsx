@@ -11,6 +11,7 @@ import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
@@ -255,6 +256,7 @@ export default function SearchScreen() {
     queryKey: ['explore-trending'],
     queryFn: ({ pageParam }) => feedApi.getTrending(pageParam as string | undefined),
     enabled: showExplore,
+    staleTime: 30_000,
     getNextPageParam: (last) => last.meta?.cursor ?? undefined,
     initialPageParam: undefined as string | undefined,
   });
@@ -304,11 +306,13 @@ export default function SearchScreen() {
       </View>
 
       {isSearching && (
-        <TabSelector
-          tabs={SEARCH_TABS.map((tab) => ({ key: tab.key, label: tab.label }))}
-          activeKey={activeTab}
-          onTabChange={(k) => setActiveTab(k as SearchTab)}
-        />
+        <Animated.View entering={FadeInUp.duration(200)}>
+          <TabSelector
+            tabs={SEARCH_TABS.map((tab) => ({ key: tab.key, label: tab.label }))}
+            activeKey={activeTab}
+            onTabChange={(k) => setActiveTab(k as SearchTab)}
+          />
+        </Animated.View>
       )}
 
       {searchQuery.isLoading ? (

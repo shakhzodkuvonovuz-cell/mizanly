@@ -7,6 +7,7 @@ import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Avatar } from '@/components/ui/Avatar';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -155,6 +156,7 @@ export default function SearchResultsScreen() {
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const haptic = useContextualHaptic();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ query: string }>();
   const initialQuery = params.query || '';
   const [query, setQuery] = useState(initialQuery);
@@ -323,7 +325,7 @@ export default function SearchResultsScreen() {
           title={t('screens.search-results.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
         />
-        <View style={styles.headerSpacer} />
+        <View style={{ height: insets.top + 52 }} />
 
         {/* Search Box - Glassmorphism */}
         <Animated.View entering={FadeInUp.delay(0).duration(400)} style={styles.searchBoxWrap}>
@@ -618,7 +620,6 @@ export default function SearchResultsScreen() {
 
 const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: { flex: 1, backgroundColor: tc.bg },
-  headerSpacer: { height: 100 },
   searchBoxWrap: {
     paddingHorizontal: spacing.base,
     paddingBottom: spacing.md,

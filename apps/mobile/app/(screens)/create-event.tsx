@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { Avatar } from '@/components/ui/Avatar';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
+import { useQuery } from '@tanstack/react-query';
 import { eventsApi } from '@/services/eventsApi';
 import { communitiesApi } from '@/services/communitiesApi';
 import type { CreateEventDto, EventPrivacy, EventType as ApiEventType } from '@/types/events';
@@ -71,8 +72,16 @@ export default function CreateEventScreen() {
   });
   const [showDatePicker, setShowDatePicker] = useState<'start' | 'end' | null>(null);
   const [tempDate, setTempDate] = useState(new Date());
-  const [communities, setCommunities] = useState<Community[]>([]);
-  const [communitiesLoading, setCommunitiesLoading] = useState(false);
+  const communitiesQuery = useQuery({
+    queryKey: ['my-communities'],
+    queryFn: async () => {
+      const response = await communitiesApi.list();
+      const items = Array.isArray(response) ? response : (response as { data?: Community[] }).data ?? [];
+      return items;
+    },
+  });
+  const communities = communitiesQuery.data ?? [];
+  const communitiesLoading = communitiesQuery.isLoading;
 
   const pickCoverPhoto = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -88,22 +97,7 @@ export default function CreateEventScreen() {
     }
   };
 
-  useEffect(() => {
-    const fetchCommunities = async () => {
-      setCommunitiesLoading(true);
-      try {
-        const response = await communitiesApi.list();
-        const items = Array.isArray(response) ? response : (response as { data?: Community[] }).data ?? [];
-        setCommunities(items);
-      } catch (err) {
-        // Silently fail - communities optional for event creation
-        if (__DEV__) console.error('Failed to fetch communities:', err);
-      } finally {
-        setCommunitiesLoading(false);
-      }
-    };
-    fetchCommunities();
-  }, []);
+  // D11#17: Communities now fetched via useQuery (was manual useEffect)
 
   useEffect(() => {
     if (showDatePicker === 'start') {

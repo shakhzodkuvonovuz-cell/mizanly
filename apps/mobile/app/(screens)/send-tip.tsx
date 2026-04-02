@@ -6,10 +6,10 @@ import {
   ScrollView,
   Pressable,
   TextInput,
-  Dimensions, useWindowDimensions,
+  Dimensions, useWindowDimensions, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -100,6 +100,11 @@ export default function SendTipScreen() {
   const sendLockRef = useRef(false);
   // D33#53: Dynamic width for responsive layout
   const { width } = useWindowDimensions();
+
+  // D33#57: Reset stale success state on back-forward navigation
+  useFocusEffect(useCallback(() => {
+    return () => { setIsSuccess(false); };
+  }, []));
 
   const formattedFollowers = useMemo(
     () => formatCount(creator?._count?.followers),
@@ -271,6 +276,7 @@ export default function SendTipScreen() {
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
 
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
           refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           contentContainerStyle={styles.scrollContent}
@@ -431,8 +437,9 @@ export default function SendTipScreen() {
           {/* Bottom spacing */}
           <View style={{ height: spacing.xxl }} />
         </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
-  
+
     </ScreenErrorBoundary>
   );
 }

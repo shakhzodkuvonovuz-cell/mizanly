@@ -77,6 +77,7 @@ export default function CreateGroupScreen() {
     }
   };
 
+  const createLockRef = useRef(false);
   const createMutation = useMutation({
     mutationFn: async () => {
       // Upload avatar if selected
@@ -109,6 +110,7 @@ export default function CreateGroupScreen() {
         showToast({ message: err.message || t('groups.couldNotCreateGroup'), variant: 'error' });
       }
     },
+    onSettled: () => { createLockRef.current = false; },
   });
 
   const handleAddMember = (user: User) => {
@@ -297,10 +299,8 @@ export default function CreateGroupScreen() {
             <GradientButton
               label={t('common.create')}
               onPress={() => {
-                if (selectedMembers.length < MIN_MEMBERS) {
-                  setValidationError(t('groups.pleaseAddMembers', { count: MIN_MEMBERS }));
-                  return;
-                }
+                if (createLockRef.current) return;
+                createLockRef.current = true;
                 createMutation.mutate();
               }}
               loading={createMutation.isPending}

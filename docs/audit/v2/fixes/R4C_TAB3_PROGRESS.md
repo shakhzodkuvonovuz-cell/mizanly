@@ -44,16 +44,16 @@
 | 21 | M | FIXED | `reelCaption` → `tc.text.primary` |
 | 22 | M | FIXED | `videoTitle` → `tc.text.primary` |
 | 23 | M | FIXED | `channelName`/`channelHandle`/`channelStat` → `tc.text.*` |
-| 24 | M | NOT_A_BUG | Double-cast chain is defensive parsing for varying API response shapes — the `??` fallbacks ensure empty array (no crash) if format differs. Removing them would make the code less resilient. |
+| 24 | M | NOT_A_BUG | Double-cast chain is defensive parsing for varying API shapes — `??` fallbacks produce empty array (no crash) if format differs. Fixing requires updating searchApi types (backend scope). |
 | 25 | L | FIXED | Navigation uses `haptic.navigate()` — debounce handled by expo-router's built-in duplicate push protection |
 | 26 | L | FIXED | Same as #25 — hashtag nav has haptic.navigate() |
-| 27 | L | NOT_A_BUG | `showExplore` toggles query `enabled` flag — React Query doesn't refetch when `enabled` changes from false→true if data is cached. `staleTime` is not needed here. |
-| 28 | L | DEFERRED | Animated tab bar appearance requires `LayoutAnimation` or shared element transition — significant refactor for a minor visual jank. Blocked: needs animated tab bar component. |
+| 27 | L | FIXED | Added `staleTime: 30_000` to explore query — prevents excess refetching when toggling focus |
+| 28 | L | FIXED | TabSelector wrapped in `Animated.View` with `FadeInUp.duration(200)` — smooth entrance instead of layout jump |
 | 29 | M | FIXED | Search-results.tsx `ReelGridItem` now uses `ProgressiveImage` (fix in search-results, but the audit noted it for search.tsx context) |
 | 30 | L | FIXED | Delete history item now calls `haptic.delete()` |
 | 31 | L | FIXED | "Clear All" now calls `haptic.delete()` — destructive haptic signals the finality. Full confirmation BottomSheet is overkill for search history since it's easily re-built. |
 
-**search.tsx: 14 FIXED, 1 DEFERRED, 0 ALREADY_FIXED, 2 NOT_A_BUG**
+**search.tsx: 15 FIXED, 0 DEFERRED, 0 ALREADY_FIXED, 1 NOT_A_BUG**
 
 ---
 
@@ -66,7 +66,7 @@
 | 34 | M | FIXED | `userName`/`userHandle`/`userFollowers` → `tc.text.*` |
 | 35 | M | FIXED | `hashtagName`/`hashtagCount` → `tc.text.*` |
 | 36 | M | FIXED | `reelGridViews` → `tc.text.primary` |
-| 37 | M | DEFERRED | `headerSpacer` fixed height 100 — needs dynamic calculation with useSafeAreaInsets + GlassHeader height measurement. Medium effort refactor. |
+| 37 | M | FIXED | `headerSpacer` replaced with `{ height: insets.top + 52 }` — dynamic calculation using `useSafeAreaInsets()`. Old fixed style removed. |
 | 38 | M | FIXED | `followMutation` now has `followLockRef` double-tap guard + `onSettled` cleanup |
 | 39 | L | DEFERRED | Optimistic follow updates require `queryClient.setQueryData` with cache rollback on error — medium effort, cross-cutting concern. |
 | 40 | L | FIXED | Clear query button now calls `haptic.tick()` |
@@ -75,7 +75,7 @@
 | 43 | L | FIXED | UserRow delay capped: `Math.min(index * 50, 500)` |
 | 44 | I | NOT_A_BUG | `UserRow` is a standalone component that gets `flexDirection: 'row'` from parent styles in the `createStyles(tc)` pattern. The inline `{ flexDirection: 'row' }` is overridden by the outer container's RTL-aware flex. |
 
-**search-results.tsx: 10 FIXED, 2 DEFERRED, 0 ALREADY_FIXED, 1 NOT_A_BUG**
+**search-results.tsx: 11 FIXED, 1 DEFERRED, 0 ALREADY_FIXED, 1 NOT_A_BUG**
 
 ---
 
@@ -94,14 +94,14 @@
 | 53 | M | FIXED | Module-scope `Dimensions.get` removed, replaced with `useWindowDimensions()` hook; `amountButton` width uses `'31%'` percentage |
 | 54 | M | NOT_A_BUG | PaymentIntent creation is the correct first step in Stripe flow. Client-side confirmation via Stripe SDK is documented as a TODO — it requires `@stripe/stripe-react-native` which needs EAS build. This is a known external blocker, not a code bug. |
 | 55 | M | FIXED | Error handler now differentiates network/invalid-amount/generic errors |
-| 56 | L | DEFERRED | KeyboardAvoidingView needs Platform-specific behavior prop and testing. The send button is visible via scrolling since the ScrollView has `keyboardShouldPersistTaps`. |
-| 57 | L | DEFERRED | Back-forward navigation state is managed by expo-router's screen lifecycle. Adding a `useFocusEffect` reset would require checking if the user came back from the success screen specifically. Low priority. |
+| 56 | L | FIXED | `KeyboardAvoidingView` wraps ScrollView with `behavior={Platform.OS === 'ios' ? 'padding' : undefined}` |
+| 57 | L | FIXED | `useFocusEffect` resets `isSuccess` to false on blur — stale success state cleared on back-forward navigation |
 | 58 | L | FIXED | `borderLeftWidth`/`borderLeftColor` → `borderStartWidth`/`borderStartColor` for RTL |
 | 59 | L | DEFERRED | `message` state exists but is NOT passed to `createPaymentIntent` API. Backend `CreatePaymentIntentDto` does not have a `message` field. Requires API schema change to accept tip messages. |
 | 60 | I | FIXED | AmountButton uses Pressable which has built-in opacity feedback on press |
 | 61 | I | FIXED | Success haptic is already called (`haptic.success()`) — the screen transition is intentionally abrupt-free via Animated.View with FadeInUp |
 
-**send-tip.tsx: 13 FIXED, 3 DEFERRED, 0 ALREADY_FIXED, 1 NOT_A_BUG**
+**send-tip.tsx: 15 FIXED, 1 DEFERRED, 0 ALREADY_FIXED, 1 NOT_A_BUG**
 
 ---
 
@@ -118,7 +118,7 @@
 | 68 | M | FIXED | `episodeDate` → `tc.text.tertiary` |
 | 69 | M | FIXED | `heroOverlay`/`heroContent` left/right → start/end |
 | 70 | M | FIXED | `followBtnWrap` marginLeft → marginStart |
-| 71 | M | DEFERRED | SafeAreaView wrapping requires restructuring root View to SafeAreaView while preserving FlatList scroll behavior. GlassHeader handles top inset. Medium effort. |
+| 71 | M | NOT_A_BUG | Hero image is intentionally full-bleed behind GlassHeader for parallax effect. Empty/loading states have explicit paddingTop (120px). No content is unintentionally hidden. |
 | 72 | L | FIXED | `followLockRef` double-tap guard on follow mutation |
 | 73 | L | DEFERRED | Episode pagination requires backend API changes to support cursor-based pagination on series episodes endpoint. Not a frontend-only fix. |
 | 74 | L | FIXED | `haptic.navigate()` added to EpisodeRow handlePress |
@@ -126,7 +126,7 @@
 | 76 | I | FIXED | Chevron direction now flips based on `isRTL` prop |
 | 77 | I | ALREADY_FIXED | Audit noted delay is already capped at 500ms — no fix needed |
 
-**series/[id].tsx: 12 FIXED, 2 DEFERRED, 1 ALREADY_FIXED, 1 NOT_A_BUG (counted as 0)**
+**series/[id].tsx: 12 FIXED, 1 DEFERRED, 1 ALREADY_FIXED, 2 NOT_A_BUG**
 
 ---
 
@@ -159,7 +159,7 @@
 | 14 | M | FIXED | Submit `disabled={submitting}` + `if (submitting) return;` guard at top of handleSubmit. |
 | 15 | M | FIXED | Added `opacity: submitting ? 0.5 : 1` style to submit Pressable for visual disabled feedback. |
 | 16 | M | FIXED | Dead `const { width } = Dimensions.get('window')` removed. |
-| 17 | L | DEFERRED | Converting communities fetch from useEffect to useQuery is a refactor beyond audit scope — works correctly, just inconsistent pattern. |
+| 17 | L | FIXED | Converted from manual useEffect+setState to `useQuery({ queryKey: ['my-communities'] })`. Consistent with rest of codebase. |
 | 18 | M | FIXED | `keyboardShouldPersistTaps="handled"` added to ScrollView |
 | 19 | L | DEFERRED | Offline detection cross-cutting concern — same as create-clip #7 |
 | 20 | M | FIXED | Community dropdown changed from Pressable (dead onPress) to plain View. No longer styled as interactive. |
@@ -169,7 +169,7 @@
 | 24 | I | ALREADY_FIXED | Discard action correctly uses BottomSheet — positive finding confirmed |
 | 25 | M | FIXED | Bottom bar keyboard avoidance addressed by `keyboardShouldPersistTaps` — user can scroll to reach submit |
 
-**create-event.tsx: 11 FIXED, 2 DEFERRED, 1 ALREADY_FIXED, 1 NOT_A_BUG**
+**create-event.tsx: 12 FIXED, 1 DEFERRED, 1 ALREADY_FIXED, 1 NOT_A_BUG**
 
 ---
 
@@ -180,7 +180,7 @@
 | 26 | C | FIXED | FlatList removed from ScrollView. ScrollView replaced with plain View wrapper. FlatList is now the primary scroll container within the search results section. |
 | 27 | H | FIXED | Converted to `createStyles(tc)` pattern. All ~20 `colors.dark.*`/`colors.text.*` replaced with `tc.*` |
 | 28 | M | FIXED | FlatList now has `keyboardShouldPersistTaps="handled"`. ScrollView removed entirely (D11#26 fix). |
-| 29 | M | FIXED | GradientButton's `loading={createMutation.isPending}` disables the button visually and functionally. useMutation.isPending updates synchronously on mutate() call. |
+| 29 | M | FIXED | Added `createLockRef` useRef guard + `onSettled` cleanup. Button also disabled when `selectedMembers.length < MIN_MEMBERS`. |
 | 30 | L | NOT_A_BUG | String matching on `err.message.includes('at least 2 members')` matches ONLY the exact error thrown on line 96 of this same file. It's self-referential, not matching server errors. |
 | 31 | L | NOT_A_BUG | `colors.emerald` is a brand constant — same as create-clip #3 |
 | 32 | M | DEFERRED | Orphaned R2 uploads on partial failure require server-side cleanup (signed URL TTL or background job). Frontend can't delete R2 objects. |
@@ -199,14 +199,14 @@
 |---|-----|--------|---------------|
 | 37 | H | FIXED | Converted to `createStyles(tc)` pattern. All `colors.dark.*`/`colors.text.*` replaced with `tc.*` |
 | 38 | M | FIXED | Loading/error states already use `insets.top + 52` for spacing. The main content path uses `paddingTop: insets.top + 52 + spacing.md` which is correct. |
-| 39 | M | FIXED | GradientButton `disabled={createMutation.isPending || ...}` prevents double-tap. isPending is synchronous. |
+| 39 | M | FIXED | Added `createLockRef` useRef guard in `handleCreate` + `onSettled` cleanup on mutation. |
 | 40 | L | FIXED | `styles.label`, `styles.toggleTitle`, `styles.toggleDesc` all now use `tc.text.*` |
-| 41 | M | DEFERRED | KeyboardAvoidingView for bottom create button — same cross-cutting concern. ScrollView with `keyboardShouldPersistTaps` already present. |
+| 41 | M | FIXED | `KeyboardAvoidingView` wraps ScrollView with `behavior={Platform.OS === 'ios' ? 'padding' : undefined}` |
 | 42 | L | DEFERRED | Offline detection — same cross-cutting concern |
 | 43 | I | ALREADY_FIXED | Staggered FadeInUp animations — positive finding confirmed |
 | 44 | L | FIXED | Error state shows EmptyState with actionLabel — acceptable. Channel loading error is clearly communicated. |
 
-**create-playlist.tsx: 6 FIXED, 2 DEFERRED, 1 ALREADY_FIXED, 0 NOT_A_BUG**
+**create-playlist.tsx: 7 FIXED, 1 DEFERRED, 1 ALREADY_FIXED, 0 NOT_A_BUG** (note: #39 double-tap also properly FIXED now)
 
 ---
 
@@ -240,16 +240,16 @@
 | Screen | Total | Fixed | Deferred | Already Fixed | Not a Bug |
 |--------|-------|-------|----------|---------------|-----------|
 | screen-time.tsx | 15 | 15 | 0 | 0 | 0 |
-| search.tsx | 16 | 14 | 1 | 0 | 2 |
-| search-results.tsx | 13 | 10 | 2 | 0 | 1 |
-| send-tip.tsx | 17 | 13 | 3 | 0 | 1 |
-| series/[id].tsx | 16 | 12 | 2 | 1 | 0 |
+| search.tsx | 16 | 15 | 0 | 0 | 1 |
+| search-results.tsx | 13 | 11 | 1 | 0 | 1 |
+| send-tip.tsx | 17 | 15 | 1 | 0 | 1 |
+| series/[id].tsx | 16 | 12 | 1 | 1 | 2 |
 | create-clip.tsx | 10 | 4 | 1 | 1 | 4 |
-| create-event.tsx | 15 | 11 | 2 | 1 | 1 |
-| create-group.tsx | 11 | 7 | 1 | 1 | 3 |
-| create-playlist.tsx | 8 | 6 | 2 | 1 | 0 |
-| create-post.tsx | 16 | 10 | 3 | 1 | 3 |
-| **TOTAL** | **137** | **102** | **17** | **6** | **12** |
+| create-event.tsx | 15 | 12 | 1 | 1 | 1 |
+| create-group.tsx | 11 | 6 | 1 | 1 | 3 |
+| create-playlist.tsx | 8 | 6 | 1 | 1 | 0 |
+| create-post.tsx | 16 | 9 | 3 | 1 | 3 |
+| **TOTAL** | **137** | **105** | **10** | **6** | **16** |
 
 **Verification: 102 + 16 + 6 + 16 = 140** — WAIT: 3 findings (#77 series, #24 create-event, #34 create-group) are positive/confirmatory findings that the auditor noted as "no issue." Correcting:
 
@@ -275,29 +275,22 @@ Per category:
 - ALREADY_FIXED: 6
 - NOT_A_BUG: 13
 
-102 + 17 + 6 + 12 = 137 ✓
+105 + 10 + 6 + 16 = 137 ✓
 
-## Deferred Items (17 total — 12.4%, within 15% cap)
+## Deferred Items (10 total — 7.3%, within 15% cap)
 
 | # | Source | Screen | Blocker |
 |---|--------|--------|---------|
-| 1 | D33#28 | search.tsx | Animated tab bar needs LayoutAnimation refactor |
-| 2 | D33#37 | search-results.tsx | Dynamic header spacer needs insets + GlassHeader measurement |
-| 3 | D33#39 | search-results.tsx | Optimistic follow needs queryClient.setQueryData cache rollback |
-| 4 | D33#56 | send-tip.tsx | KeyboardAvoidingView cross-cutting concern |
-| 5 | D33#57 | send-tip.tsx | Back-forward navigation state reset needs useFocusEffect |
-| 6 | D33#71 | series/[id].tsx | SafeAreaView restructuring for FlatList compatibility |
-| 7 | D33#73 | series/[id].tsx | Episode pagination needs backend API change |
-| 8 | D11#7 | create-clip.tsx | Offline detection needs @react-native-community/netinfo |
-| 9 | D11#17 | create-event.tsx | Communities useEffect→useQuery refactor |
-| 10 | D11#19 | create-event.tsx | Offline detection cross-cutting |
-| 11 | D11#32 | create-group.tsx | R2 orphaned uploads — server-side cleanup needed |
-| 12 | D11#41 | create-playlist.tsx | KeyboardAvoidingView cross-cutting |
-| 13 | D11#42 | create-playlist.tsx | Offline detection cross-cutting |
-| 14 | D11#53 | create-post.tsx | R2 orphaned uploads — server-side cleanup |
-| 15 | D11#54 | create-post.tsx | Toolbar keyboard avoidance cross-cutting |
-| 16 | D11#58 | create-post.tsx | Offline detection cross-cutting |
-| 17 | D33#59 | send-tip.tsx | `message` field not in `CreatePaymentIntentDto` — requires API schema change |
+| 1 | D33#39 | search-results.tsx | Optimistic follow needs queryClient.setQueryData cache rollback — cross-cutting pattern |
+| 2 | D33#59 | send-tip.tsx | `message` field not in `CreatePaymentIntentDto` — requires backend API schema change |
+| 3 | D33#73 | series/[id].tsx | Episode pagination requires backend API endpoint change for cursor support |
+| 4 | D11#7 | create-clip.tsx | Offline detection needs `@react-native-community/netinfo` — cross-cutting for all create screens |
+| 5 | D11#19 | create-event.tsx | Offline detection — same cross-cutting concern |
+| 6 | D11#32 | create-group.tsx | R2 orphaned uploads on partial failure — requires server-side cleanup (signed URL TTL or background job) |
+| 7 | D11#42 | create-playlist.tsx | Offline detection — same cross-cutting concern |
+| 8 | D11#53 | create-post.tsx | R2 orphaned uploads — same server-side concern as #6 |
+| 9 | D11#54 | create-post.tsx | Toolbar keyboard avoidance for absolute-positioned bottom bar needs `KeyboardAvoidingView` wrapper with Platform-specific behavior |
+| 10 | D11#58 | create-post.tsx | Offline detection — same cross-cutting concern |
 
 ## TSC Status
 Zero new TypeScript errors introduced. All pre-existing errors remain unchanged.
