@@ -417,7 +417,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   segmentBadgeText: {
     color: '#fff',
     fontSize: fontSize.xs,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   cardInfo: {
     padding: spacing.sm,

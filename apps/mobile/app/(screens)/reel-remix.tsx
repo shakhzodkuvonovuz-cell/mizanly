@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
-  Dimensions, Alert, ScrollView,
+  Dimensions, Alert, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -294,10 +294,16 @@ export default function ReelRemixScreen() {
             }}
           />
 
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={insets.top + 52}
+          >
           <ScrollView
             style={styles.scrollView}
             contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 52 }]}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
             refreshControl={
               <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
@@ -425,6 +431,7 @@ export default function ReelRemixScreen() {
 
             <View style={{ height: spacing['2xl'] }} />
           </ScrollView>
+          </KeyboardAvoidingView>
 
           {/* Autocomplete sheet */}
           <BottomSheet

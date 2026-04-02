@@ -7,7 +7,10 @@ import {
   Pressable,
   Alert,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -42,6 +45,7 @@ export default function ReportScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const haptic = useContextualHaptic();
+  const insets = useSafeAreaInsets();
   const [selectedReason, setSelectedReason] = useState<string>('');
   const [details, setDetails] = useState('');
 
@@ -115,18 +119,23 @@ export default function ReportScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
           title={t('screens.report.title')}
-          leftAction={{ 
-            icon: 'arrow-left', 
+          leftAction={{
+            icon: 'arrow-left',
             onPress: () => router.back(),
             accessibilityLabel: t('accessibility.goBack')
           }}
         />
         <View style={styles.headerSpacer} />
 
-        <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={insets.top + 56}
+        >
+        <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
           <Animated.View entering={FadeInUp.delay(0).duration(400)}>
             <LinearGradient
               colors={['rgba(248,81,73,0.1)', 'rgba(200,150,62,0.05)']}
@@ -221,8 +230,8 @@ export default function ReportScreen() {
             />
           </Animated.View>
         </ScrollView>
-      </View>
-  
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </ScreenErrorBoundary>
   );
 }
@@ -295,7 +304,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   reasonLabelSelected: {
     color: colors.emerald,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   checkIconBg: {
     width: 24,

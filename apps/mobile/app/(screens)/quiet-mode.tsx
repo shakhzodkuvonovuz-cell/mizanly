@@ -401,7 +401,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   toggleCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(45,53,72,0.3)',
+    borderColor: tc.border,
     overflow: 'hidden',
   },
   toggleRow: {
@@ -435,12 +435,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   card: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(45,53,72,0.3)',
+    borderColor: tc.border,
     overflow: 'hidden',
   },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(45,53,72,0.5)',
+    backgroundColor: tc.border,
     marginStart: spacing.base + 40,
   },
 
@@ -460,7 +460,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    backgroundColor: 'rgba(45,53,72,0.5)',
+    backgroundColor: tc.surface,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.md,
@@ -517,7 +517,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   infoTitle: {
     color: colors.gold,
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   infoBody: {
     color: tc.text.secondary,

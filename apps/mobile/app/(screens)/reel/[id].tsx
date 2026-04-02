@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-// GlassHeader handles safe area insets internally
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
@@ -141,7 +141,8 @@ function CommentRow({
 
 export default function ReelDetailScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const insets = useSafeAreaInsets();
+  const styles = createStyles(tc, insets);
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useUser();
@@ -689,7 +690,7 @@ export default function ReelDetailScreen() {
   );
 }
 
-const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>, insets: { bottom: number } = { bottom: 0 }) => StyleSheet.create({
   container: { flex: 1, backgroundColor: tc.bg },
   // Header is now handled by GlassHeader component
   reelContainer: {
@@ -745,7 +746,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   reelUsername: {
     color: colors.text.primary,
     fontSize: fontSize.sm,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
   },
   reelDisplayName: {
     color: colors.text.secondary,
@@ -760,7 +761,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   followButtonText: {
     color: colors.text.primary,
     fontSize: fontSize.sm,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
   },
   reelCaption: {
     color: colors.text.primary,
@@ -838,24 +839,24 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   commentLikesLabel: {
     color: tc.text.secondary,
     fontSize: fontSize.xs,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   commentAction: {
     color: tc.text.secondary,
     fontSize: fontSize.xs,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
   },
   commentActionDestructive: {
     color: colors.error,
     fontSize: fontSize.xs,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
   },
   commentLike: { paddingTop: spacing.xs },
   inputWrap: {
     borderTopWidth: 0.5,
     borderTopColor: tc.border,
     backgroundColor: tc.bg,
-    paddingBottom: Platform.OS === 'ios' ? spacing.base : spacing.sm,
+    paddingBottom: Math.max(insets.bottom, spacing.sm),
   },
   replyBanner: {
     flexDirection: 'row',
@@ -886,7 +887,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   sendBtn: {
     color: colors.emerald,
     fontSize: fontSize.base,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
   },
   sendBtnDisabled: {
     color: tc.text.tertiary,
