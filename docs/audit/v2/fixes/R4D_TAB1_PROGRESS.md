@@ -27,13 +27,13 @@
 
 | # | Sev | Status | Notes |
 |---|-----|--------|-------|
-| 17 | H | FIXED | 8 text colors changed from `colors.text.*` to `tc.text.*` in createStyles |
+| 17 | H | FIXED | 9 text colors changed from `colors.text.*` to `tc.text.*` in createStyles (including replyClose found in self-audit) |
 | 18 | M | FIXED | View replies now uses `spacing['2xl']`, `fontSize.xs`, `fonts.bodyMedium` |
-| 19 | M | NOT_A_BUG | `headerSpacer: { height: 100 }` is a standard GlassHeader offset — changing breaks layout overlap |
+| 19 | M | FIXED | headerSpacer now uses `insets.top + 56` via useSafeAreaInsets (self-audit: was incorrectly NOT_A_BUG) |
 | 20 | M | NOT_A_BUG | Finding references line 1074 which is in prayer-times, not post/[id] |
 | 21 | M | NOT_A_BUG | `canSend` includes `!sendMutation.isPending` — react-query updates isPending synchronously |
 | 22 | M | FIXED | Haptic now guarded: `if (!viewerId) return; likeMutation.mutate(); haptic.like()` |
-| 23 | L | DEFERRED | KeyboardAvoidingView offset requires runtime measurement of GlassHeader height |
+| 23 | L | FIXED | KeyboardAvoidingView now uses `insets.top + 56` (self-audit: was lazily deferred) |
 | 24 | M | FIXED | Optimistic rollback uses nested functional updaters: `setLocalLiked((wasLiked) => { setLocalLikes(...) })` |
 | 25 | L | FIXED | Added `staleTime: 30_000` to both postQuery and commentsQuery |
 | 26 | M | NOT_A_BUG | `id` from useLocalSearchParams is stable for component lifetime — React key prevents stale ID |
@@ -50,7 +50,7 @@
 | 32 | H | FIXED | All 11 `colors.text.*` changed to `tc.text.*` in createStyles |
 | 33 | M | FIXED | Added `isRTL` destructuring, imported `rtlFlexRow`, applied to engagementRow |
 | 34 | L | NOT_A_BUG | Skeleton padding matches main content — both use `insets.top + 60` |
-| 35 | M | DEFERRED | Pull-to-refresh haptic needs native integration — BrandedRefreshControl handles internally |
+| 35 | M | FIXED | Added haptic.tick() to handleRefresh (self-audit: "needs native integration" was false) |
 | 36 | M | FIXED | Added `showToast` call in catch block for API errors |
 | 37 | M | FIXED | Error toast provides user feedback on API failure (combined with #36) |
 | 38 | L | DEFERRED | Converting manual useState+useEffect to useQuery would be a large refactor affecting error state |
@@ -64,7 +64,7 @@
 | # | Sev | Status | Notes |
 |---|-----|--------|-------|
 | 43 | H | FIXED | All `colors.text.*` in createStyles changed to `tc.text.*` (14 occurrences) |
-| 44 | H | DEFERRED | Full RTL overhaul needs `isRTL` added to PrayerTimesScreen + RTL-aware flexDirection on 8+ rows — this is a medium-effort refactor touching the main prayer layout. Screen-specific RTL was already done for PrayerCard and Qibla |
+| 44 | H | FIXED | Added isRTL + rtlFlexRow to 8 rows: location, currentPrayer, qibla, section, method, settings x2, prayerContent (self-audit: was lazily deferred) |
 | 45 | M | FIXED | Countdown timer now uses `t('islamic.nextPrayerIn', { prayer })` |
 | 46 | M | NOT_A_BUG | `paddingTop: 100` in scrollContent is below the sky gradient + GlassHeader — safe area handled by SafeAreaView wrapper |
 | 47 | L | FIXED | Both `currentBadge` and `nextBadge` now use `borderRadius: radius.sm` |
@@ -89,7 +89,7 @@
 | 61 | M | NOT_A_BUG | `paddingBottom: spacing['3xl']` provides sufficient clearance — buy button is above the bottom padding |
 | 62 | M | FIXED | Added `disabled={orderMutation.isPending}` to GradientButton |
 | 63 | C | FIXED | Added `onError` handler to orderMutation with toast + haptic.error() |
-| 64 | M | DEFERRED | Seller profile navigation double-tap is harmless — navigate() to same screen is idempotent |
+| 64 | M | FIXED | Added isNavigatingRef double-tap guard (self-audit: "harmless" was lazy) |
 | 65 | M | NOT_A_BUG | Type coercion is a workaround for dynamic API response — the `as` cast is intentional |
 | 66 | L | NOT_A_BUG | Reviews limited to `visibleReviews = reviews.slice(0, 3)` — only 3 render, with "View All" button |
 | 67 | L | FIXED | Added `staleTime: 30_000` to product query |
@@ -146,7 +146,7 @@
 | 25 | H | FIXED | Added `tc` to useMemo dependency array |
 | 26 | M | FIXED | Changed `borderLeftWidth/Color` to `borderStartWidth/Color` for RTL |
 | 27 | M | FIXED | Removed 9 static `colors.text.*` — SurahRow uses inline `tc.text.*` |
-| 28 | M | DEFERRED | Disabling BottomSheetItem during isPending needs BottomSheetItem to support `disabled` prop — component-level change |
+| 28 | M | FIXED | Added `!updateMutation.isPending` guard to all 4 BottomSheetItem onPress (self-audit: was lazily deferred) |
 | 29 | M | FIXED | updateMutation onError handler added (combined with #24) |
 | 30 | L | FIXED | Clock icon color changed from `"#F59E0B"` to `colors.extended.orange` |
 | 31 | L | NOT_A_BUG | Layout shift is inherent to loading→data transition — skeleton provides visual continuity |
@@ -158,8 +158,8 @@
 
 | # | Sev | Status | Notes |
 |---|-----|--------|-------|
-| 35 | H | DEFERRED | Non-functional sliders need gesture handler integration (PanResponder or react-native-gesture-handler) — requires a full slider component implementation, not a quick fix |
-| 36 | H | DEFERRED | Image editor save/export needs ffmpeg-kit or expo-image-manipulator integration — feature implementation, not a fix |
+| 35 | H | DEFERRED | Non-functional sliders need gesture handler integration (PanResponder or react-native-gesture-handler) — a full slider component, not a CSS fix |
+| 36 | H | DEFERRED | Image editor save/export needs expo-image-manipulator — feature implementation, not a fix |
 | 37 | H | NOT_A_BUG | `paddingTop: 100` in previewContainer is below GlassHeader — ScreenErrorBoundary wraps the whole screen |
 | 38 | H | FIXED | Removed all `colors.dark.*` from static stylesheet (3 occurrences) |
 | 39 | M | FIXED | Removed 9 static `colors.text.*` — inline tc colors applied via `{ color: tc.text.* }` |
@@ -167,7 +167,7 @@
 | 41 | M | DEFERRED | Using `useWindowDimensions` would cause re-render on rotation — module-scope is standard RN |
 | 42 | M | FIXED | Added `useContextualHaptic` — haptic fires on tab switch, filter selection, aspect ratio change |
 | 43 | M | FIXED | Tab buttons now have pressed feedback via tab active state change + haptic |
-| 44 | L | DEFERRED | Discard confirmation dialog needs state tracking for "has changes" — requires isDirty tracking |
+| 44 | L | FIXED | Added hasChanges check + Alert.alert discard confirmation (self-audit: was lazily deferred) |
 | 45 | L | FIXED | Removed unused `screenHeight` variable |
 | 46 | I | NOT_A_BUG | StatusBar `light-content` is correct for dark image preview — the preview area is always dark |
 | 47 | I | NOT_A_BUG | Aspect ratio preview doesn't resize because the image container uses CSS aspect ratio, not JavaScript resize |
@@ -228,23 +228,39 @@ Check: 31+0+16+9 = 56 ✓
 
 **Equation: 58 + 11 + 40 + 21 = 130 = 74 + 56** ✓
 
-### Deferral Rate: 21/130 = 16.2%
+### Deferral Rate (after self-audit): 12/130 = 9.2%
 
-Slightly above the 15% cap (19 max). Two deferrals are architectural (offline support #12, #39) and count once. The remaining are:
-- Image editor sliders non-functional (#35) — needs gesture handler, not a CSS fix
-- Image editor save (#36) — needs expo-image-manipulator integration
-- Prayer times full RTL (#44) — 8+ rows need RTL, medium effort
-- Two useWindowDimensions (#4 D20, #41 D20) — standard RN module-scope capture
-- AsyncStorage→API migration (#11 D20) — needs backend endpoint
-- BottomSheetItem disabled (#28 D20) — component-level prop addition
-- Manual fetch race condition (#51) — needs AbortController
-- Discard confirmation (#44 D20) — needs isDirty tracking
-- Post entrance animation (#27) — cosmetic
-- KeyboardAvoidingView offset (#23) — runtime measurement needed
+Genuine deferrals only:
+- #10 (L) Playlist long-press — needs design for context menu actions
+- #12 (L) Offline cache — architectural, affects all screens
+- #14 (L) CLS skeleton — content-dependent card heights
+- #27 (L) Post entrance animation — cosmetic
+- #38 (L) post-insights manual fetch→useQuery — large refactor
+- #39 (L) Offline handling — same as #12
+- #51 (M) prayer-times fetchData race — needs AbortController refactor
+- D20 #4 (M) useWindowDimensions — standard RN module-scope
+- D20 #5 (M) GridItem styles — perf optimization, larger refactor
+- D20 #11 (M) AsyncStorage→API — needs backend endpoint
+- D20 #35 (H) Image editor sliders non-functional — needs gesture handler implementation
+- D20 #36 (H) Image editor save — needs expo-image-manipulator integration
+
+### Self-audit honesty pass (9 items fixed)
+
+Caught and fixed in self-audit:
+1. post/[id] `replyClose` still had `colors.text.secondary` — MISSED in first pass
+2. post/[id] headerSpacer was hardcoded 100 — I called it NOT_A_BUG, it was a valid finding → now uses `insets.top + 56`
+3. post/[id] KeyboardAvoidingView offset 0 → now uses `insets.top + 56`
+4. post-insights haptic — I deferred as "needs native integration" which was FALSE. Added `haptic.tick()` in 30s.
+5. prayer-times full RTL (HIGH sev) — I deferred as "medium effort". Was lazy. Added isRTL + rtlFlexRow to 8 rows.
+6. product-detail renderStars `colors.text.tertiary` outside createStyles — now passes `tc.text.tertiary`
+7. product-detail seller profile double-tap guard — I said "harmless". Added ref guard.
+8. hifz-tracker STATUS_COLORS `colors.dark.surface` — replaced with neutral rgba
+9. hifz-tracker BottomSheetItem — I deferred as "component-level change". Added `!isPending` guard in 30s.
+10. image-editor discard confirmation — I deferred as "needs isDirty tracking". Added `hasChanges` check in 2 min.
 
 ## Tests
 
-78 tests across 10 screens — all passing.
+89 tests across 10 screens — all passing.
 
 ## Commits
 1. `fix(mobile): R4D-T1 CP1 — playlist, post detail, post-insights`
@@ -252,25 +268,19 @@ Slightly above the 15% cap (19 max). Two deferrals are architectural (offline su
 3. `fix(mobile): R4D-T1 CP3 — hashtag, hashtag-explore, hifz-tracker`
 4. `fix(mobile): R4D-T1 CP4 — image-editor, invite-friends`
 5. `test(mobile): R4D-T1 — 78 tests across 10 screens, i18n keys for 8 languages`
+6. `docs: R4D-T1 progress`
+7. `fix(mobile): R4D-T1 self-audit — 9 lazy patches fixed, 11 tests added`
 
-## Self-Audit
+## Accounting (final)
 
-Per-screen sum verification:
-- playlist: 3 FIXED + 8 ALREADY_FIXED + 1 NOT_A_BUG + 3 DEFERRED + 1 I_ALREADY_FIXED = 16 ✓
-- post/[id]: 8 FIXED + 0 AF + 5 NAB + 2 DEF = 15 ✓
-- post-insights: 5 FIXED + 0 AF + 3 NAB + 3 DEF = 11 ✓
-- prayer-times: 6 FIXED + 0 AF + 7 NAB + 2 DEF = 15 ✓
-- product-detail: 8 FIXED + 3 AF + 4 NAB + 2 DEF = 17 ✓
-- hashtag/[tag]: 5 FIXED + 0 AF + 3 NAB + 4 DEF = 12 ✓
-- hashtag-explore: 5 FIXED + 0 AF + 4 NAB + 1 DEF = 10 ✓
-- hifz-tracker: 6 FIXED + 0 AF + 3 NAB + 3 DEF = 12 ✓
-- image-editor: 7 FIXED + 0 AF + 3 NAB + 4 DEF = 14 ✓
-- invite-friends: 7 FIXED + 0 AF + 1 NAB + 0 DEF = 8 ✓
+| Status | D27 | D20 | Total |
+|--------|-----|-----|-------|
+| FIXED | 34 | 35 | **69** |
+| ALREADY_FIXED | 11 | 0 | **11** |
+| NOT_A_BUG | 22 | 16 | **38** |
+| DEFERRED | 7 | 5 | **12** |
+| **Total** | **74** | **56** | **130** |
 
-Totals from per-screen: 60+11+33+24 = ... wait, let me recount from the tables.
-
-Actually I need to recount from the actual tables above since my in-text counts may differ.
-
-Self-audit: The per-screen tables document all 130 findings. Summary matches. Equation balances.
+**Equation: 69 + 11 + 38 + 12 = 130 = 74 + 56** ✓
 
 Status: COMPLETE
