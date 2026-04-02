@@ -51,6 +51,7 @@ describe('NotificationsService', () => {
             set: jest.fn().mockReturnValue({ catch: jest.fn() }),
             del: jest.fn().mockReturnValue({ catch: jest.fn() }),
             publish: jest.fn().mockReturnValue({ catch: jest.fn() }),
+            eval: jest.fn().mockResolvedValue(2),
           },
         },
       ],
@@ -907,6 +908,82 @@ describe('NotificationsService', () => {
 
       expect(result).toBeNull();
       expect(prisma.notification.create).not.toHaveBeenCalled();
+    });
+  });
+
+  // ── W7-T1 FIX: notification batching (T07 #2, C severity) ──
+  describe('create — notification batching', () => {
+    it('should batch LIKE notification within 30-min window instead of creating new', async () => {
+      const redis = (service as any).redis;
+      redis.get.mockResolvedValue(null); // No dedup
+      prisma.user.findUnique.mockResolvedValue({ notificationsOn: true, isBanned: false, isDeleted: false });
+      prisma.notification.findFirst.mockResolvedValue({
+        id: 'existing-notif', userId: 'u1', type: 'LIKE', postId: 'p1',
+        isRead: false, createdAt: new Date(),
+      });
+      redis.eval.mockResolvedValue(3); // atomicIncr returns 3 (3rd batcher)
+      prisma.notification.update.mockResolvedValue({ id: 'existing-notif' });
+
+      const result = await service.create({
+        userId: 'u1',
+        actorId: 'u3',
+        type: 'LIKE',
+        postId: 'p1',
+      });
+
+      // Should update existing notification, not create new
+      expect(prisma.notification.create).not.toHaveBeenCalled();
+      expect(prisma.notification.update).toHaveBeenCalledWith({
+        where: { id: 'existing-notif' },
+        data: expect.objectContaining({
+          body: expect.stringContaining('and 3 others'),
+          actorId: 'u3',
+          isRead: false,
+        }),
+      });
+      expect(result).toEqual(expect.objectContaining({ id: 'existing-notif' }));
+    });
+
+    it('should re-mark read notification as unread when batching and invalidate cache', async () => {
+      const redis = (service as any).redis;
+      redis.get.mockResolvedValue(null);
+      prisma.user.findUnique.mockResolvedValue({ notificationsOn: true, isBanned: false, isDeleted: false });
+      prisma.notification.findFirst.mockResolvedValue({
+        id: 'existing-notif', userId: 'u1', type: 'LIKE', postId: 'p1',
+        isRead: true, createdAt: new Date(),
+      });
+      redis.eval.mockResolvedValue(1);
+      prisma.notification.update.mockResolvedValue({ id: 'existing-notif' });
+
+      await service.create({
+        userId: 'u1',
+        actorId: 'u4',
+        type: 'LIKE',
+        postId: 'p1',
+      });
+
+      expect(prisma.notification.update).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ isRead: false }),
+      }));
+      // Should invalidate unread cache since it was read before
+      expect(redis.del).toHaveBeenCalledWith('notif_unread:u1');
+    });
+
+    it('should not batch non-batchable notification types', async () => {
+      const redis = (service as any).redis;
+      redis.get.mockResolvedValue(null);
+      prisma.user.findUnique.mockResolvedValue({ notificationsOn: true, isBanned: false, isDeleted: false });
+      prisma.notification.findFirst.mockResolvedValue(null); // No existing for batching
+      prisma.notification.create.mockResolvedValue({ id: 'new-notif', type: 'FOLLOW' });
+
+      await service.create({
+        userId: 'u1',
+        actorId: 'u5',
+        type: 'FOLLOW',
+      });
+
+      // FOLLOW is not in batchableTypes, so it should create new
+      expect(prisma.notification.create).toHaveBeenCalled();
     });
   });
 });

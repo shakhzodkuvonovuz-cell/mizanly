@@ -357,6 +357,123 @@ describe('CommunityService', () => {
     });
   });
 
+  // ── W7-T1 FIX: updateReputation() tier thresholds (T04 #12, H severity) ──
+  describe('updateReputation — tier thresholds', () => {
+    it('should assign NEWCOMER tier for score < 50', async () => {
+      prisma.userReputation.upsert.mockResolvedValue({ score: 30 });
+      prisma.userReputation.update.mockResolvedValue({ score: 30, tier: 'NEWCOMER' });
+      const result = await service.updateReputation('u1', 30, 'helpful');
+      expect(prisma.userReputation.update).toHaveBeenCalledWith({
+        where: { userId: 'u1' },
+        data: { score: 30, tier: 'NEWCOMER' },
+      });
+      expect(result.tier).toBe('NEWCOMER');
+    });
+
+    it('should assign MEMBER tier for score >= 50', async () => {
+      prisma.userReputation.upsert.mockResolvedValue({ score: 75 });
+      prisma.userReputation.update.mockResolvedValue({ score: 75, tier: 'MEMBER' });
+      const result = await service.updateReputation('u1', 75, 'contributions');
+      expect(result.tier).toBe('MEMBER');
+    });
+
+    it('should assign TRUSTED tier for score >= 200', async () => {
+      prisma.userReputation.upsert.mockResolvedValue({ score: 250 });
+      prisma.userReputation.update.mockResolvedValue({ score: 250, tier: 'TRUSTED' });
+      const result = await service.updateReputation('u1', 50, 'trusted_actions');
+      expect(result.tier).toBe('TRUSTED');
+    });
+
+    it('should assign GUARDIAN tier for score >= 500', async () => {
+      prisma.userReputation.upsert.mockResolvedValue({ score: 600 });
+      prisma.userReputation.update.mockResolvedValue({ score: 600, tier: 'GUARDIAN' });
+      const result = await service.updateReputation('u1', 100, 'guardian_actions');
+      expect(result.tier).toBe('GUARDIAN');
+    });
+
+    it('should assign ELDER tier for score >= 1000', async () => {
+      prisma.userReputation.upsert.mockResolvedValue({ score: 1200 });
+      prisma.userReputation.update.mockResolvedValue({ score: 1200, tier: 'ELDER' });
+      const result = await service.updateReputation('u1', 200, 'elder_contributions');
+      expect(result.tier).toBe('ELDER');
+    });
+
+    it('should floor negative score at 0', async () => {
+      prisma.userReputation.upsert.mockResolvedValue({ score: -50 });
+      prisma.userReputation.update.mockResolvedValue({ score: 0, tier: 'NEWCOMER' });
+      const result = await service.updateReputation('u1', -100, 'penalty');
+      expect(prisma.userReputation.update).toHaveBeenCalledWith({
+        where: { userId: 'u1' },
+        data: { score: 0, tier: 'NEWCOMER' },
+      });
+      expect(result.score).toBe(0);
+    });
+  });
+
+  // ── W7-T1 FIX: Service filter branches (T04 #25-28, M severity) ──
+  describe('getStudyCircles — topic filter', () => {
+    it('should filter by topic when provided', async () => {
+      prisma.studyCircle.findMany.mockResolvedValue([]);
+      await service.getStudyCircles('QURAN');
+      expect(prisma.studyCircle.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.objectContaining({ topic: 'QURAN' }),
+      }));
+    });
+
+    it('should not filter by topic when not provided', async () => {
+      prisma.studyCircle.findMany.mockResolvedValue([]);
+      await service.getStudyCircles();
+      const callArgs = prisma.studyCircle.findMany.mock.calls[0][0];
+      expect(callArgs.where).not.toHaveProperty('topic');
+    });
+  });
+
+  describe('getOpportunities — category filter', () => {
+    it('should filter by category when provided', async () => {
+      prisma.volunteerOpportunity.findMany.mockResolvedValue([]);
+      await service.getOpportunities('EDUCATION');
+      expect(prisma.volunteerOpportunity.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.objectContaining({ category: 'EDUCATION' }),
+      }));
+    });
+  });
+
+  describe('getEvents — eventType filter', () => {
+    it('should filter by eventType when provided', async () => {
+      prisma.islamicEvent.findMany.mockResolvedValue([]);
+      await service.getEvents('EID');
+      expect(prisma.islamicEvent.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.objectContaining({ eventType: 'EID' }),
+      }));
+    });
+  });
+
+  describe('getFatwaQuestions — status + madhab filters', () => {
+    it('should filter by status when provided', async () => {
+      prisma.fatwaQuestion.findMany.mockResolvedValue([]);
+      await service.getFatwaQuestions('FATWA_ANSWERED');
+      expect(prisma.fatwaQuestion.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.objectContaining({ status: 'FATWA_ANSWERED' }),
+      }));
+    });
+
+    it('should filter by madhab when provided', async () => {
+      prisma.fatwaQuestion.findMany.mockResolvedValue([]);
+      await service.getFatwaQuestions(undefined, 'HANAFI');
+      expect(prisma.fatwaQuestion.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.objectContaining({ madhab: 'HANAFI' }),
+      }));
+    });
+
+    it('should filter by both status and madhab', async () => {
+      prisma.fatwaQuestion.findMany.mockResolvedValue([]);
+      await service.getFatwaQuestions('FATWA_PENDING', 'SHAFI');
+      const callArgs = prisma.fatwaQuestion.findMany.mock.calls[0][0];
+      expect(callArgs.where.status).toBe('FATWA_PENDING');
+      expect(callArgs.where.madhab).toBe('SHAFI');
+    });
+  });
+
   describe('R2-Tab2 audit fixes — moderation', () => {
     it('should run content moderation when creating a board', async () => {
       const cs = (service as any).contentSafety;
