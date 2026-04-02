@@ -823,7 +823,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   toggleTrackActive: { backgroundColor: colors.emerald },
   toggleThumb: {
     width: 22, height: 22, borderRadius: radius.full,
-    backgroundColor: colors.text.primary,
+    backgroundColor: tc.text.primary,
   },
   toggleThumbActive: { alignSelf: 'flex-end' },
 
