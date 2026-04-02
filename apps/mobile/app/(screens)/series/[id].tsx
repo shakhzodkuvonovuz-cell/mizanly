@@ -423,7 +423,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   description: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     lineHeight: 22,
     paddingHorizontal: spacing.base,
     marginBottom: spacing.md,

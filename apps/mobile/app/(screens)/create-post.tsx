@@ -1106,7 +1106,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.dark.border,
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: tc.border,
     backgroundColor: tc.bg,
   },
   headerTitle: { color: tc.text.primary, fontSize: fontSize.md, fontWeight: '700', letterSpacing: 0.2 },
@@ -1323,7 +1323,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: colors.dark.bg,
+    borderColor: tc.bg,
   },
   mediaBadgeText: {
     color: '#fff',

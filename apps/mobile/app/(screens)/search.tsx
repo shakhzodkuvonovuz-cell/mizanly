@@ -182,7 +182,7 @@ export default function SearchScreen() {
     let history: string[] = [];
     try { history = stored ? JSON.parse(stored) : []; } catch { /* corrupted */ }
     const updated = [term, ...history.filter((h: string) => h !== term)].slice(0, 20);
-    await AsyncStorage.setItem('search-history', JSON.stringify(updated));
+    await AsyncStorage.setItem('search-history', JSON.stringify(updated)).catch(() => {});
     setSearchHistory(updated);
   }, []);
 
