@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
 import { UsersService } from './users.service';
@@ -29,6 +29,7 @@ describe('UsersService', () => {
             },
             report: {
               create: jest.fn(),
+              findFirst: jest.fn().mockResolvedValue(null),
             },
             device: {
               deleteMany: jest.fn(),
@@ -1331,6 +1332,227 @@ describe('UsersService', () => {
       prisma.creatorStat.findMany.mockResolvedValue([]);
       const result = await service.getAnalytics('user-1');
       expect(result.stats).toEqual([]);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // T01 Critical — Account Lifecycle (C-severity)
+  // ═══════════════════════════════════════════════════════
+
+  describe('requestAccountDeletion (T01 #14)', () => {
+    it('should schedule deletion 30 days out and deactivate', async () => {
+      prisma.user.findUnique.mockResolvedValue({ username: 'testuser', isDeleted: false });
+      prisma.user.update.mockResolvedValue({});
+      redis.del.mockResolvedValue(1);
+
+      const result = await service.requestAccountDeletion('user-1');
+
+      expect(result.requested).toBe(true);
+      expect(result.scheduledDeletionDate).toBeDefined();
+      expect(result.message).toContain('30 days');
+      expect(prisma.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'user-1' },
+          data: expect.objectContaining({
+            scheduledDeletionAt: expect.any(Date),
+            isDeactivated: true,
+            deactivatedAt: expect.any(Date),
+          }),
+        }),
+      );
+      expect(redis.del).toHaveBeenCalledWith('user:testuser');
+    });
+
+    it('should throw NotFoundException if user not found', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+      await expect(service.requestAccountDeletion('fake')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException if already deleted', async () => {
+      prisma.user.findUnique.mockResolvedValue({ username: 'x', isDeleted: true });
+      await expect(service.requestAccountDeletion('user-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('cancelAccountDeletion (T01 #15)', () => {
+    it('should clear deletion schedule and reactivate', async () => {
+      prisma.user.findUnique.mockResolvedValue({ isDeleted: false });
+      prisma.user.update.mockResolvedValue({});
+
+      const result = await service.cancelAccountDeletion('user-1');
+
+      expect(result).toEqual({ cancelled: true });
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { scheduledDeletionAt: null, deletedAt: null, isDeactivated: false, deactivatedAt: null },
+      });
+    });
+
+    it('should throw NotFoundException if user not found', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+      await expect(service.cancelAccountDeletion('fake')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException if already permanently deleted', async () => {
+      prisma.user.findUnique.mockResolvedValue({ isDeleted: true });
+      await expect(service.cancelAccountDeletion('user-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('reactivateAccount (T01 #16)', () => {
+    it('should reactivate deactivated account', async () => {
+      prisma.user.findUnique.mockResolvedValue({ isDeactivated: true, isDeleted: false });
+      prisma.user.update.mockResolvedValue({});
+
+      const result = await service.reactivateAccount('user-1');
+
+      expect(result).toEqual({ reactivated: true });
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { isDeactivated: false, deactivatedAt: null, deletedAt: null, scheduledDeletionAt: null },
+      });
+    });
+
+    it('should throw if permanently deleted', async () => {
+      prisma.user.findUnique.mockResolvedValue({ isDeactivated: true, isDeleted: true });
+      await expect(service.reactivateAccount('user-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should return already active when not deactivated', async () => {
+      prisma.user.findUnique.mockResolvedValue({ isDeactivated: false, isDeleted: false });
+      const result = await service.reactivateAccount('user-1');
+      expect(result.reactivated).toBe(true);
+      expect(result.message).toContain('already active');
+    });
+
+    it('should throw if user not found', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+      await expect(service.reactivateAccount('fake')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // T01 High — Untested endpoints
+  // ═══════════════════════════════════════════════════════
+
+  describe('exportData delegation (T01 #17)', () => {
+    it('should delegate to privacyService.exportUserData', async () => {
+      const result = await service.exportData('user-1');
+      expect(privacyService.exportUserData).toHaveBeenCalledWith('user-1');
+      expect(result).toBeDefined();
+      expect(result.profile).toBeDefined();
+    });
+  });
+
+  describe('updateNasheedMode (T01 #18)', () => {
+    it('should update nasheedMode to true', async () => {
+      prisma.user.update.mockResolvedValue({ id: 'user-1', nasheedMode: true });
+      const result = await service.updateNasheedMode('user-1', true);
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { nasheedMode: true },
+        select: { id: true, nasheedMode: true },
+      });
+      expect(result.nasheedMode).toBe(true);
+    });
+
+    it('should update nasheedMode to false', async () => {
+      prisma.user.update.mockResolvedValue({ id: 'user-1', nasheedMode: false });
+      const result = await service.updateNasheedMode('user-1', false);
+      expect(result.nasheedMode).toBe(false);
+    });
+  });
+
+  describe('getLikedPosts (T01 #19)', () => {
+    it('should return paginated liked posts', async () => {
+      prisma.postReaction.findMany.mockResolvedValue([
+        { postId: 'p1', post: { id: 'p1', content: 'hello', likesCount: 5, user: { id: 'u2', username: 'other' } }, createdAt: new Date() },
+      ]);
+
+      const result = await service.getLikedPosts('user-1');
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].id).toBe('p1');
+      expect(result.meta.hasMore).toBe(false);
+    });
+
+    it('should set hasMore when more items exist', async () => {
+      const items = Array.from({ length: 21 }, (_, i) => ({
+        postId: `p${i}`,
+        post: { id: `p${i}`, content: `post ${i}` },
+        createdAt: new Date(),
+      }));
+      prisma.postReaction.findMany.mockResolvedValue(items);
+
+      const result = await service.getLikedPosts('user-1');
+      expect(result.data).toHaveLength(20);
+      expect(result.meta.hasMore).toBe(true);
+    });
+  });
+
+  describe('requestVerification (T01 #22)', () => {
+    it('should create a verification request report', async () => {
+      prisma.user.findUnique.mockResolvedValue({ isVerified: false });
+      prisma.report.findFirst.mockResolvedValue(null);
+      prisma.report.create.mockResolvedValue({ id: 'report-1' });
+
+      const result = await service.requestVerification('user-1', { category: 'creator', reason: 'I create content', proofUrl: 'https://proof.com' });
+      expect(result.id).toBe('report-1');
+      expect(prisma.report.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          reporterId: 'user-1',
+          reportedUserId: 'user-1',
+          reason: 'OTHER',
+          description: expect.stringContaining('verification_request'),
+          status: 'PENDING',
+        }),
+      });
+    });
+
+    it('should throw ConflictException if already verified', async () => {
+      prisma.user.findUnique.mockResolvedValue({ isVerified: true });
+      await expect(service.requestVerification('user-1', { category: 'c', reason: 'r' })).rejects.toThrow(ConflictException);
+    });
+
+    it('should throw ConflictException if pending request exists', async () => {
+      prisma.user.findUnique.mockResolvedValue({ isVerified: false });
+      prisma.report.findFirst.mockResolvedValue({ id: 'existing' });
+      await expect(service.requestVerification('user-1', { category: 'c', reason: 'r' })).rejects.toThrow(ConflictException);
+    });
+
+    it('should throw NotFoundException if user not found', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+      await expect(service.requestVerification('fake', { category: 'c', reason: 'r' })).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('report — self-report guard (T01 #26)', () => {
+    it('should return reported false when reporting yourself', async () => {
+      const result = await service.report('user-1', 'user-1', 'spam');
+      expect(result).toEqual({ reported: false });
+      expect(prisma.report.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getProfile — deleted/banned/deactivated (T01 #29)', () => {
+    it('should throw NotFoundException for deleted user', async () => {
+      redis.get.mockResolvedValue(null);
+      prisma.user.findUnique.mockResolvedValue({ id: 'u1', isDeleted: true, isBanned: false, isDeactivated: false });
+      prisma.user.findFirst.mockResolvedValue(null);
+      await expect(service.getProfile('deleteduser')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException for banned user', async () => {
+      redis.get.mockResolvedValue(null);
+      prisma.user.findUnique.mockResolvedValue({ id: 'u1', isDeleted: false, isBanned: true, isDeactivated: false });
+      prisma.user.findFirst.mockResolvedValue(null);
+      await expect(service.getProfile('banneduser')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException for deactivated user', async () => {
+      redis.get.mockResolvedValue(null);
+      prisma.user.findUnique.mockResolvedValue({ id: 'u1', isDeleted: false, isBanned: false, isDeactivated: true });
+      prisma.user.findFirst.mockResolvedValue(null);
+      await expect(service.getProfile('deactivateduser')).rejects.toThrow(NotFoundException);
     });
   });
 });

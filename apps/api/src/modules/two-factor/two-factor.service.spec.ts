@@ -130,5 +130,159 @@ describe('TwoFactorService', () => {
       const result = await service.useBackupCode(mockUserId, 'WRONGCODE');
       expect(result).toBe(false);
     });
+
+    it('should consume a valid backup code and remove it (T01 #34)', async () => {
+      // First setup to get a real backup code and its hash
+      mockPrismaService.twoFactorSecret.findUnique.mockResolvedValueOnce(null);
+      mockPrismaService.twoFactorSecret.create.mockImplementation(({ data }: any) => Promise.resolve(data));
+      const setup = await service.setup(mockUserId);
+      const backupCode = setup.backupCodes[0];
+
+      // Get the hashed backup codes from the create call
+      const createCall = mockPrismaService.twoFactorSecret.create.mock.calls[0][0];
+      const hashedCodes = createCall.data.backupCodes;
+
+      // Now test useBackupCode with the real code + hashes
+      mockPrismaService.twoFactorSecret.findUnique.mockResolvedValue({
+        isEnabled: true,
+        backupCodes: hashedCodes,
+      });
+      mockPrismaService.twoFactorSecret.update.mockResolvedValue({});
+
+      const result = await service.useBackupCode(mockUserId, backupCode);
+      expect(result).toBe(true);
+      // Verify the update removed one code (7 remaining from 8)
+      expect(mockPrismaService.twoFactorSecret.update).toHaveBeenCalledWith({
+        where: { userId: mockUserId },
+        data: { backupCodes: expect.any(Array) },
+      });
+      const updatedCodes = mockPrismaService.twoFactorSecret.update.mock.calls[0][0].data.backupCodes;
+      expect(updatedCodes).toHaveLength(7);
+    });
+  });
+
+  // ── T01 Happy Path Tests (previously untested) ──
+
+  describe('verify — success path (T01 #33)', () => {
+    it('should enable 2FA when valid TOTP code is provided', async () => {
+      // Setup a secret first to get a real TOTP secret
+      mockPrismaService.twoFactorSecret.findUnique.mockResolvedValueOnce(null);
+      mockPrismaService.twoFactorSecret.create.mockImplementation(({ data }: any) => Promise.resolve(data));
+      const setup = await service.setup(mockUserId);
+      const totpSecret = setup.secret;
+
+      // Generate a valid TOTP code using the same algorithm
+      const crypto = require('crypto');
+      const BASE32_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+      function base32Decode(encoded: string): Buffer {
+        const cleaned = encoded.replace(/=+$/, '').toUpperCase();
+        const bytes: number[] = [];
+        let bits = 0;
+        let value = 0;
+        for (const char of cleaned) {
+          const idx = BASE32_CHARS.indexOf(char);
+          if (idx === -1) continue;
+          value = (value << 5) | idx;
+          bits += 5;
+          if (bits >= 8) {
+            bytes.push((value >>> (bits - 8)) & 255);
+            bits -= 8;
+          }
+        }
+        return Buffer.from(bytes);
+      }
+      const time = Math.floor(Date.now() / 1000 / 30);
+      const buf = Buffer.alloc(8);
+      buf.writeUInt32BE(0, 0);
+      buf.writeUInt32BE(time, 4);
+      const hmac = crypto.createHmac('sha1', base32Decode(totpSecret)).update(buf).digest();
+      const offset = hmac[hmac.length - 1] & 0xf;
+      const code = ((hmac[offset] & 0x7f) << 24 | hmac[offset + 1] << 16 | hmac[offset + 2] << 8 | hmac[offset + 3]) % (10 ** 6);
+      const validCode = code.toString().padStart(6, '0');
+
+      // Now test verify with the real code
+      // The service will look up the stored secret (which was encrypted by setup)
+      const createCall = mockPrismaService.twoFactorSecret.create.mock.calls[0][0];
+      mockPrismaService.twoFactorSecret.findUnique.mockResolvedValue({
+        secret: createCall.data.secret,
+        isEnabled: false,
+      });
+      mockPrismaService.twoFactorSecret.update.mockResolvedValue({});
+
+      const result = await service.verify(mockUserId, validCode);
+      expect(result).toBe(true);
+      expect(mockPrismaService.twoFactorSecret.update).toHaveBeenCalledWith({
+        where: { userId: mockUserId },
+        data: { isEnabled: true, verifiedAt: expect.any(Date) },
+      });
+    });
+  });
+
+  describe('disable — success path (T01 #35)', () => {
+    it('should disable 2FA when valid code is provided', async () => {
+      // Setup secret first
+      mockPrismaService.twoFactorSecret.findUnique.mockResolvedValueOnce(null);
+      mockPrismaService.twoFactorSecret.create.mockImplementation(({ data }: any) => Promise.resolve(data));
+      const setup = await service.setup(mockUserId);
+      const totpSecret = setup.secret;
+
+      // Generate valid code
+      const crypto = require('crypto');
+      const BASE32_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+      function base32Decode(encoded: string): Buffer {
+        const cleaned = encoded.replace(/=+$/, '').toUpperCase();
+        const bytes: number[] = [];
+        let bits = 0;
+        let value = 0;
+        for (const char of cleaned) {
+          const idx = BASE32_CHARS.indexOf(char);
+          if (idx === -1) continue;
+          value = (value << 5) | idx;
+          bits += 5;
+          if (bits >= 8) {
+            bytes.push((value >>> (bits - 8)) & 255);
+            bits -= 8;
+          }
+        }
+        return Buffer.from(bytes);
+      }
+      const time = Math.floor(Date.now() / 1000 / 30);
+      const buf = Buffer.alloc(8);
+      buf.writeUInt32BE(0, 0);
+      buf.writeUInt32BE(time, 4);
+      const hmac = crypto.createHmac('sha1', base32Decode(totpSecret)).update(buf).digest();
+      const offset = hmac[hmac.length - 1] & 0xf;
+      const code = ((hmac[offset] & 0x7f) << 24 | hmac[offset + 1] << 16 | hmac[offset + 2] << 8 | hmac[offset + 3]) % (10 ** 6);
+      const validCode = code.toString().padStart(6, '0');
+
+      const createCall = mockPrismaService.twoFactorSecret.create.mock.calls[0][0];
+      // First call: disable checks (needs isEnabled: true)
+      // Second call: verifyToken inside disable
+      mockPrismaService.twoFactorSecret.findUnique
+        .mockResolvedValueOnce({ secret: createCall.data.secret, isEnabled: true })
+        .mockResolvedValueOnce({ secret: createCall.data.secret, isEnabled: true });
+      mockPrismaService.twoFactorSecret.update.mockResolvedValue({});
+
+      await service.disable(mockUserId, validCode);
+
+      expect(mockPrismaService.twoFactorSecret.update).toHaveBeenCalledWith({
+        where: { userId: mockUserId },
+        data: { isEnabled: false, verifiedAt: null },
+      });
+    });
+  });
+
+  describe('validateStrict — not enabled (T01 #32)', () => {
+    it('should return false when 2FA is not enabled', async () => {
+      mockPrismaService.twoFactorSecret.findUnique.mockResolvedValue(null);
+      const result = await service.validateStrict(mockUserId, '123456');
+      expect(result).toBe(false);
+    });
+
+    it('should return false when record exists but not enabled', async () => {
+      mockPrismaService.twoFactorSecret.findUnique.mockResolvedValue({ secret: 'ABC', isEnabled: false });
+      const result = await service.validateStrict(mockUserId, '123456');
+      expect(result).toBe(false);
+    });
   });
 });

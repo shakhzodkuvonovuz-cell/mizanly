@@ -55,7 +55,7 @@ describe('PrivacyService', () => {
         {
           provide: PrismaService,
           useValue: {
-            user: { findUnique: jest.fn(), update: jest.fn() },
+            user: { findUnique: jest.fn(), update: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             post: { findMany: jest.fn().mockResolvedValue([]), updateMany: jest.fn() },
             thread: { findMany: jest.fn().mockResolvedValue([]), updateMany: jest.fn() },
             story: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
@@ -251,6 +251,45 @@ describe('PrivacyService', () => {
       expect(anonymizeCall.data.username).toBe('deleted_u1');
       expect(anonymizeCall.data.email).toBe('deleted_u1@deleted.local');
       expect(anonymizeCall.data.isDeleted).toBe(true);
+    });
+  });
+
+  describe('processScheduledDeletions cron (T01 #50)', () => {
+    it('should process users past scheduled deletion date', async () => {
+      const pastDate = new Date(Date.now() - 24 * 60 * 60 * 1000); // 1 day ago
+      prisma.user.findMany.mockResolvedValue([{ id: 'u-del-1' }, { id: 'u-del-2' }]);
+
+      await service.processScheduledDeletions();
+
+      // It should look for deactivated users with scheduledDeletionAt <= now
+      expect(prisma.user.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            scheduledDeletionAt: expect.objectContaining({ lte: expect.any(Date) }),
+            isDeactivated: true,
+          }),
+          take: 50,
+        }),
+      );
+    });
+
+    it('should skip when no users to delete', async () => {
+      prisma.user.findMany.mockResolvedValue([]);
+      // Should not throw
+      await service.processScheduledDeletions();
+    });
+  });
+
+  describe('purgeOldIpAddresses cron (T01 #51)', () => {
+    it('should clear IP addresses from old device records', async () => {
+      prisma.device.updateMany.mockResolvedValue({ count: 5 });
+
+      await service.purgeOldIpAddresses();
+
+      expect(prisma.device.updateMany).toHaveBeenCalledWith({
+        where: { lastActiveAt: { lt: expect.any(Date) } },
+        data: { ipAddress: null },
+      });
     });
   });
 

@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException, BadRequestException, NotFoundException } from '@nestjs/common';
+import { ConflictException, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 import { AuthService } from './auth.service';
@@ -540,6 +540,209 @@ describe('AuthService', () => {
 
       // redis.get should not be called for device_accounts when no deviceId
       expect(redis.get).not.toHaveBeenCalledWith(expect.stringContaining('device_accounts:'));
+    });
+  });
+
+  // ── T01 Critical Compliance Tests ──
+
+  describe('register — COPPA age check (T01 #1)', () => {
+    it('should reject registration for users under 13', async () => {
+      // 12-year-old
+      const dob = new Date();
+      dob.setFullYear(dob.getFullYear() - 12);
+      const dto = {
+        username: 'kid',
+        displayName: 'Kid',
+        dateOfBirth: dob.toISOString().split('T')[0],
+        acceptedTerms: true,
+      } as any;
+
+      await expect(service.register('clerk-kid', dto)).rejects.toThrow(ForbiddenException);
+      await expect(service.register('clerk-kid', dto)).rejects.toThrow(/at least 13 years old/);
+    });
+
+    it('should allow registration for users exactly 13', async () => {
+      const dob = new Date();
+      dob.setFullYear(dob.getFullYear() - 13);
+      // Ensure birthday has passed this year
+      dob.setMonth(0);
+      dob.setDate(1);
+      const dto = {
+        username: 'teen',
+        displayName: 'Teen',
+        dateOfBirth: dob.toISOString().split('T')[0],
+        acceptedTerms: true,
+      } as any;
+
+      mockClerkClient.users.getUser.mockResolvedValue({
+        emailAddresses: [{ emailAddress: 'teen@example.com' }],
+      });
+      prisma.user.findUnique.mockResolvedValue(null);
+      prisma.user.upsert.mockResolvedValue({ id: 'user-teen', clerkId: 'clerk-teen' });
+      prisma.userSettings.upsert.mockResolvedValue({});
+
+      const result = await service.register('clerk-teen', dto);
+      expect(result.id).toBe('user-teen');
+    });
+  });
+
+  describe('register — minor flag isChildAccount (T01 #5)', () => {
+    it('should set isChildAccount true for 15-year-old', async () => {
+      const dob = new Date();
+      dob.setFullYear(dob.getFullYear() - 15);
+      dob.setMonth(0);
+      dob.setDate(1);
+      const dto = {
+        username: 'minor15',
+        displayName: 'Minor',
+        dateOfBirth: dob.toISOString().split('T')[0],
+        acceptedTerms: true,
+      } as any;
+
+      mockClerkClient.users.getUser.mockResolvedValue({
+        emailAddresses: [{ emailAddress: 'minor@example.com' }],
+      });
+      prisma.user.findUnique.mockResolvedValue(null);
+      prisma.user.upsert.mockResolvedValue({ id: 'user-minor' });
+      prisma.userSettings.upsert.mockResolvedValue({});
+
+      await service.register('clerk-minor', dto);
+
+      expect(prisma.user.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          create: expect.objectContaining({ isChildAccount: true }),
+        }),
+      );
+    });
+
+    it('should set isChildAccount false for 19-year-old', async () => {
+      const dob = new Date();
+      dob.setFullYear(dob.getFullYear() - 19);
+      dob.setMonth(0);
+      dob.setDate(1);
+      const dto = {
+        username: 'adult19',
+        displayName: 'Adult',
+        dateOfBirth: dob.toISOString().split('T')[0],
+        acceptedTerms: true,
+      } as any;
+
+      mockClerkClient.users.getUser.mockResolvedValue({
+        emailAddresses: [{ emailAddress: 'adult@example.com' }],
+      });
+      prisma.user.findUnique.mockResolvedValue(null);
+      prisma.user.upsert.mockResolvedValue({ id: 'user-adult' });
+      prisma.userSettings.upsert.mockResolvedValue({});
+
+      await service.register('clerk-adult', dto);
+
+      expect(prisma.user.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          create: expect.objectContaining({ isChildAccount: false }),
+        }),
+      );
+    });
+  });
+
+  describe('register — terms rejection (T01 #2)', () => {
+    it('should reject registration when acceptedTerms is false', async () => {
+      const dto = {
+        username: 'notoserms',
+        displayName: 'No Terms',
+        dateOfBirth: '2000-01-01',
+        acceptedTerms: false,
+      } as any;
+
+      await expect(service.register('clerk-noterms', dto)).rejects.toThrow(BadRequestException);
+      await expect(service.register('clerk-noterms', dto)).rejects.toThrow(/Terms of Service/);
+    });
+  });
+
+  describe('register — re-registration within 30 days of deletion (T01 #3)', () => {
+    it('should reject re-registration when email was deleted within 30 days', async () => {
+      const dto = {
+        username: 'reregistered',
+        displayName: 'Rereg',
+        dateOfBirth: '2000-01-01',
+        acceptedTerms: true,
+      } as any;
+
+      mockClerkClient.users.getUser.mockResolvedValue({
+        emailAddresses: [{ emailAddress: 'deleted@example.com' }],
+      });
+      // Username check passes
+      prisma.user.findUnique.mockResolvedValue(null);
+      // Recently deleted user found
+      prisma.user.findFirst.mockResolvedValue({
+        id: 'deleted-user',
+        email: 'deleted@example.com',
+        isDeleted: true,
+        deletedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
+      });
+
+      await expect(service.register('clerk-rereg', dto)).rejects.toThrow(BadRequestException);
+      await expect(service.register('clerk-rereg', dto)).rejects.toThrow(/recently deleted/);
+    });
+  });
+
+  describe('register — rate limit (T01 #4)', () => {
+    it('should reject registration when more than 5 attempts', async () => {
+      const dto = {
+        username: 'ratelimited',
+        displayName: 'Rate',
+        dateOfBirth: '2000-01-01',
+        acceptedTerms: true,
+      } as any;
+
+      // Override redis to simulate atomicIncr returning 6
+      const redis = { incr: jest.fn(), eval: jest.fn().mockResolvedValue(6), expire: jest.fn(), del: jest.fn(), get: jest.fn().mockResolvedValue(null) } as any;
+      (service as any).redis = redis;
+
+      await expect(service.register('clerk-ratelimit', dto)).rejects.toThrow(ForbiddenException);
+      await expect(service.register('clerk-ratelimit', dto)).rejects.toThrow(/Too many registration attempts/);
+    });
+  });
+
+  describe('trackLogin (T01 #6)', () => {
+    it('should update lastSeenAt for the user', async () => {
+      prisma.user.updateMany.mockResolvedValue({ count: 1 });
+
+      await service.trackLogin('clerk-123');
+
+      expect(prisma.user.updateMany).toHaveBeenCalledWith({
+        where: { clerkId: 'clerk-123', isDeactivated: false, isDeleted: false },
+        data: { lastSeenAt: expect.any(Date) },
+      });
+    });
+  });
+
+  describe('findByClerkId (T01 #7)', () => {
+    it('should return user id when found', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'user-abc' });
+
+      const result = await service.findByClerkId('clerk-found');
+
+      expect(prisma.user.findUnique).toHaveBeenCalledWith({
+        where: { clerkId: 'clerk-found' },
+        select: { id: true },
+      });
+      expect(result).toEqual({ id: 'user-abc' });
+    });
+
+    it('should return null when not found', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+
+      const result = await service.findByClerkId('clerk-missing');
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getRedis (T01 #8)', () => {
+    it('should expose the Redis client', () => {
+      const redis = service.getRedis();
+      expect(redis).toBeDefined();
+      // Should be the same redis instance injected
+      expect(typeof redis.get).toBe('function');
     });
   });
 });

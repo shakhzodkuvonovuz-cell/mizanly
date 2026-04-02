@@ -224,4 +224,68 @@ describe('DevicesService', () => {
       });
     });
   });
+
+  // ── T01 Devices Tests ──
+
+  describe('register — token-belongs-to-another-user deactivation (T01 #39)', () => {
+    it('should deactivate old record when token belongs to another active user', async () => {
+      prisma.device.findUnique.mockResolvedValue({
+        pushToken: 'token-shared',
+        userId: 'other-user',
+        isActive: true,
+      });
+      prisma.device.update.mockResolvedValue({});
+      prisma.device.upsert.mockResolvedValue({ id: 'new-device' });
+
+      await service.register('user-1', 'token-shared', 'ios');
+
+      // Should deactivate the old user's record
+      expect(prisma.device.update).toHaveBeenCalledWith({
+        where: { pushToken: 'token-shared' },
+        data: { isActive: false },
+      });
+      // Should then upsert with new user
+      expect(prisma.device.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { pushToken: 'token-shared' },
+          create: expect.objectContaining({ userId: 'user-1' }),
+          update: expect.objectContaining({ userId: 'user-1' }),
+        }),
+      );
+    });
+
+    it('should NOT deactivate when token belongs to same user', async () => {
+      prisma.device.findUnique.mockResolvedValue({
+        pushToken: 'token-mine',
+        userId: 'user-1',
+        isActive: true,
+      });
+      prisma.device.upsert.mockResolvedValue({ id: 'device-1' });
+
+      await service.register('user-1', 'token-mine', 'ios');
+
+      expect(prisma.device.update).not.toHaveBeenCalled();
+    });
+
+    it('should NOT deactivate when existing record is inactive', async () => {
+      prisma.device.findUnique.mockResolvedValue({
+        pushToken: 'token-old',
+        userId: 'other-user',
+        isActive: false,
+      });
+      prisma.device.upsert.mockResolvedValue({ id: 'device-1' });
+
+      await service.register('user-1', 'token-old', 'ios');
+
+      expect(prisma.device.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('touchSession — error swallowing (T01 #40)', () => {
+    it('should not throw when updateMany fails', async () => {
+      prisma.device.updateMany.mockRejectedValue(new Error('Device not found'));
+      // Should silently swallow the error
+      await expect(service.touchSession('bad-device', '1.2.3.4', 'user-1')).resolves.toBeUndefined();
+    });
+  });
 });
