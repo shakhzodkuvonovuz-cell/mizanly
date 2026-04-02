@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput, ScrollView,
-  Switch, Platform,
+  Switch,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
@@ -12,7 +12,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
@@ -84,6 +83,7 @@ export default function GoLiveScreen() {
   const canGoLive = title.trim().length > 0 && !createMutation.isPending;
 
   const handleScheduleToggle = useCallback((value: boolean) => {
+    haptic.tick();
     setIsScheduled(value);
     if (value && !scheduleDate) {
       // Default to 30 minutes from now
@@ -91,7 +91,7 @@ export default function GoLiveScreen() {
       setScheduleDate(future);
       setTempDate(future);
     }
-  }, [scheduleDate]);
+  }, [scheduleDate, haptic]);
 
   const handleDateSelect = useCallback((date: Date) => {
     setScheduleDate(date);
@@ -118,10 +118,6 @@ export default function GoLiveScreen() {
   const handleGoLive = () => {
     if (!canGoLive) return;
     haptic.send();
-    if (!isScheduled) {
-      showToast({ message: t('live.liveNotAvailable'), variant: 'info' });
-      return;
-    }
     createMutation.mutate();
   };
 
@@ -332,7 +328,7 @@ export default function GoLiveScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
   // Body
   body: { flex: 1 },
   bodyContent: { padding: spacing.base, paddingBottom: 80, gap: spacing.lg },
@@ -344,14 +340,14 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   inputLabel: {
-    color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600',
+    fontSize: fontSize.base, fontFamily: fonts.bodySemiBold,
     marginBottom: spacing.sm,
   },
   input: {
-    color: colors.text.primary, fontSize: fontSize.base,
-    backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
+    fontSize: fontSize.base,
+    borderRadius: radius.md,
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
-    borderWidth: 1, borderColor: colors.dark.border,
+    borderWidth: 1,
   },
   textArea: {
     minHeight: 100, textAlignVertical: 'top',
@@ -363,9 +359,9 @@ const styles = StyleSheet.create({
   // Type selector
   typeSelector: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
-    backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
+    borderRadius: radius.md,
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
-    borderWidth: 1, borderColor: colors.dark.border,
+    borderWidth: 1,
   },
   typeIconBg: {
     width: 36,
@@ -374,19 +370,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  typeSelectorText: { color: colors.text.primary, fontSize: fontSize.base, flex: 1 },
+  typeSelectorText: { fontSize: fontSize.base, flex: 1 },
   // Schedule
   scheduleRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
   },
   scheduleSubtitle: {
-    color: colors.text.tertiary, fontSize: fontSize.sm, marginTop: spacing.xs,
+    fontSize: fontSize.sm, marginTop: spacing.xs,
   },
   scheduleDisplay: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
-    backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
+    borderRadius: radius.md,
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
-    marginTop: spacing.sm, borderWidth: 1, borderColor: colors.dark.border,
+    marginTop: spacing.sm, borderWidth: 1,
   },
   scheduleIconBg: {
     width: 32,
@@ -395,10 +391,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  scheduleText: { flex: 1, color: colors.emerald, fontSize: fontSize.sm, fontWeight: '600' },
+  scheduleText: { flex: 1, color: colors.emerald, fontSize: fontSize.sm, fontFamily: fonts.bodySemiBold },
   // Sheet
   sheetTitle: {
-    color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700',
+    fontSize: fontSize.base, fontFamily: fonts.bodyBold,
     paddingHorizontal: spacing.xl, paddingBottom: spacing.sm,
   },
   datePickerPlaceholder: {
@@ -406,10 +402,10 @@ const styles = StyleSheet.create({
     alignItems: 'center', gap: spacing.md,
   },
   datePickerText: {
-    color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600',
+    fontSize: fontSize.base, fontFamily: fonts.bodySemiBold,
   },
   datePickerHint: {
-    color: colors.text.secondary, fontSize: fontSize.sm, textAlign: 'center',
+    fontSize: fontSize.sm, textAlign: 'center',
   },
   // Upload overlay
   uploadOverlay: {
@@ -417,7 +413,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(13,17,23,0.85)',
     alignItems: 'center', justifyContent: 'center', gap: spacing.md,
   },
-  uploadText: { color: colors.text.primary, fontSize: fontSize.base },
+  uploadText: { fontSize: fontSize.base },
   rehearseButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -426,12 +422,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderRadius: radius.full,
     borderWidth: 1,
-    borderColor: colors.dark.border,
-    backgroundColor: colors.dark.bgElevated,
   },
   rehearseText: {
-    color: colors.text.secondary,
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
 });

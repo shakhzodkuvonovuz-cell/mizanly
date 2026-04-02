@@ -11,16 +11,17 @@ import { useUser } from '@clerk/clerk-expo';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Avatar } from '@/components/ui/Avatar';
-import { Icon } from '@/components/ui/Icon';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { followsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { showToast } from '@/components/ui/Toast';
 import type { User, PaginatedResponse } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
@@ -35,7 +36,7 @@ function UserRow({ user, isMe, onPress, onFollow, index = 0 }: {
   const tc = useThemeColors();
 
   return (
-    <Animated.View entering={FadeInUp.delay(index * 20).duration(300)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 20).duration(300)}>
       <Pressable onPress={onPress} accessibilityLabel={t('screens.following.viewProfile', { name: user.displayName })} accessibilityRole="link">
         <LinearGradient
           colors={user.isFollowing ? ['rgba(10,123,79,0.08)', 'rgba(10,123,79,0.02)'] : ['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
@@ -70,6 +71,7 @@ export default function FollowingScreen() {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const tc = useThemeColors();
+  const haptic = useContextualHaptic();
 
   const followingQuery = useInfiniteQuery({
     queryKey: ['following', userId],
@@ -84,7 +86,13 @@ export default function FollowingScreen() {
     mutationFn: (user: User) =>
       user.isFollowing ? followsApi.unfollow(user.id) : followsApi.follow(user.id),
     onSuccess: () => {
+      haptic.success();
       queryClient.invalidateQueries({ queryKey: ['following', userId] });
+      queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+    },
+    onError: () => {
+      haptic.error();
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
     },
   });
 
@@ -101,27 +109,24 @@ export default function FollowingScreen() {
     }
   }, [followingQuery]);
 
-  if (followingQuery.isError) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
-        <GlassHeader
-          title={t('profile.following')}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('saf.goBack') }}
-        />
-        <EmptyState
-          icon="flag"
-          title={t('saf.couldNotLoadContent')}
-          subtitle={t('common.networkError')}
-          actionLabel={t('common.retry')}
-          onAction={() => followingQuery.refetch()}
-        />
-      </SafeAreaView>
-    );
-  }
-
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
+      {followingQuery.isError ? (
+        <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
+          <GlassHeader
+            title={t('profile.following')}
+            leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('saf.goBack') }}
+          />
+          <EmptyState
+            icon="flag"
+            title={t('saf.couldNotLoadContent')}
+            subtitle={t('common.networkError')}
+            actionLabel={t('common.retry')}
+            onAction={() => followingQuery.refetch()}
+          />
+        </SafeAreaView>
+      ) :
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top', 'bottom']}>
         <GlassHeader
           title={t('profile.following')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('saf.goBack') }}
@@ -136,7 +141,7 @@ export default function FollowingScreen() {
               user={item}
               isMe={clerkUser?.id === item.id}
               onPress={() => router.push(`/(screens)/profile/${item.username}`)}
-              onFollow={() => followMutation.mutate(item)}
+              onFollow={() => !followMutation.isPending && followMutation.mutate(item)}
               index={index}
             />
           )}
@@ -149,7 +154,7 @@ export default function FollowingScreen() {
             followingQuery.isLoading ? (
               <View style={styles.skeletonList}>
                 {Array.from({ length: 8 }).map((_, i) => (
-                  <View key={i} style={styles.skeletonRow}>
+                  <View key={i} style={[styles.skeletonRow, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
                     <Skeleton.Circle size={40} />
                     <View style={{ flex: 1, gap: 6 }}>
                       <Skeleton.Rect width={130} height={14} />
@@ -165,7 +170,7 @@ export default function FollowingScreen() {
           ListFooterComponent={() =>
             followingQuery.isFetchingNextPage ? (
               <View style={styles.skeletonList}>
-                <View style={styles.skeletonRow}>
+                <View style={[styles.skeletonRow, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
                   <Skeleton.Circle size={40} />
                   <View style={{ flex: 1, gap: 6 }}>
                     <Skeleton.Rect width={130} height={14} />
@@ -176,26 +181,22 @@ export default function FollowingScreen() {
             ) : null
           }
         />
-      </SafeAreaView>
-  
+      </SafeAreaView>}
     </ScreenErrorBoundary>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
   skeletonList: { padding: spacing.base, gap: spacing.md },
   skeletonRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    backgroundColor: colors.dark.bgCard,
     padding: spacing.md,
     borderRadius: radius.lg,
     borderWidth: 0.5,
-    borderColor: colors.active.white6,
   },
-
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -205,12 +206,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     borderRadius: radius.lg,
     borderWidth: 0.5,
-    borderColor: colors.active.white6,
   },
   info: { flex: 1 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  name: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
+  name: { fontSize: fontSize.base, fontFamily: fonts.bodySemiBold },
   nameFollowing: { color: colors.emerald },
-  handle: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 1 },
-
+  handle: { fontSize: fontSize.sm, marginTop: 1 },
 });

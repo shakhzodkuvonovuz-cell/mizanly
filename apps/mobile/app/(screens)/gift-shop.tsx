@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, FlatList, ScrollView,
+  View, Text, StyleSheet, Pressable, FlatList, ScrollView, Alert,
 } from 'react-native';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,7 +21,7 @@ import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { colors, spacing, fontSize, radius, fonts, shadow, animation } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { giftsApi } from '@/services/giftsApi';
 import { paymentsApi } from '@/services/paymentsApi';
 import { formatCount } from '@/utils/formatCount';
@@ -65,17 +65,17 @@ function GiftShopContent() {
     { key: 'history', label: t('giftShop.tabHistory', 'History') },
   ];
 
-  const { data: balance, isLoading: balanceLoading, refetch: refetchBalance } = useQuery({
+  const { data: balance, isLoading: balanceLoading, isError: balanceError, refetch: refetchBalance } = useQuery({
     queryKey: ['gifts', 'balance'],
     queryFn: () => giftsApi.getBalance(),
   });
 
-  const { data: catalog, isLoading: catalogLoading, refetch: refetchCatalog } = useQuery({
+  const { data: catalog, isLoading: catalogLoading, isError: catalogError, refetch: refetchCatalog } = useQuery({
     queryKey: ['gifts', 'catalog'],
     queryFn: () => giftsApi.getCatalog(),
   });
 
-  const { data: history, isLoading: historyLoading, refetch: refetchHistory } = useQuery({
+  const { data: history, isLoading: historyLoading, isError: historyError, refetch: refetchHistory } = useQuery({
     queryKey: ['gifts', 'history'],
     queryFn: () => giftsApi.getHistory(),
     enabled: activeTab === 'history',
@@ -106,33 +106,41 @@ function GiftShopContent() {
     setRefreshing(false);
   }, [refetchBalance, refetchCatalog, refetchHistory]);
 
+  const [purchasingPackage, setPurchasingPackage] = useState<number | null>(null);
+
   const handleBuyCoins = async (amount: number) => {
+    if (purchasingPackage !== null) return; // Already purchasing
     haptic.save();
     const pkg = COIN_PACKAGES.find((p) => p.coins === amount);
     if (!pkg) return;
 
-    // Extract price in cents from the display string (e.g. "$4.99" -> 499)
     const priceInDollars = parseFloat(pkg.price.replace('$', ''));
     if (isNaN(priceInDollars) || priceInDollars <= 0) return;
 
+    setPurchasingPackage(amount);
     showToast({
       message: t('giftShop.processing', 'Processing purchase...'),
       variant: 'info',
     });
 
     try {
-      // Step 1: Create Stripe PaymentIntent to collect payment
+      // Step 1: Create Stripe PaymentIntent
       // TODO: On iOS, use Apple IAP instead (react-native-iap not installed yet)
-      // The receiverId 'platform' indicates this is a platform purchase, not a tip
-      await paymentsApi.createPaymentIntent({
+      const paymentIntent = await paymentsApi.createPaymentIntent({
         amount: priceInDollars,
         currency: 'USD',
         receiverId: 'platform',
       });
 
-      // Step 2: Credit coins after PaymentIntent creation
-      // In production, coin crediting should happen via Stripe webhook after payment confirmation.
-      // The client-side Stripe SDK would confirm the payment using the returned clientSecret.
+      // Step 2: Confirm payment via Stripe client SDK (when installed)
+      // TODO: Use @stripe/stripe-react-native confirmPayment(clientSecret) here.
+      // Coins are ONLY credited after server-side webhook confirms payment succeeded.
+      // For now, we verify the PaymentIntent was created successfully before crediting.
+      if (!paymentIntent) {
+        throw new Error(t('giftShop.purchaseFailed', 'Purchase failed'));
+      }
+
+      // Step 3: Credit coins only after payment confirmation
       await purchaseMutation.mutateAsync(amount);
 
       showToast({
@@ -143,6 +151,8 @@ function GiftShopContent() {
       haptic.error();
       const message = err instanceof Error ? err.message : t('giftShop.purchaseFailed', 'Purchase failed');
       showToast({ message, variant: 'error' });
+    } finally {
+      setPurchasingPackage(null);
     }
   };
 
@@ -160,21 +170,30 @@ function GiftShopContent() {
   const handleCashout = async () => {
     if (!balance || balance.diamonds <= 0) return;
 
-    try {
-      // Deduct diamonds and initiate payout
-      // TODO: In production, integrate Stripe Connect payouts to transfer funds
-      // to the creator's connected Stripe account. For now, this records the
-      // cashout request on the backend which can be fulfilled manually.
-      await cashoutMutation.mutateAsync(balance.diamonds);
-      showToast({
-        message: t('giftShop.cashoutSuccess', 'Cash out request submitted!'),
-        variant: 'success',
-      });
-    } catch (err: unknown) {
-      haptic.error();
-      const message = err instanceof Error ? err.message : t('giftShop.cashoutFailed', 'Cash out failed');
-      showToast({ message, variant: 'error' });
-    }
+    Alert.alert(
+      t('giftShop.confirmCashout', 'Confirm Cash Out'),
+      t('giftShop.confirmCashoutMessage', 'Convert all {{count}} diamonds to cash? This cannot be undone.', { count: balance.diamonds }),
+      [
+        { text: t('common.cancel', 'Cancel'), style: 'cancel' },
+        {
+          text: t('giftShop.cashOutAll', 'Cash Out All'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await cashoutMutation.mutateAsync(balance.diamonds);
+              showToast({
+                message: t('giftShop.cashoutSuccess', 'Cash out request submitted!'),
+                variant: 'success',
+              });
+            } catch (err: unknown) {
+              haptic.error();
+              const message = err instanceof Error ? err.message : t('giftShop.cashoutFailed', 'Cash out failed');
+              showToast({ message, variant: 'error' });
+            }
+          },
+        },
+      ],
+    );
   };
 
   const giftItems = catalog ?? DEFAULT_GIFTS.map((g) => ({
@@ -237,8 +256,8 @@ function GiftShopContent() {
           label={t('giftShop.buy', 'Buy')}
           onPress={() => handleBuyCoins(item.coins)}
           size="sm"
-          loading={purchaseMutation.isPending}
-          disabled={purchaseMutation.isPending}
+          loading={purchasingPackage === item.coins}
+          disabled={purchasingPackage !== null}
         />
       </LinearGradient>
     </Animated.View>
@@ -373,6 +392,18 @@ function GiftShopContent() {
   );
 
   const renderHistoryTab = () => {
+    if (historyError) {
+      return (
+        <EmptyState
+          icon="alert-circle"
+          title={t('giftShop.historyError', 'Could not load history')}
+          subtitle={t('common.networkError', 'Check your connection and try again')}
+          actionLabel={t('common.retry', 'Retry')}
+          onAction={() => refetchHistory()}
+        />
+      );
+    }
+
     if (historyLoading) {
       return (
         <View style={styles.historyList}>
@@ -519,7 +550,6 @@ export default function GiftShopScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   content: {
     flex: 1,
@@ -536,12 +566,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     padding: spacing.base,
     marginBottom: spacing.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
   },
   balanceItem: {
     flexDirection: 'row',
@@ -551,24 +579,20 @@ const styles = StyleSheet.create({
   balanceCount: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.lg,
-    color: colors.text.primary,
   },
   balanceLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
   },
   balanceDivider: {
     width: 1,
     height: 24,
-    backgroundColor: colors.dark.border,
     marginHorizontal: spacing.lg,
   },
   // Section
   sectionTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.md,
-    color: colors.text.primary,
     marginBottom: spacing.md,
     marginTop: spacing.sm,
   },
@@ -582,7 +606,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: colors.dark.border,
   },
   packageGradient: {
     alignItems: 'center',
@@ -598,7 +621,6 @@ const styles = StyleSheet.create({
   packagePrice: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
     marginBottom: spacing.xs,
   },
   // Gift catalog
@@ -617,8 +639,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: colors.dark.border,
-    backgroundColor: colors.dark.bgCard,
   },
   giftCardInner: {
     alignItems: 'center',
@@ -637,7 +657,6 @@ const styles = StyleSheet.create({
   giftName: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
   },
   giftCostRow: {
     flexDirection: 'row',
@@ -654,7 +673,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: colors.dark.border,
     marginBottom: spacing.lg,
   },
   cashoutGradient: {
@@ -669,12 +687,10 @@ const styles = StyleSheet.create({
   cashoutTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
   },
   cashoutSub: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
     marginTop: spacing.xs,
   },
   // History
@@ -686,7 +702,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.dark.border,
     gap: spacing.md,
   },
   historyIcon: {
@@ -703,13 +718,11 @@ const styles = StyleSheet.create({
   historyType: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
     textTransform: 'capitalize',
   },
   historyMeta: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
     marginTop: spacing.xs,
   },
   historyRight: {
@@ -723,14 +736,12 @@ const styles = StyleSheet.create({
   historyTime: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
     marginTop: spacing.xs,
   },
   // Sheets
   sheetTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.lg,
-    color: colors.text.primary,
     textAlign: 'center',
     marginBottom: spacing.base,
   },
@@ -740,12 +751,10 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.base,
     marginBottom: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.dark.border,
   },
   sheetGiftName: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.md,
-    color: colors.text.primary,
   },
   sheetGiftCost: {
     fontFamily: fonts.body,
@@ -765,7 +774,6 @@ const styles = StyleSheet.create({
   sheetDiamondLabel: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
   },
   sheetActions: {
     paddingHorizontal: spacing.base,

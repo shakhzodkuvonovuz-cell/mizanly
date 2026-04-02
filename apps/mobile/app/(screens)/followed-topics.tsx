@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,7 @@ import { formatCount } from '@/utils/formatCount';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { hashtagsApi } from '@/services/api';
 import type { HashtagInfo } from '@/types';
 
@@ -31,8 +32,10 @@ function FollowedTopicsContent() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const haptic = useContextualHaptic();
 
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<HashtagInfo[]>([]);
@@ -45,6 +48,7 @@ function FollowedTopicsContent() {
 
   const loadData = useCallback(async () => {
     try {
+      setLoadError(false);
       const [trendingRes, followedRes] = await Promise.all([
         hashtagsApi.getTrending(),
         hashtagsApi.getFollowed().catch(() => []),
@@ -56,7 +60,7 @@ function FollowedTopicsContent() {
         followed.map((h) => ({ ...h, isFollowing: true })),
       );
     } catch {
-      // Silently fail, show empty state
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -64,6 +68,9 @@ function FollowedTopicsContent() {
 
   useEffect(() => {
     loadData();
+    return () => {
+      if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    };
   }, [loadData]);
 
   const handleRefresh = useCallback(async () => {
@@ -98,6 +105,7 @@ function FollowedTopicsContent() {
 
   const toggleFollow = useCallback(
     async (hashtag: HashtagInfo) => {
+      haptic.tick();
       const isCurrentlyFollowing = followedTopics.some((h) => h.id === hashtag.id);
       setTogglingIds((prev) => new Set(prev).add(hashtag.id));
 
@@ -129,7 +137,7 @@ function FollowedTopicsContent() {
         });
       }
     },
-    [followedTopics],
+    [followedTopics, haptic],
   );
 
   const renderHashtagItem = useCallback(
@@ -142,7 +150,7 @@ function FollowedTopicsContent() {
         <Animated.View entering={FadeInDown.delay(index * 40).duration(300)}>
           <Pressable
             style={styles.hashtagItem}
-            onPress={() => router.push(`/(screens)/hashtag/${item.name}`)}
+            onPress={() => { haptic.tick(); router.push(`/(screens)/hashtag/${item.name}`); }}
             accessibilityRole="button"
             accessibilityLabel={`#${item.name}`}
           >
@@ -153,14 +161,14 @@ function FollowedTopicsContent() {
               <Text style={[styles.hashtagName, { color: tc.text.primary }]} numberOfLines={1}>
                 #{item.name}
               </Text>
-              <Text style={styles.hashtagCount}>
+              <Text style={[styles.hashtagCount, { color: tc.text.secondary }]}>
                 {formatCount(totalPosts)} {t('followedTopics.posts', 'posts')}
               </Text>
             </View>
             <Pressable
               style={[
                 styles.followButton,
-                isFollowing && styles.followButtonActive,
+                isFollowing && [styles.followButtonActive, { borderColor: tc.border }],
               ]}
               onPress={() => toggleFollow(item)}
               disabled={isToggling}
@@ -177,7 +185,7 @@ function FollowedTopicsContent() {
                 <Text
                   style={[
                     styles.followButtonText,
-                    isFollowing && styles.followButtonTextActive,
+                    isFollowing && { color: tc.text.secondary },
                   ]}
                 >
                   {isFollowing
@@ -190,7 +198,7 @@ function FollowedTopicsContent() {
         </Animated.View>
       );
     },
-    [followedTopics, togglingIds, toggleFollow, router, t],
+    [followedTopics, togglingIds, toggleFollow, router, t, haptic],
   );
 
   const renderSuggestedHeader = useCallback(
@@ -250,7 +258,7 @@ function FollowedTopicsContent() {
         {searching ? (
           <View style={styles.searchingRow}>
             <Skeleton.Rect width={20} height={20} borderRadius={radius.full} />
-            <Text style={styles.searchingText}>
+            <Text style={[styles.searchingText, { color: tc.text.secondary }]}>
               {t('followedTopics.searching', 'Searching...')}
             </Text>
           </View>
@@ -282,6 +290,24 @@ function FollowedTopicsContent() {
       t,
     ],
   );
+
+  if (!loading && loadError) {
+    return (
+      <View style={[styles.screen, { backgroundColor: tc.bg }]}>
+        <GlassHeader
+          title={t('followedTopics.title', 'Followed Topics')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
+        <EmptyState
+          icon="alert-circle"
+          title={t('common.error', 'Something went wrong')}
+          subtitle={t('common.networkError', 'Check your connection and try again')}
+          actionLabel={t('common.retry', 'Retry')}
+          onAction={loadData}
+        />
+      </View>
+    );
+  }
 
   if (loading) {
     return (
@@ -345,6 +371,7 @@ function FollowedTopicsContent() {
           />
         }
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       />
     </View>
   );
@@ -361,15 +388,12 @@ export default function FollowedTopicsScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.md,
     borderWidth: 0.5,
-    borderColor: colors.dark.border,
     marginHorizontal: spacing.base,
     marginTop: spacing.md,
     marginBottom: spacing.base,
@@ -381,7 +405,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: fonts.body,
     fontSize: fontSize.base,
-    color: colors.text.primary,
     paddingVertical: 0,
   },
   searchingRow: {
@@ -394,7 +417,6 @@ const styles = StyleSheet.create({
   searchingText: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -407,7 +429,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
   },
   hashtagItem: {
     flexDirection: 'row',
@@ -431,12 +452,10 @@ const styles = StyleSheet.create({
   hashtagName: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
   },
   hashtagCount: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
   },
   followButton: {
     paddingHorizontal: spacing.base,
@@ -449,16 +468,13 @@ const styles = StyleSheet.create({
   followButtonActive: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: colors.dark.border,
   },
   followButtonText: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.sm,
     color: colors.text.onColor,
   },
-  followButtonTextActive: {
-    color: colors.text.secondary,
-  },
+  followButtonTextActive: {},
   skeletonContainer: {
     paddingHorizontal: spacing.base,
     paddingTop: spacing.base,
