@@ -106,7 +106,7 @@ function ThreadPart({
 
       {/* Glassmorphism composer card */}
       <LinearGradient
-        colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
+        colors={tc.isDark ? ['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)'] : ['rgba(255,255,255,0.7)', 'rgba(240,242,246,0.5)']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.partCard}

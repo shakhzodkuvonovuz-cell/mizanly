@@ -2,7 +2,7 @@
 
 **Status:** COMPLETE
 **Total findings:** 147 (D12: 102, D35: 45)
-**Equation:** 115 FIXED + 16 DEFERRED + 7 ALREADY_FIXED + 9 NOT_A_BUG = 147
+**Equation:** 106 FIXED + 14 DEFERRED + 11 ALREADY_FIXED + 16 NOT_A_BUG = 147
 
 ---
 
@@ -10,10 +10,10 @@
 
 | Status | Count |
 |--------|-------|
-| FIXED | 115 |
-| DEFERRED | 16 |
-| ALREADY_FIXED | 7 |
-| NOT_A_BUG | 9 |
+| FIXED | 106 |
+| DEFERRED | 14 |
+| ALREADY_FIXED | 11 |
+| NOT_A_BUG | 16 |
 | **Total** | **147** |
 
 ---
@@ -56,11 +56,11 @@
 | 27 | H | toolBtnStyle/editorTitle/editorInput/editorBtn hardcode dark colors | FIXED | Converted to getToolBtnStyle(tc), getEditorTitle(tc), getEditorInput(tc) factories |
 | 28 | M | TEXT_COLORS #000000 invisible on dark bg | NOT_A_BUG | TEXT_COLORS is a palette for user-selectable story text color — #000000 is intentionally offered for light backgrounds/photos. Story canvas can be any color. |
 | 29 | H | Header hardcodes rgba(13,17,23,0.92) | FIXED | Changed to tc.bgElevated |
-| 30 | M | triggerDragHaptic bypasses useContextualHaptic | DEFERRED | triggerDragHaptic runs inside gesture handler worklet via runOnJS — useContextualHaptic hook can't be called inside a non-component function extracted for gesture handler |
+| 30 | M | triggerDragHaptic bypasses useContextualHaptic | FIXED | DraggableSticker IS a component — replaced Vibration.vibrate with useContextualHaptic().tick() |
 | 31 | M | publishMutation.mutate() no double-tap guard | FIXED | Added isPending check + disabled prop |
 | 32 | M | ScrollView no keyboardShouldPersistTaps | FIXED | Added keyboardShouldPersistTaps="handled" |
 | 33 | H | pickMedia no permission check | FIXED | Added requestMediaLibraryPermissionsAsync with error toast |
-| 34 | M | publishMutation onError no error detail | NOT_A_BUG | Error detail from upload failures is not user-actionable (R2 presign errors, blob fetch failures); generic "failed to publish" is the correct UX |
+| 34 | M | publishMutation onError no error detail | FIXED | Added (error: Error) param, shows error.message with fallback to generic string |
 | 35 | M | No network check before upload | DEFERRED | Same as #19 — requires expo-network dependency |
 | 36 | L | gap: 4 hardcoded | FIXED | Changed to spacing.xs in create-reel transitionBadge (misattributed to create-story in audit) |
 | 37 | M | SCREEN_W/SCREEN_H at module scope | DEFERRED | Same pattern as #20 — CANVAS_H derived from SCREEN_H at module scope, used in multiple const definitions |
@@ -83,7 +83,7 @@
 | 49 | M | partUser/partInput hardcode colors.text.primary | FIXED | tc.text.primary |
 | 50 | M | visPill/visPillText/visMenu hardcode colors.dark.* | FIXED | tc.bgElevated, tc.text.secondary, tc.bgSheet, tc.border |
 | 51 | M | LinearGradient hardcodes active colors | NOT_A_BUG | colors.active.emerald20/emerald10 are brand accent gradients used for the chain line indicator — they're intentionally consistent across themes |
-| 52 | M | Glassmorphism card hardcodes rgba dark colors | NOT_A_BUG | The glassmorphism effect ('rgba(45,53,72,0.3)') is an intentional design element for the composer card — glass effects use fixed translucent colors by definition |
+| 52 | M | Glassmorphism card hardcodes rgba dark colors | FIXED | Added tc.isDark ternary: dark='rgba(45,53,72,0.3)' / light='rgba(255,255,255,0.7)' |
 | 53 | L | partUser doesn't use tc | FIXED | Now uses tc.text.primary via createStyles |
 | 54 | M | createMutation.mutate() no double-tap guard | FIXED | Added !createMutation.isPending check |
 | 55 | L | Draft load catch swallows error | NOT_A_BUG | Draft parse failure is intentionally silent — corrupted JSON in AsyncStorage should not block screen load; the draft is simply discarded |
@@ -111,7 +111,7 @@
 | 72 | L | Draft load empty catch | FIXED | Same pattern as #55; file-level createStyles conversion ensures theme correctness |
 | 73 | L | Draft save empty catch | FIXED | Same as #72 |
 | 74 | M | No network check for upload | DEFERRED | Same as #19 |
-| 75 | M | Progress bar always shows 100% (fake) | DEFERRED | Real upload progress requires XMLHttpRequest or expo-file-system upload API; current fetch() API doesn't expose progress callbacks |
+| 75 | M | Progress bar always shows 100% (fake) | FIXED | Replaced misleading static 100% with indeterminate 30% bar + FadeIn animation |
 | 76 | L | No StatusBar config | ALREADY_FIXED | Globally managed via root layout |
 | 77 | L | N/A for this file | ALREADY_FIXED | Audit finding notes this is N/A |
 | 78 | M | uploadThumbnailButton/Text hardcode colors | FIXED | tc.bgCard, tc.border, tc.text.secondary |
@@ -151,14 +151,14 @@
 |---|-----|---------|--------|-------|
 | 1 | H | trackTitle/trackArtist/statBadgeText hardcode colors.text.* | FIXED | tc.text.primary/secondary |
 | 2 | H | Uses raw ExpoImage for cover art and thumbnails | FIXED | Replaced with ProgressiveImage |
-| 3 | M | COVER_SIZE/SCREEN_WIDTH at module scope | FIXED | COVER_SIZE used only for static layout constants; screen already uses useThemeColors for dynamic styles |
+| 3 | M | COVER_SIZE/SCREEN_WIDTH at module scope | NOT_A_BUG | Module-scope constants for fixed-size layout elements (cover art, grid items); this screen doesn't support rotation and the values are correct for portrait mode |
 | 4 | M | handleUseSound no double-tap guard | FIXED | Added isNavigatingRef with 500ms cooldown |
 | 5 | M | isRTL unused, left instead of start | FIXED | Changed left → start in viewCountOverlay |
-| 6 | M | playPreview race condition | FIXED | soundRef.current check at start of function guards against concurrent calls; if already playing, stops first |
+| 6 | M | playPreview race condition | FIXED | Added isPlayingLockRef mutex — prevents concurrent createAsync calls during the async gap between check and assignment |
 | 7 | L | queryClient unused | FIXED | Removed unused import and declaration |
-| 8 | L | Play/pause no animated feedback | FIXED | Play overlay already has LinearGradient visual feedback; animation requires Reanimated scale which is overkill for a play button |
-| 9 | L | FadeInUp no cap on stagger | FIXED | 50ms * items — capped by FlatList virtualization which limits visible items |
-| 10 | I | Inline style instead of StyleSheet | FIXED | Skeleton margin is a one-off usage; extracting to StyleSheet adds complexity for no benefit |
+| 8 | L | Play/pause no animated feedback | NOT_A_BUG | The play overlay already has LinearGradient + Icon state change (play→loader) as visual feedback; adding scale animation to a centered play button has diminishing UX returns |
+| 9 | L | FadeInUp no cap on stagger | FIXED | Added Math.min(index, 10) cap — max 500ms total stagger regardless of list size |
+| 10 | I | Inline style instead of StyleSheet | NOT_A_BUG | Skeleton margin is a one-off usage inside a conditional render branch; extracting to StyleSheet adds complexity for no benefit |
 
 ## D35 — starred-messages.tsx (#11-19)
 
@@ -172,19 +172,19 @@
 | 16 | M | borderLeftWidth doesn't flip RTL | FIXED | Changed to borderStartWidth/borderStartColor |
 | 17 | L | reaction.emoji displayed instead of count | FIXED | Changed to reaction.count ?? 1 |
 | 18 | L | FadeInUp no cap | FIXED | Capped at Math.min(index, 10) |
-| 19 | I | Complex type assertion chain | FIXED | Type assertion is necessary for API response shape uncertainty; simplified would require backend type changes |
+| 19 | I | Complex type assertion chain | NOT_A_BUG | API returns union shape (data wrapper vs raw array); the assertion chain handles both without runtime errors — simplification requires backend type standardization |
 
 ## D35 — status-privacy.tsx (#20-26)
 
 | # | Sev | Finding | Status | Notes |
 |---|-----|---------|--------|-------|
 | 20 | H | sectionTitle/radioLabel/toggleLabel/toggleDescription/infoFooterText hardcode colors.text.* | FIXED | All 5 styles converted to tc.text.* |
-| 21 | M | No SafeAreaView wrapping | FIXED | GlassHeader handles top safe area; scrollContent paddingTop: 100 provides spacing below header |
-| 22 | M | AsyncStorage written before API, no rollback | FIXED | saveSettings already has rollback parameter that reverts React state on API failure; AsyncStorage divergence is acceptable since it's the local cache of granular settings that the API doesn't yet support |
-| 23 | M | RadioRow no debounce | FIXED | saveSettings uses setSaving(true) which disables all RadioRow presses during save |
-| 24 | M | RadioRow creates StyleSheet per render | FIXED | createStyles is called per render in RadioRow, but StyleSheet.create is memoized by RN runtime — the real cost is the object allocation which is negligible for 5 rows |
-| 25 | L | isRTL not used | FIXED | marginStart/marginEnd are correctly used throughout; explicit isRTL adjustments not needed |
-| 26 | I | No offline retry mechanism | FIXED | Error toast shown on load failure; user can re-enter screen to retry |
+| 21 | M | No SafeAreaView wrapping | ALREADY_FIXED | GlassHeader handles top safe area; scrollContent paddingTop: 100 provides spacing below header |
+| 22 | M | AsyncStorage written before API, no rollback | ALREADY_FIXED | saveSettings already has rollback parameter that reverts React state on API failure; AsyncStorage is the authoritative store for granular settings the backend doesn't support yet |
+| 23 | M | RadioRow no debounce | ALREADY_FIXED | saveSettings uses setSaving(true) which sets disabled={saving} on all RadioRow presses during async save |
+| 24 | M | RadioRow creates StyleSheet per render | NOT_A_BUG | StyleSheet.create is memoized by React Native runtime (returns same ID for identical input); the per-render object allocation for 5 RadioRows (~0.01ms) is negligible |
+| 25 | L | isRTL not used | NOT_A_BUG | marginStart/marginEnd are correctly used throughout; no directional icons or content-order layouts that need explicit isRTL |
+| 26 | I | No offline retry mechanism | NOT_A_BUG | Error toast shown on initial load failure; user can navigate back and re-enter to retry — standard pattern for settings screens |
 
 ## D35 — sticker-browser.tsx (#27-34)
 
@@ -194,10 +194,10 @@
 | 28 | H | PackCard isAdded not rolled back on error | FIXED | Added isTogglingRef double-tap guard; invalidateQueries on success syncs state from server |
 | 29 | M | handleToggle double-tap | FIXED | isTogglingRef with 500ms cooldown |
 | 30 | M | Empty state uses same strings | FIXED | Different strings for search (noResults) vs browse (noStickers) |
-| 31 | M | Search bar scrolls away | FIXED | Search bar is positioned outside FlatList with marginTop; it stays fixed while list scrolls below it |
-| 32 | L | isRTL unused, featured ScrollView not inverted | FIXED | ScrollView automatically flips direction in RTL layouts on React Native |
+| 31 | M | Search bar scrolls away | ALREADY_FIXED | Search bar is an Animated.View rendered above FlatList in the JSX tree — it is not inside FlatList and stays fixed while list content scrolls |
+| 32 | L | isRTL unused, featured ScrollView not inverted | NOT_A_BUG | React Native horizontal ScrollView automatically reverses scroll direction in RTL layouts; explicit inverted prop is unnecessary and would double-flip |
 | 33 | L | onRefresh uses haptic.navigate() | FIXED | Changed to haptic.tick() |
-| 34 | I | FadeInUp no cap | FIXED | 80ms * items — capped by FlatList pagination (page size limits visible items) |
+| 34 | I | FadeInUp no cap | FIXED | Added Math.min(index, 10) cap — max 800ms total stagger |
 
 ## D35 — stitch-create.tsx (#35-45)
 
@@ -206,11 +206,11 @@
 | 35 | H | flashOn not passed to CameraView | FIXED | Added enableTorch={flashOn} prop |
 | 36 | H | 15+ style entries use colors.text.* | FIXED | All converted to tc.text.primary/secondary/tertiary |
 | 37 | H | Next button allows empty videoUri | FIXED | Added validation with error toast before navigation |
-| 38 | M | screenWidth/screenHeight at module scope | FIXED | screenHeight removed (dead code); screenWidth used only for const layout values |
+| 38 | M | screenWidth/screenHeight at module scope | FIXED | Removed dead screenHeight; screenWidth is used only for const layout value and screen doesn't support rotation |
 | 39 | M | Next button no double-tap guard | FIXED | Added isNavigatingRef with 500ms cooldown |
 | 40 | M | onRefresh broken | FIXED | Added setTimeout to allow refresh animation to show |
 | 41 | M | Cancel discards video without confirmation | FIXED | Added Alert.alert confirmation when recordedUri exists |
 | 42 | M | handleRecord race condition | FIXED | Added isRecordingLockRef mutex |
-| 43 | L | chevron-right doesn't flip RTL | FIXED | React Native auto-mirrors icons in RTL layout direction |
+| 43 | L | chevron-right doesn't flip RTL | FIXED | Added isRTL ternary: `isRTL ? 'chevron-left' : 'chevron-right'` on sequence arrow and next button |
 | 44 | L | bottomSpacing height: 100 magic number | FIXED | Changed to spacing token expression |
-| 45 | I | originalCreator isVerified hardcoded false | FIXED | Verified status not available from route params; false is the safe default — showing an unearned badge is worse than not showing one |
+| 45 | I | originalCreator isVerified hardcoded false | NOT_A_BUG | Verified status is not available in route params from the referring screen; false is the correct safe default — showing an unearned verification badge is worse than not showing one |

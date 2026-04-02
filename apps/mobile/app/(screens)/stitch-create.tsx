@@ -23,7 +23,7 @@ import { showToast } from '@/components/ui/Toast';
 import { navigate } from '@/utils/navigation';
 import { formatTime } from '@/utils/formatTime';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get('window');
 
 type DurationOption = 1 | 2 | 3 | 5;
 type TransitionType = 'cut' | 'fade' | 'slide' | 'zoom' | 'wipe';
@@ -42,7 +42,7 @@ export default function StitchCreateScreen() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const { reelId, username, displayName, videoUrl } = useLocalSearchParams<{
     reelId: string;
     username?: string;
@@ -475,7 +475,7 @@ export default function StitchCreateScreen() {
                       colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
                       style={styles.arrowGradient}
                     >
-                      <Icon name="chevron-right" size="sm" color={colors.gold} />
+                      <Icon name={isRTL ? 'chevron-left' : 'chevron-right'} size="sm" color={colors.gold} />
                     </LinearGradient>
                     <Text style={styles.transitionName}>{t(TRANSITIONS.find(tr => tr.id === selectedTransition)?.labelKey || '')}</Text>
                   </View>
@@ -555,7 +555,7 @@ export default function StitchCreateScreen() {
                 style={styles.nextButtonGradient}
               >
                 <Text style={styles.nextButtonText}>{t('common.next')}</Text>
-                <Icon name="chevron-right" size="sm" color="#FFF" />
+                <Icon name={isRTL ? 'chevron-left' : 'chevron-right'} size="sm" color="#FFF" />
               </LinearGradient>
             </Pressable>
           </LinearGradient>

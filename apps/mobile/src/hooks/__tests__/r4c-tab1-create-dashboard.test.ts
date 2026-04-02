@@ -122,6 +122,17 @@ describe('R4C-Tab1: create-story.tsx', () => {
     const a11yCount = (editorSections.match(/accessibilityRole="button"/g) || []).length;
     expect(a11yCount).toBeGreaterThanOrEqual(10);
   });
+
+  test('DraggableSticker uses useContextualHaptic not Vibration', () => {
+    const dragSection = src.slice(src.indexOf('function DraggableSticker'), src.indexOf('function DraggableSticker') + 500);
+    expect(dragSection).toContain('useContextualHaptic');
+    expect(dragSection).not.toContain('Vibration');
+  });
+
+  test('publishMutation onError includes error.message', () => {
+    expect(src).toContain('onError: (error: Error) =>');
+    expect(src).toContain('error.message ||');
+  });
 });
 
 // ── create-thread.tsx ──
@@ -151,6 +162,11 @@ describe('R4C-Tab1: create-thread.tsx', () => {
   test('createMutation has double-tap guard', () => {
     expect(src).toContain('!createMutation.isPending');
   });
+
+  test('glassmorphism card has light-mode variant', () => {
+    expect(src).toContain('tc.isDark');
+    expect(src).toContain('rgba(255,255,255,0.7)');
+  });
 });
 
 // ── create-video.tsx ──
@@ -177,6 +193,10 @@ describe('R4C-Tab1: create-video.tsx', () => {
 
   test('handleSubmit has double-tap guard', () => {
     expect(src).toContain('if (uploadMutation.isPending) return');
+  });
+
+  test('progress bar does not show fake 100% width', () => {
+    expect(src).not.toContain("width: '100%' }]} />");
   });
 });
 
@@ -247,6 +267,15 @@ describe('R4C-Tab1: sound/[id].tsx', () => {
   test('unused queryClient removed', () => {
     expect(src).not.toContain('const queryClient');
   });
+
+  test('playPreview has mutex lock to prevent race condition', () => {
+    expect(src).toContain('isPlayingLockRef');
+    expect(src).toContain('if (isPlayingLockRef.current) return');
+  });
+
+  test('FadeInUp stagger capped at 10', () => {
+    expect(src).toContain('Math.min(index, 10)');
+  });
 });
 
 // ── starred-messages.tsx ──
@@ -314,6 +343,10 @@ describe('R4C-Tab1: sticker-browser.tsx', () => {
     const onRefreshFn = src.slice(src.indexOf('const onRefresh'), src.indexOf('const onRefresh') + 200);
     expect(onRefreshFn).not.toContain('haptic.navigate');
   });
+
+  test('FadeInUp stagger capped at 10', () => {
+    expect(src).toContain('Math.min(index, 10)');
+  });
 });
 
 // ── stitch-create.tsx ──
@@ -355,5 +388,13 @@ describe('R4C-Tab1: stitch-create.tsx', () => {
 
   test('imports Alert from react-native', () => {
     expect(src).toContain("Alert } from 'react-native'");
+  });
+
+  test('dead screenHeight removed', () => {
+    expect(src).not.toContain('screenHeight');
+  });
+
+  test('chevron-right flips for RTL', () => {
+    expect(src).toContain("isRTL ? 'chevron-left' : 'chevron-right'");
   });
 });

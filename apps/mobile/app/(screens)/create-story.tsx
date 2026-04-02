@@ -118,6 +118,7 @@ function DraggableSticker({
   children: React.ReactNode;
   stickerStyle: ViewStyle;
 }) {
+  const dragHaptic = useContextualHaptic();
   const translateX = useSharedValue(sticker.x);
   const translateY = useSharedValue(sticker.y);
   const contextX = useSharedValue(0);
@@ -126,7 +127,7 @@ function DraggableSticker({
   const stickerScale = useSharedValue(1);
 
   const triggerDragHaptic = () => {
-    try { require('react-native').Vibration?.vibrate?.(3); } catch {}
+    dragHaptic.tick();
   };
 
   const panGesture = Gesture.Pan()
@@ -538,7 +539,7 @@ export default function CreateStoryScreen() {
       showToast({ message: t('stories.published'), variant: 'success' });
       router.back();
     },
-    onError: () => showToast({ message: t('stories.failedToPublish'), variant: 'error' }),
+    onError: (error: Error) => showToast({ message: error.message || t('stories.failedToPublish'), variant: 'error' }),
   });
 
   const currentFont = FONTS[fontIndex];

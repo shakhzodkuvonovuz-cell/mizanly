@@ -48,7 +48,7 @@ function PackCard({ pack, onPress, onAdd, onRemove, index }: { pack: StickerPack
   const coverImage = pack.coverUrl || (pack.stickers && pack.stickers.length > 0 ? pack.stickers[0].imageUrl : null);
 
   return (
-    <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 10) * 80).duration(400)}>
       <LinearGradient
         colors={colors.gradient.cardDark}
         style={styles.card}

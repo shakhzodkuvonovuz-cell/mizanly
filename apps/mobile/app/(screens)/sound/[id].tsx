@@ -46,6 +46,7 @@ export default function SoundScreen() {
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
   const soundRef = useRef<Audio.Sound | null>(null);
   const isNavigatingRef = useRef(false);
+  const isPlayingLockRef = useRef(false);
 
   const formatNumber = formatCount;
 
@@ -59,12 +60,15 @@ export default function SoundScreen() {
 
   const playPreview = useCallback(async () => {
     if (!track?.audioUrl) return;
+    if (isPlayingLockRef.current) return;
+    isPlayingLockRef.current = true;
 
     // If already playing, stop
     if (soundRef.current) {
       try { await soundRef.current.stopAsync(); await soundRef.current.unloadAsync(); } catch { /* ignore */ }
       soundRef.current = null;
       setIsPlayingPreview(false);
+      isPlayingLockRef.current = false;
       return;
     }
 
@@ -75,6 +79,7 @@ export default function SoundScreen() {
       );
       soundRef.current = sound;
       setIsPlayingPreview(true);
+      isPlayingLockRef.current = false;
 
       sound.setOnPlaybackStatusUpdate((status) => {
         if (status.isLoaded && status.didJustFinish) {
@@ -86,6 +91,7 @@ export default function SoundScreen() {
     } catch (err) {
       if (__DEV__) console.warn('Audio playback failed:', err);
       setIsPlayingPreview(false);
+      isPlayingLockRef.current = false;
     }
   }, [track?.audioUrl]);
 
@@ -134,7 +140,7 @@ export default function SoundScreen() {
 
   const renderGridItem = useCallback(({ item, index }: { item: Reel; index: number }) => {
     return (
-      <Animated.View entering={FadeInUp.delay(index * 50).duration(400)} style={styles.gridItem as ViewStyle}>
+      <Animated.View entering={FadeInUp.delay(Math.min(index, 10) * 50).duration(400)} style={styles.gridItem as ViewStyle}>
         <Pressable accessibilityRole="button" accessibilityLabel={`${t('screens.sound.reels', 'Reel')}, ${formatNumber(item.viewsCount)} ${t('screens.sound.plays', 'views')}`} onPress={() => handleReelPress(item)}>
           <ProgressiveImage
             uri={item.thumbnailUrl || item.videoUrl || ''}

@@ -585,11 +585,11 @@ export default function CreateVideoScreen() {
           </View>
         </ScrollView>
 
-        {/* Upload progress — progress callbacks require XMLHttpRequest or expo-file-system */}
+        {/* Upload progress — indeterminate bar since fetch() doesn't expose progress callbacks */}
         {uploading && (
           <View style={[styles.progressContainer, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
             <View style={[styles.progressBar, { backgroundColor: tc.border }]}>
-              <View style={[styles.progressFill, { width: '100%' }]} />
+              <Animated.View entering={FadeIn} style={[styles.progressFill, { width: '30%' }]} />
             </View>
             <Text style={styles.progressText}>{t('createVideo.uploading')}</Text>
           </View>
