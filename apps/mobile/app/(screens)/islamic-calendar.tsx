@@ -412,7 +412,7 @@ export default function IslamicCalendarScreen() {
               <View style={styles.currentDateContent}>
                 <Text style={styles.currentHijriDate}>{todayFormatted}</Text>
                 <Text style={styles.currentHijriSub}>{t('hijri.today')}</Text>
-                <View style={styles.currentGregorian}>
+                <View style={[styles.currentGregorian, { flexDirection: rtlFlexRow(isRTL) }]}>
                   <Icon name="calendar" size="xs" color="rgba(255,255,255,0.7)" />
                   <Text style={styles.currentGregorianText}>{todayGregorian}</Text>
                 </View>
@@ -487,16 +487,16 @@ export default function IslamicCalendarScreen() {
               </Text>
 
               {/* Legend */}
-              <View style={styles.calendarLegend}>
-                <View style={styles.legendItem}>
+              <View style={[styles.calendarLegend, { flexDirection: rtlFlexRow(isRTL) }]}>
+                <View style={[styles.legendItem, { flexDirection: rtlFlexRow(isRTL) }]}>
                   <View style={[styles.legendDot, { backgroundColor: colors.emerald }]} />
                   <Text style={[styles.legendText, { color: tc.text.secondary }]}>{t('screens.islamicCalendar.legendToday')}</Text>
                 </View>
-                <View style={styles.legendItem}>
+                <View style={[styles.legendItem, { flexDirection: rtlFlexRow(isRTL) }]}>
                   <View style={[styles.legendDot, { backgroundColor: colors.gold }]} />
                   <Text style={[styles.legendText, { color: tc.text.secondary }]}>{t('screens.islamicCalendar.legendEid')}</Text>
                 </View>
-                <View style={styles.legendItem}>
+                <View style={[styles.legendItem, { flexDirection: rtlFlexRow(isRTL) }]}>
                   <View style={[styles.legendDot, { backgroundColor: colors.emerald, opacity: 0.5 }]} />
                   <Text style={[styles.legendText, { color: tc.text.secondary }]}>{t('screens.islamicCalendar.legendImportant')}</Text>
                 </View>
@@ -506,7 +506,7 @@ export default function IslamicCalendarScreen() {
 
           {/* Upcoming Events */}
           <View style={styles.eventsSection}>
-            <View style={styles.sectionHeader}>
+            <View style={[styles.sectionHeader, { flexDirection: rtlFlexRow(isRTL) }]}>
               <LinearGradient
                 colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
                 style={styles.sectionIconBg}
@@ -531,7 +531,7 @@ export default function IslamicCalendarScreen() {
           {/* Community Events from Backend */}
           {(eventsLoading || communityEvents.length > 0) && (
             <View style={styles.eventsSection}>
-              <View style={styles.sectionHeader}>
+              <View style={[styles.sectionHeader, { flexDirection: rtlFlexRow(isRTL) }]}>
                 <LinearGradient
                   colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
                   style={styles.sectionIconBg}

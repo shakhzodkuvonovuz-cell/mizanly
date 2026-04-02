@@ -153,6 +153,7 @@ const StoryGroupPage = memo(function StoryGroupPage({
   const [stickerResponses, setStickerResponses] = useState<Record<string, Record<string, unknown>>>({});
   const { t } = useTranslation();
   const haptic = useContextualHaptic();
+  const tc = useThemeColors();
 
   const story = group.stories[storyIndex];
 
@@ -405,7 +406,7 @@ const StoryGroupPage = memo(function StoryGroupPage({
       default:
         return (
           <View key={id} style={[stickerStyle, { backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.full }]}>
-            <Text style={{ color: '#fff', fontSize: fontSize.sm, fontWeight: '600' }}>
+            <Text style={{ color: '#fff', fontSize: fontSize.sm, fontFamily: fonts.bodySemiBold }}>
               {type === 'mention' ? `@${String(data.username ?? '')}` : `#${String(data.tag ?? '')}`}
             </Text>
           </View>
@@ -637,7 +638,7 @@ const StoryGroupPage = memo(function StoryGroupPage({
 
       {/* Viewers bottom sheet (own stories) */}
       <BottomSheet visible={showViewers} onClose={() => setShowViewers(false)} snapPoint={0.6}>
-        <Text style={styles.viewersTitle}>
+        <Text style={[styles.viewersTitle, { color: tc.text.primary }]}>
           {t('saf.view', { count: story?.viewsCount })}
         </Text>
         {viewersQuery.isLoading ? (
@@ -667,13 +668,13 @@ const StoryGroupPage = memo(function StoryGroupPage({
               <View style={styles.viewerRow}>
                 <Avatar uri={item.avatarUrl} name={item.displayName} size="sm" />
                 <View style={styles.viewerInfo}>
-                  <Text style={styles.viewerName}>{item.displayName}</Text>
-                  <Text style={styles.viewerUsername}>@{item.username}</Text>
+                  <Text style={[styles.viewerName, { color: tc.text.primary }]}>{item.displayName}</Text>
+                  <Text style={[styles.viewerUsername, { color: tc.text.secondary }]}>@{item.username}</Text>
                 </View>
               </View>
             )}
             ListEmptyComponent={
-              <Text style={styles.viewersEmpty}>{t('saf.noViewsYet')}</Text>
+              <Text style={[styles.viewersEmpty, { color: tc.text.tertiary }]}>{t('saf.noViewsYet')}</Text>
             }
             contentContainerStyle={{ paddingBottom: spacing['2xl'] }}
           />

@@ -328,7 +328,7 @@ export default function LiveViewerScreen() {
           )}
         </View>
         <View style={styles.participantInfo}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+          <View style={{ flexDirection: rtlFlexRow(isRTL), alignItems: 'center', gap: spacing.xs }}>
             <Text style={styles.participantName}>{item.user.username}</Text>
             {isHost && (
               <LinearGradient
@@ -529,7 +529,7 @@ export default function LiveViewerScreen() {
         />
 
         {/* LIVE badge with pulsing dot */}
-        <Animated.View style={[styles.liveBadgeContainer, { top: insets.top + 60 }]} entering={FadeIn}>
+        <Animated.View style={[styles.liveBadgeContainer, { top: insets.top + 60, flexDirection: rtlFlexRow(isRTL) }]} entering={FadeIn}>
           <View style={styles.liveBadge}>
             <Animated.View style={[styles.liveDot, pulseStyle]} />
             <Text style={styles.liveBadgeText}>{t('screens.live.liveLabel')}</Text>
@@ -640,7 +640,7 @@ export default function LiveViewerScreen() {
               </LinearGradient>
 
               {/* Sample message */}
-              <View style={styles.chatMessageRow}>
+              <View style={[styles.chatMessageRow, { flexDirection: rtlFlexRow(isRTL) }]}>
                 <Avatar uri={null} name="Sarah" size="xs" />
                 <LinearGradient
                   colors={['rgba(45,53,72,0.9)', 'rgba(45,53,72,0.7)']}
@@ -654,7 +654,7 @@ export default function LiveViewerScreen() {
               </View>
 
               {/* Sample message with gold accent */}
-              <View style={styles.chatMessageRow}>
+              <View style={[styles.chatMessageRow, { flexDirection: rtlFlexRow(isRTL) }]}>
                 <Avatar uri={null} name="Ahmed" size="xs" />
                 <LinearGradient
                   colors={['rgba(200,150,62,0.15)', 'rgba(200,150,62,0.05)']}
@@ -684,7 +684,7 @@ export default function LiveViewerScreen() {
             </View>
           </View>
 
-          <View style={styles.chatInputRow}>
+          <View style={[styles.chatInputRow, { flexDirection: rtlFlexRow(isRTL) }]}>
             <TextInput
               style={styles.chatInput}
               placeholder={t('screens.live.sendMessage')}
