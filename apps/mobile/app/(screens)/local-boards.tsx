@@ -10,12 +10,13 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { formatCount } from '@/utils/formatCount';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { rtlFlexRow } from '@/utils/rtl';
 import { api } from '@/services/api';
 
 export default function LocalBoardsScreen() {
@@ -52,15 +53,28 @@ export default function LocalBoardsScreen() {
 
   const boards = boardsQuery.data?.pages.flatMap((p) => ((p as Record<string, unknown>).data as Array<Record<string, unknown>>) || []) || [];
 
+  const isNavigatingRef = useRef(false);
+
   const renderBoard = ({ item, index }: { item: Record<string, unknown>; index: number }) => (
-    <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
-      <Pressable accessibilityRole="button" style={[styles.boardCard, { borderColor: tc.border }]} onPress={() => { haptic.navigate(); router.push(`/(screens)/local-board/${item.id}` as never); }}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index * 60, 600)).duration(300)}>
+      <Pressable
+        accessibilityRole="button"
+        style={({ pressed }) => [styles.boardCard, { borderColor: tc.border }, pressed && { opacity: 0.7 }]}
+        android_ripple={{ color: 'rgba(255,255,255,0.1)' }}
+        onPress={() => {
+          if (isNavigatingRef.current) return;
+          isNavigatingRef.current = true;
+          haptic.navigate();
+          router.push(`/(screens)/local-board/${item.id}` as never);
+          setTimeout(() => { isNavigatingRef.current = false; }, 500);
+        }}
+      >
         <LinearGradient
           colors={['rgba(10,123,79,0.08)', 'transparent']}
           style={styles.boardGradient}
         >
-          <View style={styles.boardHeader}>
-            <View style={styles.boardIconWrap}>
+          <View style={[styles.boardHeader, { flexDirection: rtlFlexRow(isRTL) }]}>
+            <View style={[styles.boardIconWrap, { backgroundColor: `${colors.emerald}15` }]}>
               <Icon name="map-pin" size="md" color={colors.emerald} />
             </View>
             <View style={{ flex: 1 }}>
@@ -71,12 +85,12 @@ export default function LocalBoardsScreen() {
           {Boolean(item.description) && (
             <Text style={[styles.boardDesc, { color: tc.text.secondary }]} numberOfLines={2}>{item.description as string}</Text>
           )}
-          <View style={styles.boardStats}>
-            <View style={styles.stat}>
+          <View style={[styles.boardStats, { flexDirection: rtlFlexRow(isRTL) }]}>
+            <View style={[styles.stat, { flexDirection: rtlFlexRow(isRTL) }]}>
               <Icon name="users" size="xs" color={tc.text.tertiary} />
               <Text style={[styles.statText, { color: tc.text.tertiary }]}>{formatCount(item.membersCount as number)} {t('community.members')}</Text>
             </View>
-            <View style={styles.stat}>
+            <View style={[styles.stat, { flexDirection: rtlFlexRow(isRTL) }]}>
               <Icon name="layers" size="xs" color={tc.text.tertiary} />
               <Text style={[styles.statText, { color: tc.text.tertiary }]}>{formatCount(item.postsCount as number)} {t('community.posts')}</Text>
             </View>
@@ -94,7 +108,7 @@ export default function LocalBoardsScreen() {
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
 
-        <View style={[styles.searchWrap, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
+        <View style={[styles.searchWrap, { backgroundColor: tc.bgCard, borderColor: tc.border, flexDirection: rtlFlexRow(isRTL) }]}>
           <Icon name="search" size="sm" color={tc.text.tertiary} />
           <TextInput
             style={[styles.searchInput, { color: tc.text.primary }]}
@@ -110,6 +124,8 @@ export default function LocalBoardsScreen() {
           renderItem={renderBoard}
           keyExtractor={(item) => item.id as string}
           contentContainerStyle={styles.list}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           refreshControl={
             <BrandedRefreshControl
               refreshing={boardsQuery.isRefetching}
@@ -123,6 +139,14 @@ export default function LocalBoardsScreen() {
               <View style={styles.skeletons}>
                 {[1, 2, 3].map(i => <Skeleton.Rect key={i} width="100%" height={120} borderRadius={radius.lg} />)}
               </View>
+            ) : boardsQuery.isError ? (
+              <EmptyState
+                icon="alert-circle"
+                title={t('common.error')}
+                subtitle={t('common.tryAgain')}
+                actionLabel={t('common.retry')}
+                onAction={() => boardsQuery.refetch()}
+              />
             ) : (
               <EmptyState icon="map-pin" title={t('community.noLocalBoards')} subtitle={t('community.createBoardHint')} />
             )
@@ -134,24 +158,24 @@ export default function LocalBoardsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
   searchWrap: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    alignItems: 'center', gap: spacing.sm,
     marginHorizontal: spacing.base, marginBottom: spacing.md,
-    backgroundColor: colors.dark.bgCard, borderRadius: radius.md,
-    paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.dark.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md, borderWidth: 1,
   },
-  searchInput: { flex: 1, color: colors.text.primary, fontSize: fontSize.base, paddingVertical: spacing.md },
+  searchInput: { flex: 1, fontSize: fontSize.base, paddingVertical: spacing.md, fontFamily: fonts.body },
   list: { paddingHorizontal: spacing.base, paddingBottom: spacing['2xl'] },
   skeletons: { gap: spacing.md },
-  boardCard: { marginBottom: spacing.md, borderRadius: radius.lg, overflow: 'hidden', borderWidth: 1, borderColor: colors.dark.border },
+  boardCard: { marginBottom: spacing.md, borderRadius: radius.lg, overflow: 'hidden', borderWidth: 1 },
   boardGradient: { padding: spacing.base, borderRadius: radius.lg },
-  boardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.sm },
-  boardIconWrap: { width: 44, height: 44, borderRadius: radius.full, backgroundColor: colors.emerald + '15', justifyContent: 'center', alignItems: 'center' },
-  boardName: { color: colors.text.primary, fontSize: fontSize.md, fontWeight: '600' },
-  boardLocation: { color: colors.text.secondary, fontSize: fontSize.sm },
-  boardDesc: { color: colors.text.secondary, fontSize: fontSize.sm, marginBottom: spacing.md, lineHeight: 20 },
-  boardStats: { flexDirection: 'row', gap: spacing.xl },
-  stat: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  statText: { color: colors.text.tertiary, fontSize: fontSize.xs },
+  boardHeader: { alignItems: 'center', gap: spacing.md, marginBottom: spacing.sm },
+  boardIconWrap: { width: 44, height: 44, borderRadius: radius.full, justifyContent: 'center', alignItems: 'center' },
+  boardName: { fontSize: fontSize.md, fontFamily: fonts.bodySemiBold },
+  boardLocation: { fontSize: fontSize.sm, fontFamily: fonts.body },
+  boardDesc: { fontSize: fontSize.sm, marginBottom: spacing.md, lineHeight: 20, fontFamily: fonts.body },
+  boardStats: { gap: spacing.xl },
+  stat: { alignItems: 'center', gap: spacing.xs },
+  statText: { fontSize: fontSize.xs, fontFamily: fonts.body },
 });

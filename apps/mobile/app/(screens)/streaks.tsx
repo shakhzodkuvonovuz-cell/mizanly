@@ -6,6 +6,7 @@ import {
   ScrollView,
   useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
@@ -66,7 +67,7 @@ function StreakCard({
       <LinearGradient
         colors={
           streak.isActive
-            ? [`${meta.color}15`, `${meta.color}05`]
+            ? [`${meta.color}20`, `${meta.color}08`]
             : ['rgba(248,81,73,0.08)', 'rgba(248,81,73,0.02)']
         }
         style={[
@@ -258,6 +259,7 @@ function StreaksScreen() {
   const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const { data, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ['streaks'],
@@ -265,6 +267,7 @@ function StreaksScreen() {
       const res = await gamificationApi.getStreaks() as { streaks: Streak[]; calendar: StreakDay[] };
       return res;
     },
+    staleTime: 1000 * 60 * 2,
   });
 
   const streaks = data?.streaks ?? [];
@@ -283,7 +286,7 @@ function StreaksScreen() {
 
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 60, paddingBottom: insets.bottom + spacing['2xl'] }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <BrandedRefreshControl
@@ -294,6 +297,14 @@ function StreaksScreen() {
       >
         {isLoading ? (
           <LoadingSkeleton />
+        ) : isError ? (
+          <EmptyState
+            icon="alert-circle"
+            title={t('common.error')}
+            subtitle={t('common.tryAgain')}
+            actionLabel={t('common.retry')}
+            onAction={() => refetch()}
+          />
         ) : streaks.length === 0 ? (
           <EmptyState
             icon="trending-up"
@@ -345,9 +356,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 110,
     paddingHorizontal: spacing.base,
-    paddingBottom: spacing['2xl'],
     gap: spacing.md,
   },
   // Streak card
@@ -376,12 +385,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   streakType: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   streakLongest: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.secondary,
+    color: tc.text.secondary,
   },
   streakCountWrap: {
     alignItems: 'center',
@@ -394,7 +403,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   streakUnit: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
   },
   brokenRow: {
     flexDirection: 'row',
@@ -428,7 +437,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   sectionTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.md,
-    color: colors.text.primary,
+    color: tc.text.primary,
   },
   heatmapGrid: {
     flexDirection: 'row',
@@ -447,7 +456,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   legendText: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
   },
   legendCell: {
     width: 14,
@@ -486,7 +495,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   milestoneLabel: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
+    color: tc.text.tertiary,
   },
   milestoneLabelAchieved: {
     color: colors.gold,

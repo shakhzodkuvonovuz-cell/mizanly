@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -54,6 +54,7 @@ function PodiumCard({
 }) {
   const router = useRouter();
   const tc = useThemeColors();
+  const isNavigatingRef = useRef(false);
   const medalColor = position === 1 ? GOLD : position === 2 ? SILVER : BRONZE;
   const height = position === 1 ? 140 : position === 2 ? 110 : 90;
 
@@ -63,7 +64,12 @@ function PodiumCard({
       style={[styles.podiumCard, { height }]}
     >
       <Pressable
-        onPress={() => router.push(`/(screens)/profile/${entry.username}`)}
+        onPress={() => {
+          if (isNavigatingRef.current) return;
+          isNavigatingRef.current = true;
+          router.push(`/(screens)/profile/${entry.username}`);
+          setTimeout(() => { isNavigatingRef.current = false; }, 500);
+        }}
         accessibilityLabel={`${entry.displayName}, rank ${position}`}
         accessibilityRole="button"
       >
@@ -100,11 +106,17 @@ function LeaderboardRow({
 }) {
   const router = useRouter();
   const tc = useThemeColors();
+  const isNavigatingRef = useRef(false);
 
   return (
     <Animated.View entering={FadeInUp.delay(Math.min(index * 60, 600)).duration(400)}>
       <Pressable
-        onPress={() => router.push(`/(screens)/profile/${entry.username}`)}
+        onPress={() => {
+          if (isNavigatingRef.current) return;
+          isNavigatingRef.current = true;
+          router.push(`/(screens)/profile/${entry.username}`);
+          setTimeout(() => { isNavigatingRef.current = false; }, 500);
+        }}
         accessibilityLabel={`${entry.displayName}, rank ${entry.rank}, score ${entry.score}`}
         accessibilityRole="button"
       >
@@ -112,7 +124,7 @@ function LeaderboardRow({
           colors={
             isCurrentUser
               ? ['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']
-              : ['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.1)']
+              : [tc.bgCard + 'CC', tc.bgCard + '33']
           }
           style={[
             styles.listRow,
@@ -206,6 +218,8 @@ function LeaderboardScreen() {
     { key: 'helpers', label: t('gamification.leaderboard.helpers') },
   ];
 
+  const isNavigatingRef = useRef(false);
+
   const renderItem = useCallback(
     ({ item, index }: { item: LeaderboardEntry; index: number }) => (
       <LeaderboardRow
@@ -246,6 +260,7 @@ function LeaderboardScreen() {
               <Text
                 style={[
                   styles.tabLabel,
+                  { color: tc.text.secondary },
                   activeTab === tab.key && styles.tabLabelActive,
                 ]}
               >
@@ -329,7 +344,6 @@ export default function LeaderboardScreenWrapper() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   content: {
     flex: 1,
@@ -365,7 +379,6 @@ const styles = StyleSheet.create({
   tabLabel: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.sm,
-    color: colors.text.secondary,
   },
   tabLabelActive: {
     color: '#FFFFFF',
@@ -405,7 +418,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: colors.dark.bg,
   },
   medalText: {
     fontFamily: fonts.bodySemiBold,
@@ -415,7 +427,6 @@ const styles = StyleSheet.create({
   podiumName: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.sm,
-    color: colors.text.primary,
     textAlign: 'center',
     maxWidth: 90,
   },
@@ -446,7 +457,6 @@ const styles = StyleSheet.create({
   rankText: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.secondary,
     width: 28,
     textAlign: 'center',
   },
@@ -462,12 +472,10 @@ const styles = StyleSheet.create({
   listName: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.base,
-    color: colors.text.primary,
   },
   listUsername: {
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
   },
   listScore: {
     fontFamily: fonts.bodySemiBold,
