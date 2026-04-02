@@ -20,9 +20,12 @@ describe('NotificationsController', () => {
           useValue: {
             getNotifications: jest.fn(),
             getUnreadCount: jest.fn(),
+            getUnreadCountTotal: jest.fn(),
+            getUnreadCounts: jest.fn(),
             markRead: jest.fn(),
             markAllRead: jest.fn(),
             deleteNotification: jest.fn(),
+            getGroupedNotifications: jest.fn(),
           },
         },
         { provide: ClerkAuthGuard, useValue: { canActivate: jest.fn(() => true) } },
@@ -99,6 +102,35 @@ describe('NotificationsController', () => {
       await controller.delete('notif-1', userId);
 
       expect(service.deleteNotification).toHaveBeenCalledWith('notif-1', userId);
+    });
+  });
+
+  // ── W7-T1 T07: Missing controller delegation tests (H severity) ──
+
+  describe('getUnreadCountTotal', () => {
+    it('should call notificationsService.getUnreadCountTotal with userId', async () => {
+      service.getUnreadCountTotal.mockResolvedValue({ total: 12 } as any);
+      const result = await controller.getUnreadCountTotal(userId);
+      expect(service.getUnreadCountTotal).toHaveBeenCalledWith(userId);
+      expect(result).toEqual({ total: 12 });
+    });
+  });
+
+  describe('getUnreadCounts', () => {
+    it('should call notificationsService.getUnreadCounts with userId', async () => {
+      service.getUnreadCounts.mockResolvedValue({ LIKE: 3, COMMENT: 2, total: 5 } as any);
+      const result = await controller.getUnreadCounts(userId);
+      expect(service.getUnreadCounts).toHaveBeenCalledWith(userId);
+      expect(result).toEqual({ LIKE: 3, COMMENT: 2, total: 5 });
+    });
+  });
+
+  describe('getGroupedNotifications', () => {
+    it('should call notificationsService.getGroupedNotifications with userId and cursor', async () => {
+      service.getGroupedNotifications.mockResolvedValue({ data: [], meta: { hasMore: false } } as any);
+      const result = await controller.getGroupedNotifications(userId, 'cursor-1');
+      expect(service.getGroupedNotifications).toHaveBeenCalledWith(userId, 'cursor-1');
+      expect(result.meta.hasMore).toBe(false);
     });
   });
 });

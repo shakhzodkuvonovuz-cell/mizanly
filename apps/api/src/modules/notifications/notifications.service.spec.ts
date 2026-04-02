@@ -819,4 +819,94 @@ describe('NotificationsService', () => {
       loggerSpy.mockRestore();
     });
   });
+
+  // ── W7-T1 T07: getUnreadCounts() (H severity) ──
+  describe('getUnreadCounts', () => {
+    it('should return grouped unread counts by type with total', async () => {
+      prisma.notification.groupBy = jest.fn().mockResolvedValue([
+        { type: 'LIKE', _count: 3 },
+        { type: 'COMMENT', _count: 2 },
+        { type: 'FOLLOW', _count: 1 },
+      ]);
+
+      const result = await service.getUnreadCounts('user-1');
+
+      expect(result).toEqual({ LIKE: 3, COMMENT: 2, FOLLOW: 1, total: 6 });
+    });
+
+    it('should return empty counts with total 0 when no unread', async () => {
+      prisma.notification.groupBy = jest.fn().mockResolvedValue([]);
+      const result = await service.getUnreadCounts('user-1');
+      expect(result).toEqual({ total: 0 });
+    });
+  });
+
+  // ── W7-T1 T07: getUnreadCountTotal() (H severity) ──
+  describe('getUnreadCountTotal', () => {
+    it('should return total unread count', async () => {
+      prisma.notification.count.mockResolvedValue(42);
+      const result = await service.getUnreadCountTotal('user-1');
+      expect(result).toEqual({ total: 42 });
+    });
+  });
+
+  // ── W7-T1 T07: markRead — Redis publish (M severity) ──
+  describe('markRead — Redis publish', () => {
+    it('should publish unread count to Redis after marking read', async () => {
+      const redis = (service as any).redis;
+      prisma.notification.findUnique.mockResolvedValue({ id: 'n1', userId: 'u1' });
+      prisma.notification.update.mockResolvedValue({ id: 'n1', isRead: true });
+      prisma.notification.count.mockResolvedValue(5);
+
+      await service.markRead('n1', 'u1');
+
+      expect(redis.publish).toHaveBeenCalledWith(
+        'notification:badge',
+        JSON.stringify({ userId: 'u1', unreadCount: 5 }),
+      );
+    });
+  });
+
+  // ── W7-T1 T07: deleteNotification — Redis del (M severity) ──
+  describe('deleteNotification — Redis cache invalidation', () => {
+    it('should call redis.del when deleting unread notification', async () => {
+      const redis = (service as any).redis;
+      prisma.notification.findUnique.mockResolvedValue({ id: 'n1', userId: 'u1', isRead: false });
+      prisma.notification.delete.mockResolvedValue({});
+
+      await service.deleteNotification('n1', 'u1');
+
+      expect(redis.del).toHaveBeenCalledWith('notif_unread:u1');
+    });
+
+    it('should NOT call redis.del when deleting already-read notification', async () => {
+      const redis = (service as any).redis;
+      redis.del.mockClear();
+      prisma.notification.findUnique.mockResolvedValue({ id: 'n1', userId: 'u1', isRead: true });
+      prisma.notification.delete.mockResolvedValue({});
+
+      await service.deleteNotification('n1', 'u1');
+
+      expect(redis.del).not.toHaveBeenCalled();
+    });
+  });
+
+  // ── W7-T1 T07: create — Redis dedup (M severity) ──
+  describe('create — Redis deduplication', () => {
+    it('should suppress duplicate notification within 5-minute window', async () => {
+      const redis = (service as any).redis;
+      redis.get.mockResolvedValue('1'); // Dedup key exists
+      prisma.user.findUnique.mockResolvedValue({ notificationsOn: true, isBanned: false, isDeleted: false });
+
+      const result = await service.create({
+        userId: 'u1',
+        actorId: 'u2',
+        type: 'LIKE',
+        postId: 'p1',
+      });
+
+      expect(result).toBeNull();
+      expect(prisma.notification.create).not.toHaveBeenCalled();
+    });
+  });
 });

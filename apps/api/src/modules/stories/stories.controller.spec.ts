@@ -24,6 +24,14 @@ describe('StoriesController', () => {
     deleteHighlight: jest.fn(),
     getArchived: jest.fn(),
     addStoryToHighlight: jest.fn(),
+    // W7-T1: Missing methods for controller delegation tests
+    unarchive: jest.fn(),
+    replyToStory: jest.fn(),
+    getReactionSummary: jest.fn(),
+    submitStickerResponse: jest.fn(),
+    getStickerResponses: jest.fn(),
+    getStickerSummary: jest.fn(),
+    reportStory: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -190,6 +198,62 @@ describe('StoriesController', () => {
       const { ForbiddenException } = require('@nestjs/common');
       mockService.deleteHighlight.mockRejectedValue(new ForbiddenException('Not owner'));
       await expect(controller.deleteHighlight('hl-1', 'other-user')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  // ── W7-T1 T07: Missing controller delegation tests (H severity) ──
+
+  describe('unarchive', () => {
+    it('should call service.unarchive with id and userId', async () => {
+      mockService.unarchive.mockResolvedValue({ unarchived: true });
+      const result = await controller.unarchive('story-1', 'user-1');
+      expect(mockService.unarchive).toHaveBeenCalledWith('story-1', 'user-1');
+      expect(result).toEqual({ unarchived: true });
+    });
+  });
+
+  describe('replyToStory', () => {
+    it('should call service.replyToStory with id, userId, content', async () => {
+      mockService.replyToStory.mockResolvedValue({ id: 'msg-1' });
+      const result = await controller.replyToStory('story-1', 'user-1', { content: 'Nice story!' } as any);
+      expect(mockService.replyToStory).toHaveBeenCalledWith('story-1', 'user-1', 'Nice story!');
+      expect(result.id).toBe('msg-1');
+    });
+  });
+
+  describe('getReactionSummary', () => {
+    it('should call service.getReactionSummary with id and userId', async () => {
+      mockService.getReactionSummary.mockResolvedValue([{ emoji: '❤️', count: 5 }]);
+      const result = await controller.getReactionSummary('story-1', 'user-1');
+      expect(mockService.getReactionSummary).toHaveBeenCalledWith('story-1', 'user-1');
+      expect(result[0].emoji).toBe('❤️');
+    });
+  });
+
+  describe('submitStickerResponse', () => {
+    it('should call service.submitStickerResponse with all params', async () => {
+      mockService.submitStickerResponse.mockResolvedValue({ storyId: 's1' });
+      const dto = { stickerType: 'emoji', responseData: { emoji: '❤️' } };
+      const result = await controller.submitStickerResponse('story-1', 'user-1', dto as any);
+      expect(mockService.submitStickerResponse).toHaveBeenCalledWith('story-1', 'user-1', 'emoji', { emoji: '❤️' });
+      expect(result.storyId).toBe('s1');
+    });
+  });
+
+  describe('getStickerResponses', () => {
+    it('should call service.getStickerResponses with id, userId, type', async () => {
+      mockService.getStickerResponses.mockResolvedValue([]);
+      await controller.getStickerResponses('story-1', 'user-1', 'poll' as any);
+      expect(mockService.getStickerResponses).toHaveBeenCalledWith('story-1', 'user-1', 'poll');
+    });
+  });
+
+  describe('getStickerSummary', () => {
+    it('should call service.getStickerSummary with id and userId', async () => {
+      mockService.getStickerSummary.mockResolvedValue({ poll: { Yes: 3 } });
+      const result = await controller.getStickerSummary('story-1', 'user-1');
+      expect(mockService.getStickerSummary).toHaveBeenCalledWith('story-1', 'user-1');
+      expect(result).toEqual({ poll: { Yes: 3 } });
     });
   });
 });

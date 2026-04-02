@@ -591,4 +591,205 @@ describe('StoriesService', () => {
       expect(prisma.story.create).toHaveBeenCalled();
     });
   });
+
+  // ── W7-T1 T07: replyToStory() (C severity, 97 lines completely untested) ──
+  describe('replyToStory', () => {
+    const mockStory = { id: 's1', userId: 'owner-1', isArchived: false, expiresAt: new Date(Date.now() + 86400000) };
+
+    beforeEach(() => {
+      prisma.$transaction.mockImplementation(async (fn: (tx: any) => Promise<any>) => fn(prisma));
+    });
+
+    it('should throw NotFoundException for nonexistent story', async () => {
+      prisma.story.findUnique.mockResolvedValue(null);
+      await expect(service.replyToStory('missing', 'u1', 'hi')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException for archived story', async () => {
+      prisma.story.findUnique.mockResolvedValue({ ...mockStory, isArchived: true });
+      await expect(service.replyToStory('s1', 'u1', 'hi')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for expired story', async () => {
+      prisma.story.findUnique.mockResolvedValue({ ...mockStory, expiresAt: new Date('2020-01-01') });
+      await expect(service.replyToStory('s1', 'u1', 'hi')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for self-reply', async () => {
+      prisma.story.findUnique.mockResolvedValue(mockStory);
+      await expect(service.replyToStory('s1', 'owner-1', 'hi')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw ForbiddenException when blocked', async () => {
+      prisma.story.findUnique.mockResolvedValue(mockStory);
+      prisma.block.findFirst.mockResolvedValue({ id: 'block-1' });
+      await expect(service.replyToStory('s1', 'blocked-user', 'hi')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should create DM conversation and message when no existing DM', async () => {
+      prisma.story.findUnique.mockResolvedValue(mockStory);
+      prisma.block.findFirst.mockResolvedValue(null);
+      prisma.conversation.findFirst.mockResolvedValue(null);
+      const newConvo = { id: 'convo-new' };
+      prisma.conversation.create.mockResolvedValue(newConvo);
+      const msg = { id: 'msg-1', content: 'hi', messageType: 'STORY_REPLY', sender: { id: 'u1' }, createdAt: new Date() };
+      prisma.message.create.mockResolvedValue(msg);
+      prisma.story.update.mockResolvedValue({});
+      prisma.conversation.update.mockResolvedValue({});
+
+      const result = await service.replyToStory('s1', 'u1', 'hi');
+
+      expect(prisma.conversation.create).toHaveBeenCalled();
+      expect(prisma.message.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ messageType: 'STORY_REPLY', conversationId: 'convo-new' }),
+      }));
+      expect(result.id).toBe('msg-1');
+    });
+
+    it('should use existing DM conversation if found', async () => {
+      prisma.story.findUnique.mockResolvedValue(mockStory);
+      prisma.block.findFirst.mockResolvedValue(null);
+      const existingConvo = { id: 'convo-existing' };
+      prisma.conversation.findFirst.mockResolvedValue(existingConvo);
+      const msg = { id: 'msg-2', content: 'reply', messageType: 'STORY_REPLY', sender: { id: 'u1' }, createdAt: new Date() };
+      prisma.message.create.mockResolvedValue(msg);
+      prisma.story.update.mockResolvedValue({});
+      prisma.conversation.update.mockResolvedValue({});
+
+      const result = await service.replyToStory('s1', 'u1', 'reply');
+
+      expect(prisma.conversation.create).not.toHaveBeenCalled();
+      expect(result.id).toBe('msg-2');
+    });
+  });
+
+  // ── W7-T1 T07: getReactionSummary() (H severity) ──
+  describe('getReactionSummary', () => {
+    it('should throw NotFoundException for nonexistent story', async () => {
+      prisma.story.findUnique.mockResolvedValue(null);
+      await expect(service.getReactionSummary('missing', 'u1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException for non-owner', async () => {
+      prisma.story.findUnique.mockResolvedValue({ id: 's1', userId: 'owner-1' });
+      await expect(service.getReactionSummary('s1', 'other')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should return emoji counts from raw query', async () => {
+      prisma.story.findUnique.mockResolvedValue({ id: 's1', userId: 'u1' });
+      prisma.$queryRaw.mockResolvedValue([
+        { emoji: '❤️', count: BigInt(5) },
+        { emoji: '😂', count: BigInt(3) },
+      ]);
+
+      const result = await service.getReactionSummary('s1', 'u1');
+
+      expect(result).toEqual([
+        { emoji: '❤️', count: 5 },
+        { emoji: '😂', count: 3 },
+      ]);
+    });
+  });
+
+  // ── W7-T1 T07: createHighlight() 100 limit (M severity) ──
+  describe('createHighlight — 100 album limit', () => {
+    it('should throw BadRequestException when user already has 100 highlights', async () => {
+      prisma.storyHighlightAlbum.count.mockResolvedValue(100);
+      await expect(service.createHighlight('u1', 'New Album')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should create highlight when under limit', async () => {
+      prisma.storyHighlightAlbum.count.mockResolvedValue(5);
+      prisma.storyHighlightAlbum.create.mockResolvedValue({ id: 'hl-1', title: 'New' });
+      const result = await service.createHighlight('u1', 'New');
+      expect(result.id).toBe('hl-1');
+    });
+  });
+
+  // ── W7-T1 T07: updateHighlight() service-level errors (M severity) ──
+  describe('updateHighlight — service-level errors', () => {
+    it('should throw NotFoundException for nonexistent album', async () => {
+      prisma.storyHighlightAlbum.findUnique.mockResolvedValue(null);
+      await expect(service.updateHighlight('missing', 'u1', { title: 'New' })).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException for non-owner', async () => {
+      prisma.storyHighlightAlbum.findUnique.mockResolvedValue({ id: 'hl-1', userId: 'other' });
+      await expect(service.updateHighlight('hl-1', 'u1', { title: 'New' })).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should update highlight for owner', async () => {
+      prisma.storyHighlightAlbum.findUnique.mockResolvedValue({ id: 'hl-1', userId: 'u1' });
+      prisma.storyHighlightAlbum.update.mockResolvedValue({ id: 'hl-1', title: 'Updated' });
+      const result = await service.updateHighlight('hl-1', 'u1', { title: 'Updated' });
+      expect(result.title).toBe('Updated');
+    });
+  });
+
+  // ── W7-T1 T07: submitStickerResponse() (M severity) ──
+  describe('submitStickerResponse', () => {
+    it('should throw NotFoundException for nonexistent story', async () => {
+      prisma.story.findUnique.mockResolvedValue(null);
+      await expect(service.submitStickerResponse('missing', 'u1', 'emoji' as any, { emoji: '❤️' })).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException for archived story', async () => {
+      prisma.story.findUnique.mockResolvedValue({ id: 's1', userId: 'owner', isArchived: true });
+      await expect(service.submitStickerResponse('s1', 'u1', 'emoji' as any, { emoji: '❤️' })).rejects.toThrow(BadRequestException);
+    });
+
+    it('should upsert sticker response for valid story', async () => {
+      prisma.story.findUnique.mockResolvedValue({ id: 's1', userId: 'owner', isArchived: false, expiresAt: new Date(Date.now() + 86400000), closeFriendsOnly: false });
+      prisma.block.findFirst.mockResolvedValue(null);
+      prisma.storyStickerResponse.upsert.mockResolvedValue({ storyId: 's1', stickerType: 'emoji' });
+
+      const result = await service.submitStickerResponse('s1', 'u1', 'emoji' as any, { emoji: '❤️' });
+
+      expect(prisma.storyStickerResponse.upsert).toHaveBeenCalledWith(expect.objectContaining({
+        where: { storyId_userId_stickerType: { storyId: 's1', userId: 'u1', stickerType: 'emoji' } },
+      }));
+      expect(result.storyId).toBe('s1');
+    });
+  });
+
+  // ── W7-T1 T07: getStickerResponses() (M severity) ──
+  describe('getStickerResponses', () => {
+    it('should throw ForbiddenException for non-owner', async () => {
+      prisma.story.findUnique.mockResolvedValue({ id: 's1', userId: 'owner' });
+      await expect(service.getStickerResponses('s1', 'other')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should return responses for owner with optional stickerType filter', async () => {
+      prisma.story.findUnique.mockResolvedValue({ id: 's1', userId: 'u1' });
+      prisma.storyStickerResponse.findMany.mockResolvedValue([{ stickerType: 'poll', responseData: {} }]);
+      const result = await service.getStickerResponses('s1', 'u1', 'poll' as any);
+      expect(prisma.storyStickerResponse.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: { storyId: 's1', stickerType: 'poll' },
+      }));
+      expect(result).toHaveLength(1);
+    });
+  });
+
+  // ── W7-T1 T07: getStickerSummary() (M severity) ──
+  describe('getStickerSummary', () => {
+    it('should throw ForbiddenException for non-owner', async () => {
+      prisma.story.findUnique.mockResolvedValue({ id: 's1', userId: 'owner' });
+      await expect(service.getStickerSummary('s1', 'other')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should aggregate responses by stickerType and answer', async () => {
+      prisma.story.findUnique.mockResolvedValue({ id: 's1', userId: 'u1' });
+      prisma.storyStickerResponse.findMany.mockResolvedValue([
+        { stickerType: 'poll', responseData: { answer: 'Yes' } },
+        { stickerType: 'poll', responseData: { answer: 'Yes' } },
+        { stickerType: 'poll', responseData: { answer: 'No' } },
+        { stickerType: 'quiz', responseData: { answer: 'A' } },
+      ]);
+
+      const result = await service.getStickerSummary('s1', 'u1');
+
+      expect(result.poll).toEqual({ Yes: 2, No: 1 });
+      expect(result.quiz).toEqual({ A: 1 });
+    });
+  });
 });
