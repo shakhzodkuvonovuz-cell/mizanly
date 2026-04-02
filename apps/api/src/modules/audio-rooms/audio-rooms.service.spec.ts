@@ -199,7 +199,7 @@ describe('AudioRoomsService', () => {
 
       expect(result.data).toEqual(mockRooms);
       expect(result.meta.hasMore).toBe(false);
-      expect(result.meta.cursor).toBe(mockRooms[1].createdAt.toISOString());
+      expect(result.meta.cursor).toBe(mockRooms[1].id);
       expect(mockPrismaService.audioRoom.findMany).toHaveBeenCalledWith({
         where: {
           OR: [
@@ -214,17 +214,15 @@ describe('AudioRoomsService', () => {
     });
 
     it('should handle cursor pagination', async () => {
-      const cursor = '2026-03-13T12:00:00Z';
+      const cursorId = 'room-cursor-123';
       mockPrismaService.audioRoom.findMany.mockResolvedValue([]);
 
-      await service.list(undefined, cursor);
+      await service.list(undefined, cursorId);
 
       expect(mockPrismaService.audioRoom.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: {
-            OR: expect.any(Array),
-            createdAt: { lt: new Date(cursor) },
-          },
+          cursor: { id: cursorId },
+          skip: 1,
         }),
       );
     });

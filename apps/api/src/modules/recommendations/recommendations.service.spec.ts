@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { RecommendationsService } from './recommendations.service';
 import { PrismaService } from '../../config/prisma.service';
 import { EmbeddingsService } from '../embeddings/embeddings.service';
-import { PostVisibility, ReelStatus } from '@prisma/client';
+import { PostVisibility, ReelStatus, Prisma } from '@prisma/client';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('RecommendationsService', () => {
@@ -837,11 +837,12 @@ describe('RecommendationsService', () => {
       expect(Array.isArray(result)).toBe(true);
     });
 
-    it('should re-throw SQL errors from multiStageRank', async () => {
-      mockEmbeddingsService.getUserInterestVector.mockRejectedValue(new Error('SQL syntax error near SELECT'));
+    it('should re-throw Prisma DB errors from multiStageRank', async () => {
+      const prismaError = new Prisma.PrismaClientKnownRequestError('SQL syntax error near SELECT', { code: 'P2010', clientVersion: '5.0.0' });
+      mockEmbeddingsService.getUserInterestVector.mockRejectedValue(prismaError);
       prisma.post.findMany.mockResolvedValue([]);
 
-      await expect(service.suggestedPosts('user1', 20)).rejects.toThrow('SQL');
+      await expect(service.suggestedPosts('user1', 20)).rejects.toThrow(Prisma.PrismaClientKnownRequestError);
     });
   });
 });

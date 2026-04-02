@@ -156,24 +156,21 @@ export class CommunitiesService {
     }
     where.isBanned = false;
 
-    if (cursor) {
-      where.createdAt = { lt: new Date(cursor) };
-    }
-
     const circles = await this.prisma.circle.findMany({
       where,
       select: CIRCLE_SELECT,
-      take: limit + 1, // fetch one extra to know if there's more
+      take: limit + 1,
       orderBy: { createdAt: 'desc' },
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
 
     const hasMore = circles.length > limit;
-    const data = circles.slice(0, limit);
+    const data = hasMore ? circles.slice(0, limit) : circles;
 
     return {
       data,
       meta: {
-        cursor: data.length > 0 ? data[data.length - 1].createdAt.toISOString() : null,
+        cursor: data.length > 0 ? data[data.length - 1].id : null,
         hasMore,
       },
     };

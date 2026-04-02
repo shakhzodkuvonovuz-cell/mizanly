@@ -168,12 +168,12 @@ export class GamificationService {
     if (!xp) return { data: [], meta: { cursor: null, hasMore: false } };
 
     const where: Record<string, unknown> = { userXPId: xp.id };
-    if (cursor) where.createdAt = { lt: new Date(cursor) };
 
     const history = await this.prisma.xPHistory.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
 
     const hasMore = history.length > limit;
@@ -181,7 +181,7 @@ export class GamificationService {
 
     return {
       data: history,
-      meta: { cursor: history[history.length - 1]?.createdAt?.toISOString() || null, hasMore },
+      meta: { cursor: history[history.length - 1]?.id || null, hasMore },
     };
   }
 

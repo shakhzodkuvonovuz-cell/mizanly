@@ -1,5 +1,5 @@
 import { Throttle } from '@nestjs/throttler';
-import { Controller, Get, Inject, UseGuards, HttpCode, HttpStatus, ServiceUnavailableException, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Inject, Logger, UseGuards, HttpCode, HttpStatus, ServiceUnavailableException, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { PrismaService } from '../../config/prisma.service';
@@ -15,6 +15,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 @Throttle({ default: { limit: 60, ttl: 60000 } })
 @Controller('health')
 export class HealthController {
+  private readonly logger = new Logger(HealthController.name);
   private readonly r2PublicUrl: string;
   private readonly cfStreamToken: string;
   private readonly cfStreamAccountId: string;
@@ -150,7 +151,7 @@ export class HealthController {
     const announcementKey = await this.redis.get('active_announcement');
     let announcement: { id: string; title: string; body: string; action?: string } | null = null;
     if (announcementKey) {
-      try { announcement = JSON.parse(announcementKey); } catch {}
+      try { announcement = JSON.parse(announcementKey); } catch (err) { this.logger.debug('Malformed announcement JSON in Redis', err instanceof Error ? err.message : err); }
     }
 
     return { flags: resolved, announcement };

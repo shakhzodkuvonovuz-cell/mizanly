@@ -323,25 +323,6 @@ describe('ChatGateway', () => {
     });
   });
 
-  describe('handleRead', () => {
-    it('should mark messages as read and emit read event', async () => {
-      const client = { ...mockSocket, data: { userId: 'user-123' } };
-
-      await gateway.handleRead(client as any, { conversationId: UUID1 });
-
-      expect(messagesService.markRead).toHaveBeenCalledWith(UUID1, 'user-123');
-      expect(gateway.server.to as jest.Mock).toHaveBeenCalledWith(`conversation:${UUID1}`);
-      expect(gateway.server.emit).toHaveBeenCalledWith('messages_read', { userId: 'user-123' });
-    });
-
-    it('should throw WsException if not authorized', async () => {
-      const client = { ...mockSocket, data: {} };
-      await expect(
-        gateway.handleRead(client as any, { conversationId: UUID1 })
-      ).rejects.toThrow(WsException);
-    });
-  });
-
   describe('online presence', () => {
     it('tracks user on connection via Redis presence', async () => {
       const client = {
@@ -1045,18 +1026,6 @@ describe('ChatGateway', () => {
 
       expect(client.to).not.toHaveBeenCalled();
       expect(client.emit).not.toHaveBeenCalledWith('user_typing', expect.anything());
-    });
-
-    it('should NOT emit read receipt when activityStatus is disabled', async () => {
-      const client = { ...mockSocket, data: { userId: 'private-user' } };
-      prisma.userSettings.findUnique.mockResolvedValue({ activityStatus: false });
-
-      await gateway.handleRead(client as any, { conversationId: UUID1 });
-
-      // markRead should still be called (updates DB)
-      expect(messagesService.markRead).toHaveBeenCalledWith(UUID1, 'private-user');
-      // But the broadcast should NOT happen
-      expect(gateway.server.emit).not.toHaveBeenCalledWith('messages_read', expect.anything());
     });
 
     it('should NOT emit presence when activityStatus is disabled on connect', async () => {

@@ -284,13 +284,15 @@ export class RecommendationsService {
 
     return diversified;
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error);
-      // Re-throw critical errors (SQL, null pointer), only swallow embeddings-not-available
-      if (msg.includes('SQL') || msg.includes('null') || msg.includes('Cannot read')) {
-        this.logger.error(`Multi-stage ranking critical error: ${msg}`);
+      // Re-throw critical errors (DB failures, programming bugs); only swallow embeddings-not-available
+      if (error instanceof Prisma.PrismaClientKnownRequestError ||
+          error instanceof Prisma.PrismaClientValidationError ||
+          error instanceof TypeError ||
+          error instanceof ReferenceError) {
+        this.logger.error(`Multi-stage ranking critical error`, error instanceof Error ? error.message : error);
         throw error;
       }
-      this.logger.warn(`Multi-stage ranking failed, falling back to engagement sort: ${msg}`);
+      this.logger.warn(`Multi-stage ranking failed, falling back to engagement sort: ${error instanceof Error ? error.message : error}`);
       return [];
     }
   }

@@ -193,7 +193,7 @@ function isPrivateIpV6(ip: string): boolean {
  * Check if a resolved IP address is in a private/internal range.
  * Works with both IPv4 and IPv6 addresses.
  */
-export function isPrivateIp(ip: string): boolean {
+function isPrivateIp(ip: string): boolean {
   if (net.isIPv4(ip)) {
     return isPrivateIpV4(ip);
   }
@@ -202,49 +202,6 @@ export function isPrivateIp(ip: string): boolean {
   }
   // Not a valid IP → treat as private (fail-closed)
   return true;
-}
-
-/**
- * Throws if the given IP is in a private range.
- */
-export function assertNotPrivateIp(ip: string): void {
-  if (isPrivateIp(ip)) {
-    throw new Error(`Blocked: resolved IP ${ip} is in a private/internal range`);
-  }
-}
-
-/**
- * Resolve a URL's hostname and check if the resolved IP is private.
- * Returns true if the URL resolves to a private/internal IP.
- *
- * @param url - The full URL to check
- * @returns true if the URL is private/internal; false if safe to fetch
- */
-export async function isPrivateUrl(url: string): Promise<boolean> {
-  try {
-    const parsed = new URL(url);
-
-    // Only allow HTTP(S) protocols
-    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
-      return true;
-    }
-
-    const hostname = parsed.hostname;
-
-    // If the hostname is already an IP literal, check directly
-    // Strip brackets from IPv6 literals like [::1]
-    const cleanHost = hostname.replace(/^\[|\]$/g, '');
-    if (net.isIP(cleanHost)) {
-      return isPrivateIp(cleanHost);
-    }
-
-    // Resolve hostname to IP via DNS
-    const { address } = await dns.promises.lookup(hostname);
-    return isPrivateIp(address);
-  } catch {
-    // DNS failure or invalid URL → fail-closed (treat as private)
-    return true;
-  }
 }
 
 /**

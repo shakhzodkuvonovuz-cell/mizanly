@@ -23,7 +23,6 @@ import { atomicIncr } from '../common/utils/redis-atomic';
 import {
   WsJoinConversationDto,
   WsTypingDto,
-  WsReadDto,
   WsMessageDeliveredDto,
   WsLeaveConversationDto,
 } from './dto/chat-events.dto';
@@ -739,31 +738,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       }, 10_000);
       this.typingTimers.set(typingKey, timer);
     }
-  }
-
-  @SubscribeMessage('read')
-  async handleRead(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() data: { conversationId: string },
-  ) {
-    if (!client.data.userId) throw new WsException('Unauthorized');
-    if (!(await this.checkRateLimit(client.data.userId, 'read', 30, 60))) return;
-    const dto = plainToInstance(WsReadDto, data);
-    const errors = await validate(dto);
-    if (errors.length > 0) {
-      client.emit('error', { message: 'Invalid read data' });
-      return;
-    }
-    await this.messagesService.markRead(dto.conversationId, client.data.userId);
-    // Respect user privacy: only broadcast read receipt if activityStatus is enabled
-    const settings = await this.prisma.userSettings.findUnique({
-      where: { userId: client.data.userId },
-      select: { activityStatus: true },
-    });
-    if (settings && !settings.activityStatus) return; // User has disabled read receipts
-    this.server
-      .to(`conversation:${dto.conversationId}`)
-      .emit('messages_read', { userId: client.data.userId });
   }
 
   @SubscribeMessage('message_delivered')

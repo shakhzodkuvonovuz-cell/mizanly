@@ -124,12 +124,10 @@ export class MosquesService {
 
   async getFeed(mosqueId: string, cursor?: string, limit: number = 20) {
     const posts = await this.prisma.mosquePost.findMany({
-      where: {
-        mosqueId,
-        ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}),
-      },
+      where: { mosqueId },
       orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
       take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
 
     const hasMore = posts.length > limit;
@@ -138,7 +136,7 @@ export class MosquesService {
       data: posts,
       meta: {
         hasMore,
-        cursor: hasMore ? posts[posts.length - 1].createdAt.toISOString() : undefined,
+        cursor: hasMore ? posts[posts.length - 1].id : null,
       },
     };
   }
@@ -160,13 +158,13 @@ export class MosquesService {
       where: {
         mosqueId,
         user: { isBanned: false, isDeactivated: false, isDeleted: false },
-        ...(cursor ? { createdAt: { gt: new Date(cursor) } } : {}),
       },
       include: {
         user: { select: { id: true, displayName: true, avatarUrl: true, username: true } },
       },
       orderBy: { createdAt: 'asc' },
       take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
 
     const hasMore = members.length > limit;
@@ -175,7 +173,7 @@ export class MosquesService {
       data: members,
       meta: {
         hasMore,
-        cursor: hasMore ? members[members.length - 1].createdAt.toISOString() : undefined,
+        cursor: hasMore ? members[members.length - 1].id : null,
       },
     };
   }

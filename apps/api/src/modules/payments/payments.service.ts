@@ -122,7 +122,7 @@ export class PaymentsService {
     const mapping = await this.prisma.paymentMapping.findUnique({
       where: { stripeId: stripeSubscriptionId },
       select: { internalId: true },
-    }).catch(() => null);
+    }).catch((e) => { this.logger.debug('DB subscription mapping lookup failed', e?.message); return null; });
     if (mapping) {
       // Re-seed Redis cache
       await this.redis.setex(`subscription:${stripeSubscriptionId}`, 60 * 60 * 24 * 365, mapping.internalId).catch((e) => this.logger.debug('Redis subscription cache failed', e?.message));
@@ -141,7 +141,7 @@ export class PaymentsService {
     const mapping = await this.prisma.paymentMapping.findFirst({
       where: { internalId: internalSubscriptionId, type: 'subscription' },
       select: { stripeId: true },
-    }).catch(() => null);
+    }).catch((e) => { this.logger.debug('DB reverse subscription lookup failed', e?.message); return null; });
     if (mapping) {
       await this.redis.setex(`subscription:internal:${internalSubscriptionId}`, 60 * 60 * 24 * 365, mapping.stripeId).catch((e) => this.logger.debug('Redis subscription cache failed', e?.message));
     }
@@ -968,7 +968,7 @@ export class PaymentsService {
       const mapping = await this.prisma.paymentMapping.findUnique({
         where: { stripeId: paymentIntentId },
         select: { internalId: true },
-      }).catch(() => null);
+      }).catch((e) => { this.logger.debug('DB payment mapping lookup failed in chargeback handler', e?.message); return null; });
       tipId = mapping?.internalId ?? null;
     }
     if (!tipId) {

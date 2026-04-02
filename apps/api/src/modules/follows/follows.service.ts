@@ -8,7 +8,6 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
-import { PushTriggerService } from '../notifications/push-trigger.service';
 import { Prisma, Notification } from '@prisma/client';
 import { QueueService } from '../../common/queue/queue.service';
 import { AnalyticsService } from '../../common/services/analytics.service';
@@ -21,7 +20,6 @@ export class FollowsService {
     private prisma: PrismaService,
     @Inject('REDIS') private redis: Redis,
     private notifications: NotificationsService,
-    private pushTrigger: PushTriggerService,
     private queueService: QueueService,
     private analytics: AnalyticsService,
   ) {}

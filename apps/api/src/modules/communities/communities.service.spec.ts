@@ -212,14 +212,13 @@ describe('CommunitiesService', () => {
 
   // ── W7-T1: list() cursor pagination (T04 #40, L severity) ──
   describe('list — cursor pagination', () => {
-    it('should filter by createdAt < cursor when cursor provided', async () => {
+    it('should use Prisma ID-based cursor when cursor provided', async () => {
       prisma.circle.findMany.mockResolvedValue([]);
-      const cursorDate = '2026-03-01T00:00:00.000Z';
-      await service.list(undefined, cursorDate);
+      const cursorId = 'clxyz123';
+      await service.list(undefined, cursorId);
       expect(prisma.circle.findMany).toHaveBeenCalledWith(expect.objectContaining({
-        where: expect.objectContaining({
-          createdAt: { lt: new Date(cursorDate) },
-        }),
+        cursor: { id: cursorId },
+        skip: 1,
       }));
     });
   });

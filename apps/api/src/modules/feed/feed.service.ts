@@ -453,7 +453,6 @@ export class FeedService {
       dismissedIds = dismissed;
     }
 
-    // Cursor is a featuredAt ISO timestamp (not ID) since we sort by featuredAt desc
     const posts = await this.prisma.post.findMany({
       where: {
         isFeatured: true,
@@ -462,22 +461,21 @@ export class FeedService {
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false, ...userFilter },
         ...(dismissedIds.length > 0 ? { id: { notIn: dismissedIds } } : {}),
-        ...(cursor ? { featuredAt: { lt: new Date(cursor) } } : {}),
       },
       select: { ...FEED_POST_SELECT, featuredAt: true },
       orderBy: { featuredAt: 'desc' },
       take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
 
     const hasMore = posts.length > limit;
     const data = hasMore ? posts.slice(0, limit) : posts;
-    const lastItem = data[data.length - 1] as typeof data[0] & { featuredAt?: Date | null };
 
     return {
       data,
       meta: {
         hasMore,
-        cursor: hasMore && lastItem?.featuredAt ? lastItem.featuredAt.toISOString() : undefined,
+        cursor: hasMore && data.length > 0 ? data[data.length - 1].id : null,
       },
     };
   }
@@ -589,7 +587,6 @@ export class FeedService {
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false, ...userFilter },
         ...(dismissedIds.length > 0 ? { id: { notIn: dismissedIds } } : {}),
-        ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}),
       },
       select: {
         id: true,
@@ -607,6 +604,7 @@ export class FeedService {
       },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
 
     const hasMore = posts.length > limit;
@@ -615,7 +613,7 @@ export class FeedService {
       data: items,
       meta: {
         hasMore,
-        cursor: hasMore ? items[items.length - 1].createdAt.toISOString() : undefined,
+        cursor: hasMore ? items[items.length - 1].id : null,
       },
     };
   }

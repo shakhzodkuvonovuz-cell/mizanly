@@ -131,20 +131,17 @@ export class AudioRoomsService {
       ],
     };
 
-    if (cursor) {
-      where.createdAt = { lt: new Date(cursor) };
-    }
-
     const rooms = await this.prisma.audioRoom.findMany({
       where,
       select: ROOM_SELECT,
       take: limit + 1,
       orderBy: { createdAt: 'desc' },
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
 
     const hasMore = rooms.length > limit;
     if (hasMore) rooms.pop();
-    const nextCursor = rooms.length > 0 ? rooms[rooms.length - 1].createdAt.toISOString() : null;
+    const nextCursor = rooms.length > 0 ? rooms[rooms.length - 1].id : null;
 
     return {
       data: rooms,
@@ -429,21 +426,17 @@ export class AudioRoomsService {
     if (role) {
       where.role = role;
     }
-    if (cursor) {
-      where.joinedAt = { lt: new Date(cursor) };
-    }
-
-    // A16-#15 FIX: Fetch limit+1 to detect hasMore accurately (was === limit, causing extra pagination request)
     const participants = await this.prisma.audioRoomParticipant.findMany({
       where,
       select: PARTICIPANT_SELECT,
       take: limit + 1,
       orderBy: { joinedAt: 'desc' },
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
 
     const hasMore = participants.length > limit;
     if (hasMore) participants.pop();
-    const nextCursor = hasMore ? participants[participants.length - 1].joinedAt.toISOString() : null;
+    const nextCursor = hasMore ? participants[participants.length - 1].id : null;
 
     return {
       data: participants,

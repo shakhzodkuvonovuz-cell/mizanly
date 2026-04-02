@@ -113,10 +113,16 @@ export class StreamService {
   }
 
   async getPlaybackUrls(streamId: string): Promise<PlaybackUrls> {
-    const response = await fetch(`${this.baseUrl}/${streamId}`, {
-      method: 'GET',
-      headers: this.headers(),
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${this.baseUrl}/${streamId}`, {
+        method: 'GET',
+        headers: this.headers(),
+      });
+    } catch (err) {
+      this.logger.error(`Network error fetching Stream playback URLs for ${streamId}`, err instanceof Error ? err.message : err);
+      throw new InternalServerErrorException('Failed to reach video service');
+    }
 
     const data: CfStreamResponse = await response.json();
     if (!response.ok || !data.success || !data.result) {
@@ -145,13 +151,17 @@ export class StreamService {
   }
 
   async deleteVideo(streamId: string): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/${streamId}`, {
-      method: 'DELETE',
-      headers: this.headers(),
-    });
+    try {
+      const response = await fetch(`${this.baseUrl}/${streamId}`, {
+        method: 'DELETE',
+        headers: this.headers(),
+      });
 
-    if (!response.ok) {
-      this.logger.warn(`Failed to delete Stream video ${streamId}`);
+      if (!response.ok) {
+        this.logger.warn(`Failed to delete Stream video ${streamId}: HTTP ${response.status}`);
+      }
+    } catch (err) {
+      this.logger.error(`Network error deleting Stream video ${streamId}`, err instanceof Error ? err.message : err);
     }
   }
 

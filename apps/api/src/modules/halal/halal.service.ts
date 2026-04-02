@@ -133,12 +133,10 @@ export class HalalService {
 
   async getReviews(restaurantId: string, cursor?: string, limit: number = 20) {
     const reviews = await this.prisma.halalRestaurantReview.findMany({
-      where: {
-        restaurantId,
-        ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}),
-      },
+      where: { restaurantId },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
 
     const hasMore = reviews.length > limit;
@@ -147,7 +145,7 @@ export class HalalService {
       data: reviews,
       meta: {
         hasMore,
-        cursor: hasMore ? reviews[reviews.length - 1].createdAt.toISOString() : undefined,
+        cursor: hasMore ? reviews[reviews.length - 1].id : null,
       },
     };
   }
