@@ -86,11 +86,13 @@ export default function QuranRoomScreen() {
 
   // Audio playback for Quran verse recitation
   const soundRef = useRef<Audio.Sound | null>(null);
+  const loadingAudioRef = useRef(false);
   const [isPlaying, setIsPlaying] = useState(false);
 
   const currentUserId = user?.id ?? '';
 
   const playVerseAudio = useCallback(async () => {
+    if (loadingAudioRef.current) return;
     try {
       // Stop if already playing (toggle behavior)
       if (soundRef.current) {
@@ -105,10 +107,12 @@ export default function QuranRoomScreen() {
       // Use audioUrl from backend response, or construct from CDN directly
       const audioUrl = verseText?.audioUrl ?? getQuranAudioUrl(roomState.currentSurah, roomState.currentVerse);
 
+      loadingAudioRef.current = true;
       const { sound } = await Audio.Sound.createAsync(
         { uri: audioUrl },
         { shouldPlay: true },
       );
+      loadingAudioRef.current = false;
       soundRef.current = sound;
       setIsPlaying(true);
 
@@ -120,6 +124,7 @@ export default function QuranRoomScreen() {
         }
       });
     } catch {
+      loadingAudioRef.current = false;
       showToast({ message: t('islamic.audioPlaybackUnavailable', { defaultValue: 'Audio playback unavailable' }), variant: 'info' });
       setIsPlaying(false);
     }
@@ -207,7 +212,10 @@ export default function QuranRoomScreen() {
         }
       })
       .catch(() => {
-        if (!cancelled) setLoadingVerse(false);
+        if (!cancelled) {
+          setLoadingVerse(false);
+          setError(t('islamic.errors.failedToLoadVerse', { defaultValue: 'Failed to load verse' }));
+        }
       });
 
     return () => {

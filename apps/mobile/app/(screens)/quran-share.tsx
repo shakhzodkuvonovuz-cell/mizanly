@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, Dimensions, TextInput, Share,
 } from 'react-native';
@@ -23,6 +23,7 @@ import type { QuranSurah, QuranVerse } from '@/types/islamic';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
+import { rtlFlexRow } from '@/utils/rtl';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -52,7 +53,7 @@ export default function QuranShareScreen() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const haptic = useContextualHaptic();
   const [selectedSurahNumber, setSelectedSurahNumber] = useState(1);
   const [currentVerse, setCurrentVerse] = useState(1);
@@ -112,16 +113,24 @@ export default function QuranShareScreen() {
     setCurrentVerse(v => Math.min(currentSurah.verses, v + 1));
   }, [currentSurah.verses]);
 
+  const isNavigatingRef = useRef(false);
+
   const handleShareAsPost = useCallback(() => {
+    if (isNavigatingRef.current) return;
+    isNavigatingRef.current = true;
     setShowShareOptions(false);
     const content = `${verseText}\n\n${translationText}\n\n— ${currentSurah.name} ${currentVerse}`;
     router.push({ pathname: '/(screens)/create-post', params: { content } });
+    setTimeout(() => { isNavigatingRef.current = false; }, 500);
   }, [router, verseText, translationText, currentSurah.name, currentVerse]);
 
   const handleShareAsStory = useCallback(() => {
+    if (isNavigatingRef.current) return;
+    isNavigatingRef.current = true;
     setShowShareOptions(false);
     const content = `${verseText}\n\n${translationText}\n\n— ${currentSurah.name} ${currentVerse}`;
     router.push({ pathname: '/(screens)/create-story', params: { content } });
+    setTimeout(() => { isNavigatingRef.current = false; }, 500);
   }, [router, verseText, translationText, currentSurah.name, currentVerse]);
 
   const handleCopyText = useCallback(async () => {
@@ -240,7 +249,7 @@ export default function QuranShareScreen() {
                 colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
                 style={[styles.navButtonGradient, currentVerse === 1 && styles.navButtonDisabled]}
               >
-                <Icon name="chevron-left" size="sm" color={currentVerse === 1 ? colors.text.tertiary : colors.emerald} />
+                <Icon name="chevron-left" size="sm" color={currentVerse === 1 ? tc.text.tertiary : colors.emerald} />
               </LinearGradient>
             </Pressable>
 
@@ -262,7 +271,7 @@ export default function QuranShareScreen() {
                 colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
                 style={[styles.navButtonGradient, currentVerse === currentSurah.verses && styles.navButtonDisabled]}
               >
-                <Icon name="chevron-right" size="sm" color={currentVerse === currentSurah.verses ? colors.text.tertiary : colors.emerald} />
+                <Icon name="chevron-right" size="sm" color={currentVerse === currentSurah.verses ? tc.text.tertiary : colors.emerald} />
               </LinearGradient>
             </Pressable>
           </Animated.View>
@@ -305,7 +314,7 @@ export default function QuranShareScreen() {
                     />
 
                     {/* Arabic Text */}
-                    <Text style={styles.verseArabic}>{verseText}</Text>
+                    <Text style={[styles.verseArabic, { color: tc.text.primary }]}>{verseText}</Text>
 
                     {/* Decorative separator */}
                     <View style={styles.verseSeparator}>
@@ -412,7 +421,7 @@ export default function QuranShareScreen() {
               icon={selectedSurahNumber === surah.number ? (
                 <Icon name="check" size="sm" color={colors.emerald} />
               ) : (
-                <Text style={styles.surahArabicList}>{surah.arabicName}</Text>
+                <Text style={[styles.surahArabicList, { color: tc.text.tertiary }]}>{surah.arabicName}</Text>
               )}
             />
           ))}
