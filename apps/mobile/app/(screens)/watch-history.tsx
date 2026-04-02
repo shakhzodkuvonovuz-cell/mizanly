@@ -22,6 +22,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { rtlFlexRow } from '@/utils/rtl';
 
 // Local type for watch history items (matches Step 4's WatchHistoryItem)
 interface WatchHistoryItem {
@@ -48,7 +49,7 @@ const formatViews = formatCount;
 function VideoCard({ item, onPress, index }: { item: WatchHistoryItem; onPress: () => void; index: number }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   return (
     <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
       <Pressable
@@ -85,7 +86,7 @@ function VideoCard({ item, onPress, index }: { item: WatchHistoryItem; onPress: 
         </LinearGradient>
 
         {/* Info row */}
-        <View style={styles.infoRow}>
+        <View style={[styles.infoRow, { flexDirection: rtlFlexRow(isRTL) }]}>
           <LinearGradient
             colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
             style={styles.channelIconBg}
@@ -256,7 +257,6 @@ export default function WatchHistoryScreen() {
 
 const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: { flex: 1, backgroundColor: tc.bg },
-  headerSpacer: { height: 100 },
   listContainer: { paddingBottom: 100, gap: spacing.lg, paddingTop: spacing.sm },
   videoCard: {
     marginHorizontal: spacing.base,
@@ -296,7 +296,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     start: 0,
     height: 3,
     backgroundColor: colors.emerald,
-    borderRadius: 1.5,
+    borderRadius: radius.sm,
   },
   infoRow: {
     flexDirection: 'row',

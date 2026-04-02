@@ -368,13 +368,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   progressBarBg: {
     width: '100%',
     height: 6,
-    borderRadius: 3,
+    borderRadius: radius.sm,
     backgroundColor: tc.surface,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
-    borderRadius: 3,
+    borderRadius: radius.sm,
   },
   progressLabel: {
     fontFamily: fonts.body,

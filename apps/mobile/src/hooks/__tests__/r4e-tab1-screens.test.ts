@@ -291,6 +291,15 @@ describe('waqf', () => {
     expect(styles).toContain('fonts.bodySemiBold');
     expect(styles).toContain('fonts.bodyBold');
   });
+
+  test('RTL on info, fund header, creator, amount rows', () => {
+    expect(src).toContain('rtlFlexRow(isRTL)');
+  });
+
+  test('progressTrack uses radius.sm not hardcoded 3', () => {
+    expect(styles).not.toMatch(/borderRadius: 3/);
+    expect(styles).toContain('radius.sm');
+  });
 });
 
 // ── watch-history.tsx ──
@@ -319,8 +328,9 @@ describe('watch-history', () => {
     expect(styles).toContain('tc.text.tertiary');
   });
 
-  test('no unused isRTL variable', () => {
-    expect(src).not.toMatch(/const.*isRTL.*=.*useTranslation/);
+  test('isRTL is used for RTL layout', () => {
+    expect(src).toContain('isRTL');
+    expect(src).toContain('rtlFlexRow');
   });
 
   test('headerSpacer uses dynamic insets not magic 100', () => {
@@ -353,12 +363,21 @@ describe('watch-party', () => {
   test('double-tap guard on card and join', () => {
     expect(src).toContain('isNavigatingRef.current');
   });
+
+  test('RTL on party header, host row, actions', () => {
+    expect(src).toContain('rtlFlexRow(isRTL)');
+  });
+
+  test('no hardcoded borderRadius numbers', () => {
+    expect(styles).not.toMatch(/borderRadius: [0-3],/);
+  });
 });
 
 // ── whats-new.tsx ──
 
 describe('whats-new', () => {
   const src = readScreen('whats-new');
+  const styles = getStylesSection(src);
 
   test('scroll indicator hidden', () => {
     expect(src).toContain('showsVerticalScrollIndicator={false}');
@@ -372,6 +391,15 @@ describe('whats-new', () => {
   test('settings.whatsNew i18n key exists', () => {
     const en = readI18n('en') as { settings: Record<string, string> };
     expect(en.settings.whatsNew).toBeTruthy();
+  });
+
+  test('RTL on version header and item rows', () => {
+    expect(src).toContain('rtlFlexRow(isRTL)');
+  });
+
+  test('iconWrap uses radius.full not hardcoded 18', () => {
+    expect(styles).toContain('radius.full');
+    expect(styles).not.toMatch(/borderRadius: 18/);
   });
 });
 
@@ -400,6 +428,10 @@ describe('why-showing', () => {
   test('theme-aware text in styles', () => {
     expect(styles).toContain('tc.text.primary');
     expect(styles).toContain('tc.text.secondary');
+  });
+
+  test('RTL on reason cards and action buttons', () => {
+    expect(src).toContain('rtlFlexRow(isRTL)');
   });
 });
 
@@ -493,6 +525,10 @@ describe('xp-history', () => {
   test('load more indicator when hasNextPage', () => {
     expect(src).toContain('historyQuery.hasNextPage');
     expect(src).toContain('scrollForMore');
+  });
+
+  test('progressBar uses radius.sm not hardcoded 3', () => {
+    expect(styles).not.toMatch(/borderRadius: 3/);
   });
 });
 

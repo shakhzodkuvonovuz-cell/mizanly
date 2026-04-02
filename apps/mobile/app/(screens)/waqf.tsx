@@ -14,6 +14,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { useTranslation } from '@/hooks/useTranslation';
+import { rtlFlexRow } from '@/utils/rtl';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -28,7 +29,7 @@ export default function WaqfScreen() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const haptic = useContextualHaptic();
 
   const [contributeSheet, setContributeSheet] = useState(false);
@@ -110,14 +111,14 @@ export default function WaqfScreen() {
     return (
       <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
         <View style={styles.fundCard}>
-          <View style={styles.fundHeader}>
+          <View style={[styles.fundHeader, { flexDirection: rtlFlexRow(isRTL) }]}>
             <View style={styles.fundIconWrap}>
               <Icon name="heart" size="md" color={colors.gold} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.fundTitle}>{item.title as string}</Text>
               {creator && (
-                <View style={styles.creatorRow}>
+                <View style={[styles.creatorRow, { flexDirection: rtlFlexRow(isRTL) }]}>
                   <Avatar uri={creator.avatarUrl as string | null} name={creator.displayName as string || ''} size="xs" />
                   <Text style={styles.creatorName}>{creator.displayName as string}</Text>
                 </View>
@@ -135,7 +136,7 @@ export default function WaqfScreen() {
               style={[styles.progressFill, { width: `${progress * 100}%` }]}
             />
           </View>
-          <View style={styles.amountRow}>
+          <View style={[styles.amountRow, { flexDirection: rtlFlexRow(isRTL) }]}>
             <Text style={styles.raisedAmount}>${raised.toLocaleString()}</Text>
             <Text style={styles.goalAmount}>{t('community.waqfGoalOf', { amount: goal.toLocaleString() })}</Text>
             <Text style={styles.percentText}>{Math.round(progress * 100)}%</Text>
@@ -162,7 +163,7 @@ export default function WaqfScreen() {
 
         {/* Info card */}
         <Animated.View entering={FadeInUp.duration(300)} style={styles.infoCard}>
-          <LinearGradient colors={[colors.gold + '15', 'transparent']} style={styles.infoGradient}>
+          <LinearGradient colors={[colors.gold + '15', 'transparent']} style={[styles.infoGradient, { flexDirection: rtlFlexRow(isRTL) }]}>
             <Icon name="heart" size="md" color={colors.gold} />
             <Text style={styles.infoText}>
               {t('community.waqfDescription')}
@@ -279,8 +280,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   creatorRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: 2 },
   creatorName: { color: tc.text.secondary, fontSize: fontSize.xs },
   fundDesc: { color: tc.text.secondary, fontSize: fontSize.sm, marginBottom: spacing.md, lineHeight: 20 },
-  progressTrack: { height: 6, backgroundColor: tc.surface, borderRadius: 3, marginBottom: spacing.sm, overflow: 'hidden' },
-  progressFill: { height: 6, borderRadius: 3 },
+  progressTrack: { height: 6, backgroundColor: tc.surface, borderRadius: radius.sm, marginBottom: spacing.sm, overflow: 'hidden' },
+  progressFill: { height: 6, borderRadius: radius.sm },
   amountRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.xs, marginBottom: spacing.md },
   raisedAmount: { color: colors.gold, fontSize: fontSize.md, fontFamily: fonts.bodyBold },
   goalAmount: { color: tc.text.tertiary, fontSize: fontSize.sm },

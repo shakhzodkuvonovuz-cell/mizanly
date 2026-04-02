@@ -13,6 +13,7 @@ import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { rtlFlexRow } from '@/utils/rtl';
 import { feedApi, postsApi } from '@/services/api';
 import { showToast } from '@/components/ui/Toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -29,7 +30,7 @@ function WhyShowingContent() {
   const styles = createStyles(tc);
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const haptic = useContextualHaptic();
   const queryClient = useQueryClient();
   const params = useLocalSearchParams<{ postId: string; postType: string }>();
@@ -220,7 +221,7 @@ function WhyShowingContent() {
           <Animated.View
             key={`reason-${index}`}
             entering={FadeInDown.delay(index * 80).duration(300)}
-            style={styles.reasonCard}
+            style={[styles.reasonCard, { flexDirection: rtlFlexRow(isRTL) }]}
           >
             <View style={styles.reasonIconContainer}>
               <Icon name={reason.icon} size="md" color={colors.emerald} />
@@ -235,7 +236,7 @@ function WhyShowingContent() {
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
           <Pressable
-            style={[styles.actionButton, isActioning && { opacity: 0.5 }]}
+            style={[styles.actionButton, { flexDirection: rtlFlexRow(isRTL) }, isActioning && { opacity: 0.5 }]}
             onPress={handleNotInterested}
             disabled={isActioning}
             accessibilityRole="button"
@@ -247,7 +248,7 @@ function WhyShowingContent() {
           </Pressable>
 
           <Pressable
-            style={[styles.actionButtonSecondary, isActioning && { opacity: 0.5 }]}
+            style={[styles.actionButtonSecondary, { flexDirection: rtlFlexRow(isRTL) }, isActioning && { opacity: 0.5 }]}
             onPress={handleSeeLess}
             disabled={isActioning}
             accessibilityRole="button"

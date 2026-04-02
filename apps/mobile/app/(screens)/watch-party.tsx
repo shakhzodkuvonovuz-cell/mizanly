@@ -15,6 +15,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
+import { rtlFlexRow } from '@/utils/rtl';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { api, videosApi } from '@/services/api';
@@ -26,7 +27,7 @@ export default function WatchPartyScreen() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const haptic = useContextualHaptic();
   const queryClient = useQueryClient();
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
@@ -125,7 +126,7 @@ export default function WatchPartyScreen() {
             setTimeout(() => { isNavigatingRef.current = false; }, 500);
           }}
         >
-          <View style={styles.partyHeader}>
+          <View style={[styles.partyHeader, { flexDirection: rtlFlexRow(isRTL) }]}>
             {isLive && (
               <View style={styles.liveBadge}>
                 <View style={styles.liveDot} />
@@ -137,7 +138,7 @@ export default function WatchPartyScreen() {
 
           <View style={styles.partyInfo}>
             {host && (
-              <View style={styles.hostRow}>
+              <View style={[styles.hostRow, { flexDirection: rtlFlexRow(isRTL) }]}>
                 <Avatar uri={host.avatarUrl as string | null} name={host.displayName as string || ''} size="sm" />
                 <Text style={styles.hostName}>{t('community.hostedBy', { name: host.displayName as string })}</Text>
               </View>
@@ -148,7 +149,7 @@ export default function WatchPartyScreen() {
             </View>
           </View>
 
-          <View style={styles.partyActions}>
+          <View style={[styles.partyActions, { flexDirection: rtlFlexRow(isRTL) }]}>
             <Pressable
               style={styles.joinBtn}
               onPress={() => {
@@ -356,7 +357,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   partyCard: { backgroundColor: tc.bgCard, borderRadius: radius.lg, padding: spacing.base, borderWidth: 1, borderColor: tc.border, marginBottom: spacing.md },
   partyHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
   liveBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: '#F85149' + '20', paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
-  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#F85149' },
+  liveDot: { width: 6, height: 6, borderRadius: radius.full, backgroundColor: '#F85149' },
   liveText: { color: '#F85149', fontSize: fontSize.xs, fontFamily: fonts.bodyBold },
   partyTitle: { color: tc.text.primary, fontSize: fontSize.md, fontFamily: fonts.bodySemiBold, flex: 1 },
   partyInfo: { gap: spacing.sm, marginBottom: spacing.md },

@@ -8,6 +8,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
+import { rtlFlexRow } from '@/utils/rtl';
 
 // Changelog entries — add new ones at the top
 const CHANGELOG = [
@@ -29,7 +30,7 @@ const CHANGELOG = [
 
 function ChangelogContent() {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const tc = useThemeColors();
 
   return (
@@ -41,7 +42,7 @@ function ChangelogContent() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {CHANGELOG.map((release, ri) => (
           <Animated.View key={release.version} entering={FadeInUp.delay(ri * 100).duration(300)}>
-            <View style={[styles.versionHeader, { borderBottomColor: tc.border }]}>
+            <View style={[styles.versionHeader, { borderBottomColor: tc.border, flexDirection: rtlFlexRow(isRTL) }]}>
               <Text style={[styles.versionText, { color: colors.emerald }]}>v{release.version}</Text>
               <Text style={[styles.dateText, { color: tc.text.tertiary }]}>{release.date}</Text>
             </View>
@@ -49,7 +50,7 @@ function ChangelogContent() {
               <Animated.View
                 key={ii}
                 entering={FadeInUp.delay(ri * 100 + ii * 50).duration(250)}
-                style={[styles.itemRow, { borderBottomColor: tc.border }]}
+                style={[styles.itemRow, { borderBottomColor: tc.border, flexDirection: rtlFlexRow(isRTL) }]}
               >
                 <View style={[styles.iconWrap, { backgroundColor: `${colors.emerald}1F` }]}>
                   <Icon name={item.icon} size="sm" color={colors.emerald} />
@@ -78,7 +79,7 @@ const styles = StyleSheet.create({
   versionText: { fontFamily: fonts.bodyBold, fontSize: fontSize.lg },
   dateText: { fontFamily: fonts.body, fontSize: fontSize.xs },
   itemRow: { flexDirection: 'row', gap: spacing.md, paddingVertical: spacing.md, borderBottomWidth: StyleSheet.hairlineWidth },
-  iconWrap: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  iconWrap: { width: 36, height: 36, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   itemText: { flex: 1, gap: 2 },
   itemTitle: { fontFamily: fonts.bodyMedium, fontSize: fontSize.base },
   itemDesc: { fontFamily: fonts.body, fontSize: fontSize.xs, lineHeight: 16 },
