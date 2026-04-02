@@ -133,6 +133,8 @@ export default function CirclesScreen() {
   const circlesQuery = useQuery({
     queryKey: ['my-circles'],
     queryFn: () => circlesApi.getMyCircles(),
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
   });
 
   const circles: Circle[] = (circlesQuery.data as Circle[]) ?? [];

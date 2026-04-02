@@ -24,6 +24,7 @@ describe('Integration: Post Lifecycle', () => {
       post: {
         create: jest.fn().mockResolvedValue(mockPost),
         findUnique: jest.fn().mockResolvedValue(mockPost),
+        findFirst: jest.fn().mockResolvedValue(mockPost),
         findMany: jest.fn().mockResolvedValue([mockPost]),
         update: jest.fn().mockResolvedValue({ ...mockPost, likesCount: 1 }),
         delete: jest.fn().mockResolvedValue(mockPost),
@@ -49,8 +50,8 @@ describe('Integration: Post Lifecycle', () => {
       savedPost: { findUnique: jest.fn().mockResolvedValue(null) },
       user: { findUnique: jest.fn().mockResolvedValue(mockUser), findMany: jest.fn().mockResolvedValue([]) },
       follow: { findUnique: jest.fn().mockResolvedValue(null) },
-      block: { findMany: jest.fn().mockResolvedValue([]) },
-      mute: { findMany: jest.fn().mockResolvedValue([]) },
+      block: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) },
+      mute: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) },
       hashtag: { upsert: jest.fn().mockResolvedValue({ id: 'h1' }) },
       postHashtag: { create: jest.fn().mockResolvedValue({}) },
       $executeRaw: jest.fn().mockResolvedValue(1),

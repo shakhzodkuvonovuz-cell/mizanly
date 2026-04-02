@@ -17,10 +17,10 @@
 | @relation added | 4 | FIXED (1 P1 + 3 P2) |
 | Dead models @deprecated | 4 | FIXED P2 |
 | Report @@unique dedup | 7 | FIXED P2 |
-| Security (plaintext secrets) | 6 | DEFERRED — needs app-level encryption |
-| Remaining deferred | 5 | DEFERRED — see below |
+| Security (plaintext secrets) | 7 | DEFERRED — needs app-level encryption |
+| Other deferred | 5 | DEFERRED — architecture/service work needed |
 
-**FIXED: 113 | DEFERRED: 6 | DISPUTED: 3 | INFO/NO-ACTION: 16 = 138 total**
+**FIXED: 113 | DEFERRED: 12 | DISPUTED: 3 | INFO/NO-ACTION: 10 = 138 total**
 
 ---
 

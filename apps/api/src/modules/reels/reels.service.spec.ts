@@ -90,8 +90,12 @@ describe('ReelsService', () => {
             mute: {
               findMany: jest.fn(),
             },
+            restrict: {
+              findMany: jest.fn().mockResolvedValue([]),
+            },
             hashtag: {
               upsert: jest.fn(),
+              createMany: jest.fn().mockResolvedValue({ count: 0 }),
             },
             report: {
               create: jest.fn(),
@@ -241,14 +245,15 @@ describe('ReelsService', () => {
       };
       const mockUpdatedReel = { ...mockReel, status: ReelStatus.READY };
 
-      prisma.hashtag.upsert.mockResolvedValue({});
+      prisma.hashtag.createMany.mockResolvedValue({ count: 3 });
       prisma.$transaction.mockResolvedValue([mockReel]);
       prisma.reel.update.mockResolvedValue(mockUpdatedReel);
 
       const result = await service.create(userId, dto);
 
-      expect(prisma.hashtag.upsert).toHaveBeenCalledTimes(3); // #hello, #world, extra
-      expect(prisma.$transaction).toHaveBeenCalled();
+      expect(prisma.hashtag.createMany).toHaveBeenCalledWith(
+        expect.objectContaining({ skipDuplicates: true }),
+      );
       expect(prisma.$transaction).toHaveBeenCalled();
       // Result comes from the $transaction mock which returns [mockReel]
       expect(result).toBeDefined();

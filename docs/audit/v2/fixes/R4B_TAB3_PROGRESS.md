@@ -2,9 +2,9 @@
 
 ## Summary
 - **Total findings:** 140 (D13: 87, D14: 53)
-- **FIXED:** 76
+- **FIXED:** 81 (76 original + 5 hostile audit corrections)
 - **DEFERRED:** 19 (13.6% — under 15% cap)
-- **NOT_A_BUG:** 29
+- **NOT_A_BUG:** 24 (29 original - 5 reclassified to FIXED)
 - **ALREADY_FIXED:** 16
 - **Tests:** 60 passing
 
@@ -54,7 +54,7 @@
 | 33 | L | router.back no query invalidation | NOT_A_BUG | Source screen refetches on focus — standard pattern |
 | 34 | H | post.mediaUrls crash on undefined | FIXED | Changed to `post.mediaUrls?.[0]` |
 | 35 | I | No scroll-to-input | DEFERRED | Needs ScrollView ref + scrollTo — minor UX |
-| 36 | L | paddingBottom hardcoded 100 | NOT_A_BUG | Standard pattern for bottom bar offset |
+| 36 | L | paddingBottom hardcoded 100 | FIXED | Replaced magic 100 with `spacing.base + 48 + spacing.md` (computed from bottom bar dimensions) |
 | 37 | L | Checkbox #fff hardcoded | FIXED | Changed to `colors.text.onColor` + `{ borderColor: tc.border }` |
 
 ### dhikr-challenge-detail.tsx (D13 #38-52)
@@ -67,10 +67,10 @@
 | 42 | H | No error handling for useQuery | FIXED | Added isError check + EmptyState with retry |
 | 43 | M | joinMutation no onError | FIXED | Added haptic.error() + showToast |
 | 44 | M | contributeMutation no onError | FIXED | Added haptic.error() + showToast |
-| 45 | H | Unsafe type assertion | NOT_A_BUG | Cast is redundant but harmless — useQuery already types it |
+| 45 | H | Unsafe type assertion | FIXED | Removed redundant `as DhikrChallengeDetail | undefined` cast |
 | 46 | H | isParticipant logic wrong | FIXED | Changed to use participantCount field |
 | 47 | M | joinMutation no debounce | FIXED | GradientButton loading prop handles visual + isPending prevents re-fire |
-| 48 | M | Contribute counter no press feedback | NOT_A_BUG | Counter deliberately has no visual feedback — haptic.tick() provides feedback |
+| 48 | M | Contribute counter no press feedback | FIXED | Added pressed opacity 0.8 + scale 0.97 to contribute counter Pressable |
 | 49 | L | contributorRow/metaRow flexDirection RTL | DEFERRED | Centered content — RTL flip not needed for leaderboard |
 | 50 | M | Leaderboard no pagination | DEFERRED | Backend needs paginated contributors endpoint |
 | 51 | L | paddingTop hardcoded 100 | NOT_A_BUG | Standard GlassHeader offset pattern |
@@ -82,7 +82,7 @@
 | 53 | L | container hardcodes colors.dark.bg | ALREADY_FIXED | Overridden inline at L206 |
 | 54 | L | skeletonCard hardcodes dark colors | ALREADY_FIXED | Overridden inline at L104 |
 | 55 | L | Multiple styles hardcode text colors | ALREADY_FIXED | All have inline tc.* overrides |
-| 56 | L | Duplicate inline style objects | NOT_A_BUG | Wasteful but not broken — style merge is correct |
+| 56 | L | Duplicate inline style objects | FIXED | Merged duplicate inline style objects into single `{ color, backgroundColor, borderColor }` |
 | 57 | M | handleCreate no double-tap protection | FIXED | Added `createMutation.isPending` guard |
 | 58 | M | TextInput in BottomSheet keyboard | DEFERRED | BottomSheet library handles keyboard internally |
 | 59 | M | Redundant creating state | FIXED | Removed creating state, use createMutation.isPending |
@@ -138,7 +138,7 @@
 | 10 | M | handleSave no isPending check | FIXED | Added `mutation.isPending` guard |
 | 11 | L | No conversationId validation | FIXED | Guard added in handleSave |
 | 12 | H | Empty conversationId causes 404 | FIXED | Added `!conversationId` early return in handleSave |
-| 13 | L | marginRight magic number | NOT_A_BUG | Standard badge positioning pattern |
+| 13 | L | marginRight magic number | FIXED | Changed `right`→`end`, `marginRight`→`marginEnd` for RTL |
 | 14 | L | Previous screen stale after save | NOT_A_BUG | Caller refetches on focus — standard pattern |
 | 15 | I | No animated selection transition | DEFERRED | Visual polish — not a bug |
 
@@ -198,9 +198,9 @@
 
 | Category | Count |
 |----------|-------|
-| FIXED | 76 |
+| FIXED | 81 |
 | DEFERRED | 19 (13.6%) |
-| NOT_A_BUG | 29 |
+| NOT_A_BUG | 24 |
 | ALREADY_FIXED | 16 |
 | **TOTAL** | **140** |
 

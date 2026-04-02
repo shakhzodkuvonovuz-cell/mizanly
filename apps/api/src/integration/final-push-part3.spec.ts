@@ -267,14 +267,14 @@ describe('Final Push Part 3 — breaking 3800', () => {
             story: { create: jest.fn(), findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), update: jest.fn(), delete: jest.fn() },
             storyView: { create: jest.fn(), findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             storyHighlightAlbum: { create: jest.fn(), findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), update: jest.fn(), delete: jest.fn(), count: jest.fn().mockResolvedValue(0) },
-            storyStickerResponse: { create: jest.fn(), findFirst: jest.fn(), findMany: jest.fn().mockResolvedValue([]), update: jest.fn() },
+            storyStickerResponse: { create: jest.fn(), findFirst: jest.fn(), findMany: jest.fn().mockResolvedValue([]), update: jest.fn(), upsert: jest.fn().mockResolvedValue({}) },
             follow: { findMany: jest.fn().mockResolvedValue([]), findUnique: jest.fn().mockResolvedValue(null) },
             block: { findFirst: jest.fn().mockResolvedValue(null), findMany: jest.fn().mockResolvedValue([]) },
             mute: { findMany: jest.fn().mockResolvedValue([]) },
             restrict: { findMany: jest.fn().mockResolvedValue([]) },
             user: { findUnique: jest.fn().mockResolvedValue(null), findMany: jest.fn().mockResolvedValue([]) },
             conversation: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn() }, message: { create: jest.fn() },
-            $transaction: jest.fn().mockResolvedValue([{}, {}]), $queryRaw: jest.fn().mockResolvedValue([]),
+            $transaction: jest.fn().mockImplementation(async (fnOrArr: unknown) => { if (typeof fnOrArr === 'function') return (fnOrArr as (tx: unknown) => unknown)(prisma); return [{}, {}]; }), $queryRaw: jest.fn().mockResolvedValue([]),
           }},
         ],
       }).compile();
@@ -352,8 +352,7 @@ describe('Final Push Part 3 — breaking 3800', () => {
 
     it('submitStickerResponse — new response', async () => {
       prisma.story.findUnique.mockResolvedValue(story);
-      prisma.storyStickerResponse.findFirst.mockResolvedValue(null);
-      prisma.storyStickerResponse.create.mockResolvedValue({ id: 'sr-1' });
+      prisma.storyStickerResponse.upsert.mockResolvedValue({ id: 'sr-1' });
       const result = await service.submitStickerResponse('s-1', 'u1', 'emoji', { emoji: '🤲' });
       expect(result).toBeDefined();
       expect(result).toHaveProperty('id', 'sr-1');
@@ -361,8 +360,7 @@ describe('Final Push Part 3 — breaking 3800', () => {
 
     it('submitStickerResponse — updates existing', async () => {
       prisma.story.findUnique.mockResolvedValue(story);
-      prisma.storyStickerResponse.findFirst.mockResolvedValue({ id: 'sr-1' });
-      prisma.storyStickerResponse.update.mockResolvedValue({ id: 'sr-1' });
+      prisma.storyStickerResponse.upsert.mockResolvedValue({ id: 'sr-1' });
       const result = await service.submitStickerResponse('s-1', 'u1', 'emoji', { emoji: '🕌' });
       expect(result).toBeDefined();
       expect(result).toHaveProperty('id', 'sr-1');
@@ -492,8 +490,10 @@ describe('Final Push Part 3 — breaking 3800', () => {
     });
 
     it('createEvent — returns event', async () => {
-      prisma.event.create.mockResolvedValue({ ...ev, startDate: new Date(), endDate: new Date() });
-      const result = await service.createEvent('organizer', { title: 'Test', startDate: new Date().toISOString(), endDate: new Date().toISOString() } as any);
+      const start = new Date();
+      const end = new Date(start.getTime() + 3600000); // 1 hour later
+      prisma.event.create.mockResolvedValue({ ...ev, startDate: start, endDate: end });
+      const result = await service.createEvent('organizer', { title: 'Test', startDate: start.toISOString(), endDate: end.toISOString() } as any);
       expect(result.title).toBe('Test');
     });
 

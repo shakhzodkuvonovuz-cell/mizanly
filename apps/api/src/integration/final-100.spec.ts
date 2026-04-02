@@ -31,7 +31,7 @@ describe('Final 100 — breaking 3800', () => {
             $executeRaw: jest.fn(),
             post: { create: jest.fn(), findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             postReaction: { create: jest.fn(), update: jest.fn(), findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), delete: jest.fn() },
-            follow: { findMany: jest.fn().mockResolvedValue([]) }, block: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) }, mute: { findMany: jest.fn().mockResolvedValue([]) },
+            follow: { findMany: jest.fn().mockResolvedValue([]) }, block: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) }, mute: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) },
             restrict: { findMany: jest.fn().mockResolvedValue([]) },
             hashtag: { upsert: jest.fn() }, user: { update: jest.fn(), findMany: jest.fn().mockResolvedValue([]), findUnique: jest.fn() },
             comment: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn(), updateMany: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
@@ -115,7 +115,7 @@ describe('Final 100 — breaking 3800', () => {
 
     it('addComment with parentId (reply)', async () => {
       prisma.post.findUnique.mockResolvedValue({ id: 'p-1', userId: 'owner', isRemoved: false, commentsDisabled: false });
-      prisma.comment.findUnique.mockResolvedValue({ id: 'parent-1', userId: 'u2' }); // parent comment
+      prisma.comment.findUnique.mockResolvedValue({ id: 'parent-1', userId: 'u2', postId: 'p-1' }); // parent comment
       prisma.$transaction.mockResolvedValue([{ id: 'reply-1', userId: 'u1', content: 'reply' }, {}]);
       const result = await service.addComment('p-1', 'u1', { content: 'reply', parentId: 'parent-1' } as any);
       expect(result).toBeDefined();

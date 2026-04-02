@@ -22,6 +22,7 @@ describe('PostsService — Blocked User Content Access', () => {
           useValue: {
             post: {
               findUnique: jest.fn(),
+              findFirst: jest.fn(),
               findMany: jest.fn().mockResolvedValue([]),
               create: jest.fn(),
               update: jest.fn(),
@@ -117,7 +118,7 @@ describe('PostsService — Blocked User Content Access', () => {
         circle: null,
         sharedPost: null,
       };
-      prisma.post.findUnique.mockResolvedValue(post);
+      prisma.post.findFirst.mockResolvedValue(post);
 
       // blocker has blocked the viewer
       prisma.block.findFirst.mockResolvedValue({
@@ -160,7 +161,7 @@ describe('PostsService — Blocked User Content Access', () => {
         circle: null,
         sharedPost: null,
       };
-      prisma.post.findUnique.mockResolvedValue(post);
+      prisma.post.findFirst.mockResolvedValue(post);
 
       // viewer has blocked the post author
       prisma.block.findFirst.mockResolvedValue({
@@ -203,7 +204,7 @@ describe('PostsService — Blocked User Content Access', () => {
         circle: null,
         sharedPost: null,
       };
-      prisma.post.findUnique.mockResolvedValue(post);
+      prisma.post.findFirst.mockResolvedValue(post);
       prisma.block.findFirst.mockResolvedValue(null); // No block
 
       const result = await service.getById('post-3', blockerUserId);
@@ -241,7 +242,7 @@ describe('PostsService — Blocked User Content Access', () => {
         circle: null,
         sharedPost: null,
       };
-      prisma.post.findUnique.mockResolvedValue(post);
+      prisma.post.findFirst.mockResolvedValue(post);
 
       // Even if block exists, author should see their own post — block.findFirst should NOT be called
       const result = await service.getById('post-4', blockerUserId);

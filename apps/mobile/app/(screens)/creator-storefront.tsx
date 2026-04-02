@@ -22,6 +22,7 @@ import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { useIsOffline } from '@/hooks/useIsOffline';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { api } from '@/services/api';
 import { navigate } from '@/utils/navigation';

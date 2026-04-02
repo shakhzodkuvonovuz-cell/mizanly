@@ -30,6 +30,7 @@ import type { BroadcastChannel as BroadcastChannelType, BroadcastMessage } from 
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { useIsOffline } from '@/hooks/useIsOffline';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 
@@ -37,6 +38,7 @@ type BroadcastChannelWithSubscription = BroadcastChannelType & { isSubscribed?: 
 
 export default function BroadcastChannelScreen() {
   const tc = useThemeColors();
+  const isOffline = useIsOffline();
   const styles = createStyles(tc);
   const { id } = useLocalSearchParams<{ id: string }>();
   const navigation = useNavigation();

@@ -170,7 +170,7 @@ export default function DhikrChallengeDetailScreen() {
     contributeMutation.mutate(contributeCount);
   }, [contributeCount, haptic, contributeMutation]);
 
-  const detail = challenge as DhikrChallengeDetail | undefined;
+  const detail = challenge;
 
   // isParticipant is now based on participantCount field, not contributor list (#46 fix)
   const _isParticipant = (detail?.participantCount ?? 0) > 0;
@@ -241,8 +241,7 @@ export default function DhikrChallengeDetailScreen() {
                   accessibilityRole="button"
                   accessibilityLabel={t('dhikr.contribute')}
                   onPress={handleContributeTap}
-
-                  style={styles.contributeCounter}
+                  style={({ pressed }) => [styles.contributeCounter, pressed && { opacity: 0.8, transform: [{ scale: 0.97 }] }]}
                 >
                   <LinearGradient
                     colors={[colors.emerald, colors.goldLight]}

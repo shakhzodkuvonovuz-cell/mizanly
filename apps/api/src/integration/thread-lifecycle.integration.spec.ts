@@ -28,6 +28,7 @@ describe('Integration: Thread Lifecycle', () => {
       thread: {
         create: jest.fn().mockResolvedValue(mockThread),
         findUnique: jest.fn().mockResolvedValue(mockThread),
+        findFirst: jest.fn().mockResolvedValue(mockThread),
         findMany: jest.fn().mockResolvedValue([mockThread]),
         update: jest.fn().mockResolvedValue(mockThread),
         delete: jest.fn().mockResolvedValue(mockThread),
@@ -54,7 +55,7 @@ describe('Integration: Thread Lifecycle', () => {
       user: { findUnique: jest.fn().mockResolvedValue(mockUser), findMany: jest.fn().mockResolvedValue([]) },
       follow: { findUnique: jest.fn().mockResolvedValue(null) },
       block: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) },
-      mute: { findMany: jest.fn().mockResolvedValue([]) },
+      mute: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) },
       hashtag: { upsert: jest.fn().mockResolvedValue({ id: 'h1' }) },
       $executeRaw: jest.fn().mockResolvedValue(1),
       $transaction: jest.fn().mockImplementation((fnOrArr: any) => {
@@ -98,7 +99,7 @@ describe('Integration: Thread Lifecycle', () => {
   });
 
   it('should throw NotFoundException for missing thread', async () => {
-    prisma.thread.findUnique.mockResolvedValue(null);
+    prisma.thread.findFirst.mockResolvedValue(null);
     await expect(threadsService.getById('missing', 'user-1')).rejects.toThrow(NotFoundException);
   });
 

@@ -256,8 +256,8 @@ const styles = StyleSheet.create({
   lockBadge: {
     position: 'absolute',
     bottom: 0,
-    right: '50%',
-    marginRight: -32,
+    end: '50%',
+    marginEnd: -32,
     width: 24,
     height: 24,
     borderRadius: radius.full,

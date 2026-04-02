@@ -31,7 +31,7 @@ describe('Concurrency + Error Recovery — remaining tests', () => {
             $transaction: jest.fn().mockResolvedValue([{}, {}]), $executeRaw: jest.fn(),
             post: { create: jest.fn(), findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             postReaction: { create: jest.fn(), update: jest.fn(), findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), delete: jest.fn() },
-            follow: { findMany: jest.fn().mockResolvedValue([]) }, block: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) }, mute: { findMany: jest.fn().mockResolvedValue([]) },
+            follow: { findMany: jest.fn().mockResolvedValue([]) }, block: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) }, mute: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) },
             restrict: { findMany: jest.fn().mockResolvedValue([]) },
             hashtag: { upsert: jest.fn() }, user: { update: jest.fn(), findMany: jest.fn().mockResolvedValue([]), findUnique: jest.fn() },
             comment: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn(), updateMany: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
@@ -89,13 +89,13 @@ describe('Concurrency + Error Recovery — remaining tests', () => {
     });
 
     it('should handle getShareLink', async () => {
-      prisma.post.findUnique.mockResolvedValue(mockPost);
+      prisma.post.findFirst.mockResolvedValue(mockPost);
       const result = await service.getShareLink('p-1');
       expect(result.url).toContain('p-1');
     });
 
     it('should throw NotFoundException for share link of removed post', async () => {
-      prisma.post.findUnique.mockResolvedValue({ ...mockPost, isRemoved: true });
+      prisma.post.findFirst.mockResolvedValue(null);
       await expect(service.getShareLink('p-1')).rejects.toThrow();
     });
 

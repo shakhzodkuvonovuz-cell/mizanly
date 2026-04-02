@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import {
   View, Text, StyleSheet, TextInput,
   ScrollView, Alert, Linking, Pressable,
@@ -283,7 +284,7 @@ export default function SettingsScreen() {
   const handleSignOut = () => {
     Alert.alert(t('settings.signOut'), t('settings.confirmSignOut'), [
       { text: t('common.cancel'), style: 'cancel' },
-      { text: t('settings.signOut'), onPress: () => { storeLogout(); queryClient.clear(); signOut(); } },
+      { text: t('settings.signOut'), onPress: async () => { storeLogout(); queryClient.clear(); await signOut(); } },
     ]);
   };
 
@@ -356,7 +357,16 @@ export default function SettingsScreen() {
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
 
-        <ScrollView style={styles.body} contentContainerStyle={[styles.bodyContent, { paddingTop: insets.top + 52 }]}>
+        <ScrollView
+          style={styles.body}
+          contentContainerStyle={[styles.bodyContent, { paddingTop: insets.top + 52 }]}
+          refreshControl={
+            <BrandedRefreshControl
+              refreshing={settingsQuery.isRefetching}
+              onRefresh={() => settingsQuery.refetch()}
+            />
+          }
+        >
           {/* Search bar */}
           <View style={[styles.searchContainer, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}>
             <Icon name="search" size="sm" color={tc.text.tertiary} />

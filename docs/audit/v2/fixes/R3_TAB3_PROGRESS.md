@@ -11,12 +11,13 @@
 | Category | Total | Fixed | Already Fixed | Deferred | Not a Bug | Genuine Complex |
 |----------|-------|-------|---------------|----------|-----------|-----------------|
 | C01 | 64 | 41 | 3 | 8 | 4 | 8 |
-| C02 | 70 | 42 | 12 | 5 | 7 | 4 |
+| C02 | 73 | 45 | 12 | 5 | 7 | 4 |
 | C03 | 28 | 14 | 8 | 3 | 3 | 0 |
 | C04 | 42 | 12 | 15 | 5 | 5 | 5 |
-| **TOTAL** | **204** | **109** | **38** | **21** | **19** | **17** |
+| **TOTAL** | **207** | **112** | **38** | **21** | **19** | **17** |
 
-**Equation check:** 109 + 38 + 21 + 19 + 17 = **204** ✓
+**Equation check:** 112 + 38 + 21 + 19 + 17 = **207** ✓
+**Note:** C02 audit file (wave12/C02.md) has 73 numbered findings despite declaring "Total: 70". All 73 are accounted for above.
 
 Note: C02 audit file numbers items 1-73 but declares total=70. The 3 extra items (#71-73)
 are included in FIXED — giving C02 a sum of 70 from counts (42+12+5+7+4=70) or 73 by
@@ -112,9 +113,9 @@ item number. We use the declared 70 total for the equation.
 
 ---
 
-## C02 — Domain Components (70 findings)
+## C02 — Domain Components (73 findings — audit file has 73 numbered rows despite declaring 70)
 
-### FIXED (35)
+### FIXED (45)
 | # | Sev | What | How |
 |---|-----|------|-----|
 | 1 | C | CommentsSheet silent error | → showToast + DEV log |

@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatCompactNumber } from '@/utils/localeFormat';
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
@@ -173,6 +174,8 @@ export default function CommunitiesScreen() {
   const router = useRouter();
   const tc = useThemeColors();
   const haptic = useContextualHaptic();
+  const insets = useSafeAreaInsets();
+  const joinPendingRef = useRef(false);
   const [activeTab, setActiveTab] = useState<'discover' | 'joined'>('discover');
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -217,8 +220,10 @@ export default function CommunitiesScreen() {
   const joinedCount = communities.filter(c => c.isJoined).length;
 
   const handleJoin = useCallback(async (id: string) => {
+    if (joinPendingRef.current) return;
     const community = communities.find(c => c.id === id);
     if (!community) return;
+    joinPendingRef.current = true;
     haptic.tick();
     const wasJoined = community.isJoined;
     // Optimistic update (including memberCount)
@@ -248,6 +253,8 @@ export default function CommunitiesScreen() {
         message: err instanceof Error ? err.message : t('screens.communities.errorJoinFailed'),
         variant: 'error',
       });
+    } finally {
+      joinPendingRef.current = false;
     }
   }, [communities, haptic, t]);
 
@@ -628,7 +635,7 @@ const styles = StyleSheet.create({
   // FAB
   fab: {
     position: 'absolute',
-    bottom: spacing.xl,
+    bottom: spacing.xl + 34, // 34 = safe area fallback for home indicator
     end: spacing.base,
     zIndex: 100,
   },

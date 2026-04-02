@@ -9,6 +9,7 @@ const mockPrisma = {
   useValue: {
     thread: {
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
       findMany: jest.fn().mockResolvedValue([]),
       create: jest.fn(),
       update: jest.fn(),
@@ -101,14 +102,14 @@ describe('ThreadsService — Thread Unroll & Analytics', () => {
 
   describe('getThreadUnroll', () => {
     it('should return single thread when no chain', async () => {
-      prisma.thread.findUnique.mockResolvedValue({ ...baseThread, chainId: null });
+      prisma.thread.findFirst.mockResolvedValue({ ...baseThread, chainId: null });
       const result = await service.getThreadUnroll('thread-1');
       expect(result.data).toHaveLength(1);
       expect(result.meta.totalParts).toBe(1);
     });
 
     it('should return full chain ordered by position', async () => {
-      prisma.thread.findUnique.mockResolvedValue(baseThread);
+      prisma.thread.findFirst.mockResolvedValue(baseThread);
       prisma.thread.findMany.mockResolvedValue([
         { ...baseThread, chainPosition: 1 },
         { ...baseThread, id: 'thread-2', chainPosition: 2 },
@@ -121,12 +122,12 @@ describe('ThreadsService — Thread Unroll & Analytics', () => {
     });
 
     it('should throw for removed thread', async () => {
-      prisma.thread.findUnique.mockResolvedValue({ ...baseThread, isRemoved: true });
+      prisma.thread.findFirst.mockResolvedValue(null);
       await expect(service.getThreadUnroll('thread-1')).rejects.toThrow('Thread not found');
     });
 
     it('should throw for nonexistent thread', async () => {
-      prisma.thread.findUnique.mockResolvedValue(null);
+      prisma.thread.findFirst.mockResolvedValue(null);
       await expect(service.getThreadUnroll('nope')).rejects.toThrow('Thread not found');
     });
   });

@@ -27,6 +27,7 @@ describe('SchedulingService — edge cases', () => {
         { provide: PublishWorkflowService, useValue: { onPublish: jest.fn(), onUnpublish: jest.fn() } },
         { provide: NotificationsService, useValue: { create: jest.fn() } },
         { provide: QueueService, useValue: { addSearchIndexJob: jest.fn(), addPushNotificationJob: jest.fn() } },
+        { provide: 'REDIS', useValue: { set: jest.fn().mockResolvedValue('OK'), get: jest.fn().mockResolvedValue(null), del: jest.fn().mockResolvedValue(1) } },
       ],
     }).compile();
 

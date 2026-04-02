@@ -34,7 +34,7 @@ describe('Comprehensive Abuse Vector Tests', () => {
             $transaction: jest.fn(), $executeRaw: jest.fn(),
             post: { create: jest.fn(), findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn(), findMany: jest.fn() },
             postReaction: { create: jest.fn(), update: jest.fn(), findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), delete: jest.fn() },
-            follow: { findMany: jest.fn() }, block: { findMany: jest.fn(), findFirst: jest.fn().mockResolvedValue(null) }, mute: { findMany: jest.fn() },
+            follow: { findMany: jest.fn() }, block: { findMany: jest.fn(), findFirst: jest.fn().mockResolvedValue(null) }, mute: { findMany: jest.fn(), findFirst: jest.fn().mockResolvedValue(null) },
             hashtag: { upsert: jest.fn() }, user: { update: jest.fn(), findMany: jest.fn().mockResolvedValue([]), findUnique: jest.fn() },
             comment: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn(), updateMany: jest.fn(), findMany: jest.fn() },
             commentReaction: { create: jest.fn(), delete: jest.fn(), findUnique: jest.fn() },

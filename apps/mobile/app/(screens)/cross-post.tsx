@@ -22,6 +22,7 @@ import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { useIsOffline } from '@/hooks/useIsOffline';
 import { showToast } from '@/components/ui/Toast';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 
@@ -37,6 +38,7 @@ const CAPTION_MAX = 2000;
 function CrossPostContent() {
   const { t, isRTL } = useTranslation();
   const tc = useThemeColors();
+  const isOffline = useIsOffline();
   const { postId } = useLocalSearchParams<{ postId: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -148,7 +150,7 @@ function CrossPostContent() {
       />
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.base + 48 + spacing.md }]}
         refreshControl={
           <BrandedRefreshControl
             refreshing={refreshing}
@@ -259,7 +261,7 @@ function CrossPostContent() {
           label={crossPostMutation.isPending ? t('crossPost.posting') : t('crossPost.post')}
           onPress={handleCrossPost}
           loading={crossPostMutation.isPending}
-          disabled={selectedSpaces.size === 0}
+          disabled={isOffline || selectedSpaces.size === 0}
           icon="layers"
         />
       </View>

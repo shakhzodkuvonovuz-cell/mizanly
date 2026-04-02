@@ -276,7 +276,7 @@ export default function DhikrChallengesScreen() {
 
             <Text style={[styles.inputLabel, { color: tc.text.secondary }]}>{t('dhikr.title')}</Text>
             <TextInput
-              style={[styles.textInput, { backgroundColor: tc.surface, borderColor: tc.border }, { color: tc.text.primary, backgroundColor: tc.surface, borderColor: tc.border }]}
+              style={[styles.textInput, { color: tc.text.primary, backgroundColor: tc.surface, borderColor: tc.border }]}
               value={newTitle}
               onChangeText={setNewTitle}
               placeholder={t('dhikr.title')}
@@ -298,7 +298,7 @@ export default function DhikrChallengesScreen() {
 
             <Text style={[styles.inputLabel, { color: tc.text.secondary }]}>{t('dhikr.target')}</Text>
             <TextInput
-              style={[styles.textInput, { backgroundColor: tc.surface, borderColor: tc.border }, { color: tc.text.primary, backgroundColor: tc.surface, borderColor: tc.border }]}
+              style={[styles.textInput, { color: tc.text.primary, backgroundColor: tc.surface, borderColor: tc.border }]}
               value={newTarget}
               onChangeText={setNewTarget}
               placeholder="1000"

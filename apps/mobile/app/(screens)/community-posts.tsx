@@ -30,6 +30,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useIsOffline } from '@/hooks/useIsOffline';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const POST_MAX_LENGTH = 5000;
@@ -44,6 +45,7 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
   const router = useRouter();
   const tc = useThemeColors();
   const { t } = useTranslation();
+  const isOffline = useIsOffline();
   const [liked, setLiked] = useState(post.isLiked ?? false);
   const [likeCount, setLikeCount] = useState(post.likesCount);
 
@@ -149,6 +151,7 @@ export default function CommunityPostsScreen() {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const tc = useThemeColors();
+  const isOffline = useIsOffline();
   const haptic = useContextualHaptic();
   const [refreshing, setRefreshing] = useState(false);
   const [composeText, setComposeText] = useState('');
@@ -404,7 +407,7 @@ export default function CommunityPostsScreen() {
                     accessibilityRole="button"
                     style={[styles.composeButton, !composeText.trim() && selectedMediaList.length === 0 && styles.composeButtonDisabled]}
                     onPress={handleCreatePost}
-                    disabled={(!composeText.trim() && selectedMediaList.length === 0) || createMutation.isPending}
+                    disabled={isOffline || (!composeText.trim() && selectedMediaList.length === 0) || createMutation.isPending}
                   >
                     {createMutation.isPending ? (
                       <Icon name="loader" size="sm" color={tc.text.secondary} />

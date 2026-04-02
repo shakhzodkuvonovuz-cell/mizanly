@@ -33,6 +33,7 @@ import type { Conversation } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useIsOffline } from '@/hooks/useIsOffline';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { rtlFlexRow, rtlTextAlign, rtlBorderStart, rtlMargin, rtlAbsoluteEnd, rtlChevron } from '@/utils/rtl';
 import { TypingIndicator } from '@/components/risalah/TypingIndicator';
@@ -139,6 +140,7 @@ export default function RisalahScreen() {
   const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
   const tc = useThemeColors();
+  const isOffline = useIsOffline();
   const queryClient = useQueryClient();
 
   const TABS = useMemo(() => [

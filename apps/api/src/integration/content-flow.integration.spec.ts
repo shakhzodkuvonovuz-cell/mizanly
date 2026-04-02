@@ -84,6 +84,7 @@ describe('Integration: Content Flow', () => {
     isFeatured: false,
     isRemoved: false,
     blurhash: null,
+    remixAllowed: true,
     createdAt: now,
     updatedAt: now,
     user: {
@@ -283,6 +284,7 @@ describe('Integration: Content Flow', () => {
       },
       mute: {
         findMany: jest.fn().mockResolvedValue([]),
+        findFirst: jest.fn().mockResolvedValue(null),
       },
       restrict: {
         findMany: jest.fn().mockResolvedValue([]),
@@ -310,6 +312,7 @@ describe('Integration: Content Flow', () => {
           viewed: true,
         }),
         update: jest.fn().mockResolvedValue({}),
+        upsert: jest.fn().mockResolvedValue({}),
       },
       contentFilterSetting: {
         findUnique: jest.fn().mockResolvedValue(null),
@@ -382,14 +385,15 @@ describe('Integration: Content Flow', () => {
     });
 
     it('should get the post by ID with user info', async () => {
+      prisma.post.findFirst.mockResolvedValue(mockPost);
       const result = await postsService.getById('post-1', 'user-2');
 
       expect(result.id).toBe('post-1');
       expect(result.user.username).toBe('alice');
       expect(result).toHaveProperty('userReaction');
       expect(result).toHaveProperty('isSaved');
-      expect(prisma.post.findUnique).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { id: 'post-1' } }),
+      expect(prisma.post.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({ where: expect.objectContaining({ id: 'post-1' }) }),
       );
     });
 
@@ -469,15 +473,9 @@ describe('Integration: Content Flow', () => {
       });
 
       expect(result).toBeDefined();
-      expect(prisma.feedInteraction.create).toHaveBeenCalledWith(
+      expect(prisma.feedInteraction.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({
-            userId: 'user-2',
-            postId: 'post-1',
-            space: 'SAF',
-            viewed: true,
-            viewDurationMs: 5000,
-          }),
+          where: { userId_postId: { userId: 'user-2', postId: 'post-1' } },
         }),
       );
     });
@@ -596,6 +594,7 @@ describe('Integration: Content Flow', () => {
     });
 
     it('should get a thread by ID with viewer context', async () => {
+      prisma.thread.findFirst.mockResolvedValue(mockThread);
       const result = await threadsService.getById('thread-1', 'user-2');
 
       expect(result.id).toBe('thread-1');
@@ -604,7 +603,7 @@ describe('Integration: Content Flow', () => {
     });
 
     it('should throw NotFoundException for missing thread', async () => {
-      prisma.thread.findUnique.mockResolvedValue(null);
+      prisma.thread.findFirst.mockResolvedValue(null);
 
       await expect(
         threadsService.getById('missing', 'user-1'),
@@ -693,6 +692,7 @@ describe('Integration: Content Flow', () => {
       // post includes the full user relation so shareAsStory can check blocks
       prisma.post.findUnique.mockResolvedValue({
         ...mockPost,
+        remixAllowed: true,
         user: { id: 'user-1', username: 'alice' },
       });
 

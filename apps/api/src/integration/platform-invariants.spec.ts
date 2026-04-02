@@ -23,7 +23,7 @@ const mockPrisma = {
     user: { findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), update: jest.fn() },
     follow: { findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
     block: { findFirst: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
-    mute: { findMany: jest.fn().mockResolvedValue([]) },
+    mute: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) },
     restrict: { findMany: jest.fn().mockResolvedValue([]) },
     notification: { findMany: jest.fn().mockResolvedValue([]), findUnique: jest.fn(), findFirst: jest.fn(), create: jest.fn().mockResolvedValue({ id: 'notif-1' }), update: jest.fn(), updateMany: jest.fn(), count: jest.fn().mockResolvedValue(0), groupBy: jest.fn().mockResolvedValue([]), delete: jest.fn(), deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
     hashtag: { upsert: jest.fn() },

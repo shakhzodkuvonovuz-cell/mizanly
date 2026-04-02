@@ -20,6 +20,7 @@ import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { useIsOffline } from '@/hooks/useIsOffline';
 
 interface BlockedUser {
   id: string;
@@ -41,6 +42,7 @@ export default function BlockedScreen() {
   const tc = useThemeColors();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const isOffline = useIsOffline();
   const haptic = useContextualHaptic();
 
   const query = useInfiniteQuery({
@@ -157,7 +159,7 @@ export default function BlockedScreen() {
                       size="sm"
                       onPress={() => confirmUnblock(item)}
                       loading={unblockMutation.isPending && unblockMutation.variables === u.id}
-                      disabled={unblockMutation.isPending && unblockMutation.variables === u.id}
+                      disabled={isOffline || (unblockMutation.isPending && unblockMutation.variables === u.id)}
                       accessibilityLabel={t('screens.blocked.unblockUser', { name: u.displayName })}
                       accessibilityRole="button"
                     />

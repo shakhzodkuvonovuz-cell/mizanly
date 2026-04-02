@@ -51,7 +51,7 @@ describe('PostsService — Comment Permission Enforcement', () => {
             postReaction: { create: jest.fn(), update: jest.fn(), findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), delete: jest.fn() },
             follow: { findMany: jest.fn(), findUnique: jest.fn() },
             block: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) },
-            mute: { findMany: jest.fn().mockResolvedValue([]) },
+            mute: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) },
             hashtag: { upsert: jest.fn() },
             report: { create: jest.fn().mockResolvedValue({}), findFirst: jest.fn().mockResolvedValue(null) },
             feedDismissal: { findMany: jest.fn().mockResolvedValue([]), upsert: jest.fn() },

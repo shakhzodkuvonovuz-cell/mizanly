@@ -160,7 +160,7 @@ describe('Additional Tests — reaching 3800+ total', () => {
       prisma.videoBookmark.create.mockResolvedValue({});
       const result = await service.bookmark('v-1', 'u1');
       expect(result).toBeDefined();
-      expect(prisma.videoBookmark.create).toHaveBeenCalled();
+      expect(prisma.$transaction).toHaveBeenCalled();
     });
 
     it('should unbookmark video', async () => {
@@ -545,7 +545,7 @@ describe('Additional Tests — reaching 3800+ total', () => {
 
     it('should handle create product with Arabic title', async () => {
       prisma.product.create.mockResolvedValue({ id: 'p-1', title: 'حلال', price: 10 });
-      const result = await service.createProduct('u1', { title: 'حلال', price: 10, description: 'desc', category: 'OTHER' } as any);
+      const result = await service.createProduct('u1', { title: 'حلال', price: 10, description: 'desc', category: 'PRODUCT_OTHER' } as any);
       expect(result.title).toBe('حلال');
     });
   });

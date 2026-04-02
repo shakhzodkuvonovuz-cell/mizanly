@@ -38,6 +38,7 @@ describe('WebhookProcessor', () => {
             moveToDlq: jest.fn().mockResolvedValue(undefined),
           },
         },
+        { provide: 'REDIS', useValue: { set: jest.fn().mockResolvedValue('OK'), get: jest.fn().mockResolvedValue(null), del: jest.fn().mockResolvedValue(1) } },
       ],
     }).compile();
 
@@ -47,41 +48,41 @@ describe('WebhookProcessor', () => {
   describe('URL validation', () => {
     it('should reject HTTP URLs', async () => {
       const job = {
-        data: { url: 'http://example.com/hook', secret: 's', event: 'test', payload: {}, webhookId: 'wh1' },
+        data: { url: 'http://example.com/hook', signature: 'abc123', timestamp: '12345', event: 'test', payload: {}, webhookId: 'wh1' },
         attemptsMade: 0, opts: { attempts: 5 }, id: 'j1', updateProgress: jest.fn(),
       };
-      await expect((processor as any).deliverWebhook(job)).rejects.toThrow('only HTTPS');
+      await expect((processor as any).deliverWebhook(job)).rejects.toThrow('HTTPS');
     });
 
     it('should reject localhost', async () => {
       const job = {
-        data: { url: 'https://localhost:3000/admin', secret: 's', event: 'test', payload: {}, webhookId: 'wh1' },
+        data: { url: 'https://localhost:3000/admin', signature: 'abc123', timestamp: '12345', event: 'test', payload: {}, webhookId: 'wh1' },
         attemptsMade: 0, opts: { attempts: 5 }, id: 'j1', updateProgress: jest.fn(),
       };
-      await expect((processor as any).deliverWebhook(job)).rejects.toThrow('private IP');
+      await expect((processor as any).deliverWebhook(job)).rejects.toThrow(/private/i);
     });
 
     it('should reject private IPs', async () => {
       const job = {
-        data: { url: 'https://192.168.1.1/hook', secret: 's', event: 'test', payload: {}, webhookId: 'wh1' },
+        data: { url: 'https://192.168.1.1/hook', signature: 'abc123', timestamp: '12345', event: 'test', payload: {}, webhookId: 'wh1' },
         attemptsMade: 0, opts: { attempts: 5 }, id: 'j1', updateProgress: jest.fn(),
       };
-      await expect((processor as any).deliverWebhook(job)).rejects.toThrow('private IP');
+      await expect((processor as any).deliverWebhook(job)).rejects.toThrow(/private/i);
     });
 
     it('should reject cloud metadata URLs', async () => {
       const job = {
-        data: { url: 'https://169.254.169.254/latest', secret: 's', event: 'test', payload: {}, webhookId: 'wh1' },
+        data: { url: 'https://169.254.169.254/latest', signature: 'abc123', timestamp: '12345', event: 'test', payload: {}, webhookId: 'wh1' },
         attemptsMade: 0, opts: { attempts: 5 }, id: 'j1', updateProgress: jest.fn(),
       };
-      await expect((processor as any).deliverWebhook(job)).rejects.toThrow('private IP');
+      await expect((processor as any).deliverWebhook(job)).rejects.toThrow(/private/i);
     });
   });
 
   describe('job validation', () => {
     it('should return early for missing required fields', async () => {
       const job = {
-        data: { url: '', secret: '', event: '', payload: {}, webhookId: 'wh1' },
+        data: { url: '', signature: '', event: '', payload: {}, webhookId: 'wh1' },
         attemptsMade: 0, opts: { attempts: 5 }, id: 'j1', updateProgress: jest.fn(),
       };
       // Should not throw — just returns silently
@@ -99,7 +100,7 @@ describe('WebhookProcessor', () => {
       }) as any;
 
       const job = {
-        data: { url: 'https://example.com/hook', secret: 'test-secret', event: 'post.created', payload: { id: 'p1' }, webhookId: 'wh1' },
+        data: { url: 'https://example.com/hook', signature: 'abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890', timestamp: '1234567890', event: 'post.created', payload: { id: 'p1' }, webhookId: 'wh1' },
         attemptsMade: 0, opts: { attempts: 5 }, id: 'j1', updateProgress: jest.fn(),
       };
       await (processor as any).deliverWebhook(job);

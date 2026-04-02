@@ -166,6 +166,7 @@ describe('TwoFactorService — key rotation cron', () => {
             }),
           },
         },
+        { provide: 'REDIS', useValue: { set: jest.fn().mockResolvedValue('OK'), get: jest.fn().mockResolvedValue(null), del: jest.fn().mockResolvedValue(1) } },
       ],
     }).compile();
   }
@@ -490,6 +491,7 @@ describe('TwoFactorService — dual-key decryption in service methods', () => {
             }),
           },
         },
+        { provide: 'REDIS', useValue: { set: jest.fn().mockResolvedValue('OK'), get: jest.fn().mockResolvedValue(null), del: jest.fn().mockResolvedValue(1) } },
       ],
     }).compile();
 

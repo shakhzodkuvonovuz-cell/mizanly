@@ -47,7 +47,7 @@ describe('Final Coverage Push — 3800+ tests', () => {
             $executeRaw: jest.fn(), $executeRawUnsafe: jest.fn(),
             post: { create: jest.fn(), findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             postReaction: { create: jest.fn(), update: jest.fn(), findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), delete: jest.fn() },
-            follow: { findMany: jest.fn().mockResolvedValue([]) }, block: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) }, mute: { findMany: jest.fn().mockResolvedValue([]) },
+            follow: { findMany: jest.fn().mockResolvedValue([]) }, block: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) }, mute: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) },
             restrict: { findMany: jest.fn().mockResolvedValue([]) },
             hashtag: { upsert: jest.fn(), createMany: jest.fn().mockResolvedValue({ count: 0 }) }, user: { update: jest.fn(), findMany: jest.fn().mockResolvedValue([]), findUnique: jest.fn() },
             comment: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn(), updateMany: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
@@ -136,7 +136,7 @@ describe('Final Coverage Push — 3800+ tests', () => {
 
     // Various method tests
     it('getById returns post with user reaction info', async () => {
-      prisma.post.findUnique.mockResolvedValue(mockPost);
+      prisma.post.findFirst.mockResolvedValue(mockPost);
       prisma.postReaction.findUnique.mockResolvedValue({ reaction: 'LIKE' });
       prisma.savedPost.findUnique.mockResolvedValue({ postId: 'p-1' });
       const result = await service.getById('p-1', 'viewer');
@@ -145,7 +145,7 @@ describe('Final Coverage Push — 3800+ tests', () => {
     });
 
     it('getById returns null reaction for unauthenticated viewer', async () => {
-      prisma.post.findUnique.mockResolvedValue(mockPost);
+      prisma.post.findFirst.mockResolvedValue(mockPost);
       const result = await service.getById('p-1');
       expect(result.userReaction).toBeNull();
       expect(result.isSaved).toBe(false);
@@ -251,7 +251,7 @@ describe('Final Coverage Push — 3800+ tests', () => {
     });
 
     it('get share link for existing post', async () => {
-      prisma.post.findUnique.mockResolvedValue(mockPost);
+      prisma.post.findFirst.mockResolvedValue(mockPost);
       const result = await service.getShareLink('p-1');
       expect(result.url).toContain('p-1');
     });
@@ -347,7 +347,7 @@ describe('Final Coverage Push — 3800+ tests', () => {
             user: { findUnique: jest.fn(), update: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             follow: { findMany: jest.fn().mockResolvedValue([]), findUnique: jest.fn() },
             block: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn() },
-            mute: { findMany: jest.fn().mockResolvedValue([]) },
+            mute: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) },
             restrict: { findMany: jest.fn().mockResolvedValue([]) },
             hashtag: { upsert: jest.fn(), createMany: jest.fn().mockResolvedValue({ count: 0 }) }, report: { create: jest.fn() }, feedDismissal: { upsert: jest.fn() },
             pollOption: { findUnique: jest.fn(), update: jest.fn() },
@@ -393,20 +393,20 @@ describe('Final Coverage Push — 3800+ tests', () => {
     });
 
     it('getById with viewer block check — blocks return NotFoundException', async () => {
-      prisma.thread.findUnique.mockResolvedValue(mockThread);
+      prisma.thread.findFirst.mockResolvedValue(mockThread);
       prisma.block.findFirst.mockResolvedValue({ id: 'b-1' });
       await expect(service.getById('t-1', 'blocked-viewer')).rejects.toThrow(NotFoundException);
     });
 
     it('getById without viewer — no block check', async () => {
-      prisma.thread.findUnique.mockResolvedValue(mockThread);
+      prisma.thread.findFirst.mockResolvedValue(mockThread);
       const result = await service.getById('t-1');
       expect(result).toBeDefined();
       expect(result).toHaveProperty('id', 't-1');
     });
 
     it('getById with viewer — enriched with reaction + bookmark', async () => {
-      prisma.thread.findUnique.mockResolvedValue(mockThread);
+      prisma.thread.findFirst.mockResolvedValue(mockThread);
       prisma.block.findFirst.mockResolvedValue(null);
       prisma.threadReaction.findUnique.mockResolvedValue({ reaction: 'LIKE' });
       prisma.threadBookmark.findUnique.mockResolvedValue({ threadId: 't-1' });

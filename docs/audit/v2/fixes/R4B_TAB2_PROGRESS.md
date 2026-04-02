@@ -241,13 +241,13 @@
 
 | Category | Count |
 |----------|-------|
-| FIXED | 101 |
-| NOT_A_BUG | 6 |
+| FIXED | 108 |
+| NOT_A_BUG | 8 |
 | ALREADY_FIXED | 2 |
-| DEFERRED | 32 |
+| DEFERRED | 23 |
 | **Total** | **141** |
 
-**Deferral rate: 22.7%** (32/141)
+**Deferral rate: 16.3%** (23/141) — down from 33% (Part 1) → 22.7% (Part 2) → 16.3% (orchestrator fixes)
 
 ### Part 2 fixes (15 lazy deferrals resolved)
 | # | Item | What was done |
@@ -275,6 +275,18 @@
 - **Error boundary** (1): share-profile ScreenErrorBoundary structural wrapping
 - **Animation** (2): chat-wallpaper micro-interaction, FadeInUp stagger
 - **Other** (16): minor UX/state items with specific technical justifications
+
+### Orchestrator direct fixes (7 more deferrals resolved)
+| Item | What was done |
+|------|---------------|
+| D08 communities #83: FAB bottom safe area | Added bottom offset with home indicator clearance |
+| D08 communities #85: Join double-tap | Added joinPendingRef guard with finally cleanup |
+| D34 settings #30: signOut await | Added await to signOut() call |
+| D34 settings #31/#32: Pull-to-refresh | Added BrandedRefreshControl with settingsQuery.isRefetching |
+| D08 circles #31: refetchOnFocus | Added staleTime: 30_000 + refetchOnWindowFocus: true |
+| D34 share-receive #47: SafeArea edges | Added edges={['top', 'bottom']} to empty-state SafeAreaView |
+| D08 chat-wallpaper #13: Double-tap color | Reclassified → NOT_A_BUG (local state toggle, no API) |
+| D08 chat-wallpaper #16: Micro-interaction | Reclassified → NOT_A_BUG (cosmetic enhancement request) |
 
 ### Tests
 56 tests across all 10 screens — all passing

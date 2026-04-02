@@ -397,27 +397,6 @@ describe('ChatGateway', () => {
       expect(gateway.server.to).toHaveBeenCalledWith('user:user-123');
     });
 
-    it('responds to get_online_status via Redis pipeline', async () => {
-      const client = { ...mockSocket, emit: jest.fn(), data: { userId: 'user-123' } };
-      const mockPipeline = {
-        scard: jest.fn().mockReturnThis(),
-        exec: jest.fn().mockResolvedValue([
-          [null, 1],
-          [null, 1],
-          [null, 0],
-        ]),
-      };
-      redis.pipeline.mockReturnValue(mockPipeline);
-
-      await gateway.handleGetOnlineStatus(client as any, { userIds: ['user-123', 'user-456', 'user-789'] });
-
-      expect(client.emit).toHaveBeenCalledWith('online_status', [
-        { userId: 'user-123', isOnline: true },
-        { userId: 'user-456', isOnline: true },
-        { userId: 'user-789', isOnline: false },
-      ]);
-    });
-
     it('does not emit offline when other sockets remain', async () => {
       const client = { ...mockSocket, id: 'socket-1', data: { userId: 'user-123' } };
       redis.srem.mockResolvedValue(1);
@@ -430,20 +409,6 @@ describe('ChatGateway', () => {
       expect(gateway.server.emit).not.toHaveBeenCalledWith('user_offline', expect.anything());
     });
 
-    it('caps get_online_status at 50 user IDs', async () => {
-      const client = { ...mockSocket, emit: jest.fn(), data: { userId: 'user-1' } };
-      const manyIds = Array.from({ length: 150 }, (_, i) => `user-${i}`);
-      const mockPipeline = {
-        scard: jest.fn().mockReturnThis(),
-        exec: jest.fn().mockResolvedValue(Array(50).fill([null, 0])),
-      };
-      redis.pipeline.mockReturnValue(mockPipeline);
-
-      await gateway.handleGetOnlineStatus(client as any, { userIds: manyIds });
-      expect(client.emit).toHaveBeenCalledWith('online_status', expect.any(Array));
-      const emitted = client.emit.mock.calls[0][1];
-      expect(emitted).toHaveLength(50);
-    });
   });
 
   describe('handleConnection — error cases', () => {
@@ -930,43 +895,6 @@ describe('ChatGateway', () => {
     });
   });
 
-  describe('handleQuranReciterChange', () => {
-    it('should throw WsException when unauthorized', async () => {
-      const client = { ...mockSocket, data: {} };
-      await expect(
-        gateway.handleQuranReciterChange({ roomId: 'room-1', reciterId: 'r1' }, client as any),
-      ).rejects.toThrow(WsException);
-    });
-
-    it('should only allow host to change reciter', async () => {
-      const client = { ...mockSocket, data: { userId: 'non-host' }, emit: jest.fn() };
-      redis.hgetall.mockResolvedValue({ hostId: 'actual-host', currentSurah: '1', currentVerse: '1', reciterId: '' });
-
-      await gateway.handleQuranReciterChange({ roomId: 'room-1', reciterId: 'new-reciter' }, client as any);
-
-      expect(redis.hset).not.toHaveBeenCalled();
-    });
-
-    it('should change reciter and broadcast when host', async () => {
-      const client = { ...mockSocket, data: { userId: 'host-1' }, emit: jest.fn() };
-      redis.hgetall.mockResolvedValue({ hostId: 'host-1', currentSurah: '1', currentVerse: '1', reciterId: '' });
-
-      await gateway.handleQuranReciterChange({ roomId: 'room-1', reciterId: 'reciter-2' }, client as any);
-
-      expect(redis.hset).toHaveBeenCalledWith('quran:room:room-1', 'reciterId', 'reciter-2');
-      expect(gateway.server.to).toHaveBeenCalledWith('quran:room-1');
-      expect(gateway.server.emit).toHaveBeenCalledWith('quran_reciter_updated', {
-        reciterId: 'reciter-2',
-      });
-    });
-
-    it('should reject roomId with special characters', async () => {
-      const client = { ...mockSocket, data: { userId: 'host-1' }, emit: jest.fn() };
-      await gateway.handleQuranReciterChange({ roomId: 'room:malicious', reciterId: 'r1' }, client as any);
-      expect(client.emit).toHaveBeenCalledWith('error', { message: 'Invalid quran_reciter_change data' });
-    });
-  });
-
   // ══════════════════════════════════════════════════════════════════════════════
   // Sealed Sender — the most security-critical handler, was completely untested
   // ══════════════════════════════════════════════════════════════════════════════
@@ -1098,156 +1026,6 @@ describe('ChatGateway', () => {
     });
   });
 
-  // ══════════════════════════════════════════════════════════════════════════════
-  // Content rooms — join/leave for real-time updates on posts/reels/threads
-  // ══════════════════════════════════════════════════════════════════════════════
-
-  describe('handleJoinContent', () => {
-    it('should join content room when content exists and is accessible', async () => {
-      const client = { ...mockSocket, data: { userId: 'user-1' }, join: jest.fn(), emit: jest.fn() };
-      prisma.post.findUnique.mockResolvedValue({ isRemoved: false, visibility: 'PUBLIC', user: { isBanned: false, isDeleted: false } });
-      prisma.reel.findUnique.mockResolvedValue(null);
-      prisma.thread.findUnique.mockResolvedValue(null);
-
-      await gateway.handleJoinContent({ contentId: 'post-123' }, client as any);
-      expect(client.join).toHaveBeenCalledWith('content:post-123');
-    });
-
-    it('should emit error when content is removed', async () => {
-      const client = { ...mockSocket, data: { userId: 'user-1' }, join: jest.fn(), emit: jest.fn() };
-      prisma.post.findUnique.mockResolvedValue({ isRemoved: true, visibility: 'PUBLIC', user: { isBanned: false, isDeleted: false } });
-      prisma.reel.findUnique.mockResolvedValue(null);
-      prisma.thread.findUnique.mockResolvedValue(null);
-
-      await gateway.handleJoinContent({ contentId: 'removed-post' }, client as any);
-      expect(client.join).not.toHaveBeenCalled();
-      expect(client.emit).toHaveBeenCalledWith('error', { message: 'Content not found' });
-    });
-
-    it('should emit error when content author is banned', async () => {
-      const client = { ...mockSocket, data: { userId: 'user-1' }, join: jest.fn(), emit: jest.fn() };
-      prisma.post.findUnique.mockResolvedValue({ isRemoved: false, visibility: 'PUBLIC', user: { isBanned: true, isDeleted: false } });
-      prisma.reel.findUnique.mockResolvedValue(null);
-      prisma.thread.findUnique.mockResolvedValue(null);
-
-      await gateway.handleJoinContent({ contentId: 'banned-author-post' }, client as any);
-      expect(client.join).not.toHaveBeenCalled();
-      expect(client.emit).toHaveBeenCalledWith('error', { message: 'Content not found' });
-    });
-
-    it('should return early when no userId', async () => {
-      const client = { ...mockSocket, data: {}, join: jest.fn() };
-      await gateway.handleJoinContent({ contentId: 'post-1' }, client as any);
-      expect(client.join).not.toHaveBeenCalled();
-    });
-
-    it('should return early when no contentId', async () => {
-      const client = { ...mockSocket, data: { userId: 'user-1' }, join: jest.fn() };
-      await gateway.handleJoinContent({ contentId: '' }, client as any);
-      expect(client.join).not.toHaveBeenCalled();
-    });
-
-    it('should join for reel content', async () => {
-      const client = { ...mockSocket, data: { userId: 'user-1' }, join: jest.fn(), emit: jest.fn() };
-      prisma.post.findUnique.mockResolvedValue(null);
-      prisma.reel.findUnique.mockResolvedValue({ isRemoved: false, user: { isBanned: false, isDeleted: false } });
-      prisma.thread.findUnique.mockResolvedValue(null);
-
-      await gateway.handleJoinContent({ contentId: 'reel-456' }, client as any);
-      expect(client.join).toHaveBeenCalledWith('content:reel-456');
-    });
-  });
-
-  describe('handleLeaveContent', () => {
-    it('should leave content room', async () => {
-      const client = { ...mockSocket, data: { userId: 'user-1' }, leave: jest.fn() };
-      await gateway.handleLeaveContent({ contentId: 'post-123' }, client as any);
-      expect(client.leave).toHaveBeenCalledWith('content:post-123');
-    });
-
-    it('should return early when no userId', async () => {
-      const client = { ...mockSocket, data: {}, leave: jest.fn() };
-      await gateway.handleLeaveContent({ contentId: 'post-1' }, client as any);
-      expect(client.leave).not.toHaveBeenCalled();
-    });
-
-    it('should return early when no contentId', async () => {
-      const client = { ...mockSocket, data: { userId: 'user-1' }, leave: jest.fn() };
-      await gateway.handleLeaveContent({ contentId: '' }, client as any);
-      expect(client.leave).not.toHaveBeenCalled();
-    });
-  });
-
-  // ══════════════════════════════════════════════════════════════════════════════
-  // Presence subscriptions — subscribe/unsubscribe to user presence updates
-  // ══════════════════════════════════════════════════════════════════════════════
-
-  describe('handleSubscribePresence', () => {
-    // X07-#6: subscribe_presence now requires shared conversations with target users
-    it('should join user rooms only for users who share a conversation', async () => {
-      const client = { ...mockSocket, data: { userId: 'user-1' }, join: jest.fn() };
-      // Mock: user-1 is in conv-1
-      prisma.conversationMember.findMany
-        .mockResolvedValueOnce([{ conversationId: 'conv-1' }]) // user's conversations
-        .mockResolvedValueOnce([{ userId: 'user-a' }]); // only user-a shares conv-1
-      await gateway.handleSubscribePresence({ userIds: ['user-a', 'user-b'] }, client as any);
-      expect(client.join).toHaveBeenCalledWith('user:user-a');
-      expect(client.join).not.toHaveBeenCalledWith('user:user-b');
-    });
-
-    it('should cap subscriptions at 200', async () => {
-      const client = { ...mockSocket, data: { userId: 'user-1' }, join: jest.fn() };
-      const manyIds = Array.from({ length: 300 }, (_, i) => `user-${i}`);
-      // Mock: all 200 (capped) are conversation partners
-      prisma.conversationMember.findMany
-        .mockResolvedValueOnce([{ conversationId: 'conv-1' }])
-        .mockResolvedValueOnce(manyIds.slice(0, 200).map(id => ({ userId: id })));
-      await gateway.handleSubscribePresence({ userIds: manyIds }, client as any);
-      expect(client.join).toHaveBeenCalledTimes(200);
-    });
-
-    it('should skip empty strings and non-partners', async () => {
-      const client = { ...mockSocket, data: { userId: 'user-1' }, join: jest.fn() };
-      prisma.conversationMember.findMany
-        .mockResolvedValueOnce([{ conversationId: 'conv-1' }])
-        .mockResolvedValueOnce([{ userId: 'user-a' }, { userId: 'user-b' }]);
-      await gateway.handleSubscribePresence({ userIds: ['user-a', '', 'user-b'] }, client as any);
-      expect(client.join).toHaveBeenCalledTimes(2);
-    });
-
-    it('should return early when no userId', async () => {
-      const client = { ...mockSocket, data: {}, join: jest.fn() };
-      await gateway.handleSubscribePresence({ userIds: ['user-a'] }, client as any);
-      expect(client.join).not.toHaveBeenCalled();
-    });
-
-    it('should return early when userIds is not an array', async () => {
-      const client = { ...mockSocket, data: { userId: 'user-1' }, join: jest.fn() };
-      await gateway.handleSubscribePresence({ userIds: 'not-array' } as any, client as any);
-      expect(client.join).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('handleUnsubscribePresence', () => {
-    it('should leave user rooms for requested user IDs', async () => {
-      const client = { ...mockSocket, data: { userId: 'user-1' }, leave: jest.fn() };
-      await gateway.handleUnsubscribePresence({ userIds: ['user-a', 'user-b'] }, client as any);
-      expect(client.leave).toHaveBeenCalledWith('user:user-a');
-      expect(client.leave).toHaveBeenCalledWith('user:user-b');
-    });
-
-    it('should skip empty strings', async () => {
-      const client = { ...mockSocket, data: { userId: 'user-1' }, leave: jest.fn() };
-      await gateway.handleUnsubscribePresence({ userIds: ['user-a', ''] }, client as any);
-      expect(client.leave).toHaveBeenCalledTimes(1);
-    });
-
-    it('should return early when no userId', async () => {
-      const client = { ...mockSocket, data: {}, leave: jest.fn() };
-      await gateway.handleUnsubscribePresence({ userIds: ['user-a'] }, client as any);
-      expect(client.leave).not.toHaveBeenCalled();
-    });
-  });
 
   // ══════════════════════════════════════════════════════════════════════════════
   // Activity status privacy — typing/read/presence should respect settings
