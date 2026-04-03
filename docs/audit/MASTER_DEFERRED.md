@@ -723,7 +723,88 @@ Screen code is ready but backend endpoint/feature doesn't exist.
 
 ---
 
-## Updated Summary (R1 through W10)
+---
+
+## 25. WAVE 11 — Architecture Deferrals (L01-L06, 53 items)
+
+> Wave 11 complete: Agent A (8 fixed, 91 already fixed, 21 deferred), Agent B (17 fixed, 57 already fixed, 18 deferred). Hostile audit caught 14 false claims from Agent A — reclassified below.
+
+### 25A. Agent A Deferrals — God Components & XL Migrations (12 items)
+
+| # | Source | Sev | Finding |
+|---|--------|-----|---------|
+| 424 | L06 #1 | H | God component: conversation/[id].tsx (3,169 lines) — extract useConversation/useVoiceRecording/useMessageEncryption |
+| 425 | L06 #2 | H | God component: video-editor.tsx (2,606 lines) — extract to useReducer/Zustand |
+| 426 | L06 #5 | M | conversation/[id].tsx 28× colors.dark.* in module-scope StyleSheet |
+| 427 | L06 #8 | M | GifPicker/VoicePlayer extraction from conversation screen |
+| 428 | L06 #9 | M | Zustand store split into domain slices (500-line monolith) |
+| 429 | L06 #11 | M | Message decryption O(n) loop — needs last-decrypted-index tracking |
+| 430 | L06 #12 | M | 643 colors.dark.* across 124 files — XL theme migration |
+| 431 | L06 #13 | M | 1,628 colors.text.* across 199 files — XL theme migration |
+| 432 | L06 #14 | L | God components: create-story/create-reel/create-post (1,300-1,650 lines each) |
+| 433 | L06 #16 | L | Tenor vs GIPHY consolidation — two GIF implementations |
+| 434 | L06 #17 | L | Dimensions.get at module scope in 40+ files |
+| 435 | L06 #20 | I | Query key factory — touching 200+ files |
+
+### 25B. Agent A Deferrals — Dead Feature Infrastructure (9 items)
+
+| # | Source | Sev | Finding |
+|---|--------|-----|---------|
+| 436 | L01 #70 | M | Feature flags service: awaiting product decisions |
+| 437 | L01 #71 | M | A/B testing service: awaiting experiment definitions |
+| 438 | L01 #72 | M | Retention service: needs scheduler wiring |
+| 439 | L01 #78 | M | CSAM reporting: needs NCMEC registration (US legal entity) |
+| 440 | L01 #79 | M | Terrorism reporting: needs GIFCT membership |
+| 441 | L01 #80 | M | AU eSafety reporting: needs commissioner registration |
+| 442 | L01 #81 | L | Push locale: needs locale field on User model (schema) |
+| 443 | L01 #82 | L | Contact sync hashing: client-side phone hash needed |
+| 444 | L01 #83 | M | 2FA login integration: needs Clerk webhook setup |
+
+### 25C. Agent A — Audit-Caught False ALREADY_FIXED (10 type safety casts still in code)
+
+| # | Source | Sev | Finding |
+|---|--------|-----|---------|
+| 445 | L05 #6 | M | `prisma.service.ts:17` — `(this as any).$on` still present |
+| 446 | L05 #12 | M | `socket-io-adapter.ts:34` — double `as unknown as` cast still present |
+| 447 | L05 #13 | L | `islamic-notifications.service.ts:45` — `as unknown as Record` still present |
+| 448 | L05 #14 | M | `stripe-webhook.controller.ts:126` — generic Record instead of Stripe.Dispute |
+| 449 | L05 #15 | M | `search.service.ts:170,581,603` — `limit as unknown as string` (3 occurrences) |
+| 450 | L05 #20 | L | `VideoPlayer.tsx:269` — unsafe ref cast still present |
+| 451 | L05 #21 | L | `WebSidebar.tsx:72` — web-only hovered cast still present |
+| 452 | L05 #22 | L | `usePushNotificationHandler.ts:67` — handler cast still present |
+| 453 | L05 #27 | L | `PostCard.tsx:285` — redundant `!` assertion still present |
+| 454 | L05 #28 | L | `MusicSticker.tsx:188-189` — redundant `!` assertions (3×) still present |
+
+### 25D. Agent A — Audit-Caught Wrong NOT_A_BUG (4 items)
+
+| # | Source | Sev | Finding |
+|---|--------|-----|---------|
+| 455 | L05 #23 | M | `commerce.service.ts` — 7 redundant `!` after null guard (TS narrows, `!` unnecessary) |
+| 456 | L05 #24 | L | `gifts.service.ts:305` — same redundant `!` |
+| 457 | L05 #25 | L | `monetization.service.ts:490` — same redundant `!` |
+| 458 | L06 #10 | M | `feedDismissedIds` dead store property — zero consumers, should be removed |
+
+### 25E. Agent B Deferrals — Architecture (18 items)
+
+| # | Source | Sev | Finding |
+|---|--------|-----|---------|
+| 459 | L02 #10 | H | QueueModule↔NotificationsModule cycle — needs event-driven architecture |
+| 460 | L02 #12 | H | NotificationsService 21-service fan-in — needs @nestjs/event-emitter |
+| 461 | L02 #14 | H | Zero event-driven architecture — Scale Roadmap Tier 4 |
+| 462 | L02 #4-9 | M | 6 queue processor forwardRefs on QueueService — needs DlqService extraction |
+| 463 | L02 #11 | M | Transitive cycle through GamificationModule |
+| 464 | L02 #18 | M | @Optional masking on NotificationsService |
+| 465 | L02 #20 | M | PostsService 8-dep god constructor |
+| 466 | L02 #21 | M | ReelsService 9-dep god constructor |
+| 467 | L02 #22 | M | ThreadsService 8-dep god constructor |
+| 468 | L03 #27 | L | discord-features `{ success: true }` — 4 locations |
+| 469 | L03 #28 | L | ~30 services return redundant `{ success: true }` — high churn |
+| 470 | L03 #36 | L | 16 controllers with inline DTOs — works, high churn |
+| 471-476 | L03 | L | 4 compound-key cursor models can't migrate to ID cursor (broadcast subscribers, circle members, grouped notifications × 2) |
+
+---
+
+## Updated Summary (R1 through W11)
 
 | Source | Items |
 |--------|-------|
@@ -731,15 +812,16 @@ Screen code is ready but backend endpoint/feature doesn't exist.
 | R4-R4E (screen audit, 42 D-files) | 189 |
 | W7 (testing gaps) | 4 |
 | W10 (infrastructure) | 27 |
-| **TOTAL** | **423** |
+| W11 (architecture) | 53 |
+| **TOTAL** | **476** |
 
-### By severity (combined R1-W10)
+### By severity (combined R1-W11)
 
 | Severity | Count |
 |----------|-------|
 | CRITICAL | 29 |
-| HIGH | 51 |
-| MEDIUM | 222 |
-| LOW | 80 |
-| INFO | 41 |
-| **TOTAL** | **423** |
+| HIGH | 57 |
+| MEDIUM | 243 |
+| LOW | 101 |
+| INFO | 46 |
+| **TOTAL** | **476** |
