@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { colors } from '@/theme';
 
 // Cache extracted colors to avoid re-extraction on re-render
@@ -19,12 +19,7 @@ const DEFAULT_AMBIENT = `${colors.emerald}1A`; // emerald at 10% opacity
 export function useAmbientColor(imageUri: string | undefined | null) {
   const [dominantColor, setDominantColor] = useState<string | null>(null);
   const [secondaryColor, setSecondaryColor] = useState<string | null>(null);
-  const mountedRef = useRef(true);
-
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => { mountedRef.current = false; };
-  }, []);
+  // [W12-C03#22] Removed redundant mountedRef — cancelled flag per-effect already handles cleanup
 
   useEffect(() => {
     if (!imageUri) {
@@ -64,7 +59,7 @@ export function useAmbientColor(imageUri: string | undefined | null) {
           quality: 'lowest',
         });
 
-        if (cancelled || !mountedRef.current) return;
+        if (cancelled) return;
 
         let primary: string = colors.emerald;
         let accent: string = colors.gold;
@@ -92,17 +87,17 @@ export function useAmbientColor(imageUri: string | undefined | null) {
           : accent;
 
         colorCache.set(imageUri, { dominant: dom, secondary: sec });
-        if (mountedRef.current) {
+        if (!cancelled) {
           setDominantColor(dom);
           setSecondaryColor(sec);
         }
       } catch {
         // Fallback: hash-based deterministic color
-        if (cancelled || !mountedRef.current) return;
+        if (cancelled) return;
 
         const { dominant, secondary } = hashToAmbientColors(imageUri);
         colorCache.set(imageUri, { dominant, secondary });
-        if (mountedRef.current) {
+        if (!cancelled) {
           setDominantColor(dominant);
           setSecondaryColor(secondary);
         }

@@ -35,7 +35,8 @@ export interface GradientButtonProps {
   fullWidth?: boolean;
   size?: ButtonSize;
   accessibilityLabel?: string;
-  accessibilityRole?: import('react-native').AccessibilityRole;
+  /** @deprecated All variants hardcode "button" — this prop is ignored */
+  accessibilityRole?: string;
   style?: import('react-native').StyleProp<import('react-native').ViewStyle>;
 }
 
