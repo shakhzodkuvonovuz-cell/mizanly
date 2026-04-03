@@ -804,7 +804,22 @@ Screen code is ready but backend endpoint/feature doesn't exist.
 
 ---
 
-## Updated Summary (R1 through W11)
+## 19. W12 — COMPONENTS/HOOKS/SERVICES DEFERRALS (8 items)
+
+| # | Source | Sev | Finding | Blocker |
+|---|--------|-----|---------|---------|
+| 477 | C01 #5 | H | VideoPlayer quality selection is non-functional (selectedQuality state not wired to source) | Backend must provide quality-specific URLs |
+| 478 | C02 #22 | M | PostCard ReactionPicker ignores reaction type — always sends "like" | Backend API only supports like/unlike, not typed reactions |
+| 479 | C04 #2 | M | GIPHY API key in client-side REST fallback URL | GIPHY SDK uses key client-side by design; proxy through backend for ideal setup |
+| 480 | C02 #2,5 | H | StickerPackBrowser/StickerPicker use raw RN Image instead of expo-image/ProgressiveImage | Mechanical fix, ~15 image replacements across 2 files |
+| 481 | C02 #6,7 | H | StickerPackBrowser/StickerPicker use raw RefreshControl instead of BrandedRefreshControl | Mechanical fix |
+| 482 | C01 #7 | H | RichCaptionInput autocomplete cursor approximated as text.length instead of selection position | Needs TextInput onSelectionChange tracking |
+| 483 | C03 #3 | M | startCall in useLiveKitCall depends on status in deps (unnecessary re-renders) | Ref pattern mitigation exists (startingRef), perf-only |
+| 484 | C04 #40 | I | api.ts localhost fallback if EXPO_PUBLIC_API_URL missing in production | Must set env var in EAS build config |
+
+---
+
+## Updated Summary (R1 through W12)
 
 | Source | Items |
 |--------|-------|
@@ -813,15 +828,16 @@ Screen code is ready but backend endpoint/feature doesn't exist.
 | W7 (testing gaps) | 4 |
 | W10 (infrastructure) | 27 |
 | W11 (architecture) | 53 |
-| **TOTAL** | **476** |
+| W12 (components/hooks/services) | 8 |
+| **TOTAL** | **484** |
 
-### By severity (combined R1-W11)
+### By severity (combined R1-W12)
 
 | Severity | Count |
 |----------|-------|
 | CRITICAL | 29 |
-| HIGH | 57 |
-| MEDIUM | 243 |
+| HIGH | 61 |
+| MEDIUM | 246 |
 | LOW | 101 |
-| INFO | 46 |
-| **TOTAL** | **476** |
+| INFO | 47 |
+| **TOTAL** | **484** |
