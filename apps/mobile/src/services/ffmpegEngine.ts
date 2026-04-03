@@ -183,6 +183,8 @@ const QUALITY_MAP: Record<QualityPreset, QualityConfig> = {
 // ── Active session tracking (for cancel) ───────────────────────────
 
 let activeSessionId: number | null = null;
+// [W12-C04#15] Store session promise so cancelExport can await it
+let activeSessionPromise: Promise<{ getSessionId: () => number }> | null = null;
 
 // ── FFmpeg availability check ──────────────────────────────────────
 
@@ -622,8 +624,8 @@ export async function executeExport(
       },
     );
 
-    // Set activeSessionId BEFORE the complete callback can fire
-    // by awaiting the session promise immediately
+    // [W12-C04#15] Store promise so cancelExport can await it if called immediately
+    activeSessionPromise = sessionPromise;
     sessionPromise.then((session) => {
       // Only set if not already completed (race guard)
       if (activeSessionId === null) {
@@ -637,10 +639,19 @@ export async function executeExport(
 
 export async function cancelExport(): Promise<void> {
   const kit = await getFFmpegKit();
-  if (kit && activeSessionId !== null) {
+  if (!kit) return;
+  // [W12-C04#15] If cancel is called before session ID resolves, await the promise first
+  if (activeSessionId === null && activeSessionPromise) {
+    try {
+      const session = await activeSessionPromise;
+      activeSessionId = session.getSessionId();
+    } catch { /* session creation failed — nothing to cancel */ }
+  }
+  if (activeSessionId !== null) {
     await kit.FFmpegKit.cancel(activeSessionId);
     activeSessionId = null;
   }
+  activeSessionPromise = null;
 }
 
 // ── Probe (get video info) ─────────────────────────────────────────

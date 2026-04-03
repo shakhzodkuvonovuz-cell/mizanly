@@ -197,6 +197,11 @@ export function useLiveKitCall(options: UseLiveKitCallOptions = {}): UseLiveKitC
   const callUUIDRef = useRef<string | null>(null);
   // [F3] Track camera-was-on state in a ref (not closure-captured state) for background handler
   const cameraWasOnRef = useRef(false);
+  // [W12-C03#1] statusRef avoids stale closure in AppState handler
+  const statusRef = useRef(status);
+  statusRef.current = status;
+  // [W12-C03#6] Reactive sessionId state for caller-side poll
+  const [sessionIdState, setSessionIdState] = useState<string | null>(incomingSessionId || null);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -466,6 +471,7 @@ export function useLiveKitCall(options: UseLiveKitCallOptions = {}): UseLiveKitC
 
       roomNameRef.current = response.data.livekitRoomName;
       sessionIdRef.current = response.data.id; // [N1]
+      if (mountedRef.current) setSessionIdState(response.data.id); // [W12-C03#6] reactive update
       if (mountedRef.current) setStatus('ringing');
 
       // [F10] Set CallKit UUID BEFORE connectToRoom so the Connected handler has it
@@ -676,11 +682,12 @@ export function useLiveKitCall(options: UseLiveKitCallOptions = {}): UseLiveKitC
     return () => { dataMessageHandlersRef.current.delete(handler); };
   }, []);
 
-  // [F3] Background handler uses ref (not stale closure state) for camera
+  // [F3] Background handler uses refs (not stale closure state) for camera and status
+  // [W12-C03#1] Use statusRef to avoid stale closure — effect no longer re-subscribes on every status change
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextState) => {
       const room = roomRef.current;
-      if (!room || status !== 'connected') return;
+      if (!room || statusRef.current !== 'connected') return;
 
       if (nextState === 'background') {
         if (cameraWasOnRef.current) {
@@ -696,7 +703,7 @@ export function useLiveKitCall(options: UseLiveKitCallOptions = {}): UseLiveKitC
       }
     });
     return () => subscription.remove();
-  }, [status]);
+  }, []);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -712,7 +719,7 @@ export function useLiveKitCall(options: UseLiveKitCallOptions = {}): UseLiveKitC
 
   return {
     status,
-    sessionId: sessionIdRef.current || incomingSessionId || null,
+    sessionId: sessionIdState || sessionIdRef.current || null,
     room: roomState,
     localParticipant: roomState?.localParticipant ?? null,
     remoteParticipants,

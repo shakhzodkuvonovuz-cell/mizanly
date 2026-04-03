@@ -161,7 +161,15 @@ type AccessibilitySettings = { reducedMotion?: boolean; fontSize?: string };
 type WellbeingSettings = { sensitiveContent?: boolean; dailyTimeLimit?: number };
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
-export const SOCKET_URL = `${API_URL.replace('/api/v1', '')}/chat`;
+// [W12-C04#13] Use URL parsing instead of fragile string replace for socket URL
+export const SOCKET_URL = (() => {
+  try {
+    const parsed = new URL(API_URL);
+    return `${parsed.origin}/chat`;
+  } catch {
+    return `${API_URL.replace('/api/v1', '')}/chat`;
+  }
+})();
 const REQUEST_TIMEOUT_MS = 30000;
 
 /** Typed API error with HTTP status code for proper error handling */
@@ -254,7 +262,8 @@ class ApiClient {
       // ── 429 Rate Limited — auto-retry once after Retry-After delay ──
       if (res.status === 429 && !retryFlags._retried429) {
         const retryAfterRaw = res.headers.get('Retry-After');
-        const retryAfter = Math.min(parseInt(retryAfterRaw || '60', 10) || 60, 120);
+        // [W12-C04#10] Cap retry delay at 10s to avoid blocking UI for minutes
+        const retryAfter = Math.min(parseInt(retryAfterRaw || '5', 10) || 5, 10);
         showToast({
           message: i18next.t('common.rateLimited', { seconds: retryAfter }),
           variant: 'warning',
@@ -291,9 +300,10 @@ class ApiClient {
         throw new ApiError('Session expired', 401, 'SESSION_EXPIRED');
       }
 
-      const error = await res.json().catch(() => ({ message: res.statusText || 'Request failed' }));
+      // [W12-C04#14] Include status text in fallback error for better debugging
+      const error = await res.json().catch(() => ({ message: `${res.status} ${res.statusText || 'Request failed'}` }));
       if (__DEV__) console.error(`[API] ${options.method || 'GET'} ${path} → ${res.status}`, error);
-      throw new ApiError(error.message || `HTTP ${res.status}`, res.status);
+      throw new ApiError(error.message || `HTTP ${res.status} ${res.statusText}`, res.status);
     }
 
     if (res.status === 204) return null as T;

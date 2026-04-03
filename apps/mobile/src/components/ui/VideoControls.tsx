@@ -63,6 +63,7 @@ export const VideoControls = memo(function VideoControls({
   const { width: screenWidth } = useWindowDimensions();
 
   const [showControls, setShowControls] = useState(true);
+  const fadeOutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [qualitySheetVisible, setQualitySheetVisible] = useState(false);
   const [speedSheetVisible, setSpeedSheetVisible] = useState(false);
   const [volumeSliderVisible, setVolumeSliderVisible] = useState(false);
@@ -75,11 +76,17 @@ export const VideoControls = memo(function VideoControls({
     if (hideTimeoutRef.current) {
       clearTimeout(hideTimeoutRef.current);
     }
+    if (fadeOutTimerRef.current) {
+      clearTimeout(fadeOutTimerRef.current);
+    }
     setShowControls(true);
     controlsOpacity.value = withTiming(1, { duration: animation.timing.normal });
     hideTimeoutRef.current = setTimeout(() => {
       controlsOpacity.value = withTiming(0, { duration: animation.timing.normal });
-      runOnJS(setShowControls)(false);
+      // [W12-C01#9] Delay removal until AFTER fade completes to prevent visual pop
+      fadeOutTimerRef.current = setTimeout(() => {
+        runOnJS(setShowControls)(false);
+      }, animation.timing.normal);
     }, 3000);
   }, [controlsOpacity]);
 
@@ -88,6 +95,9 @@ export const VideoControls = memo(function VideoControls({
     return () => {
       if (hideTimeoutRef.current) {
         clearTimeout(hideTimeoutRef.current);
+      }
+      if (fadeOutTimerRef.current) {
+        clearTimeout(fadeOutTimerRef.current);
       }
     };
   }, [resetHideTimeout]);
