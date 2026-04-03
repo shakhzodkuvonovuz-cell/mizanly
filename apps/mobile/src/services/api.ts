@@ -306,7 +306,8 @@ class ApiClient {
       throw new ApiError(error.message || `HTTP ${res.status} ${res.statusText}`, res.status);
     }
 
-    if (res.status === 204) return null as T;
+    // [W12-C04#36] Return standard success shape instead of null-as-T type lie
+    if (res.status === 204) return { success: true } as unknown as T;
     const json = await res.json();
 
     // Log slow API calls in dev (>2s) — before any return

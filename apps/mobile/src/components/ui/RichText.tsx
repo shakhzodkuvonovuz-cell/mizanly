@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useRef } from 'react';
 import { View, Text, StyleSheet, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinkPreview } from '@/components/ui/LinkPreview';
@@ -22,6 +22,9 @@ export const RichText = memo(function RichText({ text, style, numberOfLines, onP
   const router = useRouter();
   const haptic = useContextualHaptic();
   const writingDirection = detectWritingDirection(text);
+  // [W12-C01#31] Track nested link press to prevent parent onPostPress from firing
+  // (React Native doesn't support stopPropagation on nested Text components)
+  const linkPressedRef = useRef(false);
 
   const segments: { type: 'text' | 'hashtag' | 'mention' | 'url' | 'phone' | 'email' | 'quran_ref'; value: string }[] = [];
   // Finding #322: Added Quran citation pattern (\d{1,3}:\d{1,3}) for auto-linking surah:verse refs
@@ -66,14 +69,17 @@ export const RichText = memo(function RichText({ text, style, numberOfLines, onP
 
   return (
     <View>
-      <Text style={[styles.base, { writingDirection, textAlign: writingDirection === 'rtl' ? 'right' : 'left' }, style]} numberOfLines={numberOfLines} onPress={onPostPress}>
+      <Text style={[styles.base, { writingDirection, textAlign: writingDirection === 'rtl' ? 'right' : 'left' }, style]} numberOfLines={numberOfLines} onPress={() => {
+        if (linkPressedRef.current) { linkPressedRef.current = false; return; }
+        onPostPress?.();
+      }}>
       {segments.map((seg, i) => {
         if (seg.type === 'url') {
           return (
             <Text
               key={i}
               style={styles.url}
-              onPress={(e) => { e.stopPropagation?.(); haptic.navigate(); Linking.openURL(seg.value); }}
+              onPress={() => { linkPressedRef.current = true; haptic.navigate(); Linking.openURL(seg.value); }}
             >
               {seg.value}
             </Text>
@@ -84,8 +90,8 @@ export const RichText = memo(function RichText({ text, style, numberOfLines, onP
             <Text
               key={i}
               style={styles.hashtag}
-              onPress={(e) => {
-                e.stopPropagation?.();
+              onPress={() => {
+                linkPressedRef.current = true;
                 haptic.navigate();
                 router.push(`/(screens)/hashtag/${seg.value}`);
               }}
@@ -99,8 +105,8 @@ export const RichText = memo(function RichText({ text, style, numberOfLines, onP
             <Text
               key={i}
               style={styles.mention}
-              onPress={(e) => {
-                e.stopPropagation?.();
+              onPress={() => {
+                linkPressedRef.current = true;
                 haptic.navigate();
                 router.push(`/(screens)/profile/${seg.value}`);
               }}
@@ -116,8 +122,8 @@ export const RichText = memo(function RichText({ text, style, numberOfLines, onP
             <Text
               key={i}
               style={{ color: colors.emerald, fontWeight: '600' }}
-              onPress={(e) => {
-                e.stopPropagation?.();
+              onPress={() => {
+                linkPressedRef.current = true;
                 haptic.navigate();
                 router.push(`/(screens)/tafsir-viewer?surah=${surah}&verse=${verse}` as never);
               }}
@@ -131,7 +137,7 @@ export const RichText = memo(function RichText({ text, style, numberOfLines, onP
             <Text
               key={i}
               style={styles.phone}
-              onPress={(e) => { e.stopPropagation?.(); haptic.navigate(); Linking.openURL(`tel:${seg.value}`); }}
+              onPress={() => { linkPressedRef.current = true; haptic.navigate(); Linking.openURL(`tel:${seg.value}`); }}
             >
               {seg.value}
             </Text>
@@ -142,7 +148,7 @@ export const RichText = memo(function RichText({ text, style, numberOfLines, onP
             <Text
               key={i}
               style={styles.email}
-              onPress={(e) => { e.stopPropagation?.(); haptic.navigate(); Linking.openURL(`mailto:${seg.value}`); }}
+              onPress={() => { linkPressedRef.current = true; haptic.navigate(); Linking.openURL(`mailto:${seg.value}`); }}
             >
               {seg.value}
             </Text>

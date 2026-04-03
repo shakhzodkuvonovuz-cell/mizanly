@@ -38,8 +38,6 @@ type NotificationData = {
   sessionId?: string;
   callType?: string;
   callerName?: string;
-  // Additional metadata
-  [key: string]: unknown;
 };
 
 /**

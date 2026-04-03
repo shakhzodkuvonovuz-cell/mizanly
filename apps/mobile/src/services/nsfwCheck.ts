@@ -107,7 +107,8 @@ export async function initNSFWModel(): Promise<boolean> {
  * @returns NSFWResult with safety determination
  */
 export async function checkImage(imageUri: string): Promise<NSFWResult> {
-  // Graceful degradation — if model not loaded, allow the upload
+  // [W12-C04#19] If model not loaded, signal unchecked state. Callers MUST check the
+  // `checked` flag — server-side moderation is the real gate, this is a pre-filter only.
   if (!nsfwModel || !tfReady) {
     return { safe: true, checked: false };
   }

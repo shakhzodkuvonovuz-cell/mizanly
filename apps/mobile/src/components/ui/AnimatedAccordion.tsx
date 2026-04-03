@@ -75,10 +75,12 @@ export function AnimatedAccordion({
     if (h > 0) contentHeight.current = h;
   }, []);
 
+  // [W12-C01#35] Use 0 instead of 300 fallback to avoid flicker on first expansion
+  // Content starts hidden; onLayout measures real height before animation needs it
   const contentContainerStyle = useAnimatedStyle(() => {
-    const maxH = contentHeight.current || 300;
+    const maxH = contentHeight.current || 0;
     return {
-      height: interpolate(animatedHeight.value, [0, 1], [0, maxH], Extrapolation.CLAMP),
+      height: maxH > 0 ? interpolate(animatedHeight.value, [0, 1], [0, maxH], Extrapolation.CLAMP) : 0,
       opacity: interpolate(animatedHeight.value, [0, 0.3, 1], [0, 0.5, 1], Extrapolation.CLAMP),
       overflow: 'hidden' as const,
     };

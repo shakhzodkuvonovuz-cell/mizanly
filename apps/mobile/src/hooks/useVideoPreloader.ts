@@ -135,6 +135,7 @@ export function useVideoPreloader(poolSize = 3) {
     isReady,
     getLoadState,
     clearAll,
-    preloadCount: preloadedUrls.current.size,
+    // [W12-C03#12] Use loadStates.size for reactivity (loadStates is state, not ref)
+    preloadCount: loadStates.size,
   };
 }

@@ -84,6 +84,7 @@ export const livekitApi = {
   }): Promise<{ ingressId: string; url: string; streamKey: string; success: boolean }> =>
     api.post(`${LIVEKIT_BASE}/calls/ingress/create`, data),
 
+  // [W12-C04#17] Use POST with body instead of query param on DELETE (some proxies strip DELETE query params)
   deleteIngress: (ingressId: string, roomName: string): Promise<{ success: boolean }> =>
-    api.delete(`${LIVEKIT_BASE}/calls/ingress/${ingressId}?roomName=${roomName}`),
+    api.post(`${LIVEKIT_BASE}/calls/ingress/${encodeURIComponent(ingressId)}/delete`, { roomName }),
 };
