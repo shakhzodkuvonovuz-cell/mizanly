@@ -2174,7 +2174,7 @@ model Circle {
   communityEvents     Event[]             @relation("communityEvents")
   communityTreasuries CommunityTreasury[] @relation("communityTreasuries")
 
-  @@index([slug])
+  // @@index([slug]) — redundant: slug is @unique
   @@index([ownerId])
   @@index([privacy, membersCount(sort: Desc)])
   @@map("circles")

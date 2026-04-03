@@ -976,7 +976,45 @@ Note: W7 Tabs 3/4 (T01, T06, T08, T10 = 251 findings) have tests written but no 
 
 ---
 
-## 26. W11 — ARCHITECTURE GAP FILL (5 items)
+## 26. W13 — SCHEMA GAP FILL (7 items)
+
+> Source: S01/S02 findings neither tagged as fixed in schema nor deferred. All Low/Info severity.
+
+| # | Source | Sev | Finding | Category |
+|---|--------|-----|---------|----------|
+| 576 | S01 #33 | L | UserInterest.category is String instead of enum | Schema |
+| 577 | S02 #53 | L | ViewerDemographic has no @updatedAt field (append-only analytics) | Schema |
+| 578 | S02 #54 | L | SavedMessage.forwardedFromId dangling FK with no referential integrity | Schema |
+| 579 | S02 #59 | L | ChatFolder.conversationIds String[] has dangling FK references on deletion | Schema |
+| 580 | S02 #60 | L | AdminLog.targetId polymorphic FK ambiguity (userId vs messageId) | Schema |
+| 581 | S02 #61 | L | ScholarQuestionVote counter no reconciliation with denormalized votes field | Schema |
+| 582 | Circle model | L | @@index([slug]) at line 2177 redundant — slug is @unique | Schema |
+
+---
+
+## 27. STALE ENTRIES — Items fixed but still listed as deferred
+
+> These 12 items (11 unique) were resolved in code but never removed from MASTER_DEFERRED.
+> They should be considered RESOLVED and excluded from active deferral counts.
+
+| # | Finding | Evidence of fix |
+|---|---------|----------------|
+| 49 | Float to Decimal money fields | All money fields now Decimal @db.Decimal(12,2) |
+| 51 | Dual balance system | User.coinBalance removed, balance in CoinBalance table only |
+| 76 | No real-time socket notification | Chat gateway subscribes to notification:new Redis channel |
+| 77 | Notification dedup | Redis dedup with 5-min TTL at notifications.service.ts:271 |
+| 79 | No notification cleanup/retention | cleanupOldNotifications cron — 90-day read, 1-year unread |
+| 80 | No unread-counts endpoint | getUnreadCounts on controller + service + tests |
+| 81 | Scheduled message auto-send | publishScheduledMessages @Cron every minute with Redis lock |
+| 94 | Meilisearch only 3/6 indexes | All 6 indexes configured |
+| 120 | No scheduled content publisher | publishOverdueContent @Cron in scheduling.service.ts |
+| 174 | Go version mismatch | Both Go modules use go 1.25.0 |
+| 175 | --passWithNoTests on integration | Removed from ci.yml |
+| 203 | Scheduled message (dup of #81) | Same fix |
+
+---
+
+## 28. W11 — ARCHITECTURE GAP FILL (5 items)
 
 > Source: L03 #43-47 fell between Agent A (mobile) and Agent B (API). Neither processed them.
 
@@ -1003,7 +1041,9 @@ Note: W7 Tabs 3/4 (T01, T06, T08, T10 = 251 findings) have tests written but no 
 | W4 (screen audit gap fill) | 80 |
 | W7 (testing gap fill) | 68 |
 | W11 (architecture gap fill) | 5 |
-| **TOTAL** | **~1,198** |
+| W13 (schema gap fill) | 7 |
+| Stale entries (actually fixed) | -12 |
+| **TOTAL** | **~1,193** |
 
 ### By severity (combined all waves)
 
