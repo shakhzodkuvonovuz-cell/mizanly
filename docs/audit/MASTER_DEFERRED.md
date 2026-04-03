@@ -945,13 +945,54 @@ Screen code is ready but backend endpoint/feature doesn't exist.
 | 562 | X08 #12,24,32 | M | Word-filter auto-block architecture, AI moderation content type expansion, AutoFlagged stats boolean | Moderation |
 | 563 | X01-X10 misc | M-L | ~40 additional items from TAB3/TAB4 progress files | Various |
 
-## Updated Summary (R1 through W12 + W1-W3/W5/W6/W9 gap fill)
+## 24. W4 — SCREEN AUDIT GAP FILL (80 items)
+
+> Source: R4E_TAB4 progress file + other progress files. Screen-specific deferrals not captured in SCREEN_DEFERRALS_EXTRACTED.md.
+
+| # | Source | Sev | Finding | Category |
+|---|--------|-----|---------|----------|
+| 564 | D28 #9-13 | M-L | product-detail.tsx: press animation, offline error, VirtualizedList nesting | Screen polish |
+| 565 | D28 #20-23 | M | profile/[username].tsx: mute confirmation, sticky tab, DM double-tap, staleTime | Screen UX |
+| 566 | D28 #30-58 | M-L | profile-customization scroll-to-input, unsaved changes, qibla RTL cardinals, offline caching, QR RTL, safe areas (~25 items) | Screen polish |
+| 567 | D29 #5-49 | M-L | qr-scanner camera error, quiet-mode concurrent mutation, quran-reading-plan double-tap, quran-room socket reconnect/audio guards, quran-share haptics (~20 items) | Screen UX |
+| 568 | D30 #4-52 | M-L | ramadan-mode offline countdown, reel SafeAreaView, follow error, poster frame, reel-remix sync, reel-templates RTL, report SafeAreaView/offline (~15 items) | Screen polish |
+| 569 | D-misc | M-L | ~20 additional items across D13-D27 progress files not in SCREEN_DEFERRALS_EXTRACTED categories (error state UI, debouncing, haptic, VirtualizedList nesting) | Various |
+
+---
+
+## 25. W7 — TESTING GAP FILL (68 items)
+
+> Source: Tab 2 + Tab 6 progress files. Items acknowledged as untested but never added to MASTER_DEFERRED.
+
+| # | Source | Sev | Finding | Category |
+|---|--------|-----|---------|----------|
+| 570 | T02 Tab6 | M-I | 16 remaining: I=4, L=5 controller-only, H=7 controller delegation | Test coverage |
+| 571 | T12 Tab6 | M-I | 13 remaining: I=4, N/A=9 files don't exist | Test coverage |
+| 572 | T05 Tab6 | M | 18 remaining: I=4, L=8 ffmpeg/controller, M=6 mock pattern | Test coverage |
+| 573 | T11 Tab2 | M | ~4 remaining: T11-58, T11-112, T11-116/117 | Test coverage |
+| 574 | T13 Tab2 | M | ~17 remaining: T13-4 to T13-34 (specific finding IDs) | Test coverage |
+
+Note: W7 Tabs 3/4 (T01, T06, T08, T10 = 251 findings) have tests written but no per-finding tracking. Cannot determine which specific findings are covered.
+
+---
+
+## 26. W11 — ARCHITECTURE GAP FILL (5 items)
+
+> Source: L03 #43-47 fell between Agent A (mobile) and Agent B (API). Neither processed them.
+
+| # | Source | Sev | Finding | Category |
+|---|--------|-----|---------|----------|
+| 575 | L03 #43-47 | M | 5 raw `api.get()` calls in mobile screens (fatwa-qa, local-boards, cashout, chat-folder-view, etc.) — should use typed API methods | Mobile API patterns |
+
+---
+
+## Updated Summary (all waves — completeness audit 2026-04-03)
 
 | Source | Items |
 |--------|-------|
-| R1-R3 (API audit) | 203 |
+| R1-R3 (API audit — original) | 203 |
 | R4-R4E (screen audit, 42 D-files) | 189 |
-| W7 (testing gaps) | 4 |
+| W7 (testing gaps — original) | 4 |
 | W10 (infrastructure) | 27 |
 | W11 (architecture) | 53 |
 | W12 (components/hooks/services) | 8 |
@@ -959,21 +1000,18 @@ Screen code is ready but backend endpoint/feature doesn't exist.
 | W6 (Go server audit) | 98 |
 | W9 (performance audit) | 191 |
 | W1-W3 (API audit gap fill) | 182 |
-| **TOTAL** | **1,045** |
+| W4 (screen audit gap fill) | 80 |
+| W7 (testing gap fill) | 68 |
+| W11 (architecture gap fill) | 5 |
+| **TOTAL** | **~1,198** |
 
 ### By severity (combined all waves)
 
 | Severity | Count |
 |----------|-------|
-| CRITICAL | ~45 |
-| HIGH | ~120 |
-| MEDIUM | ~530 |
-| LOW | ~250 |
-| INFO | ~100 |
-| **TOTAL** | **~1,045** ||-------|
-| CRITICAL | 29 |
-| HIGH | 61 |
-| MEDIUM | 246 |
-| LOW | 101 |
-| INFO | 47 |
-| **TOTAL** | **484** |
+| CRITICAL | ~48 |
+| HIGH | ~130 |
+| MEDIUM | ~590 |
+| LOW | ~310 |
+| INFO | ~120 |
+| **TOTAL** | **~1,198** |
