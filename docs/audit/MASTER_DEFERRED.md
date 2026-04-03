@@ -1024,6 +1024,84 @@ Note: W7 Tabs 3/4 (T01, T06, T08, T10 = 251 findings) have tests written but no 
 
 ---
 
+## 29. W8 — i18n & ACCESSIBILITY DEFERRALS (265 items)
+
+> Source: docs/audit/v2/wave8/I01-I06. Wave 8 had ZERO entries in MASTER_DEFERRED until this completeness audit.
+
+### Hardcoded English strings (~80 items)
+
+| # | Source | Sev | Finding | Category |
+|---|--------|-----|---------|----------|
+| 583 | I01 #6 | H | account-settings.tsx toLocaleDateString('en-US') | Date locale |
+| 584 | I01 #7 | H | account-settings.tsx formatExportAsText ~20 English strings | Data export |
+| 585 | I01 #36 | H | audio-room.tsx formatTimeAgo hardcoded 'Just now', 'Xm ago' | Time formatting |
+| 586 | I02 #4-7 | H | caption-editor.tsx 4 hardcoded toast messages | Toasts |
+| 587 | I02 #26-30 | H | channel/charity-campaign hardcoded share messages | Share text |
+| 588 | I03 #1-10 | H | community-guidelines.tsx 5 sections, 20 rules all hardcoded English | Legal content |
+| 589 | I03 #49 | H | create-story.tsx FILTERS/FONTS arrays hardcoded | UI labels |
+| 590 | I03 #51 | H | creator-dashboard.tsx TABS array hardcoded | UI labels |
+| 591 | I03 #56,59 | H | create-event/video toLocaleString('en-US'), CATEGORIES array | Date/categories |
+| 592 | I04 #8 | M | dhikr-counter.tsx PRESET_PHRASES meanings hardcoded | Islamic content |
+| 593 | I04 #28-38 | H | membership-tiers.tsx /month, revenue, toLocaleString('en-US') | Financial display |
+| 594 | I05 #1,44 | H-M | hadith.tsx, names-of-allah.tsx "Shared from Mizanly" hardcoded | Share text |
+| 595 | I05 #57-59 | M | manage-data.tsx share title + data export English | Data export |
+| 596 | I06 #15-16 | C | prayer-times.tsx PRAYER_NAMES hardcoded, "Next: X in" hardcoded | Core Islamic |
+| 597 | I06 #17-19 | H | zakat-calculator.tsx toLocaleString('en-US'), hardcoded $, borderLeftWidth | Financial/RTL |
+| 598 | I06 #1-6 | H | bakra.tsx (main tab) 5 hardcoded a11y hints + share message | Main tab |
+| 599 | I06 #20-30 | H | 11 screens with hardcoded English a11y labels | Various |
+| 600 | I06 #88-92 | H | gift-shop, cashout, creator-dashboard hardcoded USD $ | Currency |
+| 601 | I02 #35-37 | M | chat-wallpaper.tsx color/gradient/pattern names hardcoded | UI labels |
+| 602 | I01-I06 misc | M-L | ~40 additional hardcoded strings across ~30 screens | Various |
+
+### Accessibility labels (~70 items)
+
+| # | Source | Sev | Finding | Category |
+|---|--------|-----|---------|----------|
+| 603 | I01 #3-5 | H | 2fa-setup/verify OTP TextInput fields no accessibilityLabel (12 total) | Form inputs |
+| 604 | I01 #20,30-35 | M | ai-assistant, audio-library TextInput/Pressable missing a11y | Interactive elements |
+| 605 | I01 #40-46 | M-L | audio-room, bookmark-folders Pressable/TextInput missing a11y roles/labels | Interactive elements |
+| 606 | I06 S2 | H | Systemic: ~50 screens have interactive Pressables with no accessibilityRole="button" | Systemic |
+| 607 | I01-I06 misc | M-L | ~45 additional missing a11y labels on Pressable/TextInput/Icon-only buttons | Various |
+
+### RTL layout issues (~55 items)
+
+| # | Source | Sev | Finding | Category |
+|---|--------|-----|---------|----------|
+| 608 | I06 S1 | C | SYSTEMIC: 55 screens with ZERO RTL utility usage (marginLeft→marginStart, left→start, etc.) | RTL systemic |
+| 609 | I06 misc | M | 7 files still use borderLeftWidth instead of borderStartWidth | RTL borders |
+| 610 | I01-I06 misc | M-L | ~10 additional left/right positioning issues | RTL positioning |
+
+### Hardcoded date locale (~5 items)
+
+| # | Source | Sev | Finding | Category |
+|---|--------|-----|---------|----------|
+| 611 | I01 #6, I01 #24, I03 #56, I04 #38, I06 #17 | H | 5 files use toLocaleDateString('en-US') or toLocaleString('en-US') | Date locale |
+
+---
+
+## 30. W12 — STALE DEFERRALS IN SECTION 15 (5 items to remove)
+
+> These items appear as deferred in MASTER_DEFERRED section 15 (R3-T3) but were FIXED in W12 session.
+
+| Stale # | Finding | Evidence of fix |
+|---------|---------|----------------|
+| 137 | C01 #31 RichText stopPropagation | Fixed with ref-based link press guard |
+| 140 | C03 #6 sessionId non-reactive | Fixed with sessionIdState + setSessionIdState |
+| 141 | C03 #12 preloadCount non-reactive | Fixed with loadStates.size |
+| 143 | C04 #10 429 retry 120s | Fixed — capped at 10s |
+| 146 | C04 #13 SOCKET_URL fragile | Fixed — URL parsing |
+
+### Additional W12 gap-fill items
+
+| # | Source | Sev | Finding | Category |
+|---|--------|-----|---------|----------|
+| 612 | C01 #30 | M | RichText Quran/time false positive regex (1:30 matches Quran 1:30) | Bug |
+| 613 | C02 #9-11 | H | StickerPackBrowser/Picker ~15 hardcoded English strings not tracked | i18n |
+| 614 | C02 #28 | M | VideoTimeline module-scope Dimensions.get (stale on rotation) | Performance |
+| 615 | C04 #20 | M | callKitSetupFailed flag set but never consumed — call features don't degrade | Error handling |
+
+---
+
 ## Updated Summary (all waves — completeness audit 2026-04-03)
 
 | Source | Items |
@@ -1042,16 +1120,18 @@ Note: W7 Tabs 3/4 (T01, T06, T08, T10 = 251 findings) have tests written but no 
 | W7 (testing gap fill) | 68 |
 | W11 (architecture gap fill) | 5 |
 | W13 (schema gap fill) | 7 |
-| Stale entries (actually fixed) | -12 |
-| **TOTAL** | **~1,193** |
+| W8 (i18n/a11y — entire wave) | 265 |
+| W12 (additional gap fill) | 4 |
+| Stale entries (actually fixed) | -17 |
+| **TOTAL** | **~1,456** |
 
 ### By severity (combined all waves)
 
 | Severity | Count |
 |----------|-------|
-| CRITICAL | ~48 |
-| HIGH | ~130 |
-| MEDIUM | ~590 |
-| LOW | ~310 |
-| INFO | ~120 |
-| **TOTAL** | **~1,198** |
+| CRITICAL | ~55 |
+| HIGH | ~175 |
+| MEDIUM | ~680 |
+| LOW | ~390 |
+| INFO | ~156 |
+| **TOTAL** | **~1,456** |
