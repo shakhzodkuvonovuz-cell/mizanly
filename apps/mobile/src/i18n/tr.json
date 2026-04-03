@@ -198,7 +198,10 @@
     "saved": "Saved",
     "rateLimited": "Yavaşla! {{seconds}} saniye sonra tekrar dene",
     "views": "görüntüleme",
-    "unfollowed": "Takip bırakıldı"
+    "unfollowed": "Takip bırakıldı",
+    "listen": "Listen",
+    "copyAll": "Copy All",
+    "submitting": "Submitting..."
   },
   "auth": {
     "signIn": "Giriş Yap",
@@ -278,7 +281,33 @@
     "signUpToInteract": "Beğenmek, yorum yapmak ve takip etmek için kaydolun",
     "enjoyingMizanly": "Mizanly'yi beğeniyor musunuz?",
     "createAccountPrompt": "Kaydetmek ve etkileşim kurmak için hesap oluşturun",
-    "signUpFree": "Ücretsiz kaydolun"
+    "signUpFree": "Ücretsiz kaydolun",
+    "twoFactorAuthentication": "Two-Factor Authentication",
+    "secureYourAccount": "Secure Your Account",
+    "twoFactorDescription": "Add an extra layer of security to your account with two-factor authentication.",
+    "step1InstallAuthenticatorApp": "Step 1: Install an Authenticator App",
+    "step1Description": "Download one of the following apps on your phone:",
+    "selectAuthenticatorApp": "Select Authenticator App",
+    "step2ScanQRCode": "Step 2: Scan QR Code",
+    "step2Description": "Open your authenticator app and scan this QR code.",
+    "generatingQRCode": "Generating QR code...",
+    "qrCode": "QR Code",
+    "scanWithAuthenticatorApp": "Scan with your authenticator app",
+    "enterSecretManually": "Enter secret manually",
+    "scannedCodeButton": "I've scanned the code",
+    "step3EnterVerificationCode": "Step 3: Enter Verification Code",
+    "step3Description": "Enter the 6-digit code from your authenticator app.",
+    "enable2FA": "Enable 2FA",
+    "step4SaveBackupCodes": "Step 4: Save Backup Codes",
+    "step4Description": "Save these backup codes in a safe place. You can use them to access your account if you lose your authenticator.",
+    "backupCodeCopied": "Backup code copied",
+    "allBackupCodesCopied": "All backup codes copied",
+    "setupFailed": "Setup Failed",
+    "setupFailedMessage": "Could not set up two-factor authentication. Please try again.",
+    "twoFactorEnabledMessage": "Two-factor authentication has been enabled.",
+    "verificationFailed": "Verification Failed",
+    "verificationFailedMessage": "Invalid verification code. Please try again.",
+    "downloadBackupCodesMessage": "Download your backup codes before continuing."
   },
   "tabs": {
     "saf": "Saf",
@@ -1070,7 +1099,8 @@
     "calculating": "Hesaplaniyor...",
     "adhanNotification": "{{prayer}} bildirimi",
     "deviceHeading": "Cihaz yönü",
-    "nextPrayerIn": "Sonraki: {{prayer}}"
+    "nextPrayerIn": "Sonraki: {{prayer}}",
+    "audioRecitationComingSoon": "Audio recitation coming soon"
   },
   "prayerNotifications": {
     "settings": "Namaz Bildirimleri Ayarları",
@@ -2278,6 +2308,108 @@
     "followRequests": {
       "accepted": "Takip isteği kabul edildi",
       "declined": "Takip isteği reddedildi"
+    },
+    "2faVerify": {
+      "title": "Verify Identity",
+      "heroTitle": "Two-Factor Verification",
+      "heroSubtitle": "Enter the code from your authenticator app to continue.",
+      "codeInputLabel": "Verification Code",
+      "backupInputLabel": "Backup Code",
+      "backupPlaceholder": "Enter your backup code",
+      "backupHint": "Use one of the backup codes you saved during setup.",
+      "useBackupCodeInstead": "Use a backup code instead",
+      "useAuthenticatorCodeInstead": "Use authenticator code instead",
+      "verificationSuccessMessage": "Verification successful",
+      "invalidCodeMessage": "Invalid code. Please try again.",
+      "lostAccessLinkText": "Lost access to your authenticator?",
+      "lostAccessTitle": "Lost Access",
+      "lostAccessMessage": "If you've lost access to your authenticator app, you can use a backup code or contact support.",
+      "lostAccessButtonContact": "Contact Support",
+      "helpTitle": "Need Help?",
+      "helpDescription": "If you're having trouble, make sure you're using the correct authenticator app and that the time on your device is accurate."
+    },
+    "accountSwitcher": {
+      "title": "Switch Account",
+      "activeNow": "Active now",
+      "tapToSwitch": "Tap to switch",
+      "accountFallback": "Account",
+      "switchFailed": "Could not switch accounts. Please try again.",
+      "signOutAll": "Sign Out All",
+      "signOutAllConfirm": "Are you sure you want to sign out of all accounts?",
+      "signOutAllButton": "Sign Out All",
+      "noAccountsFound": "No accounts found",
+      "signInToGetStarted": "Sign in to get started",
+      "personalLabel": "Personal",
+      "creatorLabel": "Creator",
+      "addAccount": "Add Account",
+      "maxAccounts": "Maximum accounts reached",
+      "switchingTo": "Switching to",
+      "currentAccount": "Current",
+      "lastActive": "Last active",
+      "removeAccount": "Remove Account",
+      "removeConfirm": "Are you sure you want to remove this account?",
+      "accountRemoved": "Account removed"
+    },
+    "archive": {
+      "title": "Archive",
+      "emptyTitle": "No archived items",
+      "emptySubtitle": "Items you archive will appear here",
+      "unarchive": "Unarchive",
+      "errorTitle": "Something went wrong",
+      "errorSubtitle": "Could not load your archive. Please try again.",
+      "confirmTitle": "Unarchive?",
+      "confirmMessage": "This item will be visible on your profile again.",
+      "unarchived": "Item unarchived",
+      "archiveFailed": "Could not archive item",
+      "unarchiveFailed": "Could not unarchive item"
+    },
+    "blocked": {
+      "title": "Blocked Users",
+      "unblock": "Unblock",
+      "unblockConfirmTitle": "Unblock User?",
+      "unblockConfirmMessage": "They will be able to see your profile and contact you again.",
+      "emptyTitle": "No blocked users",
+      "emptySubtitle": "Users you block will appear here",
+      "errorTitle": "Something went wrong",
+      "errorSubtitle": "Could not load blocked users",
+      "unblockFailed": "Could not unblock user"
+    },
+    "blockedKeywords": {
+      "title": "Blocked Keywords",
+      "addKeyword": "Add Keyword",
+      "placeholder": "Enter keyword to block",
+      "emptyTitle": "No blocked keywords",
+      "emptySubtitle": "Content containing blocked keywords will be hidden from your feed",
+      "deleteConfirm": "Remove this keyword?",
+      "added": "Keyword added",
+      "removed": "Keyword removed",
+      "errorAdd": "Could not add keyword",
+      "errorRemove": "Could not remove keyword",
+      "errorLoad": "Could not load keywords",
+      "maxReached": "Maximum keywords reached"
+    },
+    "bookmarkCollections": {
+      "title": "Collections",
+      "emptyTitle": "No collections",
+      "emptySubtitle": "Create collections to organize your saved posts",
+      "createCollection": "Create Collection",
+      "itemsCount": "{{count}} items",
+      "deleteConfirm": "Delete this collection?",
+      "collectionDeleted": "Collection deleted"
+    },
+    "dhikrCounter": {
+      "title": "Dhikr Counter",
+      "sessionSaved": "Session saved",
+      "tapToCount": "Tap to count",
+      "reset": "Reset",
+      "target": "Target",
+      "completed": "Completed"
+    },
+    "enableTips": {
+      "title": "Enable Tips",
+      "errorLoadFailed": "Could not load tip settings",
+      "tipPreferencesDesc": "Choose how you'd like to receive tips from your supporters.",
+      "stripeConnectDesc": "Connect your Stripe account to receive payouts."
     }
   },
   "createReel": {
@@ -2428,7 +2560,27 @@
     "purchaseFailed": "Satın alma başarısız oldu",
     "processing": "Satın alma işleniyor...",
     "cashoutSuccess": "Nakit çekim talebi gönderildi!",
-    "cashoutFailed": "Nakit çekim başarısız oldu"
+    "cashoutFailed": "Nakit çekim başarısız oldu",
+    "shop": "Shop",
+    "history": "History",
+    "coins": "Coins",
+    "diamonds": "Diamonds",
+    "buy": "Buy",
+    "noGiftHistory": "No gift history",
+    "send": "Send",
+    "sendGift": "Send Gift",
+    "giftSent": "Gift sent!",
+    "giftFailed": "Could not send gift",
+    "coinPackages": "Coin Packages",
+    "diamondPackages": "Diamond Packages",
+    "balance": "Balance",
+    "insufficientCoins": "Not enough coins",
+    "insufficientDiamonds": "Not enough diamonds",
+    "confirmPurchase": "Confirm Purchase",
+    "confirmSend": "Confirm Send",
+    "giftAmount": "Gift Amount",
+    "recipientLabel": "Recipient",
+    "selectGift": "Select a Gift"
   },
   "tafsir": {
     "title": "Tefsir",
@@ -2488,7 +2640,10 @@
     "noActive": "Aktif meydan okuma yok",
     "stats": "İstatistikleriniz",
     "noContributors": "Henüz katkıda bulunan yok",
-    "beFirstContributor": "Bu meydan okumaya ilk katkıda bulunan siz olun"
+    "beFirstContributor": "Bu meydan okumaya ilk katkıda bulunan siz olun",
+    "joinedChallenge": "Joined challenge",
+    "contributed": "Contributed",
+    "challengeCreated": "Challenge created"
   },
   "contactSync": {
     "title": "Arkadaşları Bul",
@@ -3294,7 +3449,35 @@
   },
   "accountSettings": {
     "storage": "Depolama ve Onbellek",
-    "cacheSize": "Onbellek boyutu"
+    "cacheSize": "Onbellek boyutu",
+    "title": "Account Settings",
+    "notSet": "Not set",
+    "joined": "Joined",
+    "sections.accountInfo": "Account Information",
+    "sections.dataPrivacy": "Data & Privacy",
+    "sections.accountActions": "Account Actions",
+    "downloadMyData": "Download My Data",
+    "exportDataHint": "Get a copy of all your Mizanly data",
+    "manageDataHint": "Control what data Mizanly stores about you",
+    "deactivateAccount": "Deactivate Account",
+    "deactivateHint": "Temporarily disable your account",
+    "deleteAccount": "Delete Account",
+    "deleteHint": "Permanently delete your account and all data",
+    "deactivateAlertTitle": "Deactivate Account?",
+    "deactivateAlertMessage": "Your profile will be hidden and you won't receive notifications. You can reactivate anytime by logging in.",
+    "deactivateButton": "Deactivate",
+    "deactivateConfirmTitle": "Confirm Deactivation",
+    "deactivateConfirmMessage": "Enter your password to confirm account deactivation.",
+    "deactivateConfirmButton": "Confirm Deactivation",
+    "deleteAlertTitle": "Delete Account?",
+    "deleteAlertMessage": "This action is permanent and cannot be undone. All your data, posts, messages, and connections will be permanently removed.",
+    "deleteConfirmTitle": "Confirm Deletion",
+    "deleteConfirmMessage": "Type DELETE to confirm permanent account deletion.",
+    "deleteConfirmButton": "Delete Forever",
+    "confirmIdentity": "Confirm Your Identity",
+    "dataReadyMessage": "Your data export is ready for download.",
+    "downloadDataTitle": "Download Data",
+    "downloadDataMessage": "Your data export has been prepared. It includes your profile, posts, messages, and activity."
   },
   "network": {
     "offline": "Çevrimdışısınız",
@@ -3858,7 +4041,8 @@
     "errorLoadStats": "Failed to load chat statistics"
   },
   "disappearingDefault": {
-    "errorTitle": "Error"
+    "errorTitle": "Error",
+    "errorSave": "Could not save disappearing message settings"
   },
   "cashout": {
     "title": "Nakde Cevir",
@@ -3996,7 +4180,11 @@
       "none": "None",
       "darkbar": "Dark Bar",
       "outline": "Outline"
-    }
+    },
+    "captionsGenerated": "Captions generated",
+    "generateFailed": "Failed to generate captions",
+    "captionsSaved": "Captions saved",
+    "saveFailed": "Failed to save captions"
   },
   "volunteer": {
     "categoryAll": "All",
@@ -4025,7 +4213,11 @@
     "speakers": "Speakers",
     "listeners": "Listeners",
     "raisedHands": "Raised Hands",
-    "reactionSent": "Tepki gönderildi!"
+    "reactionSent": "Tepki gönderildi!",
+    "moreListeners": "+{{count}} more",
+    "raisedAgo": "Raised {{time}} ago",
+    "youAreSpeaker": "You are a speaker",
+    "youAreListener": "You are a listener"
   },
   "video": {
     "title": "Video",
@@ -4347,5 +4539,95 @@
   },
   "events": {
     "rsvpUpdated": "Katılım güncellendi"
+  },
+  "appealModeration": {
+    "title": "Appeal Moderation",
+    "actionTitle": "Action Taken",
+    "actionReason": "Reason",
+    "actionDate": "Date",
+    "actionId": "Action ID",
+    "contentHeader": "Content Under Review",
+    "guidelinesText": "Our community guidelines help keep Mizanly safe and respectful for everyone.",
+    "formTitle": "Submit Your Appeal",
+    "reasonLabel": "Appeal Reason",
+    "detailsPlaceholder": "Explain why you believe this action was incorrect...",
+    "evidenceTitle": "Supporting Evidence",
+    "evidenceLabel": "Attach Evidence",
+    "uploadImage": "Upload Image",
+    "uploadDocument": "Upload Document",
+    "historyTitle": "Appeal History",
+    "noHistory": "No previous appeals",
+    "appealNumber": "Appeal #",
+    "submitted": "Submitted",
+    "importantNotes": "Important Notes",
+    "note1": "Appeals are typically reviewed within 24-48 hours.",
+    "note2": "You can submit one appeal per moderation action.",
+    "note3": "Providing clear evidence increases the chance of a successful appeal.",
+    "submitAppeal": "Submit Appeal",
+    "documentUploadComingSoon": "Document upload coming soon"
+  },
+  "boost": {
+    "title": "Boost Post",
+    "budget": "Budget",
+    "duration": "Duration",
+    "custom": "Custom",
+    "enterAmount": "Enter amount",
+    "customAmountLabel": "Custom Budget",
+    "postPreview": "Post Preview",
+    "postIdLabel": "Post ID",
+    "boostHint": "Boosting helps your post reach more people in the community.",
+    "estimatedReach": "Estimated Reach",
+    "reachHonestMessage": "Reach estimates are approximate and depend on content quality and engagement.",
+    "infoText": "Your boost will start immediately and run for the selected duration.",
+    "boostNow": "Boost Now",
+    "successMessage": "Post boosted successfully!",
+    "errorMessage": "Could not boost post. Please try again.",
+    "noPost": "No Post Selected",
+    "noPostSub": "Select a post to boost",
+    "totalCost": "Total Cost",
+    "day": "day",
+    "days": "days",
+    "duration1Day": "1 Day",
+    "duration3Days": "3 Days",
+    "duration7Days": "7 Days",
+    "duration14Days": "14 Days"
+  },
+  "branded": {
+    "title": "Branded Content",
+    "paidPartnership": "Paid Partnership",
+    "paidPartnershipSub": "Disclose paid partnerships to maintain transparency with your audience.",
+    "togglePartnership": "This is a paid partnership",
+    "partnerName": "Partner Name",
+    "partnerPlaceholder": "Enter brand or partner name",
+    "partnerNameLabel": "Brand Partner",
+    "preview": "Preview",
+    "yourName": "Your Name",
+    "paidPartnershipWith": "Paid partnership with",
+    "paidPartnershipLabel": "Paid Partnership Label",
+    "disclosureTitle": "Disclosure",
+    "disclosureText": "This content is a paid partnership. Disclosing partnerships builds trust with your audience.",
+    "save": "Save",
+    "savedMessage": "Branded content settings saved",
+    "saveError": "Could not save settings",
+    "noPost": "No Post Selected",
+    "noPostSub": "Select a post to configure branded content"
+  },
+  "chatThemePicker": {
+    "title": "Chat Theme",
+    "tab.solidColors": "Solid Colors",
+    "tab.gradients": "Gradients",
+    "tab.patterns": "Patterns",
+    "tab.photos": "Photos",
+    "resetDefault": "Reset to Default",
+    "applied": "Theme applied"
+  },
+  "chatWallpaper": {
+    "title": "Chat Wallpaper",
+    "chooseWallpaper": "Choose Wallpaper",
+    "removeWallpaper": "Remove Wallpaper",
+    "setForAll": "Set for all chats",
+    "setForThis": "Set for this chat only",
+    "wallpaperApplied": "Wallpaper applied",
+    "wallpaperRemoved": "Wallpaper removed"
   }
 }
