@@ -2083,8 +2083,8 @@ model LiveSession {
   streamKey         String?           @unique
   playbackUrl       String?
   streamId          String?
-  peakViewers       Int               @default(0)
-  currentViewers    Int               @default(0)
+  peakViewers       BigInt            @default(0) // S01-#26: overflow protection for viral sessions
+  currentViewers    BigInt            @default(0) // S01-#26: overflow protection
   totalViews        Int               @default(0)
   scheduledAt       DateTime?
   startedAt         DateTime?
@@ -3679,8 +3679,8 @@ model QuietModeSetting {
   user        User     @relation("quietMode", fields: [userId], references: [id], onDelete: Cascade)
   isActive    Boolean  @default(false)
   autoReply   String?  @db.VarChar(200)
-  startTime   String?
-  endTime     String?
+  startTime   String?  @db.VarChar(5) // S02-#22: "HH:MM" format, e.g. "22:00"
+  endTime     String?  @db.VarChar(5) // S02-#22: "HH:MM" format, e.g. "07:00"
   isScheduled Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
