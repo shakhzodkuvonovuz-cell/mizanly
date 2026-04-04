@@ -146,7 +146,7 @@ export class HealthController {
       else resolved[key] = false; // Anonymous users don't get percentage rollouts
     }
     // Finding #413: Feature announcement banners — include active announcements
-    const announcementKey = await this.redis.get('active_announcement');
+    const announcementKey = await this.redis.get('active:announcement');
     let announcement: { id: string; title: string; body: string; action?: string } | null = null;
     if (announcementKey) {
       try { announcement = JSON.parse(announcementKey); } catch (err) { this.logger.debug('Malformed announcement JSON in Redis', err instanceof Error ? err.message : err); }

@@ -351,7 +351,7 @@ export class TwoFactorService {
     const isValid = verifyTotp(code, plaintextSecret);
     if (isValid) {
       // Store session-level 2FA verification flag in Redis
-      await this.redis.setex(`2fa_verified:${userId}`, this.TWO_FACTOR_SESSION_TTL, '1');
+      await this.redis.setex(`2fa:verified:${userId}`, this.TWO_FACTOR_SESSION_TTL, '1');
     }
     return isValid;
   }
@@ -366,7 +366,7 @@ export class TwoFactorService {
     const isEnabled = await this.getStatus(userId);
     if (!isEnabled) return true; // 2FA not enabled — no verification needed
 
-    const verified = await this.redis.get(`2fa_verified:${userId}`);
+    const verified = await this.redis.get(`2fa:verified:${userId}`);
     return verified === '1';
   }
 
@@ -374,7 +374,7 @@ export class TwoFactorService {
    * Clear the 2FA session flag (e.g., on logout or session revocation).
    */
   async clearTwoFactorSession(userId: string): Promise<void> {
-    await this.redis.del(`2fa_verified:${userId}`);
+    await this.redis.del(`2fa:verified:${userId}`);
   }
 
   /**

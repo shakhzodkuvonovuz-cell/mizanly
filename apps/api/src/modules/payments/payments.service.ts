@@ -88,7 +88,7 @@ export class PaymentsService {
    */
   private async storePaymentIntentMapping(paymentIntentId: string, tipId: string) {
     // Dual write: Redis (fast cache, 30d TTL) + DB (durable, no TTL)
-    await this.redis.setex(`payment_intent:${paymentIntentId}`, 60 * 60 * 24 * 30, tipId);
+    await this.redis.setex(`payment:intent:${paymentIntentId}`, 60 * 60 * 24 * 30, tipId);
     await this.prisma.paymentMapping.upsert({
       where: { stripeId: paymentIntentId },
       create: { stripeId: paymentIntentId, internalId: tipId, type: 'tip' },
@@ -741,7 +741,7 @@ export class PaymentsService {
    * Bug 16 fix: Handle tip payment — mark completed AND credit receiver
    */
   private async handleTipPaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
-    let tipId = await this.redis.get(`payment_intent:${paymentIntent.id}`);
+    let tipId = await this.redis.get(`payment:intent:${paymentIntent.id}`);
     if (!tipId) {
       // Layer 1: PaymentMapping table (durable, exact match by stripeId)
       const mapping = await this.prisma.paymentMapping.findUnique({
@@ -863,7 +863,7 @@ export class PaymentsService {
     }
 
     // Clean up Redis mapping
-    await this.redis.del(`payment_intent:${paymentIntent.id}`);
+    await this.redis.del(`payment:intent:${paymentIntent.id}`);
   }
 
   async handleInvoicePaid(invoice: Stripe.Invoice) {
@@ -944,7 +944,7 @@ export class PaymentsService {
   }
 
   async handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
-    let tipId = await this.redis.get(`payment_intent:${paymentIntent.id}`);
+    let tipId = await this.redis.get(`payment:intent:${paymentIntent.id}`);
     if (!tipId) {
       // Redis mapping expired or lost — try DB fallback via metadata
       const senderId = paymentIntent.metadata?.senderId;
@@ -977,7 +977,7 @@ export class PaymentsService {
     });
 
     // Clean up mapping
-    await this.redis.del(`payment_intent:${paymentIntent.id}`);
+    await this.redis.del(`payment:intent:${paymentIntent.id}`);
   }
 
   async handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
@@ -1064,7 +1064,7 @@ export class PaymentsService {
     if (!paymentIntentId) return;
 
     // Find the tip: Redis first, then DB fallback (disputes arrive days/weeks after payment — Redis TTL may have expired)
-    let tipId = await this.redis.get(`payment_intent:${paymentIntentId}`);
+    let tipId = await this.redis.get(`payment:intent:${paymentIntentId}`);
     if (!tipId) {
       const mapping = await this.prisma.paymentMapping.findUnique({
         where: { stripeId: paymentIntentId },

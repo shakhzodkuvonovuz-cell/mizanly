@@ -557,7 +557,7 @@ describe('PaymentsService', () => {
       redis.get.mockResolvedValue('tip-fail-2');
       prisma.tip.update.mockResolvedValue({});
       await service.handlePaymentIntentFailed({ id: 'pi_failed_2', metadata: {} } as any);
-      expect(redis.del).toHaveBeenCalledWith('payment_intent:pi_failed_2');
+      expect(redis.del).toHaveBeenCalledWith('payment:intent:pi_failed_2');
     });
 
     it('should fall back to DB when Redis mapping is missing', async () => {

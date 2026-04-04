@@ -208,7 +208,7 @@ describe('IslamicNotificationsService', () => {
       expect(typeof result).toBe('boolean');
       // Verify it attempted to re-seed the cache
       expect(redis.setex).toHaveBeenCalledWith(
-        'prayer_times:user-1',
+        'prayer:times:user-1',
         3600,
         expect.any(String),
       );

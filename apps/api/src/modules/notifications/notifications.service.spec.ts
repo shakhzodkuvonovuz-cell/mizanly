@@ -879,7 +879,7 @@ describe('NotificationsService', () => {
 
       await service.deleteNotification('n1', 'u1');
 
-      expect(redis.del).toHaveBeenCalledWith('notif_unread:u1');
+      expect(redis.del).toHaveBeenCalledWith('notif:unread:u1');
     });
 
     it('should NOT call redis.del when deleting already-read notification', async () => {
@@ -968,7 +968,7 @@ describe('NotificationsService', () => {
         data: expect.objectContaining({ isRead: false }),
       }));
       // Should invalidate unread cache since it was read before
-      expect(redis.del).toHaveBeenCalledWith('notif_unread:u1');
+      expect(redis.del).toHaveBeenCalledWith('notif:unread:u1');
     });
 
     it('should not batch non-batchable notification types', async () => {

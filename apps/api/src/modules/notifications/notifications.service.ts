@@ -169,7 +169,7 @@ export class NotificationsService {
     // If the deleted notification was unread, invalidate the cached unread count
     // so the next getUnreadCount call returns the correct value
     if (!notification.isRead) {
-      this.redis.del(`notif_unread:${userId}`).catch((err) => this.logger.debug('Redis unread count cache invalidation failed', err?.message));
+      this.redis.del(`notif:unread:${userId}`).catch((err) => this.logger.debug('Redis unread count cache invalidation failed', err?.message));
     }
 
     return { deleted: true };
@@ -276,7 +276,7 @@ export class NotificationsService {
     const targetId = params.postId || params.threadId || params.reelId || params.videoId
       || params.commentId || params.conversationId || params.followRequestId || params.circleId
       || (params.actorId ? `actor:${params.actorId}:${(params.title || '').slice(0, 20)}` : 'none');
-    const dedupeKey = `notif_dedup:${params.userId}:${params.type}:${targetId}`;
+    const dedupeKey = `notif:dedup:${params.userId}:${params.type}:${targetId}`;
     try {
       const exists = await this.redis.get(dedupeKey);
       if (exists) {
@@ -308,7 +308,7 @@ export class NotificationsService {
       });
       if (existing) {
         // Batch: update the existing notification body to show aggregated count
-        const countKey = `notif_batch:${existing.id}`;
+        const countKey = `notif:batch:${existing.id}`;
         const count = await atomicIncr(this.redis, countKey, 1800);
 
         // If re-marking a read notification as unread, invalidate the cached unread count
@@ -336,7 +336,7 @@ export class NotificationsService {
         });
 
         if (wasRead) {
-          this.redis.del(`notif_unread:${params.userId}`).catch((err) => this.logger.debug('Redis unread count cache invalidation failed', err?.message));
+          this.redis.del(`notif:unread:${params.userId}`).catch((err) => this.logger.debug('Redis unread count cache invalidation failed', err?.message));
         }
 
         return existing;

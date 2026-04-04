@@ -2,7 +2,7 @@ import Redis from 'ioredis';
 import { PrismaService } from '../../config/prisma.service';
 
 const CACHE_TTL_SECONDS = 60;
-const CACHE_KEY_PREFIX = 'excluded_users:';
+const CACHE_KEY_PREFIX = 'excluded:users:';
 
 /**
  * Shared utility to get user IDs that should be excluded from feeds, recommendations, etc.

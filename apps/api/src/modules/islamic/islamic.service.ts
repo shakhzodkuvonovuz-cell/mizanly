@@ -2097,7 +2097,7 @@ export class IslamicService {
     if (!todayEvent) return;
 
     // Dedup: atomic set-if-not-exists to avoid TOCTOU race on multi-instance
-    const dedupKey = `islamic_event:${todayEvent.key}:${today.toISOString().slice(0, 10)}`;
+    const dedupKey = `islamic:event:${todayEvent.key}:${today.toISOString().slice(0, 10)}`;
     const acquired = await this.redis.set(dedupKey, '1', 'EX', 86400, 'NX');
     if (!acquired) return;
 

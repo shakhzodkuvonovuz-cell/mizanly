@@ -51,7 +51,7 @@ describe('getExcludedUserIds', () => {
 
     // Should cache the result
     expect(mockRedis.set).toHaveBeenCalledWith(
-      'excluded_users:user-1',
+      'excluded:users:user-1',
       expect.any(String),
       'EX',
       60,

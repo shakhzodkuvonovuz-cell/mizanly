@@ -1,7 +1,8 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import type { ImageStyle, StyleProp } from 'react-native';
 import { Image } from 'expo-image';
 import { BLURHASH_POST } from '@/utils/blurhash';
+import { imagePresets } from '@/utils/image';
 
 interface ProgressiveImageProps {
   /** Image URI */
@@ -22,6 +23,11 @@ interface ProgressiveImageProps {
   style?: StyleProp<ImageStyle>;
   /** Accessibility label */
   accessibilityLabel?: string;
+  /**
+   * Skip CDN image optimization. Set to true when the URI is already optimized,
+   * is a local file (file://), or is a data URI. Default: false.
+   */
+  skipCdn?: boolean;
 }
 
 /**
@@ -30,6 +36,10 @@ interface ProgressiveImageProps {
  * Uses expo-image's built-in blurhash decode + crossfade transition.
  * Wrapped in memo() for use in FlashList/FlatList without unnecessary re-renders.
  * recyclingKey prevents image flicker when FlashList recycles cells.
+ *
+ * When width is a number, automatically applies Cloudflare CDN image resizing
+ * to serve appropriately sized images (J06-M1). Falls back to raw URI for
+ * '100%' width (cannot determine pixel width), local files, or data URIs.
  *
  * Usage:
  *   <ProgressiveImage uri={post.mediaUrls[0]} width="100%" height={300} borderRadius={12} />
@@ -46,10 +56,20 @@ export const ProgressiveImage = memo(function ProgressiveImage({
   transition = 300,
   style,
   accessibilityLabel,
+  skipCdn = false,
 }: ProgressiveImageProps) {
+  // J06-M1: Apply CDN resizing when display width is known (number, not '100%')
+  const optimizedUri = useMemo(() => {
+    if (skipCdn || typeof width !== 'number' || !uri.startsWith('http')) return uri;
+    // Bucket widths to reduce CDN variant proliferation: 200, 600, 1200
+    if (width <= 200) return imagePresets.thumbnail(uri);
+    if (width <= 600) return imagePresets.feedImage(uri);
+    return imagePresets.fullImage(uri);
+  }, [uri, width, skipCdn]);
+
   return (
     <Image
-      source={{ uri }}
+      source={{ uri: optimizedUri }}
       placeholder={
         blurhash !== null
           ? { blurhash: blurhash ?? BLURHASH_POST }

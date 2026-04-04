@@ -28,7 +28,7 @@ export class IslamicNotificationsService {
     });
     if (!settings || !settings.dndDuringPrayer) return false;
 
-    const prayerTimesKey = `prayer_times:${userId}`;
+    const prayerTimesKey = `prayer:times:${userId}`;
     const cached = await this.redis.get(prayerTimesKey);
 
     // Fallback: if Redis cache miss, check user's mosque coordinates to compute times on the fly
@@ -102,7 +102,7 @@ export class IslamicNotificationsService {
     const isInPrayer = await this.isInPrayerDND(userId);
     if (!isInPrayer) return { show: false };
 
-    const prayerTimesKey = `prayer_times:${userId}`;
+    const prayerTimesKey = `prayer:times:${userId}`;
     const cached = await this.redis.get(prayerTimesKey);
     if (!cached) return { show: false };
 
