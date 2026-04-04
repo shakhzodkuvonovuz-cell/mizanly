@@ -1,17 +1,12 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useRef, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TextInput, Pressable,
   ScrollView, Platform, Dimensions, KeyboardAvoidingView,
 } from 'react-native';
-import { useDraftPersistence } from '@/hooks/useDraftPersistence';
-import { useQuery } from '@tanstack/react-query';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
-import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
-import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Avatar } from '@/components/ui/Avatar';
@@ -21,33 +16,23 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { Autocomplete } from '@/components/ui/Autocomplete';
 import { LocationPicker } from '@/components/ui/LocationPicker';
-import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { AnimatedAccordion } from '@/components/ui/AnimatedAccordion';
 import { RichCaptionInput, type RichCaptionInputRef } from '@/components/ui/RichCaptionInput';
-import { UploadProgressBar, uploadWithProgress } from '@/components/ui/UploadProgressBar';
+import { UploadProgressBar } from '@/components/ui/UploadProgressBar';
 import { SchedulePostSheet } from '@/components/ui/SchedulePostSheet';
 import { colors, spacing, fontSize, radius, fontSizeExt, fonts } from '@/theme';
-import { Circle } from '@/types';
-import { postsApi, uploadApi, circlesApi, draftsApi } from '@/services/api';
+import { draftsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 import { showToast } from '@/components/ui/Toast';
-import { resizeForUpload } from '@/utils/imageResize';
+import { usePostMedia } from '@/hooks/create/usePostMedia';
+import { usePostPublish } from '@/hooks/create/usePostPublish';
 
 type Visibility = 'PUBLIC' | 'FOLLOWERS' | 'CIRCLE';
-
-interface PickedMedia {
-  uri: string;
-  type: 'image' | 'video';
-  width?: number;
-  height?: number;
-}
-
-type AutocompleteType = 'hashtag' | 'mention' | null;
 
 type VisIconName = React.ComponentProps<typeof Icon>['name'];
 const VISIBILITY_KEYS: { value: Visibility; labelKey: string; iconName: VisIconName }[] = [
@@ -62,251 +47,21 @@ export default function CreatePostScreen() {
   const tc = useThemeColors();
   const styles = useMemo(() => createStyles(tc), [tc]);
   const { user } = useUser();
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
   const haptic = useContextualHaptic();
-
-  const [content, setContent] = useState(prefillContent ?? '');
-  const [media, setMedia] = useState<PickedMedia[]>(
-    prefillMedia ? [{ uri: prefillMedia, type: prefillMedia.match(/\.(mp4|mov|avi)/i) ? 'video' : 'image' } as PickedMedia] : [],
-  );
-  const [visibility, setVisibility] = useState<Visibility>('PUBLIC');
-  const [showVisibility, setShowVisibility] = useState(false);
-  const [circleId, setCircleId] = useState<string | undefined>();
-  const [showCirclePicker, setShowCirclePicker] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const uploadAbortRef = useRef<(() => void) | null>(null);
-
-  // Autocomplete state
-  const [autocompleteType, setAutocompleteType] = useState<AutocompleteType>(null);
-  const [autocompleteQuery, setAutocompleteQuery] = useState('');
-  const [showAutocomplete, setShowAutocomplete] = useState(false);
-
-  // Discard sheet state
-  const [showDiscardSheet, setShowDiscardSheet] = useState(false);
-
-  // Location state
-  const [showLocationPicker, setShowLocationPicker] = useState(false);
-  const [location, setLocation] = useState<{ name: string; latitude?: number; longitude?: number } | null>(null);
-
-  // ── Publish fields (Session 4 — Instagram parity) ──
-  const [altText, setAltText] = useState('');
-  const [taggedUsers, setTaggedUsers] = useState<string[]>([]);
-  const [tagSearchQuery, setTagSearchQuery] = useState('');
-  const [collaboratorUsername, setCollaboratorUsername] = useState('');
-  const [commentControl, setCommentControl] = useState<'everyone' | 'followers' | 'nobody'>('everyone');
-  const [shareToFeed, setShareToFeed] = useState(true);
-  const [brandedContent, setBrandedContent] = useState(false);
-  const [brandPartner, setBrandPartner] = useState('');
-  const [remixAllowed, setRemixAllowed] = useState(true);
-  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
-  const [scheduledAt, setScheduledAt] = useState<string | null>(null);
-  const [showScheduleSheet, setShowScheduleSheet] = useState(false);
-  const [showTopics, setShowTopics] = useState(false);
-
   const inputRef = useRef<RichCaptionInputRef>(null);
-  const [showDraftBanner, setShowDraftBanner] = useState(false);
 
-  // Draft persistence via shared hook
-  const { save: saveDraftImmediate, clear: clearDraft, debouncedSave: debouncedSaveDraft } = useDraftPersistence<{ content: string; mediaUrls: string[] }>(
-    'post-draft',
-    (draft) => {
-      if (draft.content) setContent(draft.content);
-      // Note: mediaUrls are URLs, not local URIs. We cannot restore picked media files.
-      setShowDraftBanner(true);
-      setTimeout(() => setShowDraftBanner(false), 3000);
-    },
+  // ── Hooks ──
+  const mediaHook = usePostMedia(t, prefillContent, prefillMedia);
+  const pub = usePostPublish(
+    () => ({ media: mediaHook.media, content: mediaHook.content }),
+    mediaHook.clearDraft,
+    t,
   );
 
-  // Debounced auto-save when content or media changes
-  useEffect(() => {
-    if (!content.trim() && media.length === 0) {
-      clearDraft().catch(() => {});
-      return;
-    }
-    debouncedSaveDraft({ content, mediaUrls: media.map(m => m.uri) });
-  }, [content, media, clearDraft, debouncedSaveDraft]);
-
-  const circlesQuery = useQuery({
-    queryKey: ['my-circles'],
-    queryFn: () => circlesApi.getMyCircles(),
-    enabled: visibility === 'CIRCLE',
-  });
-  const circles: Circle[] = (circlesQuery.data ?? []) as Circle[];
-
-  // ── File size limits ──
-  const MAX_IMAGE_SIZE = 20 * 1024 * 1024; // 20MB
-  const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB
-
-  const getFileSize = async (uri: string): Promise<number> => {
-    const info = await FileSystem.getInfoAsync(uri, { size: true });
-    return info.exists && 'size' in info ? info.size : 0;
-  };
-
-  // ── Media picker ──
-  const pickMedia = async () => {
-    if (media.length >= 10) {
-      showToast({ message: t('compose.mediaLimit'), variant: 'error' });
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images', 'videos'],
-      allowsMultipleSelection: true,
-      selectionLimit: 10 - media.length,
-      quality: 0.85,
-      exif: false,
-    });
-    if (!result.canceled) {
-      const validAssets: PickedMedia[] = [];
-      for (const a of result.assets) {
-        const isVideo = a.type === 'video';
-        const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
-        const maxLabel = isVideo ? '100MB' : '20MB';
-        const fileSize = a.fileSize ?? await getFileSize(a.uri);
-        if (fileSize > maxSize) {
-          const msgKey = isVideo ? 'compose.videoTooLarge' : 'compose.fileTooLarge';
-          showToast({ message: t(msgKey, { max: maxLabel }), variant: 'error' });
-          continue;
-        }
-        validAssets.push({
-          uri: a.uri,
-          type: isVideo ? 'video' : 'image',
-          width: a.width,
-          height: a.height,
-        });
-      }
-      // Client-side NSFW screening — blocks before upload (zero API cost)
-      if (validAssets.length > 0) {
-        const imageUris = validAssets.filter(a => a.type === 'image').map(a => a.uri);
-        if (imageUris.length > 0) {
-          try {
-            const { checkImages } = require('@/services/nsfwCheck');
-            const nsfwResult = await checkImages(imageUris);
-            if (!nsfwResult.safe) {
-              showToast({ message: t('compose.contentBlocked') || 'This image violates community guidelines', variant: 'error' });
-              return;
-            }
-          } catch {
-            // nsfwCheck not available — server-side moderation is the fallback
-          }
-        }
-        setMedia((prev) => [...prev, ...validAssets].slice(0, 10));
-      }
-    }
-  };
-
-  const removeMedia = (index: number) => {
-    setMedia((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  // ── Upload + create ──
-  const createMutation = useMutation({
-    mutationFn: async () => {
-      setUploading(media.length > 0);
-      setUploadProgress(0);
-
-      const mediaUrls: string[] = [];
-      const mediaTypes: string[] = [];
-      let mediaWidth: number | undefined;
-      let mediaHeight: number | undefined;
-
-      // Upload each media file with real progress tracking
-      for (let i = 0; i < media.length; i++) {
-        const item = media[i];
-        // Resize images before upload (saves bandwidth + storage)
-        let uploadUri = item.uri;
-        let uploadWidth = item.width;
-        let uploadHeight = item.height;
-        let contentType: string;
-        if (item.type === 'image') {
-          const resized = await resizeForUpload(item.uri, item.width, item.height);
-          uploadUri = resized.uri;
-          uploadWidth = resized.width;
-          uploadHeight = resized.height;
-          contentType = resized.mimeType;
-        } else {
-          const ext = uploadUri.split('?')[0].split('.').pop()?.toLowerCase() ?? 'mp4';
-          contentType = `video/${ext}`;
-        }
-        const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl(contentType, 'posts');
-
-        const fileRes = await fetch(uploadUri);
-        const blob = await fileRes.blob();
-
-        // Use XMLHttpRequest for real progress tracking
-        const baseProgress = (i / media.length) * 100;
-        const itemWeight = 100 / media.length;
-        const { promise, abort } = uploadWithProgress(
-          uploadUrl,
-          blob,
-          contentType,
-          (percent) => setUploadProgress(baseProgress + (percent / 100) * itemWeight),
-        );
-        uploadAbortRef.current = abort;
-        await promise;
-
-        mediaUrls.push(publicUrl);
-        mediaTypes.push(item.type);
-        if (mediaWidth === undefined && uploadWidth) {
-          mediaWidth = uploadWidth;
-          mediaHeight = uploadHeight;
-        }
-      }
-
-      uploadAbortRef.current = null;
-      setUploading(false);
-
-      const postType =
-        mediaUrls.length === 0 ? 'TEXT'
-        : mediaUrls.length > 1 ? 'CAROUSEL'
-        : mediaTypes[0] === 'video' ? 'VIDEO'
-        : 'IMAGE';
-
-      return postsApi.create({
-        content: content.trim() || undefined,
-        postType,
-        mediaUrls,
-        mediaTypes,
-        mediaWidth,
-        mediaHeight,
-        visibility,
-        circleId: visibility === 'CIRCLE' ? circleId : undefined,
-        locationName: location?.name,
-        locationLat: location?.latitude,
-        locationLng: location?.longitude,
-        altText: altText.trim() || undefined,
-        taggedUserIds: taggedUsers.length > 0 ? taggedUsers : undefined,
-        collaboratorUsername: collaboratorUsername.trim() || undefined,
-        commentPermission: commentControl === 'nobody' ? 'NOBODY' : commentControl === 'followers' ? 'FOLLOWERS' : 'EVERYONE',
-        shareToFeed,
-        brandedContent,
-        brandPartner: brandedContent ? brandPartner.trim() || undefined : undefined,
-        remixAllowed,
-        topics: selectedTopics.length > 0 ? selectedTopics : undefined,
-        scheduledAt: scheduledAt ?? undefined,
-      });
-    },
-    onSuccess: async () => {
-      haptic.success();
-      queryClient.invalidateQueries({ queryKey: ['saf-feed'] });
-      await clearDraft().catch(() => {});
-      showToast({ message: t('compose.postPublished'), variant: 'success' });
-      router.back();
-    },
-    onError: (err: Error) => {
-      haptic.error();
-      setUploading(false);
-      showToast({ message: err.message || t('compose.failedToCreatePost'), variant: 'error' });
-    },
-  });
-
-  const canPost =
-    (content.trim().length > 0 || media.length > 0) && !createMutation.isPending;
-
-  const visibilityOption = VISIBILITY_KEYS.find((o) => o.value === visibility)!;
-  const selectedCircle = circles.find((c) => c.id === circleId);
-  const pillText = visibility === 'CIRCLE' && selectedCircle
+  const visibilityOption = VISIBILITY_KEYS.find((o) => o.value === pub.visibility)!;
+  const selectedCircle = pub.circles.find((c) => c.id === pub.circleId);
+  const pillText = pub.visibility === 'CIRCLE' && selectedCircle
     ? selectedCircle.name
     : t(visibilityOption.labelKey);
 
@@ -320,8 +75,8 @@ export default function CreatePostScreen() {
             accessibilityRole="button"
             accessibilityLabel={t('accessibility.navigateBack')}
             onPress={() => {
-              if (content.trim() || media.length > 0) {
-                setShowDiscardSheet(true);
+              if (mediaHook.content.trim() || mediaHook.media.length > 0) {
+                pub.setShowDiscardSheet(true);
               } else {
                 router.back();
               }
@@ -330,19 +85,19 @@ export default function CreatePostScreen() {
           >
             <Icon name="x" size="md" color={tc.text.primary} />
           </Pressable>
-          <Text style={styles.headerTitle}>{scheduledAt ? t('schedule.scheduled') : t('saf.newPost')}</Text>
+          <Text style={styles.headerTitle}>{pub.scheduledAt ? t('schedule.scheduled') : t('saf.newPost')}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
             <Pressable
-              onPress={() => setShowScheduleSheet(true)}
+              onPress={() => pub.setShowScheduleSheet(true)}
               hitSlop={8}
               style={{ padding: spacing.xs }}
               accessibilityLabel={t('schedule.scheduleButton')}
               accessibilityRole="button"
             >
-              <Icon name="clock" size="md" color={scheduledAt ? colors.emerald : tc.text.tertiary} />
+              <Icon name="clock" size="md" color={pub.scheduledAt ? colors.emerald : tc.text.tertiary} />
             </Pressable>
             {/* Finding #384: Alt text reminder */}
-            {media.length > 0 && !altText.trim() && (
+            {mediaHook.media.length > 0 && !pub.altText.trim() && (
                             <Pressable
                 accessibilityRole="button"
                 onPress={() => inputRef.current?.blur()}
@@ -352,24 +107,24 @@ export default function CreatePostScreen() {
               </Pressable>
             )}
             <GradientButton
-              label={scheduledAt ? t('schedule.confirm') : t('common.share')}
+              label={pub.scheduledAt ? t('schedule.confirm') : t('common.share')}
               size="sm"
-              onPress={() => { if (!canPost || createMutation.isPending) return; createMutation.mutate(); }}
-              loading={createMutation.isPending}
-              disabled={!canPost}
+              onPress={() => { if (!pub.canPost || pub.createMutation.isPending) return; pub.createMutation.mutate(); }}
+              loading={pub.createMutation.isPending}
+              disabled={!pub.canPost}
             />
           </View>
         </View>
 
         {/* Draft restored banner */}
-        {showDraftBanner && (
+        {mediaHook.showDraftBanner && (
           <View style={styles.draftBanner}>
             <Icon name="clock" size="sm" color={colors.gold} />
             <Text style={styles.draftBannerText}>{t('compose.draftRestored')}</Text>
                         <Pressable
               accessibilityRole="button"
               accessibilityLabel={t('accessibility.close')}
-              onPress={() => setShowDraftBanner(false)}
+              onPress={() => mediaHook.setShowDraftBanner(false)}
               hitSlop={8}
             >
               <Icon name="x" size="xs" color={tc.text.secondary} />
@@ -392,7 +147,7 @@ export default function CreatePostScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={t('accessibility.expandSection')}
                 style={[styles.visibilityPill, { backgroundColor: tc.bgElevated }]}
-                onPress={() => setShowVisibility((v) => !v)}
+                onPress={() => pub.setShowVisibility(!pub.showVisibility)}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
                   <Icon name={visibilityOption.iconName} size={12} color={tc.text.secondary} />
@@ -403,37 +158,37 @@ export default function CreatePostScreen() {
             </View>
           </View>
 
-          {showVisibility && (
+          {pub.showVisibility && (
             <View style={[styles.visibilityMenu, { backgroundColor: tc.bgSheet, borderColor: tc.border }]}>
               {VISIBILITY_KEYS.map((opt) => (
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={t('accessibility.close')}
                   key={opt.value}
-                  style={[styles.visOption, visibility === opt.value && styles.visOptionActive]}
+                  style={[styles.visOption, pub.visibility === opt.value && styles.visOptionActive]}
                   onPress={() => {
-                    setVisibility(opt.value);
-                    setShowVisibility(false);
-                    if (opt.value === 'CIRCLE') setShowCirclePicker(true);
+                    pub.setVisibility(opt.value);
+                    pub.setShowVisibility(false);
+                    if (opt.value === 'CIRCLE') pub.setShowCirclePicker(true);
                   }}
                 >
-                  <Icon name={opt.iconName} size="sm" color={visibility === opt.value ? colors.emerald : tc.text.secondary} />
-                  <Text style={[styles.visOptionText, visibility === opt.value && styles.visOptionTextActive]}>
+                  <Icon name={opt.iconName} size="sm" color={pub.visibility === opt.value ? colors.emerald : tc.text.secondary} />
+                  <Text style={[styles.visOptionText, pub.visibility === opt.value && styles.visOptionTextActive]}>
                     {t(opt.labelKey)}
                   </Text>
-                  {visibility === opt.value && <Icon name="check" size="sm" color={colors.emerald} />}
+                  {pub.visibility === opt.value && <Icon name="check" size="sm" color={colors.emerald} />}
                 </Pressable>
               ))}
             </View>
           )}
 
           {/* Circle picker — shown when CIRCLE visibility is active */}
-          {visibility === 'CIRCLE' && (
+          {pub.visibility === 'CIRCLE' && (
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t('accessibility.seeMore')}
               style={styles.circlePill}
-              onPress={() => setShowCirclePicker(true)}
+              onPress={() => pub.setShowCirclePicker(true)}
             >
               <Text style={styles.circlePillText}>
                 {selectedCircle
@@ -447,35 +202,35 @@ export default function CreatePostScreen() {
           {/* Rich caption input — #hashtags emerald, @mentions blue, URLs gold */}
           <RichCaptionInput
             ref={inputRef}
-            value={content}
-            onChangeText={setContent}
+            value={mediaHook.content}
+            onChangeText={mediaHook.setContent}
             placeholder={t('compose.whatsOnYourMind')}
             maxLength={2200}
             autoFocus
             accessibilityLabel={t('accessibility.postContent')}
             onTriggerAutocomplete={(type, query) => {
-              setAutocompleteType(type);
-              setShowAutocomplete(true);
-              setAutocompleteQuery(query);
+              pub.setAutocompleteType(type);
+              pub.setShowAutocomplete(true);
+              pub.setAutocompleteQuery(query);
             }}
             onDismissAutocomplete={() => {
-              if (showAutocomplete) {
-                setShowAutocomplete(false);
-                setAutocompleteType(null);
-                setAutocompleteQuery('');
+              if (pub.showAutocomplete) {
+                pub.setShowAutocomplete(false);
+                pub.setAutocompleteType(null);
+                pub.setAutocompleteQuery('');
               }
             }}
           />
 
           {/* Premium glassmorphism media previews */}
-          {media.length > 0 && (
+          {mediaHook.media.length > 0 && (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               style={styles.mediaRow}
               contentContainerStyle={{ gap: spacing.sm, paddingEnd: spacing.base }}
             >
-              {media.map((item, idx) => (
+              {mediaHook.media.map((item, idx) => (
                 <Animated.View key={idx} entering={FadeInUp.delay(Math.min(idx, 15) * 50)} style={styles.mediaCard}>
                   <LinearGradient
                     colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
@@ -483,7 +238,7 @@ export default function CreatePostScreen() {
                     end={{ x: 1, y: 1 }}
                     style={styles.mediaCardGradient}
                   >
-                    <ProgressiveImage uri={item.uri} width="100%" height={100} borderRadius={radius.md - 3} accessibilityLabel={altText || t('compose.contentImage')} />
+                    <ProgressiveImage uri={item.uri} width="100%" height={100} borderRadius={radius.md - 3} accessibilityLabel={pub.altText || t('compose.contentImage')} />
                     {item.type === 'video' && (
                       <LinearGradient
                         colors={['rgba(0,0,0,0.6)', 'transparent']}
@@ -494,7 +249,7 @@ export default function CreatePostScreen() {
                     )}
                     <Pressable
                       style={styles.removeMedia}
-                      onPress={() => removeMedia(idx)}
+                      onPress={() => mediaHook.removeMedia(idx)}
                       hitSlop={4}
                       accessibilityLabel={t('compose.removeMedia')}
                       accessibilityRole="button"
@@ -528,8 +283,8 @@ export default function CreatePostScreen() {
                   </LinearGradient>
                 </Animated.View>
               ))}
-              {media.length < 10 && (
-                <Pressable style={styles.addMoreMedia} onPress={pickMedia} accessibilityLabel={t('compose.addMoreMedia')} accessibilityRole="button">
+              {mediaHook.media.length < 10 && (
+                <Pressable style={styles.addMoreMedia} onPress={mediaHook.pickMedia} accessibilityLabel={t('compose.addMoreMedia')} accessibilityRole="button">
                   <LinearGradient
                     colors={['rgba(10,123,79,0.1)', 'rgba(10,123,79,0.05)']}
                     style={styles.addMoreMediaGradient}
@@ -552,16 +307,16 @@ export default function CreatePostScreen() {
             </View>
 
             {/* ── Alt text (accessibility) — animated accordion ── */}
-            {media.length > 0 && (
+            {mediaHook.media.length > 0 && (
               <AnimatedAccordion
                 icon="eye"
-                title={altText ? t('compose.altTextAdded') : t('compose.addAltText')}
-                isActive={!!altText}
+                title={pub.altText ? t('compose.altTextAdded') : t('compose.addAltText')}
+                isActive={!!pub.altText}
               >
                 <View style={{ paddingTop: spacing.sm }}>
                   <TextInput
-                    value={altText}
-                    onChangeText={setAltText}
+                    value={pub.altText}
+                    onChangeText={pub.setAltText}
                     placeholder={t('compose.describeForScreenReaders')}
                     placeholderTextColor={tc.text.tertiary}
                     multiline
@@ -570,7 +325,7 @@ export default function CreatePostScreen() {
                     accessibilityLabel={t('compose.altTextInput')}
                   />
                   <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: spacing.xs }}>
-                    <CharCountRing current={altText.length} max={1000} size={20} />
+                    <CharCountRing current={pub.altText.length} max={1000} size={20} />
                   </View>
                 </View>
               </AnimatedAccordion>
@@ -579,23 +334,23 @@ export default function CreatePostScreen() {
             {/* ── Tag people — animated accordion ── */}
             <AnimatedAccordion
               icon="users"
-              title={taggedUsers.length > 0 ? `${taggedUsers.length} ${t('compose.peopleTagged')}` : t('compose.tagPeople')}
-              isActive={taggedUsers.length > 0}
+              title={pub.taggedUsers.length > 0 ? `${pub.taggedUsers.length} ${t('compose.peopleTagged')}` : t('compose.tagPeople')}
+              isActive={pub.taggedUsers.length > 0}
             >
               <View style={{ paddingTop: spacing.sm }}>
                 <TextInput
-                  value={tagSearchQuery}
-                  onChangeText={setTagSearchQuery}
+                  value={pub.tagSearchQuery}
+                  onChangeText={pub.setTagSearchQuery}
                   placeholder={t('compose.searchPeopleToTag')}
                   placeholderTextColor={tc.text.tertiary}
                   autoCapitalize="none"
                   style={{ color: tc.text.primary, fontSize: fontSize.sm, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, backgroundColor: tc.bgElevated, borderRadius: radius.md }}
                   accessibilityLabel={t('compose.searchPeopleToTag')}
                 />
-                {taggedUsers.length > 0 && (
+                {pub.taggedUsers.length > 0 && (
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.sm }}>
-                    {taggedUsers.map((user, i) => (
-                      <Pressable key={i} onPress={() => setTaggedUsers(prev => prev.filter((_, idx) => idx !== i))} hitSlop={4} accessibilityRole="button" accessibilityLabel={`${t('common.remove')} @${user}`} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', backgroundColor: pressed ? colors.active.emerald20 : colors.active.emerald10, borderRadius: radius.full, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, gap: spacing.xs, transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                    {pub.taggedUsers.map((user, i) => (
+                      <Pressable key={i} onPress={() => pub.setTaggedUsers(prev => prev.filter((_, idx) => idx !== i))} hitSlop={4} accessibilityRole="button" accessibilityLabel={`${t('common.remove')} @${user}`} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', backgroundColor: pressed ? colors.active.emerald20 : colors.active.emerald10, borderRadius: radius.full, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, gap: spacing.xs, transform: [{ scale: pressed ? 0.95 : 1 }] })}>
                         <Text style={{ color: colors.emerald, fontSize: fontSize.xs, fontFamily: fonts.bodyBold, fontWeight: '600' }}>@{user}</Text>
                         <Icon name="x" size={12} color={colors.emerald} />
                       </Pressable>
@@ -609,16 +364,16 @@ export default function CreatePostScreen() {
             <AnimatedAccordion
               icon="users"
               iconColor={colors.gold}
-              title={collaboratorUsername ? `${t('compose.collaborator')}: @${collaboratorUsername}` : t('compose.inviteCollaborator')}
-              isActive={!!collaboratorUsername}
+              title={pub.collaboratorUsername ? `${t('compose.collaborator')}: @${pub.collaboratorUsername}` : t('compose.inviteCollaborator')}
+              isActive={!!pub.collaboratorUsername}
             >
               <View style={{ paddingTop: spacing.sm }}>
                 <Text style={{ color: tc.text.secondary, fontSize: fontSize.xs, fontFamily: fonts.body, marginBottom: spacing.sm, lineHeight: 16 }}>
                   {t('compose.collaboratorDescription')}
                 </Text>
                 <TextInput
-                  value={collaboratorUsername}
-                  onChangeText={setCollaboratorUsername}
+                  value={pub.collaboratorUsername}
+                  onChangeText={pub.setCollaboratorUsername}
                   placeholder="@username"
                   placeholderTextColor={tc.text.tertiary}
                   autoCapitalize="none"
@@ -632,33 +387,33 @@ export default function CreatePostScreen() {
             <AnimatedAccordion
               icon="message-circle"
               title={t('compose.whoCanComment')}
-              subtitle={t(`compose.comment${commentControl.charAt(0).toUpperCase() + commentControl.slice(1)}`)}
-              isActive={commentControl !== 'everyone'}
+              subtitle={t(`compose.comment${pub.commentControl.charAt(0).toUpperCase() + pub.commentControl.slice(1)}`)}
+              isActive={pub.commentControl !== 'everyone'}
             >
               <View style={{ paddingTop: spacing.sm, borderRadius: radius.md, overflow: 'hidden' }}>
                 {(['everyone', 'followers', 'nobody'] as const).map(opt => (
                   <Pressable
                     key={opt}
-                    onPress={() => setCommentControl(opt)}
+                    onPress={() => pub.setCommentControl(opt)}
                     style={({ pressed }) => ({
                       flexDirection: 'row', alignItems: 'center',
                       padding: spacing.md, gap: spacing.md,
-                      backgroundColor: commentControl === opt ? colors.active.emerald10 : pressed ? colors.active.white10 : 'transparent',
+                      backgroundColor: pub.commentControl === opt ? colors.active.emerald10 : pressed ? colors.active.white10 : 'transparent',
                       transform: [{ scale: pressed ? 0.98 : 1 }],
                     })}
                     accessibilityRole="radio"
-                    accessibilityState={{ selected: commentControl === opt }}
+                    accessibilityState={{ selected: pub.commentControl === opt }}
                     accessibilityLabel={t(`compose.comment${opt.charAt(0).toUpperCase() + opt.slice(1)}`)}
                   >
                     <View style={{
                       width: 20, height: 20, borderRadius: radius.full,
-                      borderWidth: 2, borderColor: commentControl === opt ? colors.emerald : tc.border,
-                      backgroundColor: commentControl === opt ? colors.emerald : 'transparent',
+                      borderWidth: 2, borderColor: pub.commentControl === opt ? colors.emerald : tc.border,
+                      backgroundColor: pub.commentControl === opt ? colors.emerald : 'transparent',
                       alignItems: 'center', justifyContent: 'center',
                     }}>
-                      {commentControl === opt && <Icon name="check" size={12} color="#fff" />}
+                      {pub.commentControl === opt && <Icon name="check" size={12} color="#fff" />}
                     </View>
-                    <Text style={{ flex: 1, color: commentControl === opt ? colors.emerald : tc.text.primary, fontSize: fontSize.sm, fontFamily: fonts.bodyMedium, fontWeight: '500' }}>
+                    <Text style={{ flex: 1, color: pub.commentControl === opt ? colors.emerald : tc.text.primary, fontSize: fontSize.sm, fontFamily: fonts.bodyMedium, fontWeight: '500' }}>
                       {t(`compose.comment${opt.charAt(0).toUpperCase() + opt.slice(1)}`)}
                     </Text>
                   </Pressable>
@@ -674,47 +429,47 @@ export default function CreatePostScreen() {
               <View style={{ gap: spacing.sm, paddingTop: spacing.sm }}>
                 {/* Share to feed toggle */}
                 <Pressable
-                  onPress={() => setShareToFeed(!shareToFeed)}
+                  onPress={() => pub.setShareToFeed(!pub.shareToFeed)}
                   style={({ pressed }) => [publishRowStyle, { backgroundColor: tc.bgElevated, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
                   accessibilityRole="switch"
-                  accessibilityState={{ checked: shareToFeed }}
+                  accessibilityState={{ checked: pub.shareToFeed }}
                   accessibilityLabel={t('compose.shareToFeed')}
                 >
-                  <Icon name="layers" size="sm" color={shareToFeed ? colors.emerald : tc.text.secondary} />
+                  <Icon name="layers" size="sm" color={pub.shareToFeed ? colors.emerald : tc.text.secondary} />
                   <Text style={{ flex: 1, color: tc.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>
                     {t('compose.shareToFeed')}
                   </Text>
-                  <View style={{ width: 20, height: 20, borderRadius: radius.full, backgroundColor: shareToFeed ? colors.emerald : tc.surface, borderWidth: 1, borderColor: tc.border, justifyContent: 'center', alignItems: 'center' }}>
-                    {shareToFeed && <Icon name="check" size={12} color="#fff" />}
+                  <View style={{ width: 20, height: 20, borderRadius: radius.full, backgroundColor: pub.shareToFeed ? colors.emerald : tc.surface, borderWidth: 1, borderColor: tc.border, justifyContent: 'center', alignItems: 'center' }}>
+                    {pub.shareToFeed && <Icon name="check" size={12} color="#fff" />}
                   </View>
                 </Pressable>
 
                 {/* Remix allowed toggle */}
                 <Pressable
-                  onPress={() => setRemixAllowed(!remixAllowed)}
+                  onPress={() => pub.setRemixAllowed(!pub.remixAllowed)}
                   style={({ pressed }) => [publishRowStyle, { backgroundColor: tc.bgElevated, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
                   accessibilityRole="switch"
-                  accessibilityState={{ checked: remixAllowed }}
+                  accessibilityState={{ checked: pub.remixAllowed }}
                   accessibilityLabel={t('compose.allowRemix')}
                 >
-                  <Icon name="repeat" size="sm" color={remixAllowed ? colors.emerald : tc.text.secondary} />
+                  <Icon name="repeat" size="sm" color={pub.remixAllowed ? colors.emerald : tc.text.secondary} />
                   <Text style={{ flex: 1, color: tc.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>
                     {t('compose.allowRemix')}
                   </Text>
-                  <View style={{ width: 20, height: 20, borderRadius: radius.full, backgroundColor: remixAllowed ? colors.emerald : tc.surface, borderWidth: 1, borderColor: tc.border, justifyContent: 'center', alignItems: 'center' }}>
-                    {remixAllowed && <Icon name="check" size={12} color="#fff" />}
+                  <View style={{ width: 20, height: 20, borderRadius: radius.full, backgroundColor: pub.remixAllowed ? colors.emerald : tc.surface, borderWidth: 1, borderColor: tc.border, justifyContent: 'center', alignItems: 'center' }}>
+                    {pub.remixAllowed && <Icon name="check" size={12} color="#fff" />}
                   </View>
                 </Pressable>
 
                 {/* Branded content */}
                 <Pressable
-                  onPress={() => setBrandedContent(!brandedContent)}
+                  onPress={() => pub.setBrandedContent(!pub.brandedContent)}
                   style={({ pressed }) => [publishRowStyle, { backgroundColor: tc.bgElevated, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
                   accessibilityRole="switch"
-                  accessibilityState={{ checked: brandedContent }}
+                  accessibilityState={{ checked: pub.brandedContent }}
                   accessibilityLabel={t('compose.brandedContent')}
                 >
-                  <Icon name="check-circle" size="sm" color={brandedContent ? colors.gold : tc.text.secondary} />
+                  <Icon name="check-circle" size="sm" color={pub.brandedContent ? colors.gold : tc.text.secondary} />
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: tc.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>
                       {t('compose.brandedContent')}
@@ -723,15 +478,15 @@ export default function CreatePostScreen() {
                       {t('compose.brandedContentHint')}
                     </Text>
                   </View>
-                  <View style={{ width: 20, height: 20, borderRadius: radius.full, backgroundColor: brandedContent ? colors.gold : tc.surface, borderWidth: 1, borderColor: tc.border, justifyContent: 'center', alignItems: 'center' }}>
-                    {brandedContent && <Icon name="check" size={12} color="#fff" />}
+                  <View style={{ width: 20, height: 20, borderRadius: radius.full, backgroundColor: pub.brandedContent ? colors.gold : tc.surface, borderWidth: 1, borderColor: tc.border, justifyContent: 'center', alignItems: 'center' }}>
+                    {pub.brandedContent && <Icon name="check" size={12} color="#fff" />}
                   </View>
                 </Pressable>
-                {brandedContent && (
+                {pub.brandedContent && (
                   <View style={{ backgroundColor: tc.bgElevated, borderRadius: radius.md, padding: spacing.md }}>
                     <TextInput
-                      value={brandPartner}
-                      onChangeText={setBrandPartner}
+                      value={pub.brandPartner}
+                      onChangeText={pub.setBrandPartner}
                       placeholder={t('compose.brandPartnerPlaceholder')}
                       placeholderTextColor={tc.text.tertiary}
                       autoCapitalize="none"
@@ -743,26 +498,26 @@ export default function CreatePostScreen() {
 
                 {/* Topics / categories */}
                 <Pressable
-                  onPress={() => setShowTopics(!showTopics)}
+                  onPress={() => pub.setShowTopics(!pub.showTopics)}
                   style={({ pressed }) => [publishRowStyle, { backgroundColor: tc.bgElevated, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
                   accessibilityRole="button"
                   accessibilityLabel={t('compose.addTopics')}
                 >
-                  <Icon name="hash" size="sm" color={selectedTopics.length > 0 ? colors.emerald : tc.text.secondary} />
+                  <Icon name="hash" size="sm" color={pub.selectedTopics.length > 0 ? colors.emerald : tc.text.secondary} />
                   <Text style={{ flex: 1, color: tc.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>
-                    {selectedTopics.length > 0 ? `${selectedTopics.length} ${t('compose.topicsSelected')}` : t('compose.addTopics')}
+                    {pub.selectedTopics.length > 0 ? `${pub.selectedTopics.length} ${t('compose.topicsSelected')}` : t('compose.addTopics')}
                   </Text>
                   <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
                 </Pressable>
-                {showTopics && (
+                {pub.showTopics && (
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, padding: spacing.sm }}>
                     {(['Islamic', 'Lifestyle', 'Education', 'Technology', 'Food', 'Travel', 'Fashion', 'Sports', 'Business', 'Art'] as const).map(topic => {
-                      const isSelected = selectedTopics.includes(topic);
+                      const isSelected = pub.selectedTopics.includes(topic);
                       return (
                         <Pressable
                           key={topic}
                           onPress={() => {
-                            setSelectedTopics(prev =>
+                            pub.setSelectedTopics(prev =>
                               isSelected ? prev.filter(t => t !== topic) : [...prev, topic].slice(0, 3)
                             );
                           }}
@@ -793,14 +548,14 @@ export default function CreatePostScreen() {
       </KeyboardAvoidingView>
 
         {/* Discard confirmation */}
-        <BottomSheet visible={showDiscardSheet} onClose={() => setShowDiscardSheet(false)}>
+        <BottomSheet visible={pub.showDiscardSheet} onClose={() => pub.setShowDiscardSheet(false)}>
           <BottomSheetItem
             label={t('common.saveDraft')}
             icon={<Icon name="bookmark" size="sm" color={tc.text.primary} />}
             onPress={async () => {
               try {
-                await saveDraftImmediate({ content, mediaUrls: media.map(m => m.uri) });
-                setShowDiscardSheet(false);
+                await mediaHook.saveDraftImmediate({ content: mediaHook.content, mediaUrls: mediaHook.media.map(m => m.uri) });
+                pub.setShowDiscardSheet(false);
                 showToast({ message: t('common.draftSaved'), variant: 'success' });
                 router.back();
               } catch {
@@ -813,22 +568,22 @@ export default function CreatePostScreen() {
             icon={<Icon name="trash" size="sm" color={colors.error} />}
             destructive
             onPress={async () => {
-              setShowDiscardSheet(false);
-              await clearDraft().catch(() => {});
+              pub.setShowDiscardSheet(false);
+              await mediaHook.clearDraft().catch(() => {});
               router.back();
             }}
           />
           <BottomSheetItem
             label={t('common.cancel')}
             icon={<Icon name="x" size="sm" color={tc.text.primary} />}
-            onPress={() => setShowDiscardSheet(false)}
+            onPress={() => pub.setShowDiscardSheet(false)}
           />
         </BottomSheet>
 
         {/* Circle picker */}
-        <BottomSheet visible={showCirclePicker} onClose={() => setShowCirclePicker(false)}>
+        <BottomSheet visible={pub.showCirclePicker} onClose={() => pub.setShowCirclePicker(false)}>
           <Text style={styles.sheetTitle}>{t('compose.chooseCircle')}</Text>
-          {circlesQuery.isLoading ? (
+          {pub.circlesQuery.isLoading ? (
             <View style={styles.skeletonList}>
               {Array.from({ length: 3 }).map((_, i) => (
                 <View key={i} style={styles.skeletonRow}>
@@ -840,21 +595,21 @@ export default function CreatePostScreen() {
                 </View>
               ))}
             </View>
-          ) : circles.length === 0 ? (
+          ) : pub.circles.length === 0 ? (
             <View style={styles.emptyCircles}>
               <Text style={styles.emptyCirclesText}>{t('compose.noCirclesYet')}</Text>
                             <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={t('accessibility.seeMore')}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}
-                onPress={() => { setShowCirclePicker(false); router.push('/(screens)/circles'); }}
+                onPress={() => { pub.setShowCirclePicker(false); router.push('/(screens)/circles'); }}
               >
                 <Text style={styles.emptyCirclesLink}>{t('compose.createCircle')}</Text>
                 <Icon name="chevron-right" size="sm" color={colors.emerald} />
               </Pressable>
             </View>
           ) : (
-            circles.map((c) => (
+            pub.circles.map((c) => (
               <BottomSheetItem
                 key={c.id}
                 label={c.name}
@@ -867,7 +622,7 @@ export default function CreatePostScreen() {
                     )}
                   </View>
                 }
-                onPress={() => { setCircleId(c.id); setShowCirclePicker(false); }}
+                onPress={() => { pub.setCircleId(c.id); pub.setShowCirclePicker(false); }}
               />
             ))
           )}
@@ -875,29 +630,27 @@ export default function CreatePostScreen() {
 
         {/* Upload progress bar — non-blocking, shows real percentage */}
         <UploadProgressBar
-          visible={uploading}
-          progress={uploadProgress}
-          label={media.length > 1 ? `${t('compose.uploadingMedia')} (${Math.ceil((uploadProgress / 100) * media.length)}/${media.length})` : undefined}
+          visible={pub.uploading}
+          progress={pub.uploadProgress}
+          label={mediaHook.media.length > 1 ? `${t('compose.uploadingMedia')} (${Math.ceil((pub.uploadProgress / 100) * mediaHook.media.length)}/${mediaHook.media.length})` : undefined}
           onCancel={() => {
-            if (uploadAbortRef.current) {
-              uploadAbortRef.current();
-              uploadAbortRef.current = null;
-              setUploading(false);
-              setUploadProgress(0);
+            if (pub.uploadAbortRef.current) {
+              pub.uploadAbortRef.current();
+              pub.uploadAbortRef.current = null;
               showToast({ message: t('compose.uploadCancelled'), variant: 'info' });
             }
           }}
         />
 
         {/* Location display */}
-        {location && (
+        {pub.location && (
           <View style={styles.locationPill}>
             <Icon name="map-pin" size="xs" color={colors.emerald} />
-            <Text style={styles.locationPillText}>{location.name}</Text>
+            <Text style={styles.locationPillText}>{pub.location?.name}</Text>
                         <Pressable
               accessibilityRole="button"
               accessibilityLabel={t('accessibility.close')}
-              onPress={() => setLocation(null)}
+              onPress={() => pub.setLocation(null)}
               hitSlop={8}
             >
               <Icon name="x" size="xs" color={tc.text.tertiary} />
@@ -907,41 +660,39 @@ export default function CreatePostScreen() {
 
         {/* Autocomplete dropdown */}
         <Autocomplete
-          visible={showAutocomplete}
-          type={autocompleteType || 'hashtag'}
-          query={autocompleteQuery}
+          visible={pub.showAutocomplete}
+          type={pub.autocompleteType || 'hashtag'}
+          query={pub.autocompleteQuery}
           onSelect={(value) => {
             // Find cursor position and replace the partial tag
-            const cursorPos = content.length;
-            const lastHashIndex = content.lastIndexOf('#', cursorPos - 1);
-            const lastAtIndex = content.lastIndexOf('@', cursorPos - 1);
+            const cursorPos = mediaHook.content.length;
+            const lastHashIndex = mediaHook.content.lastIndexOf('#', cursorPos - 1);
+            const lastAtIndex = mediaHook.content.lastIndexOf('@', cursorPos - 1);
 
-            let newContent = content;
-            if (autocompleteType === 'hashtag' && lastHashIndex !== -1) {
-              // Replace from # to cursor with the selected hashtag
-              const before = content.slice(0, lastHashIndex);
-              const after = content.slice(cursorPos);
+            let newContent = mediaHook.content;
+            if (pub.autocompleteType === 'hashtag' && lastHashIndex !== -1) {
+              const before = mediaHook.content.slice(0, lastHashIndex);
+              const after = mediaHook.content.slice(cursorPos);
               newContent = before + value + ' ' + after;
-            } else if (autocompleteType === 'mention' && lastAtIndex !== -1) {
-              // Replace from @ to cursor with the selected mention
-              const before = content.slice(0, lastAtIndex);
-              const after = content.slice(cursorPos);
+            } else if (pub.autocompleteType === 'mention' && lastAtIndex !== -1) {
+              const before = mediaHook.content.slice(0, lastAtIndex);
+              const after = mediaHook.content.slice(cursorPos);
               newContent = before + value + ' ' + after;
             }
-            setContent(newContent);
+            mediaHook.setContent(newContent);
           }}
           onClose={() => {
-            setShowAutocomplete(false);
-            setAutocompleteType(null);
-            setAutocompleteQuery('');
+            pub.setShowAutocomplete(false);
+            pub.setAutocompleteType(null);
+            pub.setAutocompleteQuery('');
           }}
         />
 
         {/* Location Picker */}
         <LocationPicker
-          visible={showLocationPicker}
-          onClose={() => setShowLocationPicker(false)}
-          onSelect={(loc) => setLocation(loc)}
+          visible={pub.showLocationPicker}
+          onClose={() => pub.setShowLocationPicker(false)}
+          onSelect={(loc) => pub.setLocation(loc)}
         />
 
         {/* Premium gradient toolbar */}
@@ -954,18 +705,18 @@ export default function CreatePostScreen() {
                         <Pressable
               accessibilityRole="button"
               accessibilityLabel={t('accessibility.pickMedia')}
-              onPress={pickMedia}
+              onPress={mediaHook.pickMedia}
               hitSlop={8}
               style={styles.toolbarBtn}
             >
               <LinearGradient
                 colors={['rgba(10,123,79,0.1)', 'rgba(10,123,79,0.05)']}
-                style={[styles.toolbarBtnGradient, media.length > 0 && styles.toolbarBtnGradientActive]}
+                style={[styles.toolbarBtnGradient, mediaHook.media.length > 0 && styles.toolbarBtnGradientActive]}
               >
-                <Icon name="image" size="md" color={media.length > 0 ? colors.emerald : tc.text.secondary} />
-                {media.length > 0 && (
+                <Icon name="image" size="md" color={mediaHook.media.length > 0 ? colors.emerald : tc.text.secondary} />
+                {mediaHook.media.length > 0 && (
                   <View style={[styles.mediaBadge, { borderColor: tc.bg }]}>
-                    <Text style={styles.mediaBadgeText}>{media.length}</Text>
+                    <Text style={styles.mediaBadgeText}>{mediaHook.media.length}</Text>
                   </View>
                 )}
               </LinearGradient>
@@ -976,13 +727,13 @@ export default function CreatePostScreen() {
               accessibilityLabel={t('accessibility.addLocation')}
               hitSlop={8}
               style={styles.toolbarBtn}
-              onPress={() => setShowLocationPicker(true)}
+              onPress={() => pub.setShowLocationPicker(true)}
             >
               <LinearGradient
-                colors={location ? [colors.active.emerald10, 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(45,53,72,0.1)']}
+                colors={pub.location ? [colors.active.emerald10, 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(45,53,72,0.1)']}
                 style={styles.toolbarBtnGradient}
               >
-                <Icon name="map-pin" size="md" color={location ? colors.emerald : tc.text.secondary} />
+                <Icon name="map-pin" size="md" color={pub.location ? colors.emerald : tc.text.secondary} />
               </LinearGradient>
             </Pressable>
 
@@ -991,17 +742,17 @@ export default function CreatePostScreen() {
               hitSlop={8}
               style={styles.toolbarBtn}
               onPress={() => {
-                setAutocompleteType('hashtag');
-                setShowAutocomplete(true);
-                setAutocompleteQuery('');
+                pub.setAutocompleteType('hashtag');
+                pub.setShowAutocomplete(true);
+                pub.setAutocompleteQuery('');
                 inputRef.current?.focus();
               }}
             >
               <LinearGradient
-                colors={showAutocomplete && autocompleteType === 'hashtag' ? [colors.active.emerald10, 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(45,53,72,0.1)']}
+                colors={pub.showAutocomplete && pub.autocompleteType === 'hashtag' ? [colors.active.emerald10, 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(45,53,72,0.1)']}
                 style={styles.toolbarBtnGradient}
               >
-                <Icon name="hash" size="md" color={showAutocomplete && autocompleteType === 'hashtag' ? colors.emerald : tc.text.secondary} />
+                <Icon name="hash" size="md" color={pub.showAutocomplete && pub.autocompleteType === 'hashtag' ? colors.emerald : tc.text.secondary} />
               </LinearGradient>
             </Pressable>
 
@@ -1010,17 +761,17 @@ export default function CreatePostScreen() {
               hitSlop={8}
               style={styles.toolbarBtn}
               onPress={() => {
-                setAutocompleteType('mention');
-                setShowAutocomplete(true);
-                setAutocompleteQuery('');
+                pub.setAutocompleteType('mention');
+                pub.setShowAutocomplete(true);
+                pub.setAutocompleteQuery('');
                 inputRef.current?.focus();
               }}
             >
               <LinearGradient
-                colors={showAutocomplete && autocompleteType === 'mention' ? [colors.active.emerald10, 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(45,53,72,0.1)']}
+                colors={pub.showAutocomplete && pub.autocompleteType === 'mention' ? [colors.active.emerald10, 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(45,53,72,0.1)']}
                 style={styles.toolbarBtnGradient}
               >
-                <Icon name="at-sign" size="md" color={showAutocomplete && autocompleteType === 'mention' ? colors.emerald : tc.text.secondary} />
+                <Icon name="at-sign" size="md" color={pub.showAutocomplete && pub.autocompleteType === 'mention' ? colors.emerald : tc.text.secondary} />
               </LinearGradient>
             </Pressable>
 
@@ -1029,11 +780,11 @@ export default function CreatePostScreen() {
               onPress={async () => {
                 try {
                   await draftsApi.save('SAF', {
-                    content,
-                    mediaUrls: media.map(m => m.uri),
-                    mediaTypes: media.map(m => m.type),
-                    visibility,
-                    circleId,
+                    content: mediaHook.content,
+                    mediaUrls: mediaHook.media.map(m => m.uri),
+                    mediaTypes: mediaHook.media.map(m => m.type),
+                    visibility: pub.visibility,
+                    circleId: pub.circleId,
                   });
                   showToast({ message: t('compose.draftSavedToAccount'), variant: 'success' });
                 } catch {
@@ -1084,10 +835,10 @@ export default function CreatePostScreen() {
             {/* Animated char count with glow effect */}
             <View style={styles.charCountContainer}>
               <LinearGradient
-                colors={content.length > 2000 ? ['rgba(248,81,73,0.2)', 'transparent'] : ['rgba(10,123,79,0.1)', 'transparent']}
+                colors={mediaHook.content.length > 2000 ? ['rgba(248,81,73,0.2)', 'transparent'] : ['rgba(10,123,79,0.1)', 'transparent']}
                 style={styles.charCountGlow}
               >
-                <CharCountRing current={content.length} max={2200} />
+                <CharCountRing current={mediaHook.content.length} max={2200} />
               </LinearGradient>
             </View>
           </View>
@@ -1095,11 +846,11 @@ export default function CreatePostScreen() {
       </SafeAreaView>
 
       <SchedulePostSheet
-        visible={showScheduleSheet}
-        onClose={() => setShowScheduleSheet(false)}
-        onSchedule={(isoDate) => { setScheduledAt(isoDate); haptic.success(); }}
-        onClearSchedule={() => { setScheduledAt(null); haptic.delete(); }}
-        currentSchedule={scheduledAt}
+        visible={pub.showScheduleSheet}
+        onClose={() => pub.setShowScheduleSheet(false)}
+        onSchedule={(isoDate) => { pub.setScheduledAt(isoDate); haptic.success(); }}
+        onClearSchedule={() => { pub.setScheduledAt(null); haptic.delete(); }}
+        currentSchedule={pub.scheduledAt}
       />
     </ScreenErrorBoundary>
   );
