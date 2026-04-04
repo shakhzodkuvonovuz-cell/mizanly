@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius } from '@/theme';
@@ -40,6 +40,7 @@ export const VideoTransitions = memo(function VideoTransitions({
   const haptic = useContextualHaptic();
   const tc = useThemeColors();
 
+  const styles = useMemo(() => createStyles(tc), [tc]);
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{t('editor.transitions.title')}</Text>
@@ -75,7 +76,7 @@ export const VideoTransitions = memo(function VideoTransitions({
   );
 });
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     paddingVertical: spacing.md,
   },
@@ -100,7 +101,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: radius.md,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1.5,

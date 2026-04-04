@@ -1,11 +1,10 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions, TextInput, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withTiming, runOnJS } from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { GestureDetector } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Video, Audio, ResizeMode, AVPlaybackStatus } from 'expo-av';
+import { Video, ResizeMode } from 'expo-av';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
@@ -15,20 +14,21 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { showToast } from '@/components/ui/Toast';
 import { MusicPicker } from '@/components/story/MusicPicker';
-import { uploadApi } from '@/services/api';
-import type { AudioTrack } from '@/types';
-import { executeExport, cancelExport, isFFmpegAvailable, type EditParams } from '@/services/ffmpegEngine';
-import * as Speech from 'expo-speech';
 import { EmojiPicker } from '@/components/ui/EmojiPicker';
 import { formatTime } from '@/utils/formatTime';
+import * as Speech from 'expo-speech';
+import {
+  useVideoEditorState,
+  useVideoTimeline,
+  useVideoPlayback,
+  useVideoExport,
+  useVideoVoiceover,
+  useVideoVolumeGestures,
+} from '@/hooks/video-editor';
+import type { ToolTab, SpeedOption, SpeedCurve, VoiceEffect, FilterName } from '@/hooks/video-editor';
 
 // Fallback dimensions for createStyles (overridden by hook values in component)
 const { width: fallbackScreenWidth, height: fallbackScreenHeight } = Dimensions.get('window');
-
-type ToolTab = 'trim' | 'speed' | 'filters' | 'adjust' | 'text' | 'music' | 'volume' | 'voiceover' | 'effects';
-type SpeedOption = 0.25 | 0.5 | 1 | 1.5 | 2 | 3;
-type FilterName = 'original' | 'warm' | 'cool' | 'bw' | 'vintage' | 'vivid' | 'dramatic' | 'fade' | 'emerald' | 'golden' | 'night' | 'soft' | 'cinematic';
-type QualityOption = '720p' | '1080p' | '4K';
 
 const SPEED_OPTIONS: SpeedOption[] = [0.25, 0.5, 1, 1.5, 2, 3];
 
@@ -51,22 +51,6 @@ const FILTERS: { id: FilterName; labelKey: string; color: string }[] = [
 const FONT_OPTION_KEYS = ['default', 'bold', 'handwritten'];
 const TEXT_COLORS = ['#FFFFFF', '#D4A94F', '#0A7B4F', '#C8963E', '#F85149', colors.extended.blue];
 
-type VoiceEffect = 'none' | 'robot' | 'echo' | 'deep' | 'chipmunk' | 'telephone';
-type SpeedCurve = 'none' | 'montage' | 'hero' | 'bullet' | 'flashIn' | 'flashOut';
-
-type EditSnapshot = {
-  startTime: number; endTime: number; speed: SpeedOption; speedCurve: SpeedCurve; filter: FilterName;
-  captionText: string; originalVolume: number; musicVolume: number; isReversed: boolean;
-  voiceEffect: VoiceEffect; stabilize: boolean; noiseReduce: boolean;
-  freezeFrameAt: number | null; textStartTime: number; textEndTime: number;
-  aspectRatio: '9:16' | '16:9' | '1:1' | '4:5';
-  brightness: number; contrast: number; saturation: number; temperature: number;
-  fadeIn: number; fadeOut: number;
-  rotation: 0 | 90 | 180 | 270; sharpen: boolean; vignetteOn: boolean; grain: boolean;
-  audioPitch: number; flipH: boolean; flipV: boolean; glitch: boolean;
-  letterbox: boolean; boomerang: boolean; textSize: number; textBg: boolean; textShadow: boolean;
-};
-
 export default function VideoEditorScreen() {
   const tc = useThemeColors();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
@@ -77,469 +61,106 @@ export default function VideoEditorScreen() {
   const { t, language: currentLanguage, isRTL } = useTranslation();
   const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
-  const videoRef = useRef<Video>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [totalDuration, setTotalDuration] = useState(0);
-  const [playbackSpeed, setPlaybackSpeed] = useState<SpeedOption>(1);
-  const [selectedTool, setSelectedTool] = useState<ToolTab>('trim');
-  const [selectedFilter, setSelectedFilter] = useState<FilterName>('original');
-  const [selectedQuality, setSelectedQuality] = useState<QualityOption>('1080p');
-  const [startTime, setStartTime] = useState(0);
-  const [endTime, setEndTime] = useState(0);
-  const [selectedFont, setSelectedFont] = useState('default');
-  const [selectedTextColor, setSelectedTextColor] = useState('#FFFFFF');
-  const [captionText, setCaptionText] = useState('');
-  const [originalVolume, setOriginalVolume] = useState(80);
-  const [musicVolume, setMusicVolume] = useState(60);
-  const [voiceoverUri, setVoiceoverUri] = useState<string | null>(null);
-  const [isRecordingVoiceover, setIsRecordingVoiceover] = useState(false);
-  const recordingRef = useRef<Audio.Recording | null>(null);
-  const navTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [showMusicPicker, setShowMusicPicker] = useState(false);
-  const [selectedTrack, setSelectedTrack] = useState<AudioTrack | null>(null);
-  const [isReversed, setIsReversed] = useState(false);
-  const [speedCurve, setSpeedCurve] = useState<SpeedCurve>('none');
-
-  // Color grading adjustments (-100 to +100, 0 = neutral)
-  const [brightness, setBrightness] = useState(0);
-  const [contrast, setContrast] = useState(0);
-  const [saturation, setSaturation] = useState(0);
-  const [temperature, setTemperature] = useState(0);
-  const [fadeIn, setFadeIn] = useState(0);   // seconds, 0 = no fade
-  const [fadeOut, setFadeOut] = useState(0);  // seconds, 0 = no fade
-  const [aspectRatio, setAspectRatio] = useState<'9:16' | '16:9' | '1:1' | '4:5'>('9:16');
-
-  // Text timing — when the caption appears and disappears
-  const [textStartTime, setTextStartTime] = useState(0);
-  const [textEndTime, setTextEndTime] = useState(0); // 0 = full duration
-
-  // Effects: voice effect, stabilization, noise reduction, freeze frame
-  const [voiceEffect, setVoiceEffect] = useState<VoiceEffect>('none');
-  const [stabilize, setStabilize] = useState(false);
-  const [noiseReduce, setNoiseReduce] = useState(false);
-  const [freezeFrameAt, setFreezeFrameAt] = useState<number | null>(null); // seconds, null = none
-  const [rotation, setRotation] = useState<0 | 90 | 180 | 270>(0);
-  const [sharpen, setSharpen] = useState(false);
-  const [vignetteOn, setVignetteOn] = useState(false);
-  const [grain, setGrain] = useState(false);
-  const [audioPitch, setAudioPitch] = useState(0); // -12 to +12 semitones
-  const [flipH, setFlipH] = useState(false);
-  const [flipV, setFlipV] = useState(false);
-  const [glitch, setGlitch] = useState(false);
-  const [letterbox, setLetterbox] = useState(false);
-  const [boomerang, setBoomerang] = useState(false);
-  const [textSize, setTextSize] = useState(48);
-  const [textBg, setTextBg] = useState(false);
-  const [textShadow, setTextShadow] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
-  const [exportProgress, setExportProgress] = useState(0);
-  const [videoLoaded, setVideoLoaded] = useState(false);
-
-  // Undo/redo stack — snapshot ALL edit state
-  const [undoStack, setUndoStack] = useState<EditSnapshot[]>([]);
-  const [redoStack, setRedoStack] = useState<EditSnapshot[]>([]);
-
-  const captureSnapshot = useCallback((): EditSnapshot => ({
-    startTime, endTime, speed: playbackSpeed, speedCurve, filter: selectedFilter,
-    captionText, originalVolume, musicVolume, isReversed,
-    voiceEffect, stabilize, noiseReduce, freezeFrameAt,
-    textStartTime, textEndTime, aspectRatio,
-    brightness, contrast, saturation, temperature, fadeIn, fadeOut,
-    rotation, sharpen, vignetteOn, grain, audioPitch,
-    flipH, flipV, glitch, letterbox, boomerang, textSize, textBg, textShadow,
-  }), [startTime, endTime, playbackSpeed, speedCurve, selectedFilter, captionText, originalVolume, musicVolume, isReversed, voiceEffect, stabilize, noiseReduce, freezeFrameAt, textStartTime, textEndTime, aspectRatio, brightness, contrast, saturation, temperature, fadeIn, fadeOut, rotation, sharpen, vignetteOn, grain, audioPitch, flipH, flipV, glitch, letterbox, boomerang, textSize, textBg, textShadow]);
-
-  const applySnapshot = useCallback((s: EditSnapshot) => {
-    setStartTime(s.startTime); setEndTime(s.endTime);
-    setPlaybackSpeed(s.speed); setSpeedCurve(s.speedCurve); setSelectedFilter(s.filter);
-    setBrightness(s.brightness); setContrast(s.contrast); setSaturation(s.saturation);
-    setTemperature(s.temperature); setFadeIn(s.fadeIn); setFadeOut(s.fadeOut);
-    setRotation(s.rotation); setSharpen(s.sharpen); setVignetteOn(s.vignetteOn); setGrain(s.grain);
-    setAudioPitch(s.audioPitch); setFlipH(s.flipH); setFlipV(s.flipV); setGlitch(s.glitch);
-    setLetterbox(s.letterbox); setBoomerang(s.boomerang); setTextSize(s.textSize);
-    setTextBg(s.textBg); setTextShadow(s.textShadow);
-    setCaptionText(s.captionText); setOriginalVolume(s.originalVolume);
-    setMusicVolume(s.musicVolume); setIsReversed(s.isReversed);
-    setVoiceEffect(s.voiceEffect); setStabilize(s.stabilize);
-    setNoiseReduce(s.noiseReduce); setFreezeFrameAt(s.freezeFrameAt);
-    setTextStartTime(s.textStartTime); setTextEndTime(s.textEndTime);
-    setAspectRatio(s.aspectRatio);
-  }, []);
-
-  const pushUndo = useCallback(() => {
-    setUndoStack(prev => [...prev.slice(-19), captureSnapshot()]);
-    setRedoStack([]);
-  }, [captureSnapshot]);
-
-  const handleUndo = useCallback(() => {
-    if (undoStack.length === 0) return;
-    haptic.tick();
-    const prev = undoStack[undoStack.length - 1];
-    setRedoStack(r => [...r, captureSnapshot()]);
-    setUndoStack(s => s.slice(0, -1));
-    applySnapshot(prev);
-  }, [undoStack, captureSnapshot, applySnapshot, haptic]);
-
-  const handleRedo = useCallback(() => {
-    if (redoStack.length === 0) return;
-    haptic.tick();
-    const next = redoStack[redoStack.length - 1];
-    setUndoStack(s => [...s, captureSnapshot()]);
-    setRedoStack(r => r.slice(0, -1));
-    applySnapshot(next);
-  }, [redoStack, captureSnapshot, applySnapshot, haptic]);
   const videoUri = params.videoUri || params.uri || null;
 
-  // Cleanup: stop voiceover recording and TTS on unmount
-  useEffect(() => {
-    return () => {
-      if (recordingRef.current) {
-        recordingRef.current.stopAndUnloadAsync().catch(() => {});
-        recordingRef.current = null;
-      }
-      if (navTimerRef.current) {
-        clearTimeout(navTimerRef.current);
-      }
-      Speech.stop();
-      Audio.setAudioModeAsync({ allowsRecordingIOS: false }).catch(() => {});
-    };
-  }, []);
+  // ── Hook orchestration ──────────────────────────────────────────────
 
-  // Timeline width reference for gesture calculations
-  const timelineWidth = useRef(0);
-  const MIN_TRIM_GAP = 1; // minimum 1 second between handles
+  const state = useVideoEditorState();
 
-  // Animated trim handle positions (0-1 fraction of timeline)
-  const leftHandlePos = useSharedValue(0);
-  const rightHandlePos = useSharedValue(1);
-  // Store initial position at gesture start to avoid compounding
-  const leftHandleStartPos = useSharedValue(0);
-  const rightHandleStartPos = useSharedValue(1);
+  const playback = useVideoPlayback({
+    isPlaying: state.isPlaying,
+    setIsPlaying: state.setIsPlaying,
+    setCurrentTime: state.setCurrentTime,
+    totalDuration: state.totalDuration,
+    setTotalDuration: state.setTotalDuration,
+    setEndTime: state.setEndTime,
+    videoLoaded: state.videoLoaded,
+    setVideoLoaded: state.setVideoLoaded,
+    playbackSpeed: state.playbackSpeed,
+    setPlaybackSpeed: state.setPlaybackSpeed,
+    originalVolume: state.originalVolume,
+    startTime: state.startTime,
+    endTime: state.endTime,
+  });
 
-  // Update shared values when trim times change from other interactions
-  useEffect(() => {
-    if (totalDuration > 0) {
-      leftHandlePos.value = startTime / totalDuration;
-      rightHandlePos.value = endTime / totalDuration;
-    }
-  }, [totalDuration, startTime, endTime, leftHandlePos, rightHandlePos]);
+  const timeline = useVideoTimeline({
+    totalDuration: state.totalDuration,
+    startTime: state.startTime,
+    endTime: state.endTime,
+    setStartTime: state.setStartTime,
+    setEndTime: state.setEndTime,
+    videoRef: playback.videoRef,
+  });
 
-  // Seek helper — extracted as named function for runOnJS
-  const seekToStart = useCallback(() => {
-    videoRef.current?.setPositionAsync(startTime * 1000);
-  }, [startTime]);
+  const volumeGestures = useVideoVolumeGestures({
+    setOriginalVolume: state.setOriginalVolume,
+    setMusicVolume: state.setMusicVolume,
+  });
 
-  // FIX: Gesture captures start position in onStart, uses absolute offset in onUpdate
-  const leftTrimGesture = Gesture.Pan()
-    .onStart(() => {
-      leftHandleStartPos.value = leftHandlePos.value;
-    })
-    .onUpdate((e) => {
-      if (timelineWidth.current <= 0 || totalDuration <= 0) return;
-      const fraction = Math.max(0, Math.min(
-        rightHandlePos.value - MIN_TRIM_GAP / totalDuration,
-        leftHandleStartPos.value + e.translationX / timelineWidth.current
-      ));
-      leftHandlePos.value = fraction;
-      runOnJS(setStartTime)(fraction * totalDuration);
-    })
-    .onEnd(() => {
-      runOnJS(seekToStart)();
-    });
+  const voiceover = useVideoVoiceover({
+    videoRef: playback.videoRef,
+    startTime: state.startTime,
+    setVoiceoverUri: state.setVoiceoverUri,
+    isRecordingVoiceover: state.isRecordingVoiceover,
+    setIsRecordingVoiceover: state.setIsRecordingVoiceover,
+    t: t as (key: string, defaultValueOrOptions?: string | Record<string, unknown>) => string,
+  });
 
-  // FIX: Same pattern for right handle
-  const rightTrimGesture = Gesture.Pan()
-    .onStart(() => {
-      rightHandleStartPos.value = rightHandlePos.value;
-    })
-    .onUpdate((e) => {
-      if (timelineWidth.current <= 0 || totalDuration <= 0) return;
-      const fraction = Math.min(1, Math.max(
-        leftHandlePos.value + MIN_TRIM_GAP / totalDuration,
-        rightHandleStartPos.value + e.translationX / timelineWidth.current
-      ));
-      rightHandlePos.value = fraction;
-      runOnJS(setEndTime)(fraction * totalDuration);
-    });
+  const exporter = useVideoExport({
+    videoUri,
+    t: t as (key: string, defaultValueOrOptions?: string | Record<string, unknown>) => string,
+    router: router as { back: () => void; replace: (opts: { pathname: string; params: Record<string, string> }) => void },
+    returnTo: params.returnTo,
+    startTime: state.startTime,
+    endTime: state.endTime,
+    totalDuration: state.totalDuration,
+    playbackSpeed: state.playbackSpeed,
+    speedCurve: state.speedCurve,
+    selectedFilter: state.selectedFilter,
+    selectedQuality: state.selectedQuality,
+    captionText: state.captionText,
+    selectedTextColor: state.selectedTextColor,
+    selectedFont: state.selectedFont,
+    textStartTime: state.textStartTime,
+    textEndTime: state.textEndTime,
+    textSize: state.textSize,
+    textBg: state.textBg,
+    textShadow: state.textShadow,
+    originalVolume: state.originalVolume,
+    musicVolume: state.musicVolume,
+    selectedTrack: state.selectedTrack,
+    voiceoverUri: state.voiceoverUri,
+    isReversed: state.isReversed,
+    aspectRatio: state.aspectRatio,
+    voiceEffect: state.voiceEffect,
+    stabilize: state.stabilize,
+    noiseReduce: state.noiseReduce,
+    freezeFrameAt: state.freezeFrameAt,
+    brightness: state.brightness,
+    contrast: state.contrast,
+    saturation: state.saturation,
+    temperature: state.temperature,
+    fadeIn: state.fadeIn,
+    fadeOut: state.fadeOut,
+    rotation: state.rotation,
+    sharpen: state.sharpen,
+    vignetteOn: state.vignetteOn,
+    grain: state.grain,
+    audioPitch: state.audioPitch,
+    flipH: state.flipH,
+    flipV: state.flipV,
+    glitch: state.glitch,
+    letterbox: state.letterbox,
+    boomerang: state.boomerang,
+    isExporting: state.isExporting,
+    setIsExporting: state.setIsExporting,
+    setExportProgress: state.setExportProgress,
+  });
 
-  // Animated styles for trim handles
-  const leftHandleStyle = useAnimatedStyle(() => ({
-    left: `${leftHandlePos.value * 100}%`,
-  }));
-  const rightHandleStyle = useAnimatedStyle(() => ({
-    right: `${(1 - rightHandlePos.value) * 100}%`,
-  }));
-
-  // Volume slider uses ref + onLayout to capture absolute X position
-  const volumeSliderWidth = useRef(0);
-  const volumeSliderX = useRef(0);
-  const volumeSliderRef = useRef<View>(null);
-  const onOriginalVolumeGesture = Gesture.Pan()
-    .onUpdate((e) => {
-      if (volumeSliderWidth.current <= 0) return;
-      const newVol = Math.max(0, Math.min(100, Math.round((e.absoluteX - volumeSliderX.current) / volumeSliderWidth.current * 100)));
-      runOnJS(setOriginalVolume)(newVol);
-    });
-  const onMusicVolumeGesture = Gesture.Pan()
-    .onUpdate((e) => {
-      if (volumeSliderWidth.current <= 0) return;
-      const newVol = Math.max(0, Math.min(100, Math.round((e.absoluteX - volumeSliderX.current) / volumeSliderWidth.current * 100)));
-      runOnJS(setMusicVolume)(newVol);
-    });
-
-  // Deterministic waveform pattern that looks like real audio (no Math.random)
-  const waveformData = useMemo(() =>
-    Array.from({ length: 40 }, (_, i) => {
-      const t = i / 40;
-      return 10 + 15 * Math.abs(Math.sin(t * Math.PI * 4)) + 8 * Math.abs(Math.sin(t * Math.PI * 7));
-    }),
-  []);
-
-  // Animated export progress
-  const exportProgressAnim = useSharedValue(0);
-  const exportBarStyle = useAnimatedStyle(() => ({
-    width: `${exportProgressAnim.value}%`,
-  }));
-
-
-  // Handle video playback status updates
-  const onPlaybackStatusUpdate = useCallback((status: AVPlaybackStatus) => {
-    if (!status.isLoaded) return;
-    setCurrentTime(status.positionMillis / 1000);
-    if (status.durationMillis) {
-      const dur = status.durationMillis / 1000;
-      if (totalDuration !== dur) {
-        setTotalDuration(dur);
-        setEndTime(dur);
-      }
-    }
-    setIsPlaying(status.isPlaying);
-  }, [totalDuration]);
-
-  // Toggle play/pause with real video
-  const togglePlayback = useCallback(async () => {
-    haptic.navigate();
-    if (!videoRef.current) return;
-    if (isPlaying) {
-      await videoRef.current.pauseAsync();
-    } else {
-      await videoRef.current.playAsync();
-    }
-  }, [isPlaying, haptic]);
-
-  // Seek to position when tapping timeline
-  const seekToPosition = useCallback(async (fraction: number) => {
-    if (!videoRef.current) return;
-    const seekMs = Math.max(startTime, Math.min(endTime, fraction * totalDuration)) * 1000;
-    await videoRef.current.setPositionAsync(seekMs);
-  }, [startTime, endTime, totalDuration]);
-
-  // Apply playback speed to real video
-  useEffect(() => {
-    if (videoRef.current && videoLoaded) {
-      videoRef.current.setRateAsync(playbackSpeed, true);
-    }
-  }, [playbackSpeed, videoLoaded]);
-
-  // Apply volume to real video
-  useEffect(() => {
-    if (videoRef.current && videoLoaded) {
-      videoRef.current.setVolumeAsync(originalVolume / 100);
-    }
-  }, [originalVolume, videoLoaded]);
-
-  const cyclePlaybackSpeed = () => {
-    haptic.tick();
-    const speeds: SpeedOption[] = [0.5, 1, 1.5, 2];
-    const currentIndex = speeds.indexOf(playbackSpeed);
-    const nextIndex = (currentIndex + 1) % speeds.length;
-    setPlaybackSpeed(speeds[nextIndex]);
-  };
-
-  // FFmpeg export pipeline — uses ffmpegEngine.ts for command building + execution
-  const handleExport = useCallback(async () => {
-    if (isExporting) return;
-    if (!videoUri) {
-      showToast({ message: t('videoEditor.noVideo'), variant: 'error' });
-      return;
-    }
-
-    haptic.send();
-    setIsExporting(true);
-    setExportProgress(0);
-    exportProgressAnim.value = 0;
-
-    const ffmpegReady = await isFFmpegAvailable();
-
-    if (!ffmpegReady) {
-      // FFmpeg not available — upload original video with edit metadata for server-side processing
-      try {
-        const editMetadata = {
-          trimStart: startTime,
-          trimEnd: endTime,
-          speed: playbackSpeed,
-          speedCurve: speedCurve !== 'none' ? speedCurve : undefined,
-          filter: selectedFilter,
-          caption: captionText,
-          captionColor: selectedTextColor,
-          captionFont: selectedFont,
-          textStartTime,
-          textEndTime: textEndTime || undefined,
-          textSize: textSize !== 48 ? textSize : undefined,
-          textBg: textBg || undefined,
-          textShadow: textShadow || undefined,
-          volume: originalVolume,
-          musicVolume,
-          musicTrackId: selectedTrack?.id,
-          voiceEffect: voiceEffect !== 'none' ? voiceEffect : undefined,
-          audioPitch: audioPitch !== 0 ? audioPitch : undefined,
-          noiseReduce: noiseReduce || undefined,
-          quality: selectedQuality,
-          isReversed: isReversed || undefined,
-          aspectRatio: aspectRatio !== '9:16' ? aspectRatio : undefined,
-          stabilize: stabilize || undefined,
-          brightness: brightness !== 0 ? brightness : undefined,
-          contrast: contrast !== 0 ? contrast : undefined,
-          saturation: saturation !== 0 ? saturation : undefined,
-          temperature: temperature !== 0 ? temperature : undefined,
-          fadeIn: fadeIn > 0 ? fadeIn : undefined,
-          fadeOut: fadeOut > 0 ? fadeOut : undefined,
-          rotation: rotation !== 0 ? rotation : undefined,
-          sharpen: sharpen || undefined,
-          vignette: vignetteOn || undefined,
-          grain: grain || undefined,
-          flipH: flipH || undefined,
-          flipV: flipV || undefined,
-          glitch: glitch || undefined,
-          letterbox: letterbox || undefined,
-          boomerang: boomerang || undefined,
-          freezeFrameAt,
-        };
-
-        setExportProgress(5);
-        exportProgressAnim.value = withTiming(5, { duration: 200 });
-
-        const presign = await uploadApi.getPresignUrl('video/mp4', 'videos');
-
-        setExportProgress(15);
-        exportProgressAnim.value = withTiming(15, { duration: 200 });
-
-        const response = await fetch(videoUri);
-        const blob = await (response as Response & { blob: () => Promise<Blob> }).blob();
-
-        setExportProgress(30);
-        exportProgressAnim.value = withTiming(30, { duration: 200 });
-
-        const uploadRes = await fetch(presign.uploadUrl, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'video/mp4',
-            'x-amz-meta-edit': JSON.stringify(editMetadata),
-          },
-          body: blob,
-        });
-
-        if (!uploadRes.ok) throw new Error('Upload failed');
-
-        setExportProgress(100);
-        exportProgressAnim.value = withTiming(100, { duration: 200 });
-
-        showToast({ message: t('videoEditor.videoSaved'), variant: 'success' });
-        const navTimer = setTimeout(() => router.back(), 800);
-        navTimerRef.current = navTimer;
-      } catch {
-        showToast({ message: t('videoEditor.saveFailed'), variant: 'error' });
-      } finally {
-        setIsExporting(false);
-      }
-      return;
-    }
-
-    // Real FFmpeg export via engine
-    try {
-      const editParams: EditParams = {
-        inputUri: videoUri,
-        startTime,
-        endTime,
-        totalDuration,
-        speed: playbackSpeed,
-        filter: selectedFilter,
-        captionText,
-        captionColor: selectedTextColor,
-        captionFont: selectedFont,
-        originalVolume,
-        musicVolume,
-        musicUri: selectedTrack?.audioUrl,
-        voiceoverUri: voiceoverUri || undefined,
-        quality: selectedQuality,
-        isReversed,
-        aspectRatio,
-        speedCurve: speedCurve !== 'none' ? speedCurve : undefined,
-        textStartTime,
-        textEndTime: textEndTime || undefined,
-        voiceEffect,
-        stabilize,
-        noiseReduce,
-        freezeFrameAt,
-        brightness: brightness !== 0 ? brightness : undefined,
-        contrast: contrast !== 0 ? contrast : undefined,
-        saturation: saturation !== 0 ? saturation : undefined,
-        temperature: temperature !== 0 ? temperature : undefined,
-        fadeIn: fadeIn > 0 ? fadeIn : undefined,
-        fadeOut: fadeOut > 0 ? fadeOut : undefined,
-        rotation: rotation !== 0 ? rotation : undefined,
-        sharpen: sharpen || undefined,
-        vignette: vignetteOn || undefined,
-        grain: grain || undefined,
-        audioPitch: audioPitch !== 0 ? audioPitch : undefined,
-        flipH: flipH || undefined,
-        flipV: flipV || undefined,
-        glitch: glitch || undefined,
-        letterbox: letterbox || undefined,
-        boomerang: boomerang || undefined,
-        textSize: textSize !== 48 ? textSize : undefined,
-        textBg: textBg || undefined,
-        textShadow: textShadow || undefined,
-      };
-
-      const result = await executeExport(editParams, (percent) => {
-        setExportProgress(percent);
-        exportProgressAnim.value = withTiming(percent, { duration: 80 });
-      });
-
-      if (result.success && result.outputUri) {
-        setExportProgress(100);
-        exportProgressAnim.value = withTiming(100, { duration: 200 });
-        showToast({ message: t('videoEditor.exportComplete'), variant: 'success' });
-        // Pass exported URI back — if returnTo is specified, navigate there with the URI
-        if (params.returnTo) {
-          (router as { replace: (opts: { pathname: string; params: Record<string, string> }) => void }).replace({ pathname: params.returnTo, params: { videoUri: result.outputUri, edited: 'true' } });
-        } else {
-          router.back();
-        }
-      } else if (result.cancelled) {
-        showToast({ message: t('videoEditor.exportCancelled'), variant: 'info' });
-      } else {
-        showToast({ message: t('videoEditor.exportFailed'), variant: 'error' });
-      }
-    } catch {
-      showToast({ message: t('videoEditor.exportFailed'), variant: 'error' });
-    } finally {
-      setIsExporting(false);
-    }
-  }, [haptic, videoUri, startTime, endTime, totalDuration, playbackSpeed, speedCurve, captionText, selectedTextColor, selectedFont, selectedFilter, selectedQuality, originalVolume, musicVolume, selectedTrack, voiceoverUri, isReversed, aspectRatio, voiceEffect, stabilize, noiseReduce, freezeFrameAt, brightness, contrast, saturation, temperature, fadeIn, fadeOut, rotation, sharpen, vignetteOn, grain, audioPitch, flipH, flipV, glitch, letterbox, boomerang, textSize, textBg, textShadow, textStartTime, textEndTime, exportProgressAnim, t, router, params.returnTo]);
-
-  // Cancel export handler
-  const handleCancelExport = useCallback(async () => {
-    haptic.delete();
-    await cancelExport();
-  }, [haptic]);
+  // ── Tool panel renderer ─────────────────────────────────────────────
 
   const renderToolPanel = () => {
-    switch (selectedTool) {
+    switch (state.selectedTool) {
       case 'trim':
         return (
           <View style={styles.toolPanel}>
@@ -548,7 +169,7 @@ export default function VideoEditorScreen() {
                 <Text style={styles.timeInputLabel}>{t('videoEditor.start')}</Text>
                 <TextInput
                   style={styles.timeInput}
-                  value={formatTime(startTime)}
+                  value={formatTime(state.startTime)}
                   editable={false}
                 />
               </View>
@@ -556,7 +177,7 @@ export default function VideoEditorScreen() {
                 <Text style={styles.timeInputLabel}>{t('videoEditor.end')}</Text>
                 <TextInput
                   style={styles.timeInput}
-                  value={formatTime(endTime)}
+                  value={formatTime(state.endTime)}
                   editable={false}
                 />
               </View>
@@ -566,11 +187,10 @@ export default function VideoEditorScreen() {
               accessibilityLabel={t('videoEditor.splitAtPlayhead')}
               style={styles.splitButton}
               onPress={() => {
-                // Split at current playhead: set endTime to current position
-                if (currentTime > startTime + 1 && currentTime < endTime - 1) {
-                  pushUndo();
+                if (state.currentTime > state.startTime + 1 && state.currentTime < state.endTime - 1) {
+                  state.pushUndo();
                   haptic.tick();
-                  setEndTime(currentTime);
+                  state.setEndTime(state.currentTime);
                   showToast({ message: t('videoEditor.splitDone'), variant: 'success' });
                 } else {
                   showToast({ message: t('videoEditor.splitTooShort'), variant: 'info' });
@@ -590,11 +210,10 @@ export default function VideoEditorScreen() {
               accessibilityLabel={t('videoEditor.deleteSelectedSegment')}
               style={styles.deleteButton}
               onPress={() => {
-                // Reset trim to full duration
-                pushUndo();
+                state.pushUndo();
                 haptic.delete();
-                setStartTime(0);
-                setEndTime(totalDuration);
+                state.setStartTime(0);
+                state.setEndTime(state.totalDuration);
               }}
             >
               <View style={styles.deleteButtonInner}>
@@ -615,10 +234,10 @@ export default function VideoEditorScreen() {
                   accessibilityLabel={`${speed}x ${t('videoEditor.speed')}`}
                   key={speed}
                   style={styles.speedButton}
-                  onPress={() => { pushUndo(); setPlaybackSpeed(speed); haptic.tick(); }}
+                  onPress={() => { state.pushUndo(); state.setPlaybackSpeed(speed); haptic.tick(); }}
                 >
                   <LinearGradient
-                    colors={playbackSpeed === speed
+                    colors={state.playbackSpeed === speed
                       ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
                       : cardGradient
                     }
@@ -626,7 +245,7 @@ export default function VideoEditorScreen() {
                   >
                     <Text style={[
                       styles.speedButtonText,
-                      playbackSpeed === speed && styles.speedButtonTextActive
+                      state.playbackSpeed === speed && styles.speedButtonTextActive
                     ]}>
                       {speed}x
                     </Text>
@@ -651,16 +270,16 @@ export default function VideoEditorScreen() {
                     key={curve.id}
                     accessibilityRole="button"
                     style={styles.effectChip}
-                    onPress={() => { pushUndo(); setSpeedCurve(curve.id as SpeedCurve); haptic.tick(); }}
+                    onPress={() => { state.pushUndo(); state.setSpeedCurve(curve.id as SpeedCurve); haptic.tick(); }}
                   >
                     <LinearGradient
-                      colors={speedCurve === curve.id
+                      colors={state.speedCurve === curve.id
                         ? ['rgba(200,150,62,0.4)', 'rgba(200,150,62,0.2)']
                         : cardGradient
                       }
                       style={styles.effectChipGradient}
                     >
-                      <Text style={[styles.effectChipText, speedCurve === curve.id && { color: colors.gold, fontWeight: '600' }]}>
+                      <Text style={[styles.effectChipText, state.speedCurve === curve.id && { color: colors.gold, fontWeight: '600' }]}>
                         {curve.label}
                       </Text>
                     </LinearGradient>
@@ -684,13 +303,13 @@ export default function VideoEditorScreen() {
                   <Pressable accessibilityRole="button"
                     accessibilityLabel={t(filter.labelKey)}
                     style={styles.filterButton}
-                    onPress={() => { pushUndo(); setSelectedFilter(filter.id); }}
+                    onPress={() => { state.pushUndo(); state.setSelectedFilter(filter.id); }}
                   >
                     <LinearGradient
                       colors={cardGradient}
                       style={[
                         styles.filterButtonGradient,
-                        selectedFilter === filter.id && styles.filterButtonGradientActive
+                        state.selectedFilter === filter.id && styles.filterButtonGradientActive
                       ]}
                     >
                       <View style={[styles.filterPreview, { backgroundColor: filter.color }]} />
@@ -708,10 +327,10 @@ export default function VideoEditorScreen() {
           <View style={styles.toolPanel}>
             <Text style={styles.toolPanelTitle}>{t('videoEditor.adjust')}</Text>
             {[
-              { label: t('videoEditor.brightness'), value: brightness, setter: setBrightness, icon: 'sun' as IconName },
-              { label: t('videoEditor.contrast'), value: contrast, setter: setContrast, icon: 'circle-plus' as IconName },
-              { label: t('videoEditor.saturation'), value: saturation, setter: setSaturation, icon: 'layers' as IconName },
-              { label: t('videoEditor.temperature'), value: temperature, setter: setTemperature, icon: 'hash' as IconName },
+              { label: t('videoEditor.brightness'), value: state.brightness, setter: state.setBrightness, icon: 'sun' as IconName },
+              { label: t('videoEditor.contrast'), value: state.contrast, setter: state.setContrast, icon: 'circle-plus' as IconName },
+              { label: t('videoEditor.saturation'), value: state.saturation, setter: state.setSaturation, icon: 'layers' as IconName },
+              { label: t('videoEditor.temperature'), value: state.temperature, setter: state.setTemperature, icon: 'hash' as IconName },
             ].map(({ label, value, setter, icon }) => (
               <View key={label} style={styles.adjustRow}>
                 <View style={styles.adjustLabelRow}>
@@ -729,7 +348,7 @@ export default function VideoEditorScreen() {
                   ]} />
                   <Pressable
                     style={[styles.adjustSliderThumb, { left: `${50 + value / 2}%` }]}
-                    onPress={() => { pushUndo(); setter(0); haptic.tick(); }}
+                    onPress={() => { state.pushUndo(); setter(0); haptic.tick(); }}
                   />
                 </View>
                 <View style={styles.adjustPresetRow}>
@@ -737,7 +356,7 @@ export default function VideoEditorScreen() {
                     <Pressable
                       key={preset}
                       style={[styles.adjustPreset, value === preset && styles.adjustPresetActive]}
-                      onPress={() => { pushUndo(); setter(preset); haptic.tick(); }}
+                      onPress={() => { state.pushUndo(); setter(preset); haptic.tick(); }}
                     >
                       <Text style={[styles.adjustPresetText, value === preset && styles.adjustPresetTextActive]}>
                         {preset > 0 ? `+${preset}` : String(preset)}
@@ -757,10 +376,10 @@ export default function VideoEditorScreen() {
                   {[0, 0.5, 1, 2].map(sec => (
                     <Pressable
                       key={sec}
-                      style={[styles.fadeButton, fadeIn === sec && styles.fadeButtonActive]}
-                      onPress={() => { pushUndo(); setFadeIn(sec); haptic.tick(); }}
+                      style={[styles.fadeButton, state.fadeIn === sec && styles.fadeButtonActive]}
+                      onPress={() => { state.pushUndo(); state.setFadeIn(sec); haptic.tick(); }}
                     >
-                      <Text style={[styles.fadeButtonText, fadeIn === sec && styles.fadeButtonTextActive]}>
+                      <Text style={[styles.fadeButtonText, state.fadeIn === sec && styles.fadeButtonTextActive]}>
                         {sec === 0 ? t('videoEditor.off') : `${sec}s`}
                       </Text>
                     </Pressable>
@@ -773,10 +392,10 @@ export default function VideoEditorScreen() {
                   {[0, 0.5, 1, 2].map(sec => (
                     <Pressable
                       key={sec}
-                      style={[styles.fadeButton, fadeOut === sec && styles.fadeButtonActive]}
-                      onPress={() => { pushUndo(); setFadeOut(sec); haptic.tick(); }}
+                      style={[styles.fadeButton, state.fadeOut === sec && styles.fadeButtonActive]}
+                      onPress={() => { state.pushUndo(); state.setFadeOut(sec); haptic.tick(); }}
                     >
-                      <Text style={[styles.fadeButtonText, fadeOut === sec && styles.fadeButtonTextActive]}>
+                      <Text style={[styles.fadeButtonText, state.fadeOut === sec && styles.fadeButtonTextActive]}>
                         {sec === 0 ? t('videoEditor.off') : `${sec}s`}
                       </Text>
                     </Pressable>
@@ -795,18 +414,18 @@ export default function VideoEditorScreen() {
               style={styles.captionInput}
               placeholder={t('videoEditor.addTextOverlay')}
               placeholderTextColor={tc.text.tertiary}
-              value={captionText}
-              onChangeText={setCaptionText}
+              value={state.captionText}
+              onChangeText={state.setCaptionText}
               maxLength={200}
               multiline
               numberOfLines={3}
             />
-            {captionText.length > 0 && (
-              <Text style={styles.captionCharCount}>{captionText.length}/200</Text>
+            {state.captionText.length > 0 && (
+              <Text style={styles.captionCharCount}>{state.captionText.length}/200</Text>
             )}
 
-            {/* Text timing — when caption appears/disappears */}
-            {captionText.length > 0 && (
+            {/* Text timing */}
+            {state.captionText.length > 0 && (
               <>
                 <Text style={styles.toolSubTitle}>{t('videoEditor.textTiming')}</Text>
                 <View style={styles.timeInputRow}>
@@ -815,9 +434,9 @@ export default function VideoEditorScreen() {
                     <Pressable
                       accessibilityRole="button"
                       style={styles.timeInput}
-                      onPress={() => { pushUndo(); setTextStartTime(currentTime); haptic.tick(); }}
+                      onPress={() => { state.pushUndo(); state.setTextStartTime(state.currentTime); haptic.tick(); }}
                     >
-                      <Text style={styles.timeInputValue}>{formatTime(textStartTime)}</Text>
+                      <Text style={styles.timeInputValue}>{formatTime(state.textStartTime)}</Text>
                     </Pressable>
                   </View>
                   <View style={styles.timeInputContainer}>
@@ -825,9 +444,9 @@ export default function VideoEditorScreen() {
                     <Pressable
                       accessibilityRole="button"
                       style={styles.timeInput}
-                      onPress={() => { pushUndo(); setTextEndTime(currentTime); haptic.tick(); }}
+                      onPress={() => { state.pushUndo(); state.setTextEndTime(state.currentTime); haptic.tick(); }}
                     >
-                      <Text style={styles.timeInputValue}>{formatTime(textEndTime || endTime)}</Text>
+                      <Text style={styles.timeInputValue}>{formatTime(state.textEndTime || state.endTime)}</Text>
                     </Pressable>
                   </View>
                 </View>
@@ -842,10 +461,10 @@ export default function VideoEditorScreen() {
                   accessibilityLabel={t(`videoEditor.font.${font}`)}
                   key={font}
                   style={styles.fontButton}
-                  onPress={() => { pushUndo(); setSelectedFont(font); haptic.tick(); }}
+                  onPress={() => { state.pushUndo(); state.setSelectedFont(font); haptic.tick(); }}
                 >
                   <LinearGradient
-                    colors={selectedFont === font
+                    colors={state.selectedFont === font
                       ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
                       : cardGradient
                     }
@@ -853,7 +472,7 @@ export default function VideoEditorScreen() {
                   >
                     <Text style={[
                       styles.fontButtonText,
-                      selectedFont === font && styles.fontButtonTextActive
+                      state.selectedFont === font && styles.fontButtonTextActive
                     ]}>
                       {t(`videoEditor.font.${font}`)}
                     </Text>
@@ -871,9 +490,9 @@ export default function VideoEditorScreen() {
                   style={[
                     styles.colorCircle,
                     { backgroundColor: color },
-                    selectedTextColor === color && styles.colorCircleActive
+                    state.selectedTextColor === color && styles.colorCircleActive
                   ]}
-                  onPress={() => setSelectedTextColor(color)}
+                  onPress={() => state.setSelectedTextColor(color)}
                 />
               ))}
             </View>
@@ -884,10 +503,10 @@ export default function VideoEditorScreen() {
               {[24, 36, 48, 64, 80].map(size => (
                 <Pressable
                   key={size}
-                  style={[styles.adjustPreset, textSize === size && styles.adjustPresetActive]}
-                  onPress={() => { pushUndo(); setTextSize(size); haptic.tick(); }}
+                  style={[styles.adjustPreset, state.textSize === size && styles.adjustPresetActive]}
+                  onPress={() => { state.pushUndo(); state.setTextSize(size); haptic.tick(); }}
                 >
-                  <Text style={[styles.adjustPresetText, textSize === size && styles.adjustPresetTextActive]}>{size}</Text>
+                  <Text style={[styles.adjustPresetText, state.textSize === size && styles.adjustPresetTextActive]}>{size}</Text>
                 </Pressable>
               ))}
             </View>
@@ -895,16 +514,16 @@ export default function VideoEditorScreen() {
             {/* Text style toggles */}
             <View style={[styles.effectToggleGrid, { marginTop: spacing.sm }]}>
               <Pressable
-                style={[styles.effectToggleItem, textBg && styles.effectToggleActive]}
-                onPress={() => { pushUndo(); setTextBg(!textBg); haptic.tick(); }}
+                style={[styles.effectToggleItem, state.textBg && styles.effectToggleActive]}
+                onPress={() => { state.pushUndo(); state.setTextBg(!state.textBg); haptic.tick(); }}
               >
-                <Text style={[styles.effectToggleText, textBg && styles.effectToggleTextActive]}>{t('videoEditor.textBackground')}</Text>
+                <Text style={[styles.effectToggleText, state.textBg && styles.effectToggleTextActive]}>{t('videoEditor.textBackground')}</Text>
               </Pressable>
               <Pressable
-                style={[styles.effectToggleItem, textShadow && styles.effectToggleActive]}
-                onPress={() => { pushUndo(); setTextShadow(!textShadow); haptic.tick(); }}
+                style={[styles.effectToggleItem, state.textShadow && styles.effectToggleActive]}
+                onPress={() => { state.pushUndo(); state.setTextShadow(!state.textShadow); haptic.tick(); }}
               >
-                <Text style={[styles.effectToggleText, textShadow && styles.effectToggleTextActive]}>{t('videoEditor.textShadowLabel')}</Text>
+                <Text style={[styles.effectToggleText, state.textShadow && styles.effectToggleTextActive]}>{t('videoEditor.textShadowLabel')}</Text>
               </Pressable>
             </View>
 
@@ -915,32 +534,31 @@ export default function VideoEditorScreen() {
                 accessibilityLabel={t('videoEditor.textToSpeech')}
                 style={styles.ttsButton}
                 onPress={async () => {
-                  if (!captionText.trim()) return;
-                  if (isSpeaking) {
+                  if (!state.captionText.trim()) return;
+                  if (state.isSpeaking) {
                     Speech.stop();
-                    setIsSpeaking(false);
+                    state.setIsSpeaking(false);
                   } else {
-                    setIsSpeaking(true);
-                    // Preview TTS — plays through device speaker only (not burned into export)
+                    state.setIsSpeaking(true);
                     const langMap: Record<string, string> = { en: 'en-US', ar: 'ar-SA', tr: 'tr-TR', ur: 'ur-PK', bn: 'bn-BD', fr: 'fr-FR', id: 'id-ID', ms: 'ms-MY' };
-                    Speech.speak(captionText, {
+                    Speech.speak(state.captionText, {
                       language: langMap[currentLanguage] || 'en-US',
-                      onDone: () => setIsSpeaking(false),
-                      onStopped: () => setIsSpeaking(false),
+                      onDone: () => state.setIsSpeaking(false),
+                      onStopped: () => state.setIsSpeaking(false),
                     });
                   }
                 }}
               >
                 <LinearGradient
-                  colors={isSpeaking
+                  colors={state.isSpeaking
                     ? ['rgba(248,81,73,0.4)', 'rgba(248,81,73,0.2)']
                     : cardGradient
                   }
                   style={styles.ttsButtonGradient}
                 >
-                  <Icon name={isSpeaking ? 'volume-x' : 'volume-2'} size="sm" color={isSpeaking ? colors.error : tc.text.secondary} />
+                  <Icon name={state.isSpeaking ? 'volume-x' : 'volume-2'} size="sm" color={state.isSpeaking ? colors.error : tc.text.secondary} />
                   <Text style={styles.ttsButtonText}>
-                    {isSpeaking ? t('videoEditor.stopTTS') : t('videoEditor.textToSpeech')}
+                    {state.isSpeaking ? t('videoEditor.stopTTS') : t('videoEditor.textToSpeech')}
                   </Text>
                 </LinearGradient>
               </Pressable>
@@ -949,7 +567,7 @@ export default function VideoEditorScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={t('videoEditor.addEmoji')}
                 style={styles.ttsButton}
-                onPress={() => setShowEmojiPicker(true)}
+                onPress={() => state.setShowEmojiPicker(true)}
               >
                 <LinearGradient
                   colors={cardGradient}
@@ -971,7 +589,7 @@ export default function VideoEditorScreen() {
               accessibilityRole="button"
               accessibilityLabel={t('videoEditor.addFromAudioLibrary')}
               style={styles.libraryButton}
-              onPress={() => setShowMusicPicker(true)}
+              onPress={() => state.setShowMusicPicker(true)}
             >
               <LinearGradient
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
@@ -983,7 +601,7 @@ export default function VideoEditorScreen() {
               </LinearGradient>
             </Pressable>
 
-            {selectedTrack ? (
+            {state.selectedTrack ? (
               <View style={styles.currentTrackCard}>
                 <LinearGradient
                   colors={cardGradient}
@@ -999,14 +617,14 @@ export default function VideoEditorScreen() {
                       </LinearGradient>
                     </View>
                     <View style={styles.trackDetails}>
-                      <Text style={styles.trackName} numberOfLines={1}>{selectedTrack.title}</Text>
-                      <Text style={styles.trackArtist} numberOfLines={1}>{selectedTrack.artist}</Text>
+                      <Text style={styles.trackName} numberOfLines={1}>{state.selectedTrack.title}</Text>
+                      <Text style={styles.trackArtist} numberOfLines={1}>{state.selectedTrack.artist}</Text>
                     </View>
                     <Pressable
                       accessibilityRole="button"
                       accessibilityLabel={t('videoEditor.removeTrack')}
                       style={styles.removeTrackButton}
-                      onPress={() => setSelectedTrack(null)}
+                      onPress={() => state.setSelectedTrack(null)}
                     >
                       <Icon name="x" size="xs" color={colors.error} />
                     </Pressable>
@@ -1033,20 +651,20 @@ export default function VideoEditorScreen() {
               </View>
               <View style={styles.volumeLabelContainer}>
                 <Text style={styles.volumeLabel}>{t('videoEditor.originalAudio')}</Text>
-                <Text style={styles.volumeValue}>{originalVolume}%</Text>
+                <Text style={styles.volumeValue}>{state.originalVolume}%</Text>
               </View>
             </View>
-            <GestureDetector gesture={onOriginalVolumeGesture}>
+            <GestureDetector gesture={volumeGestures.onOriginalVolumeGesture}>
               <View
-                ref={volumeSliderRef}
+                ref={volumeGestures.volumeSliderRef}
                 style={styles.sliderTrack}
                 onLayout={(e) => {
-                  volumeSliderWidth.current = e.nativeEvent.layout.width;
-                  volumeSliderRef.current?.measureInWindow((x) => { volumeSliderX.current = x; });
+                  volumeGestures.volumeSliderWidth.current = e.nativeEvent.layout.width;
+                  volumeGestures.volumeSliderRef.current?.measureInWindow((x) => { volumeGestures.volumeSliderX.current = x; });
                 }}
               >
-                <View style={[styles.sliderFill, { width: `${originalVolume}%` }]} />
-                <View style={[styles.sliderThumb, { left: `${originalVolume}%` }]} />
+                <View style={[styles.sliderFill, { width: `${state.originalVolume}%` }]} />
+                <View style={[styles.sliderThumb, { left: `${state.originalVolume}%` }]} />
               </View>
             </GestureDetector>
 
@@ -1056,13 +674,13 @@ export default function VideoEditorScreen() {
               </View>
               <View style={styles.volumeLabelContainer}>
                 <Text style={styles.volumeLabel}>{t('videoEditor.backgroundMusic')}</Text>
-                <Text style={styles.volumeValue}>{musicVolume}%</Text>
+                <Text style={styles.volumeValue}>{state.musicVolume}%</Text>
               </View>
             </View>
-            <GestureDetector gesture={onMusicVolumeGesture}>
+            <GestureDetector gesture={volumeGestures.onMusicVolumeGesture}>
               <View style={styles.sliderTrack}>
-                <View style={[styles.sliderFill, { width: `${musicVolume}%` }]} />
-                <View style={[styles.sliderThumb, { left: `${musicVolume}%` }]} />
+                <View style={[styles.sliderFill, { width: `${state.musicVolume}%` }]} />
+                <View style={[styles.sliderThumb, { left: `${state.musicVolume}%` }]} />
               </View>
             </GestureDetector>
           </View>
@@ -1083,16 +701,16 @@ export default function VideoEditorScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={t(`videoEditor.effect.${effect}`)}
                     style={styles.effectChip}
-                    onPress={() => { pushUndo(); setVoiceEffect(effect); haptic.tick(); }}
+                    onPress={() => { state.pushUndo(); state.setVoiceEffect(effect); haptic.tick(); }}
                   >
                     <LinearGradient
-                      colors={voiceEffect === effect
+                      colors={state.voiceEffect === effect
                         ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
                         : cardGradient
                       }
                       style={styles.effectChipGradient}
                     >
-                      <Text style={[styles.effectChipText, voiceEffect === effect && styles.effectChipTextActive]}>
+                      <Text style={[styles.effectChipText, state.voiceEffect === effect && styles.effectChipTextActive]}>
                         {t(`videoEditor.effect.${effect}`)}
                       </Text>
                     </LinearGradient>
@@ -1105,16 +723,16 @@ export default function VideoEditorScreen() {
             <Text style={[styles.toolSubTitle, { marginTop: spacing.md }]}>{t('videoEditor.audioPitch')}</Text>
             <View style={styles.adjustLabelRow}>
               <Text style={styles.adjustLabel}>{t('videoEditor.pitchSemitones')}</Text>
-              <Text style={styles.adjustValue}>{audioPitch > 0 ? '+' : ''}{audioPitch}</Text>
+              <Text style={styles.adjustValue}>{state.audioPitch > 0 ? '+' : ''}{state.audioPitch}</Text>
             </View>
             <View style={styles.adjustPresetRow}>
               {[-6, -3, 0, 3, 6].map(preset => (
                 <Pressable
                   key={preset}
-                  style={[styles.adjustPreset, audioPitch === preset && styles.adjustPresetActive]}
-                  onPress={() => { pushUndo(); setAudioPitch(preset); haptic.tick(); }}
+                  style={[styles.adjustPreset, state.audioPitch === preset && styles.adjustPresetActive]}
+                  onPress={() => { state.pushUndo(); state.setAudioPitch(preset); haptic.tick(); }}
                 >
-                  <Text style={[styles.adjustPresetText, audioPitch === preset && styles.adjustPresetTextActive]}>
+                  <Text style={[styles.adjustPresetText, state.audioPitch === preset && styles.adjustPresetTextActive]}>
                     {preset > 0 ? `+${preset}` : String(preset)}
                   </Text>
                 </Pressable>
@@ -1127,34 +745,34 @@ export default function VideoEditorScreen() {
             <Pressable
               accessibilityRole="switch"
               style={styles.toggleRow}
-              onPress={() => { pushUndo(); setNoiseReduce(!noiseReduce); haptic.tick(); }}
+              onPress={() => { state.pushUndo(); state.setNoiseReduce(!state.noiseReduce); haptic.tick(); }}
             >
               <View style={styles.toggleInfo}>
-                <Icon name="volume-x" size="sm" color={noiseReduce ? colors.emerald : tc.text.secondary} />
+                <Icon name="volume-x" size="sm" color={state.noiseReduce ? colors.emerald : tc.text.secondary} />
                 <View>
                   <Text style={styles.toggleLabel}>{t('videoEditor.noiseReduction')}</Text>
                   <Text style={styles.toggleDesc}>{t('videoEditor.noiseReductionDesc')}</Text>
                 </View>
               </View>
-              <View style={[styles.toggleSwitch, noiseReduce && styles.toggleSwitchActive]}>
-                <View style={[styles.toggleThumb, noiseReduce && styles.toggleThumbActive]} />
+              <View style={[styles.toggleSwitch, state.noiseReduce && styles.toggleSwitchActive]}>
+                <View style={[styles.toggleThumb, state.noiseReduce && styles.toggleThumbActive]} />
               </View>
             </Pressable>
 
             <Pressable
               accessibilityRole="switch"
               style={styles.toggleRow}
-              onPress={() => { pushUndo(); setStabilize(!stabilize); haptic.tick(); }}
+              onPress={() => { state.pushUndo(); state.setStabilize(!state.stabilize); haptic.tick(); }}
             >
               <View style={styles.toggleInfo}>
-                <Icon name="layers" size="sm" color={stabilize ? colors.emerald : tc.text.secondary} />
+                <Icon name="layers" size="sm" color={state.stabilize ? colors.emerald : tc.text.secondary} />
                 <View>
                   <Text style={styles.toggleLabel}>{t('videoEditor.stabilization')}</Text>
                   <Text style={styles.toggleDesc}>{t('videoEditor.stabilizationDesc')}</Text>
                 </View>
               </View>
-              <View style={[styles.toggleSwitch, stabilize && styles.toggleSwitchActive]}>
-                <View style={[styles.toggleThumb, stabilize && styles.toggleThumbActive]} />
+              <View style={[styles.toggleSwitch, state.stabilize && styles.toggleSwitchActive]}>
+                <View style={[styles.toggleThumb, state.stabilize && styles.toggleThumbActive]} />
               </View>
             </Pressable>
 
@@ -1165,22 +783,22 @@ export default function VideoEditorScreen() {
                 accessibilityRole="button"
                 style={styles.freezeButton}
                 onPress={() => {
-                  pushUndo();
+                  state.pushUndo();
                   haptic.tick();
-                  setFreezeFrameAt(freezeFrameAt === null ? currentTime : null);
+                  state.setFreezeFrameAt(state.freezeFrameAt === null ? state.currentTime : null);
                 }}
               >
                 <LinearGradient
-                  colors={freezeFrameAt !== null
+                  colors={state.freezeFrameAt !== null
                     ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
                     : cardGradient
                   }
                   style={styles.freezeButtonGradient}
                 >
-                  <Icon name="pause" size="sm" color={freezeFrameAt !== null ? colors.emerald : tc.text.secondary} />
-                  <Text style={[styles.freezeButtonText, freezeFrameAt !== null && { color: colors.emerald }]}>
-                    {freezeFrameAt !== null
-                      ? `${t('videoEditor.frozenAt')} ${formatTime(freezeFrameAt)}`
+                  <Icon name="pause" size="sm" color={state.freezeFrameAt !== null ? colors.emerald : tc.text.secondary} />
+                  <Text style={[styles.freezeButtonText, state.freezeFrameAt !== null && { color: colors.emerald }]}>
+                    {state.freezeFrameAt !== null
+                      ? `${t('videoEditor.frozenAt')} ${formatTime(state.freezeFrameAt)}`
                       : t('videoEditor.freezeAtPlayhead')
                     }
                   </Text>
@@ -1193,75 +811,75 @@ export default function VideoEditorScreen() {
 
             <View style={styles.effectToggleGrid}>
               <Pressable
-                style={[styles.effectToggleItem, sharpen && styles.effectToggleActive]}
-                onPress={() => { pushUndo(); setSharpen(!sharpen); haptic.tick(); }}
+                style={[styles.effectToggleItem, state.sharpen && styles.effectToggleActive]}
+                onPress={() => { state.pushUndo(); state.setSharpen(!state.sharpen); haptic.tick(); }}
               >
-                <Icon name="eye" size="sm" color={sharpen ? colors.emerald : tc.text.secondary} />
-                <Text style={[styles.effectToggleText, sharpen && styles.effectToggleTextActive]}>{t('videoEditor.sharpen')}</Text>
+                <Icon name="eye" size="sm" color={state.sharpen ? colors.emerald : tc.text.secondary} />
+                <Text style={[styles.effectToggleText, state.sharpen && styles.effectToggleTextActive]}>{t('videoEditor.sharpen')}</Text>
               </Pressable>
               <Pressable
-                style={[styles.effectToggleItem, vignetteOn && styles.effectToggleActive]}
-                onPress={() => { pushUndo(); setVignetteOn(!vignetteOn); haptic.tick(); }}
+                style={[styles.effectToggleItem, state.vignetteOn && styles.effectToggleActive]}
+                onPress={() => { state.pushUndo(); state.setVignetteOn(!state.vignetteOn); haptic.tick(); }}
               >
-                <Icon name="circle-plus" size="sm" color={vignetteOn ? colors.emerald : tc.text.secondary} />
-                <Text style={[styles.effectToggleText, vignetteOn && styles.effectToggleTextActive]}>{t('videoEditor.vignetteEffect')}</Text>
+                <Icon name="circle-plus" size="sm" color={state.vignetteOn ? colors.emerald : tc.text.secondary} />
+                <Text style={[styles.effectToggleText, state.vignetteOn && styles.effectToggleTextActive]}>{t('videoEditor.vignetteEffect')}</Text>
               </Pressable>
               <Pressable
-                style={[styles.effectToggleItem, grain && styles.effectToggleActive]}
-                onPress={() => { pushUndo(); setGrain(!grain); haptic.tick(); }}
+                style={[styles.effectToggleItem, state.grain && styles.effectToggleActive]}
+                onPress={() => { state.pushUndo(); state.setGrain(!state.grain); haptic.tick(); }}
               >
-                <Icon name="hash" size="sm" color={grain ? colors.emerald : tc.text.secondary} />
-                <Text style={[styles.effectToggleText, grain && styles.effectToggleTextActive]}>{t('videoEditor.filmGrain')}</Text>
+                <Icon name="hash" size="sm" color={state.grain ? colors.emerald : tc.text.secondary} />
+                <Text style={[styles.effectToggleText, state.grain && styles.effectToggleTextActive]}>{t('videoEditor.filmGrain')}</Text>
               </Pressable>
               <Pressable
-                style={[styles.effectToggleItem, rotation !== 0 && styles.effectToggleActive]}
+                style={[styles.effectToggleItem, state.rotation !== 0 && styles.effectToggleActive]}
                 onPress={() => {
-                  pushUndo();
+                  state.pushUndo();
                   const rotations: (0 | 90 | 180 | 270)[] = [0, 90, 180, 270];
-                  const idx = rotations.indexOf(rotation);
-                  setRotation(rotations[(idx + 1) % rotations.length]);
+                  const idx = rotations.indexOf(state.rotation);
+                  state.setRotation(rotations[(idx + 1) % rotations.length]);
                   haptic.tick();
                 }}
               >
-                <Icon name="repeat" size="sm" color={rotation !== 0 ? colors.emerald : tc.text.secondary} />
-                <Text style={[styles.effectToggleText, rotation !== 0 && styles.effectToggleTextActive]}>
-                  {rotation === 0 ? t('videoEditor.rotate') : `${rotation}°`}
+                <Icon name="repeat" size="sm" color={state.rotation !== 0 ? colors.emerald : tc.text.secondary} />
+                <Text style={[styles.effectToggleText, state.rotation !== 0 && styles.effectToggleTextActive]}>
+                  {state.rotation === 0 ? t('videoEditor.rotate') : `${state.rotation}°`}
                 </Text>
               </Pressable>
               <Pressable
-                style={[styles.effectToggleItem, flipH && styles.effectToggleActive]}
-                onPress={() => { pushUndo(); setFlipH(!flipH); haptic.tick(); }}
+                style={[styles.effectToggleItem, state.flipH && styles.effectToggleActive]}
+                onPress={() => { state.pushUndo(); state.setFlipH(!state.flipH); haptic.tick(); }}
               >
-                <Icon name="arrow-left" size="sm" color={flipH ? colors.emerald : tc.text.secondary} style={{ transform: [{ scaleX: isRTL ? 1 : -1 }] }} />
-                <Text style={[styles.effectToggleText, flipH && styles.effectToggleTextActive]}>{t('videoEditor.flipH')}</Text>
+                <Icon name="arrow-left" size="sm" color={state.flipH ? colors.emerald : tc.text.secondary} style={{ transform: [{ scaleX: isRTL ? 1 : -1 }] }} />
+                <Text style={[styles.effectToggleText, state.flipH && styles.effectToggleTextActive]}>{t('videoEditor.flipH')}</Text>
               </Pressable>
               <Pressable
-                style={[styles.effectToggleItem, flipV && styles.effectToggleActive]}
-                onPress={() => { pushUndo(); setFlipV(!flipV); haptic.tick(); }}
+                style={[styles.effectToggleItem, state.flipV && styles.effectToggleActive]}
+                onPress={() => { state.pushUndo(); state.setFlipV(!state.flipV); haptic.tick(); }}
               >
-                <Icon name="arrow-left" size="sm" color={flipV ? colors.emerald : tc.text.secondary} style={{ transform: [{ rotate: '90deg' }] }} />
-                <Text style={[styles.effectToggleText, flipV && styles.effectToggleTextActive]}>{t('videoEditor.flipV')}</Text>
+                <Icon name="arrow-left" size="sm" color={state.flipV ? colors.emerald : tc.text.secondary} style={{ transform: [{ rotate: '90deg' }] }} />
+                <Text style={[styles.effectToggleText, state.flipV && styles.effectToggleTextActive]}>{t('videoEditor.flipV')}</Text>
               </Pressable>
               <Pressable
-                style={[styles.effectToggleItem, glitch && styles.effectToggleActive]}
-                onPress={() => { pushUndo(); setGlitch(!glitch); haptic.tick(); }}
+                style={[styles.effectToggleItem, state.glitch && styles.effectToggleActive]}
+                onPress={() => { state.pushUndo(); state.setGlitch(!state.glitch); haptic.tick(); }}
               >
-                <Icon name="slash" size="sm" color={glitch ? colors.error : tc.text.secondary} />
-                <Text style={[styles.effectToggleText, glitch && styles.effectToggleTextActive]}>{t('videoEditor.glitchEffect')}</Text>
+                <Icon name="slash" size="sm" color={state.glitch ? colors.error : tc.text.secondary} />
+                <Text style={[styles.effectToggleText, state.glitch && styles.effectToggleTextActive]}>{t('videoEditor.glitchEffect')}</Text>
               </Pressable>
               <Pressable
-                style={[styles.effectToggleItem, letterbox && styles.effectToggleActive]}
-                onPress={() => { pushUndo(); setLetterbox(!letterbox); haptic.tick(); }}
+                style={[styles.effectToggleItem, state.letterbox && styles.effectToggleActive]}
+                onPress={() => { state.pushUndo(); state.setLetterbox(!state.letterbox); haptic.tick(); }}
               >
-                <Icon name="minus" size="sm" color={letterbox ? colors.emerald : tc.text.secondary} />
-                <Text style={[styles.effectToggleText, letterbox && styles.effectToggleTextActive]}>{t('videoEditor.letterbox')}</Text>
+                <Icon name="minus" size="sm" color={state.letterbox ? colors.emerald : tc.text.secondary} />
+                <Text style={[styles.effectToggleText, state.letterbox && styles.effectToggleTextActive]}>{t('videoEditor.letterbox')}</Text>
               </Pressable>
               <Pressable
-                style={[styles.effectToggleItem, boomerang && styles.effectToggleActive]}
-                onPress={() => { pushUndo(); setBoomerang(!boomerang); haptic.tick(); }}
+                style={[styles.effectToggleItem, state.boomerang && styles.effectToggleActive]}
+                onPress={() => { state.pushUndo(); state.setBoomerang(!state.boomerang); haptic.tick(); }}
               >
-                <Icon name="repeat" size="sm" color={boomerang ? colors.gold : tc.text.secondary} />
-                <Text style={[styles.effectToggleText, boomerang && { color: colors.gold, fontWeight: '600' }]}>{t('videoEditor.boomerang')}</Text>
+                <Icon name="repeat" size="sm" color={state.boomerang ? colors.gold : tc.text.secondary} />
+                <Text style={[styles.effectToggleText, state.boomerang && { color: colors.gold, fontWeight: '600' }]}>{t('videoEditor.boomerang')}</Text>
               </Pressable>
             </View>
           </View>
@@ -1278,78 +896,33 @@ export default function VideoEditorScreen() {
             {/* Record button */}
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={isRecordingVoiceover ? t('videoEditor.stopRecording') : t('videoEditor.startRecording')}
+              accessibilityLabel={state.isRecordingVoiceover ? t('videoEditor.stopRecording') : t('videoEditor.startRecording')}
               style={styles.voiceoverRecordButton}
-              onPress={async () => {
-                haptic.tick();
-                if (isRecordingVoiceover) {
-                  // Stop recording
-                  setIsRecordingVoiceover(false);
-                  if (videoRef.current) await videoRef.current.pauseAsync();
-                  if (recordingRef.current) {
-                    try {
-                      await recordingRef.current.stopAndUnloadAsync();
-                      const uri = recordingRef.current.getURI();
-                      recordingRef.current = null;
-                      // Reset audio mode so video playback works again (iOS mutes playback during recording)
-                      await Audio.setAudioModeAsync({
-                        allowsRecordingIOS: false,
-                        playsInSilentModeIOS: true,
-                      });
-                      if (uri) {
-                        setVoiceoverUri(uri);
-                        showToast({ message: t('videoEditor.voiceoverSaved'), variant: 'success' });
-                      }
-                    } catch {
-                      showToast({ message: t('videoEditor.voiceoverFailed', 'Voiceover save failed'), variant: 'error' });
-                    }
-                  }
-                } else {
-                  // Start recording
-                  try {
-                    await Audio.setAudioModeAsync({
-                      allowsRecordingIOS: true,
-                      playsInSilentModeIOS: true,
-                    });
-                    const { recording } = await Audio.Recording.createAsync(
-                      Audio.RecordingOptionsPresets.HIGH_QUALITY,
-                    );
-                    recordingRef.current = recording;
-                    setIsRecordingVoiceover(true);
-                    // Play video from trim start while recording
-                    if (videoRef.current) {
-                      await videoRef.current.setPositionAsync(startTime * 1000);
-                      await videoRef.current.playAsync();
-                    }
-                  } catch {
-                    showToast({ message: t('videoEditor.recordingFailed', 'Recording failed to start'), variant: 'error' });
-                  }
-                }
-              }}
+              onPress={voiceover.toggleVoiceoverRecording}
             >
               <LinearGradient
-                colors={isRecordingVoiceover
+                colors={state.isRecordingVoiceover
                   ? ['rgba(248,81,73,0.8)', 'rgba(248,81,73,0.6)']
                   : ['rgba(10,123,79,0.8)', 'rgba(10,123,79,0.6)']
                 }
                 style={styles.voiceoverRecordGradient}
               >
-                <Icon name={isRecordingVoiceover ? 'square' : 'mic'} size="lg" color="#FFF" />
+                <Icon name={state.isRecordingVoiceover ? 'square' : 'mic'} size="lg" color="#FFF" />
                 <Text style={styles.voiceoverRecordText}>
-                  {isRecordingVoiceover ? t('videoEditor.stopRecording') : t('videoEditor.startRecording')}
+                  {state.isRecordingVoiceover ? t('videoEditor.stopRecording') : t('videoEditor.startRecording')}
                 </Text>
               </LinearGradient>
             </Pressable>
 
             {/* Show recorded voiceover */}
-            {voiceoverUri && (
+            {state.voiceoverUri && (
               <View style={styles.voiceoverRecorded}>
                 <Icon name="check-circle" size="sm" color={colors.emerald} />
                 <Text style={styles.voiceoverRecordedText}>{t('videoEditor.voiceoverReady')}</Text>
                 <Pressable
                   accessibilityRole="button"
                   onPress={() => {
-                    setVoiceoverUri(null);
+                    state.setVoiceoverUri(null);
                     haptic.delete();
                   }}
                 >
@@ -1365,43 +938,45 @@ export default function VideoEditorScreen() {
     }
   };
 
+  // ── JSX ─────────────────────────────────────────────────────────────
+
   return (
     <ScreenErrorBoundary>
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader title={t('videoEditor.editVideo')} showBackButton />
 
-      {/* Quick action bar — undo/redo, reverse, aspect ratio, captions */}
+      {/* Quick action bar */}
       <View style={styles.quickActions}>
-        <Pressable accessibilityRole="button" accessibilityLabel={t('videoEditor.undo')} onPress={handleUndo} disabled={undoStack.length === 0} accessibilityState={{ disabled: undoStack.length === 0 }} style={[styles.quickActionBtn, undoStack.length === 0 && styles.quickActionDisabled]}>
-          <Icon name="arrow-left" size="sm" color={undoStack.length > 0 ? tc.text.primary : tc.text.tertiary} />
+        <Pressable accessibilityRole="button" accessibilityLabel={t('videoEditor.undo')} onPress={state.handleUndo} disabled={state.undoStack.length === 0} accessibilityState={{ disabled: state.undoStack.length === 0 }} style={[styles.quickActionBtn, state.undoStack.length === 0 && styles.quickActionDisabled]}>
+          <Icon name="arrow-left" size="sm" color={state.undoStack.length > 0 ? tc.text.primary : tc.text.tertiary} />
         </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel={t('videoEditor.redo')} onPress={handleRedo} disabled={redoStack.length === 0} accessibilityState={{ disabled: redoStack.length === 0 }} style={[styles.quickActionBtn, redoStack.length === 0 && styles.quickActionDisabled]}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('videoEditor.redo')} onPress={state.handleRedo} disabled={state.redoStack.length === 0} accessibilityState={{ disabled: state.redoStack.length === 0 }} style={[styles.quickActionBtn, state.redoStack.length === 0 && styles.quickActionDisabled]}>
           <View style={{ transform: [{ scaleX: isRTL ? 1 : -1 }] }}>
-            <Icon name="arrow-left" size="sm" color={redoStack.length > 0 ? tc.text.primary : tc.text.tertiary} />
+            <Icon name="arrow-left" size="sm" color={state.redoStack.length > 0 ? tc.text.primary : tc.text.tertiary} />
           </View>
         </Pressable>
         <View style={styles.quickActionDivider} />
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t('videoEditor.reverse')}
-          onPress={() => { pushUndo(); setIsReversed(!isReversed); haptic.tick(); }}
-          style={[styles.quickActionBtn, isReversed && styles.quickActionActive]}
+          onPress={() => { state.pushUndo(); state.setIsReversed(!state.isReversed); haptic.tick(); }}
+          style={[styles.quickActionBtn, state.isReversed && styles.quickActionActive]}
         >
-          <Icon name="repeat" size="sm" color={isReversed ? colors.emerald : tc.text.secondary} />
+          <Icon name="repeat" size="sm" color={state.isReversed ? colors.emerald : tc.text.secondary} />
         </Pressable>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t('videoEditor.aspectRatio')}
           onPress={() => {
             haptic.tick();
-            const ratios: typeof aspectRatio[] = ['9:16', '16:9', '1:1', '4:5'];
-            const idx = ratios.indexOf(aspectRatio);
-            setAspectRatio(ratios[(idx + 1) % ratios.length]);
+            const ratios: typeof state.aspectRatio[] = ['9:16', '16:9', '1:1', '4:5'];
+            const idx = ratios.indexOf(state.aspectRatio);
+            state.setAspectRatio(ratios[(idx + 1) % ratios.length]);
           }}
           style={styles.quickActionBtn}
         >
           <Icon name="layers" size="sm" color={tc.text.secondary} />
-          <Text style={styles.quickActionLabel}>{aspectRatio}</Text>
+          <Text style={styles.quickActionLabel}>{state.aspectRatio}</Text>
         </Pressable>
         <View style={styles.quickActionDivider} />
         <Pressable
@@ -1435,30 +1010,30 @@ export default function VideoEditorScreen() {
                 style={styles.timestampGradient}
               >
                 <Text style={styles.timestampText}>
-                  {formatTime(currentTime)} / {formatTime(totalDuration)}
+                  {formatTime(state.currentTime)} / {formatTime(state.totalDuration)}
                 </Text>
               </LinearGradient>
             </View>
 
             {/* Playback Speed Badge */}
-            <Pressable accessibilityRole="button" accessibilityLabel={`${t('videoEditor.playbackSpeed')} ${playbackSpeed}x`} style={styles.speedBadge} onPress={cyclePlaybackSpeed}>
+            <Pressable accessibilityRole="button" accessibilityLabel={`${t('videoEditor.playbackSpeed')} ${state.playbackSpeed}x`} style={styles.speedBadge} onPress={playback.cyclePlaybackSpeed}>
               <LinearGradient
                 colors={['rgba(45,53,72,0.8)', 'rgba(28,35,51,0.6)']}
                 style={styles.speedBadgeGradient}
               >
-                <Text style={styles.speedBadgeText}>{playbackSpeed}x</Text>
+                <Text style={styles.speedBadgeText}>{state.playbackSpeed}x</Text>
               </LinearGradient>
             </Pressable>
 
             {/* Real Video Player */}
             {videoUri ? (
               <Video
-                ref={videoRef}
+                ref={playback.videoRef}
                 source={{ uri: videoUri }}
                 style={StyleSheet.absoluteFill}
                 resizeMode={ResizeMode.CONTAIN}
-                onPlaybackStatusUpdate={onPlaybackStatusUpdate}
-                onLoad={() => setVideoLoaded(true)}
+                onPlaybackStatusUpdate={playback.onPlaybackStatusUpdate}
+                onLoad={() => state.setVideoLoaded(true)}
                 shouldPlay={false}
                 isLooping={false}
               />
@@ -1472,15 +1047,15 @@ export default function VideoEditorScreen() {
             {/* Play/Pause Button */}
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={isPlaying ? t('videoEditor.pause', 'Pause') : t('videoEditor.play', 'Play')}
+              accessibilityLabel={state.isPlaying ? t('videoEditor.pause', 'Pause') : t('videoEditor.play', 'Play')}
               style={styles.playButton}
-              onPress={togglePlayback}
+              onPress={playback.togglePlayback}
             >
               <LinearGradient
                 colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
                 style={styles.playButtonGradient}
               >
-                <Icon name={isPlaying ? 'pause' : 'play'} size="xl" color="#FFF" />
+                <Icon name={state.isPlaying ? 'pause' : 'play'} size="xl" color="#FFF" />
               </LinearGradient>
             </Pressable>
           </LinearGradient>
@@ -1493,19 +1068,19 @@ export default function VideoEditorScreen() {
               colors={cardGradient}
               style={styles.timelineGradient}
             >
-              {/* Time Labels — show trim range */}
+              {/* Time Labels */}
               <View style={styles.timeLabels}>
-                <Text style={styles.timeLabelStart}>{formatTime(startTime)}</Text>
-                <Text style={styles.timeLabelEnd}>{formatTime(endTime)}</Text>
+                <Text style={styles.timeLabelStart}>{formatTime(state.startTime)}</Text>
+                <Text style={styles.timeLabelEnd}>{formatTime(state.endTime)}</Text>
               </View>
 
               {/* Waveform Strip with Draggable Trim Handles */}
               <View
                 style={styles.waveformContainer}
-                onLayout={(e) => { timelineWidth.current = e.nativeEvent.layout.width; }}
+                onLayout={(e) => { timeline.timelineWidth.current = e.nativeEvent.layout.width; }}
               >
                 <View style={styles.waveform}>
-                  {waveformData.map((h, i) => (
+                  {timeline.waveformData.map((h, i) => (
                     <View
                       key={i}
                       style={[
@@ -1516,9 +1091,9 @@ export default function VideoEditorScreen() {
                   ))}
                 </View>
 
-                {/* Left Trim Handle — draggable */}
-                <GestureDetector gesture={leftTrimGesture}>
-                  <Animated.View style={[styles.trimHandle, leftHandleStyle]}>
+                {/* Left Trim Handle */}
+                <GestureDetector gesture={timeline.leftTrimGesture}>
+                  <Animated.View style={[styles.trimHandle, timeline.leftHandleStyle]}>
                     <LinearGradient
                       colors={['rgba(10,123,79,0.8)', 'rgba(10,123,79,0.6)']}
                       style={styles.trimHandleGradient}
@@ -1528,9 +1103,9 @@ export default function VideoEditorScreen() {
                   </Animated.View>
                 </GestureDetector>
 
-                {/* Right Trim Handle — draggable */}
-                <GestureDetector gesture={rightTrimGesture}>
-                  <Animated.View style={[styles.trimHandle, rightHandleStyle]}>
+                {/* Right Trim Handle */}
+                <GestureDetector gesture={timeline.rightTrimGesture}>
+                  <Animated.View style={[styles.trimHandle, timeline.rightHandleStyle]}>
                     <LinearGradient
                       colors={['rgba(10,123,79,0.8)', 'rgba(10,123,79,0.6)']}
                       style={styles.trimHandleGradient}
@@ -1541,7 +1116,7 @@ export default function VideoEditorScreen() {
                 </GestureDetector>
 
                 {/* Playhead */}
-                <View style={[styles.playhead, { left: `${totalDuration > 0 ? (currentTime / totalDuration) * 100 : 0}%` }]}>
+                <View style={[styles.playhead, { left: `${state.totalDuration > 0 ? (state.currentTime / state.totalDuration) * 100 : 0}%` }]}>
                   <View style={styles.playheadTriangle} />
                   <View style={styles.playheadLine} />
                 </View>
@@ -1575,10 +1150,10 @@ export default function VideoEditorScreen() {
                 accessibilityLabel={tool.label}
                 key={tool.id}
                 style={styles.toolTab}
-                onPress={() => setSelectedTool(tool.id as ToolTab)}
+                onPress={() => state.setSelectedTool(tool.id as ToolTab)}
               >
                 <LinearGradient
-                  colors={selectedTool === tool.id
+                  colors={state.selectedTool === tool.id
                     ? ['rgba(10,123,79,0.5)', 'rgba(10,123,79,0.3)']
                     : cardGradient
                   }
@@ -1587,11 +1162,11 @@ export default function VideoEditorScreen() {
                   <Icon
                     name={tool.icon}
                     size="sm"
-                    color={selectedTool === tool.id ? colors.emerald : tc.text.secondary}
+                    color={state.selectedTool === tool.id ? colors.emerald : tc.text.secondary}
                   />
                   <Text style={[
                     styles.toolTabText,
-                    selectedTool === tool.id && styles.toolTabTextActive
+                    state.selectedTool === tool.id && styles.toolTabTextActive
                   ]}>
                     {tool.label}
                   </Text>
@@ -1618,15 +1193,15 @@ export default function VideoEditorScreen() {
           <View style={styles.qualityContainer}>
             <Text style={styles.qualityLabel}>{t('videoEditor.exportQuality')}</Text>
             <View style={styles.qualityButtons}>
-              {(['720p', '1080p', '4K'] as QualityOption[]).map((quality) => (
+              {(['720p', '1080p', '4K'] as const).map((quality) => (
                 <Pressable accessibilityRole="button"
                   accessibilityLabel={`${t('videoEditor.exportQuality')} ${quality}`}
                   key={quality}
                   style={styles.qualityButton}
-                  onPress={() => setSelectedQuality(quality)}
+                  onPress={() => state.setSelectedQuality(quality)}
                 >
                   <LinearGradient
-                    colors={selectedQuality === quality
+                    colors={state.selectedQuality === quality
                       ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
                       : cardGradient
                     }
@@ -1634,7 +1209,7 @@ export default function VideoEditorScreen() {
                   >
                     <Text style={[
                       styles.qualityButtonText,
-                      selectedQuality === quality && styles.qualityButtonTextActive
+                      state.selectedQuality === quality && styles.qualityButtonTextActive
                     ]}>
                       {quality}
                     </Text>
@@ -1658,20 +1233,20 @@ export default function VideoEditorScreen() {
           <Pressable accessibilityRole="button" accessibilityLabel={t('common.cancel')} style={styles.cancelButton} onPress={() => router.back()} hitSlop={8}>
             <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
           </Pressable>
-          {isExporting ? (
-            <Pressable accessibilityRole="button" accessibilityLabel={t('common.cancel')} style={styles.exportButton} onPress={handleCancelExport}>
+          {state.isExporting ? (
+            <Pressable accessibilityRole="button" accessibilityLabel={t('common.cancel')} style={styles.exportButton} onPress={exporter.handleCancelExport}>
               <LinearGradient
                 colors={['rgba(248,81,73,0.8)', 'rgba(248,81,73,0.6)']}
                 style={styles.exportButtonGradient}
               >
                 <View style={styles.exportProgressContainer}>
                   <ActivityIndicator size="small" color="#FFF" />
-                  <Text style={styles.exportButtonText}>{exportProgress}%</Text>
+                  <Text style={styles.exportButtonText}>{state.exportProgress}%</Text>
                 </View>
               </LinearGradient>
             </Pressable>
           ) : (
-            <Pressable accessibilityRole="button" accessibilityLabel={t('videoEditor.export')} style={styles.exportButton} onPress={handleExport}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('videoEditor.export')} style={styles.exportButton} onPress={exporter.handleExport}>
               <LinearGradient
                 colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
                 style={styles.exportButtonGradient}
@@ -1685,22 +1260,22 @@ export default function VideoEditorScreen() {
       </View>
       {/* Emoji Picker Bottom Sheet */}
       <EmojiPicker
-        visible={showEmojiPicker}
-        onClose={() => setShowEmojiPicker(false)}
+        visible={state.showEmojiPicker}
+        onClose={() => state.setShowEmojiPicker(false)}
         onSelect={(emoji) => {
-          setCaptionText(prev => prev + emoji);
-          setShowEmojiPicker(false);
+          state.setCaptionText(prev => prev + emoji);
+          state.setShowEmojiPicker(false);
           haptic.tick();
         }}
       />
 
       {/* Music Picker Bottom Sheet */}
       <MusicPicker
-        visible={showMusicPicker}
-        onClose={() => setShowMusicPicker(false)}
+        visible={state.showMusicPicker}
+        onClose={() => state.setShowMusicPicker(false)}
         onSelect={(track) => {
-          setSelectedTrack(track);
-          setShowMusicPicker(false);
+          state.setSelectedTrack(track);
+          state.setShowMusicPicker(false);
           haptic.tick();
         }}
       />

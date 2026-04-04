@@ -1,4 +1,4 @@
-import { memo, useCallback, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { View, StyleSheet, Dimensions, Pressable, Text } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -49,6 +49,7 @@ export const VideoTimeline = memo(function VideoTimeline({
 }: VideoTimelineProps) {
   const { t } = useTranslation();
   const tc = useThemeColors();
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const [selectedSegment, setSelectedSegment] = useState<string | null>(null);
   const timelineWidth = SCREEN_W - spacing.base * 2;
   const msPerPixel = durationMs / timelineWidth;
@@ -162,11 +163,11 @@ export const VideoTimeline = memo(function VideoTimeline({
   );
 });
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
-    backgroundColor: colors.dark.bgElevated,
+    backgroundColor: tc.bgElevated,
   },
   speedRow: {
     flexDirection: 'row',
@@ -183,7 +184,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
   },
   speedChipActive: {
     backgroundColor: colors.emerald,
@@ -198,7 +199,7 @@ const styles = StyleSheet.create({
   },
   timeline: {
     height: TIMELINE_HEIGHT,
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.sm,
     position: 'relative',
     overflow: 'hidden',
@@ -236,7 +237,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 4,
     left: HANDLE_WIDTH + 4,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     paddingHorizontal: 4,
     paddingVertical: 1,
     borderRadius: radius.sm,
@@ -265,7 +266,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.full,
   },
   actionText: {
