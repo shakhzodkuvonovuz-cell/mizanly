@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -34,6 +35,8 @@ type Config struct {
 	RoomEmptyTimeout     uint32        // ROOM_EMPTY_TIMEOUT_SECONDS — LiveKit room auto-close (default 300)
 	CleanupIntervalSecs  int           // CLEANUP_INTERVAL_SECONDS — stale ringing check interval (default 30)
 	StaleRingTimeoutSecs int           // STALE_RING_TIMEOUT_SECONDS — ringing→MISSED after N seconds (default 60)
+	LogLevel             string        // LOG_LEVEL — slog level: debug, info, warn, error (default "info")
+	NodeEnv              string        // NODE_ENV — environment name for Sentry/CORS (default "development")
 }
 
 // Load reads config from environment variables and validates required fields.
@@ -62,6 +65,8 @@ func Load() (*Config, error) {
 		RoomEmptyTimeout:     uint32(envOrDefaultInt("ROOM_EMPTY_TIMEOUT_SECONDS", 300)),
 		CleanupIntervalSecs:  envOrDefaultInt("CLEANUP_INTERVAL_SECONDS", 30),
 		StaleRingTimeoutSecs: envOrDefaultInt("STALE_RING_TIMEOUT_SECONDS", 60),
+		LogLevel:             envOrDefault("LOG_LEVEL", "info"),
+		NodeEnv:              envOrDefault("NODE_ENV", "development"),
 	}
 
 	if cfg.LiveKitAPIKey == "" {
@@ -97,6 +102,14 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("PORT must be between 1 and 65535, got %d", portNum)
 	}
 
+	// Validate log level
+	switch strings.ToLower(cfg.LogLevel) {
+	case "debug", "info", "warn", "error":
+		cfg.LogLevel = strings.ToLower(cfg.LogLevel)
+	default:
+		return nil, fmt.Errorf("LOG_LEVEL must be one of: debug, info, warn, error — got %q", cfg.LogLevel)
+	}
+
 	// Validate tunable parameters
 	if cfg.DBMaxConns < 1 || cfg.DBMaxConns > 1000 {
 		return nil, fmt.Errorf("DB_MAX_CONNS must be between 1 and 1000, got %d", cfg.DBMaxConns)
@@ -118,6 +131,20 @@ func Load() (*Config, error) {
 	}
 
 	return cfg, nil
+}
+
+// ParseLogLevel converts a validated log level string to slog.Level.
+func ParseLogLevel(level string) int {
+	switch level {
+	case "debug":
+		return -4 // slog.LevelDebug
+	case "warn":
+		return 4 // slog.LevelWarn
+	case "error":
+		return 8 // slog.LevelError
+	default:
+		return 0 // slog.LevelInfo
+	}
 }
 
 func envOrDefault(key, def string) string {

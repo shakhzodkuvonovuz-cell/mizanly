@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -10,7 +11,7 @@ func clearEnv() {
 		"LIVEKIT_API_KEY", "LIVEKIT_API_SECRET", "LIVEKIT_HOST",
 		"DATABASE_URL", "CLERK_SECRET_KEY", "REDIS_URL", "INTERNAL_SERVICE_KEY",
 		"R2_ACCESS_KEY", "R2_SECRET_KEY", "R2_BUCKET", "R2_ENDPOINT",
-		"SENTRY_DSN", "PORT",
+		"SENTRY_DSN", "PORT", "LOG_LEVEL", "NODE_ENV",
 		"DB_MAX_CONNS", "TOKEN_TTL_SECONDS", "MAX_GROUP_PARTICIPANTS",
 		"MAX_BROADCAST_VIEWERS", "ROOM_EMPTY_TIMEOUT_SECONDS",
 		"CLEANUP_INTERVAL_SECONDS", "STALE_RING_TIMEOUT_SECONDS",
@@ -276,5 +277,103 @@ func TestLoad_CleanupInterval_TooLow(t *testing.T) {
 	_, err := Load()
 	if err == nil {
 		t.Fatal("expected error for CLEANUP_INTERVAL_SECONDS=2 (below 5)")
+	}
+}
+
+// --- LOG_LEVEL tests ---
+
+func TestLoad_LogLevel_Default(t *testing.T) {
+	clearEnv()
+	setRequiredEnv()
+	defer clearEnv()
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if cfg.LogLevel != "info" {
+		t.Errorf("expected default LOG_LEVEL='info', got %q", cfg.LogLevel)
+	}
+}
+
+func TestLoad_LogLevel_AllValid(t *testing.T) {
+	tests := []string{"debug", "info", "warn", "error", "DEBUG", "Info", "WARN", "ERROR"}
+	for _, level := range tests {
+		t.Run(level, func(t *testing.T) {
+			clearEnv()
+			setRequiredEnv()
+			os.Setenv("LOG_LEVEL", level)
+			defer clearEnv()
+
+			cfg, err := Load()
+			if err != nil {
+				t.Fatalf("unexpected error for LOG_LEVEL=%q: %v", level, err)
+			}
+			if cfg.LogLevel != strings.ToLower(level) {
+				t.Errorf("expected LOG_LEVEL=%q, got %q", strings.ToLower(level), cfg.LogLevel)
+			}
+		})
+	}
+}
+
+func TestLoad_LogLevel_Invalid(t *testing.T) {
+	clearEnv()
+	setRequiredEnv()
+	os.Setenv("LOG_LEVEL", "trace")
+	defer clearEnv()
+
+	_, err := Load()
+	if err == nil {
+		t.Fatal("expected error for invalid LOG_LEVEL='trace'")
+	}
+}
+
+func TestLoad_NodeEnv_Default(t *testing.T) {
+	clearEnv()
+	setRequiredEnv()
+	defer clearEnv()
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if cfg.NodeEnv != "development" {
+		t.Errorf("expected default NODE_ENV='development', got %q", cfg.NodeEnv)
+	}
+}
+
+func TestLoad_NodeEnv_Custom(t *testing.T) {
+	clearEnv()
+	setRequiredEnv()
+	os.Setenv("NODE_ENV", "production")
+	defer clearEnv()
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if cfg.NodeEnv != "production" {
+		t.Errorf("expected NODE_ENV='production', got %q", cfg.NodeEnv)
+	}
+}
+
+func TestParseLogLevel(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int
+	}{
+		{"debug", -4},
+		{"info", 0},
+		{"warn", 4},
+		{"error", 8},
+		{"unknown", 0}, // defaults to info
+	}
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			got := ParseLogLevel(tt.input)
+			if got != tt.expected {
+				t.Errorf("ParseLogLevel(%q) = %d, want %d", tt.input, got, tt.expected)
+			}
+		})
 	}
 }

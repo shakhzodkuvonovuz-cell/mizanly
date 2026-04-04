@@ -31,6 +31,7 @@ import (
 )
 
 func main() {
+	// Bootstrap logger at INFO for config loading; reconfigured after config.Load().
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	}))
@@ -41,11 +42,21 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Reconfigure logger with LOG_LEVEL from config.
+	logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.Level(config.ParseLogLevel(cfg.LogLevel)),
+	}))
+	slog.SetDefault(logger)
+
 	// Sentry
+	// SampleRate: 1.0 = capture 100% of errors (critical for call server).
+	// TracesSampleRate: 0.1 = sample 10% of transactions for performance tracing.
 	if cfg.SentryDSN != "" {
 		if err := sentry.Init(sentry.ClientOptions{
 			Dsn:              cfg.SentryDSN,
+			SampleRate:       1.0,
 			TracesSampleRate: 0.1,
+			Environment:      cfg.NodeEnv,
 		}); err != nil {
 			logger.Error("sentry init failed", "error", err)
 		}
@@ -111,7 +122,7 @@ func main() {
 		"https://api.mizanly.app": true,
 	}
 	// Allow localhost in development
-	if os.Getenv("NODE_ENV") != "production" {
+	if cfg.NodeEnv != "production" {
 		allowedOrigins["http://localhost:8081"] = true
 		allowedOrigins["http://localhost:3000"] = true
 		allowedOrigins["http://localhost:19006"] = true
@@ -177,6 +188,7 @@ func main() {
 		WriteTimeout:      30 * time.Second,
 		IdleTimeout:       120 * time.Second,
 		MaxHeaderBytes:    1 << 16,
+		ErrorLog:          slog.NewLogLogger(logger.Handler(), slog.LevelError),
 	}
 
 	// [H7 fix] Ringing timeout ticker — mark stale RINGING sessions as MISSED

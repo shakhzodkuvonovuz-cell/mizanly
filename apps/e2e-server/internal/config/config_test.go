@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -277,5 +278,93 @@ func TestLoad_DBMaxConns_Invalid(t *testing.T) {
 	_, err := Load()
 	if err == nil {
 		t.Fatal("expected error for DB_MAX_CONNS=0")
+	}
+}
+
+// --- LOG_LEVEL tests ---
+
+func TestLoad_LogLevel_Default(t *testing.T) {
+	os.Setenv("DATABASE_URL", "postgres://localhost")
+	os.Setenv("CLERK_SECRET_KEY", "sk_test")
+	os.Setenv("REDIS_URL", "redis://localhost")
+	os.Unsetenv("LOG_LEVEL")
+	defer func() {
+		os.Unsetenv("DATABASE_URL")
+		os.Unsetenv("CLERK_SECRET_KEY")
+		os.Unsetenv("REDIS_URL")
+	}()
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if cfg.LogLevel != "info" {
+		t.Errorf("expected default LOG_LEVEL='info', got %q", cfg.LogLevel)
+	}
+}
+
+func TestLoad_LogLevel_AllValid(t *testing.T) {
+	tests := []string{"debug", "info", "warn", "error", "DEBUG", "Info", "WARN", "ERROR"}
+	for _, level := range tests {
+		t.Run(level, func(t *testing.T) {
+			os.Setenv("DATABASE_URL", "postgres://localhost")
+			os.Setenv("CLERK_SECRET_KEY", "sk_test")
+			os.Setenv("REDIS_URL", "redis://localhost")
+			os.Setenv("LOG_LEVEL", level)
+			defer func() {
+				os.Unsetenv("DATABASE_URL")
+				os.Unsetenv("CLERK_SECRET_KEY")
+				os.Unsetenv("REDIS_URL")
+				os.Unsetenv("LOG_LEVEL")
+			}()
+
+			cfg, err := Load()
+			if err != nil {
+				t.Fatalf("unexpected error for LOG_LEVEL=%q: %v", level, err)
+			}
+			// All valid levels should be normalized to lowercase
+			if cfg.LogLevel != strings.ToLower(level) {
+				t.Errorf("expected LOG_LEVEL=%q, got %q", strings.ToLower(level), cfg.LogLevel)
+			}
+		})
+	}
+}
+
+func TestLoad_LogLevel_Invalid(t *testing.T) {
+	os.Setenv("DATABASE_URL", "postgres://localhost")
+	os.Setenv("CLERK_SECRET_KEY", "sk_test")
+	os.Setenv("REDIS_URL", "redis://localhost")
+	os.Setenv("LOG_LEVEL", "trace")
+	defer func() {
+		os.Unsetenv("DATABASE_URL")
+		os.Unsetenv("CLERK_SECRET_KEY")
+		os.Unsetenv("REDIS_URL")
+		os.Unsetenv("LOG_LEVEL")
+	}()
+
+	_, err := Load()
+	if err == nil {
+		t.Fatal("expected error for invalid LOG_LEVEL='trace'")
+	}
+}
+
+func TestParseLogLevel(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int
+	}{
+		{"debug", -4},
+		{"info", 0},
+		{"warn", 4},
+		{"error", 8},
+		{"unknown", 0}, // defaults to info
+	}
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			got := ParseLogLevel(tt.input)
+			if got != tt.expected {
+				t.Errorf("ParseLogLevel(%q) = %d, want %d", tt.input, got, tt.expected)
+			}
+		})
 	}
 }
