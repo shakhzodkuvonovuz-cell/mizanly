@@ -92,6 +92,26 @@ export default function RestrictedScreen() {
     );
   };
 
+  const listFooter = useMemo(() =>
+    query.isFetchingNextPage ? (
+      <View style={styles.skeletonRow}>
+        <Skeleton.Circle size={46} />
+        <View style={{ flex: 1, gap: spacing.sm }}>
+          <Skeleton.Rect width={120} height={14} />
+          <Skeleton.Rect width={80} height={11} />
+        </View>
+      </View>
+    ) : null
+  , [query.isFetchingNextPage]);
+
+  const listEmpty = useMemo(() => (
+    <EmptyState
+      icon="eye-off"
+      title={t('screens.restricted.emptyTitle')}
+      subtitle={t('screens.restricted.emptySubtitle')}
+    />
+  ), [t]);
+
   if (query.isError) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
@@ -192,23 +212,8 @@ export default function RestrictedScreen() {
                 </View>
               </Animated.View>
             ), [])}
-            ListFooterComponent={useMemo(() =>
-              query.isFetchingNextPage ? (
-                <View style={styles.skeletonRow}>
-                  <Skeleton.Circle size={46} />
-                  <View style={{ flex: 1, gap: spacing.sm }}>
-                    <Skeleton.Rect width={120} height={14} />
-                    <Skeleton.Rect width={80} height={11} />
-                  </View>
-                </View>
-              ) : null
-            , [])}ListEmptyComponent={useMemo(() => (
-              <EmptyState
-                icon="eye-off"
-                title={t('screens.restricted.emptyTitle')}
-                subtitle={t('screens.restricted.emptySubtitle')}
-              />
-            ), [])}           )}
+            ListFooterComponent={listFooter}
+            ListEmptyComponent={listEmpty}
           />
         )}
       </SafeAreaView>

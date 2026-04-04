@@ -109,6 +109,38 @@ export default function FollowingScreen() {
     }
   }, [followingQuery]);
 
+  const listEmpty = useMemo(() =>
+    followingQuery.isLoading ? (
+      <View style={styles.skeletonList}>
+        {Array.from({ length: 8 }).map((_, i) => (
+          <View key={i} style={[styles.skeletonRow, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
+            <Skeleton.Circle size={40} />
+            <View style={{ flex: 1, gap: 6 }}>
+              <Skeleton.Rect width={130} height={14} />
+              <Skeleton.Rect width={90} height={11} />
+            </View>
+          </View>
+        ))}
+      </View>
+    ) : (
+      <EmptyState icon="users" title={t('screens.following.emptyState')} subtitle={t('screens.following.emptySubtitle')} />
+    )
+  , [followingQuery.isLoading, tc.bgCard, tc.border, t]);
+
+  const listFooter = useMemo(() =>
+    followingQuery.isFetchingNextPage ? (
+      <View style={styles.skeletonList}>
+        <View style={[styles.skeletonRow, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
+          <Skeleton.Circle size={40} />
+          <View style={{ flex: 1, gap: 6 }}>
+            <Skeleton.Rect width={130} height={14} />
+            <Skeleton.Rect width={90} height={11} />
+          </View>
+        </View>
+      </View>
+    ) : null
+  , [followingQuery.isFetchingNextPage, tc.bgCard, tc.border]);
+
   return (
     <ScreenErrorBoundary>
       {followingQuery.isError ? (
@@ -150,36 +182,8 @@ export default function FollowingScreen() {
           refreshControl={
             <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
-          ListEmptyComponent={useMemo(() =>
-            followingQuery.isLoading ? (
-              <View style={styles.skeletonList}>
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <View key={i} style={[styles.skeletonRow, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
-                    <Skeleton.Circle size={40} />
-                    <View style={{ flex: 1, gap: 6 }}>
-                      <Skeleton.Rect width={130} height={14} />
-                      <Skeleton.Rect width={90} height={11} />
-                    </View>
-                  </View>
-                ))}
-              </View>
-            ) : (
-              <EmptyState icon="users" title={t('screens.following.emptyState')} subtitle={t('screens.following.emptySubtitle')} />
-            )
-          , [])}
-          ListFooterComponent={useMemo(() =>
-            followingQuery.isFetchingNextPage ? (
-              <View style={styles.skeletonList}>
-                <View style={[styles.skeletonRow, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
-                  <Skeleton.Circle size={40} />
-                  <View style={{ flex: 1, gap: 6 }}>
-                    <Skeleton.Rect width={130} height={14} />
-                    <Skeleton.Rect width={90} height={11} />
-                  </View>
-                </View>
-              </View>
-            ) : null
-          , [])}
+          ListEmptyComponent={listEmpty}
+          ListFooterComponent={listFooter}
         />
       </SafeAreaView>}
     </ScreenErrorBoundary>

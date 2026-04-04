@@ -130,6 +130,20 @@ export default function CreateGroupScreen() {
   };
 
 
+  const memberSearchEmpty = useMemo(() =>
+    debouncedQuery.trim().length >= 2 ? (
+      <EmptyState
+        icon="search"
+        title={t('messages.noUsersFound', { query: debouncedQuery })}
+      />
+    ) : (
+      <EmptyState
+        icon="user"
+        title={t('messages.searchByNameOrUsername')}
+      />
+    )
+  , [debouncedQuery, t]);
+
   return (
     <ScreenErrorBoundary>
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top', 'bottom']}>
@@ -274,19 +288,7 @@ export default function CreateGroupScreen() {
                     <Icon name="plus" size="sm" color={colors.emerald} />
                   </Pressable>
                 ), [])}
-                ListEmptyComponent={useMemo(() =>
-                  debouncedQuery.trim().length >= 2 ? (
-                    <EmptyState
-                      icon="search"
-                      title={t('messages.noUsersFound', { query: debouncedQuery })}
-                    />
-                  ) : (
-                    <EmptyState
-                      icon="user"
-                      title={t('messages.searchByNameOrUsername')}
-                    />
-                  )
-                , [])}
+                ListEmptyComponent={memberSearchEmpty}
               />
             )}
           </View>

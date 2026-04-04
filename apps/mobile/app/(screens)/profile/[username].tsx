@@ -949,6 +949,34 @@ export default function ProfileScreen() {
     : activeTab === 'reels' ? reelsQuery
     : likedPostsQuery;
 
+  const profileListEmpty = useMemo(() =>
+    currentQuery.isLoading ? (
+      activeTab === 'threads' ? (
+        <View>
+          <Skeleton.ThreadCard />
+          <Skeleton.ThreadCard />
+        </View>
+      ) : (
+        <View style={styles.skeletonGrid}>
+          {Array.from({ length: 9 }).map((_, i) => (
+            <Skeleton.Rect key={i} width={GRID_ITEM} height={GRID_ITEM} borderRadius={0} />
+          ))}
+        </View>
+      )
+    ) : (
+      <EmptyState
+        icon={activeTab === 'posts' ? "image" : activeTab === 'threads' ? "message-circle" : activeTab === 'reels' ? "video" : "heart"}
+        title={activeTab === 'liked' ? t('profile.noLikedPosts') : t('profile.noContent')}
+      />
+    )
+  , [currentQuery.isLoading, activeTab, t]);
+
+  const profileListFooter = useMemo(() =>
+    currentQuery.isFetchingNextPage ? (
+      activeTab === 'threads' ? <Skeleton.ThreadCard /> : <Skeleton.Rect width="100%" height={GRID_ITEM} />
+    ) : null
+  , [currentQuery.isFetchingNextPage, activeTab]);
+
   return (
     <ScreenErrorBoundary>
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -979,32 +1007,8 @@ export default function ProfileScreen() {
         onEndReachedThreshold={0.4}
         ListHeaderComponent={ListHeader}
         renderItem={renderItem}
-        ListEmptyComponent={useMemo(() =>
-          currentQuery.isLoading ? (
-            activeTab === 'threads' ? (
-              <View>
-                <Skeleton.ThreadCard />
-                <Skeleton.ThreadCard />
-              </View>
-            ) : (
-              <View style={styles.skeletonGrid}>
-                {Array.from({ length: 9 }).map((_, i) => (
-                  <Skeleton.Rect key={i} width={GRID_ITEM} height={GRID_ITEM} borderRadius={0} />
-                ))}
-              </View>
-            )
-          ) : (
-            <EmptyState
-              icon={activeTab === 'posts' ? "image" : activeTab === 'threads' ? "message-circle" : activeTab === 'reels' ? "video" : "heart"}
-              title={activeTab === 'liked' ? t('profile.noLikedPosts') : t('profile.noContent')}
-            />
-          )
-        , [])}
-        ListFooterComponent={useMemo(() =>
-          currentQuery.isFetchingNextPage ? (
-            activeTab === 'threads' ? <Skeleton.ThreadCard /> : <Skeleton.Rect width="100%" height={GRID_ITEM} />
-          ) : null
-        , [])}
+        ListEmptyComponent={profileListEmpty}
+        ListFooterComponent={profileListFooter}
         refreshControl={
           <BrandedRefreshControl
             refreshing={currentQuery.isRefetching}

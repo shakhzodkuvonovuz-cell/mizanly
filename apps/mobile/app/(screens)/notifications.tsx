@@ -443,6 +443,32 @@ export default function NotificationsScreen() {
     );
   }
 
+  const listEmpty = useMemo(() =>
+    query.isLoading ? (
+      <View style={styles.skeletonList}>
+        {Array.from({ length: 8 }).map((_, i) => (
+          <View key={i} style={[styles.skeletonRow, { flexDirection: rtlFlexRow(isRTL) }]}>
+            <Skeleton.Circle size={40} />
+            <View style={{ flex: 1, gap: 6 }}>
+              <Skeleton.Rect width="80%" height={14} />
+              <Skeleton.Rect width="40%" height={11} />
+            </View>
+          </View>
+        ))}
+      </View>
+    ) : (
+      <EmptyState
+        icon="bell"
+        title={t('notifications.noNotifications')}
+        subtitle={t('notifications.noNotificationsSubtitle')}
+      />
+    )
+  , [query.isLoading, isRTL, t]);
+
+  const listFooter = useMemo(() =>
+    query.isFetchingNextPage ? <Skeleton.Rect width="100%" height={60} /> : null
+  , [query.isFetchingNextPage]);
+
   return (
     <ScreenErrorBoundary>
       <View style={styles.container}>
@@ -488,30 +514,8 @@ export default function NotificationsScreen() {
           onScroll={onScrollElastic}
           scrollEventThrottle={16}
           refreshControl={<BrandedRefreshControl refreshing={query.isRefetching && !query.isFetchingNextPage} onRefresh={onRefresh} />}
-          ListEmptyComponent={useMemo(() =>
-            query.isLoading ? (
-              <View style={styles.skeletonList}>
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <View key={i} style={[styles.skeletonRow, { flexDirection: rtlFlexRow(isRTL) }]}>
-                    <Skeleton.Circle size={40} />
-                    <View style={{ flex: 1, gap: 6 }}>
-                      <Skeleton.Rect width="80%" height={14} />
-                      <Skeleton.Rect width="40%" height={11} />
-                    </View>
-                  </View>
-                ))}
-              </View>
-            ) : (
-              <EmptyState
-                icon="bell"
-                title={t('notifications.noNotifications')}
-                subtitle={t('notifications.noNotificationsSubtitle')}
-              />
-            )
-          , [])}
-          ListFooterComponent={useMemo(() =>
-            query.isFetchingNextPage ? <Skeleton.Rect width="100%" height={60} /> : null
-          , [])}
+          ListEmptyComponent={listEmpty}
+          ListFooterComponent={listFooter}
           contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}
           stickySectionHeadersEnabled={true}
         />

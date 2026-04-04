@@ -2051,6 +2051,14 @@ export default function ConversationScreen() {
     );
   }
 
+  const chatListEmpty = useMemo(() => (
+    <View style={styles.emptyWrap}>
+      <Avatar uri={avatarUri} name={name} size="2xl" />
+      <Text style={[styles.emptyName, { color: tc.text.primary }]}>{name}</Text>
+      <Text style={[styles.emptyHint, { color: tc.text.secondary }]}>{t('risalah.startConversation')}</Text>
+    </View>
+  ), [avatarUri, name, tc.text.primary, tc.text.secondary, t]);
+
   return (
     <ScreenErrorBoundary>
     <View style={[styles.container, { backgroundColor: chatThemeBg || tc.bg }]}>
@@ -2206,13 +2214,7 @@ export default function ConversationScreen() {
                 onRefresh={onRefresh}
               />
             }
-            ListEmptyComponent={useMemo(() => (
-              <View style={styles.emptyWrap}>
-                <Avatar uri={avatarUri} name={name} size="2xl" />
-                <Text style={[styles.emptyName, { color: tc.text.primary }]}>{name}</Text>
-                <Text style={[styles.emptyHint, { color: tc.text.secondary }]}>{t('risalah.startConversation')}</Text>
-              </View>
-            ), [])}
+            ListEmptyComponent={chatListEmpty}
             contentContainerStyle={styles.messageList}
             onScrollToIndexFailed={({ index }) => flatListRef.current?.scrollToOffset({ offset: index * 100 })}
             onLayout={initialScrollDoneRef.current ? undefined : () => { initialScrollDoneRef.current = true; flatListRef.current?.scrollToEnd({ animated: false }); }}

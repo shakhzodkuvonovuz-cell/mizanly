@@ -207,6 +207,33 @@ export default function MutualFollowersScreen() {
     );
   }
 
+  const listEmpty = useMemo(() =>
+    mutualFollowersQuery.isLoading ? null : (
+      <View style={styles.emptyState}>
+        <EmptyState
+          icon="users"
+          title={t('screens.mutual-followers.emptyTitle')}
+          subtitle={t('screens.mutual-followers.emptySubtitle')}
+        />
+      </View>
+    )
+  , [mutualFollowersQuery.isLoading, t]);
+
+  const listFooter = useMemo(() =>
+    mutualFollowersQuery.isFetchingNextPage ? (
+      <View style={styles.skeletonList}>
+        <View style={styles.skeletonRow}>
+          <Skeleton.Circle size={40} />
+          <View style={{ flex: 1, gap: 6 }}>
+            <Skeleton.Rect width={130} height={14} />
+            <Skeleton.Rect width={90} height={11} />
+          </View>
+          <Skeleton.Rect width={70} height={30} borderRadius={radius.full} />
+        </View>
+      </View>
+    ) : null
+  , [mutualFollowersQuery.isFetchingNextPage]);
+
   if (mutualFollowersQuery.isLoading && !mutualFollowersQuery.data) {
     return (
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
@@ -259,31 +286,8 @@ export default function MutualFollowersScreen() {
           refreshControl={
             <BrandedRefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
           }
-          ListEmptyComponent={useMemo(() =>
-            mutualFollowersQuery.isLoading ? null : (
-              <View style={styles.emptyState}>
-                <EmptyState
-                  icon="users"
-                  title={t('screens.mutual-followers.emptyTitle')}
-                  subtitle={t('screens.mutual-followers.emptySubtitle')}
-                />
-              </View>
-            )
-          , [])}
-          ListFooterComponent={useMemo(() =>
-            mutualFollowersQuery.isFetchingNextPage ? (
-              <View style={styles.skeletonList}>
-                <View style={styles.skeletonRow}>
-                  <Skeleton.Circle size={40} />
-                  <View style={{ flex: 1, gap: 6 }}>
-                    <Skeleton.Rect width={130} height={14} />
-                    <Skeleton.Rect width={90} height={11} />
-                  </View>
-                  <Skeleton.Rect width={70} height={30} borderRadius={radius.full} />
-                </View>
-              </View>
-            ) : null
-          , [])}
+          ListEmptyComponent={listEmpty}
+          ListFooterComponent={listFooter}
         />
       </View>
   

@@ -140,6 +140,14 @@ export default function FollowRequestsScreen() {
 
   const pendingId = acceptMutation.variables ?? declineMutation.variables;
 
+  const listEmpty = useMemo(() => (
+    <EmptyState
+      icon="user"
+      title={t('screens.followRequests.emptyTitle')}
+      subtitle={t('screens.followRequests.emptySubtitle')}
+    />
+  ), [t]);
+
   if (requestsQuery.isError) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
@@ -193,13 +201,7 @@ export default function FollowRequestsScreen() {
                 onDecline={() => declineMutation.mutate(item.id)}
               />
             ), [])}
-            ListEmptyComponent={useMemo(() => (
-              <EmptyState
-                icon="user"
-                title={t('screens.followRequests.emptyTitle')}
-                subtitle={t('screens.followRequests.emptySubtitle')}
-              />
-            ), [])}
+            ListEmptyComponent={listEmpty}
           />
         )}
       </SafeAreaView>

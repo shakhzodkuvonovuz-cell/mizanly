@@ -313,6 +313,36 @@ export default function DownloadsScreen() {
 
   const handleSheetClose = useCallback(() => setSheetItem(null), []);
 
+  const listEmpty = useMemo(() =>
+    !downloadsQuery.isLoading ? (
+      <EmptyState
+        icon="layers"
+        title={t('downloads.empty')}
+        subtitle={t('downloads.emptySubtitle')}
+      />
+    ) : (
+      <View style={styles.skeletonContainer}>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <View key={i} style={styles.skeletonItem}>
+            <Skeleton.Rect width={72} height={72} borderRadius={radius.md} />
+            <View style={{ flex: 1, gap: spacing.xs }}>
+              <Skeleton.Rect width="70%" height={14} borderRadius={radius.sm} />
+              <Skeleton.Rect width="40%" height={12} borderRadius={radius.sm} />
+            </View>
+          </View>
+        ))}
+      </View>
+    )
+  , [downloadsQuery.isLoading, t]);
+
+  const listFooter = useMemo(() =>
+    downloadsQuery.isFetchingNextPage ? (
+      <View style={styles.footer}>
+        <Skeleton.Rect width="100%" height={72} borderRadius={radius.md} />
+      </View>
+    ) : null
+  , [downloadsQuery.isFetchingNextPage]);
+
   // Error state
   if (downloadsQuery.isError) {
     return (
@@ -367,34 +397,8 @@ export default function DownloadsScreen() {
               onAction={handleAction}
             />
           ), [])}
-          ListEmptyComponent={useMemo(() =>
-            !downloadsQuery.isLoading ? (
-              <EmptyState
-                icon="layers"
-                title={t('downloads.empty')}
-                subtitle={t('downloads.emptySubtitle')}
-              />
-            ) : (
-              <View style={styles.skeletonContainer}>
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <View key={i} style={styles.skeletonItem}>
-                    <Skeleton.Rect width={72} height={72} borderRadius={radius.md} />
-                    <View style={{ flex: 1, gap: spacing.xs }}>
-                      <Skeleton.Rect width="70%" height={14} borderRadius={radius.sm} />
-                      <Skeleton.Rect width="40%" height={12} borderRadius={radius.sm} />
-                    </View>
-                  </View>
-                ))}
-              </View>
-            )
-          , [])}
-          ListFooterComponent={useMemo(() =>
-            downloadsQuery.isFetchingNextPage ? (
-              <View style={styles.footer}>
-                <Skeleton.Rect width="100%" height={72} borderRadius={radius.md} />
-              </View>
-            ) : null
-          , [])}
+          ListEmptyComponent={listEmpty}
+          ListFooterComponent={listFooter}
           contentContainerStyle={styles.listContent}
         />
 

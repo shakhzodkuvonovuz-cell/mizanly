@@ -255,6 +255,18 @@ export default function ConversationInfoScreen() {
          !selectedNewMembers.find(m => m.id === p.id)
   );
 
+  const memberSearchEmpty = useMemo(() =>
+    debouncedSearchQuery.trim().length >= 2 ? (
+      <View style={styles.empty}>
+        <Text style={[styles.emptyText, { color: tc.text.secondary }]}>{t('messages.noUsersFound', { query: debouncedSearchQuery })}</Text>
+      </View>
+    ) : (
+      <View style={styles.hint}>
+        <Text style={[styles.hintText, { color: tc.text.tertiary }]}>{t('messages.searchByNameOrUsername')}</Text>
+      </View>
+    )
+  , [debouncedSearchQuery, tc.text.secondary, tc.text.tertiary, t]);
+
   return (
     <ScreenErrorBoundary>
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
@@ -763,17 +775,7 @@ export default function ConversationInfoScreen() {
                     <Icon name="plus" size="sm" color={colors.emerald} />
                   </Pressable>
                 ), [])}
-                ListEmptyComponent={useMemo(() =>
-                  debouncedSearchQuery.trim().length >= 2 ? (
-                    <View style={styles.empty}>
-                      <Text style={[styles.emptyText, { color: tc.text.secondary }]}>{t('messages.noUsersFound', { query: debouncedSearchQuery })}</Text>
-                    </View>
-                  ) : (
-                    <View style={styles.hint}>
-                      <Text style={[styles.hintText, { color: tc.text.tertiary }]}>{t('messages.searchByNameOrUsername')}</Text>
-                    </View>
-                  )
-                , [])}
+                ListEmptyComponent={memberSearchEmpty}
               />
             )}
 

@@ -174,6 +174,34 @@ export default function WatchHistoryScreen() {
     setTimeout(() => { isNavigatingRef.current = false; }, 500);
   };
 
+  const listEmpty = useMemo(() =>
+    !watchHistoryQuery.isLoading ? (
+      <EmptyState
+        icon="clock"
+        title={t('screens.watch-history.emptyTitle')}
+        subtitle={t('screens.watch-history.emptySubtitle')}
+      />
+    ) : (
+      <View style={styles.skeletonContainer}>
+        {Array.from({ length: 3 }).map((_, i) => (
+          <View key={i} style={styles.skeletonItem}>
+            <Skeleton.Rect width="100%" height={180} borderRadius={radius.md} />
+            <Skeleton.Rect width="60%" height={14} borderRadius={radius.sm} style={{ marginTop: spacing.sm }} />
+            <Skeleton.Rect width="40%" height={12} borderRadius={radius.sm} style={{ marginTop: spacing.xs }} />
+          </View>
+        ))}
+      </View>
+    )
+  , [watchHistoryQuery.isLoading, t]);
+
+  const listFooter = useMemo(() =>
+    watchHistoryQuery.isFetchingNextPage ? (
+      <View style={styles.footer}>
+        <Skeleton.Rect width="100%" height={180} borderRadius={radius.md} />
+      </View>
+    ) : null
+  , [watchHistoryQuery.isFetchingNextPage]);
+
   if (watchHistoryQuery.isError) {
     return (
       <ScreenErrorBoundary>
@@ -221,32 +249,8 @@ export default function WatchHistoryScreen() {
           renderItem={useCallback(({ item, index }) => (
             <VideoCard item={item} onPress={() => handleVideoPress(item)} index={index} />
           ), [])}
-          ListEmptyComponent={useMemo(() =>
-            !watchHistoryQuery.isLoading ? (
-              <EmptyState
-                icon="clock"
-                title={t('screens.watch-history.emptyTitle')}
-                subtitle={t('screens.watch-history.emptySubtitle')}
-              />
-            ) : (
-              <View style={styles.skeletonContainer}>
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <View key={i} style={styles.skeletonItem}>
-                    <Skeleton.Rect width="100%" height={180} borderRadius={radius.md} />
-                    <Skeleton.Rect width="60%" height={14} borderRadius={radius.sm} style={{ marginTop: spacing.sm }} />
-                    <Skeleton.Rect width="40%" height={12} borderRadius={radius.sm} style={{ marginTop: spacing.xs }} />
-                  </View>
-                ))}
-              </View>
-            )
-          , [])}
-          ListFooterComponent={useMemo(() =>
-            watchHistoryQuery.isFetchingNextPage ? (
-              <View style={styles.footer}>
-                <Skeleton.Rect width="100%" height={180} borderRadius={radius.md} />
-              </View>
-            ) : null
-          , [])}
+          ListEmptyComponent={listEmpty}
+          ListFooterComponent={listFooter}
           contentContainerStyle={styles.listContainer}
         />
       </View>

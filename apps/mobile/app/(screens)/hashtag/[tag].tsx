@@ -114,6 +114,32 @@ export default function HashtagScreen() {
     if (postsQuery.hasNextPage && !postsQuery.isFetchingNextPage) postsQuery.fetchNextPage();
   }, [postsQuery]);
 
+  const listEmpty = useMemo(() =>
+    postsQuery.isLoading ? (
+      <View style={styles.skeletonGrid}>
+        {Array.from({ length: 9 }).map((_, i) => (
+          <Skeleton.Rect key={i} width={GRID_ITEM} height={GRID_ITEM} borderRadius={0} />
+        ))}
+      </View>
+    ) : (
+      <EmptyState
+        icon="hash"
+        title={t('screens.hashtag.emptyTitle')}
+        subtitle={t('screens.hashtag.emptySubtitle')}
+      />
+    )
+  , [postsQuery.isLoading, t]);
+
+  const listFooter = useMemo(() =>
+    postsQuery.isFetchingNextPage ? (
+      <View style={styles.skeletonGrid}>
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton.Rect key={i} width={GRID_ITEM} height={GRID_ITEM} borderRadius={0} />
+        ))}
+      </View>
+    ) : null
+  , [postsQuery.isFetchingNextPage]);
+
   if (postsQuery.isError) {
     return (
       <View style={styles.container}>
@@ -195,30 +221,8 @@ export default function HashtagScreen() {
               />
             </Animated.View>
           ), [])}
-          ListEmptyComponent={useMemo(() =>
-            postsQuery.isLoading ? (
-              <View style={styles.skeletonGrid}>
-                {Array.from({ length: 9 }).map((_, i) => (
-                  <Skeleton.Rect key={i} width={GRID_ITEM} height={GRID_ITEM} borderRadius={0} />
-                ))}
-              </View>
-            ) : (
-              <EmptyState
-                icon="hash"
-                title={t('screens.hashtag.emptyTitle')}
-                subtitle={t('screens.hashtag.emptySubtitle')}
-              />
-            )
-          , [])}
-          ListFooterComponent={useMemo(() =>
-            postsQuery.isFetchingNextPage ? (
-              <View style={styles.skeletonGrid}>
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton.Rect key={i} width={GRID_ITEM} height={GRID_ITEM} borderRadius={0} />
-                ))}
-              </View>
-            ) : null
-          , [])}
+          ListEmptyComponent={listEmpty}
+          ListFooterComponent={listFooter}
           contentContainerStyle={{ paddingBottom: 40 }}
         />
       </View>

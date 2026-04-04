@@ -224,6 +224,21 @@ export default function NewConversationScreen() {
     );
   };
 
+  const searchListEmpty = useMemo(() => (
+    <EmptyState
+      icon="search"
+      title={t('messages.noUsersFound', { query: debouncedQuery })}
+    />
+  ), [t, debouncedQuery]);
+
+  const sectionListEmpty = useMemo(() => (
+    <EmptyState
+      icon="user"
+      title={t('newConversation.noContacts')}
+      subtitle={t('messages.searchByNameOrUsername')}
+    />
+  ), [t]);
+
   return (
     <ScreenErrorBoundary>
       <SafeAreaView style={styles.container} edges={['top']}>
@@ -306,12 +321,7 @@ export default function NewConversationScreen() {
               />
             }
             renderItem={useCallback(({ item, index }) => renderUserRow(item, index), [])}
-            ListEmptyComponent={useMemo(() => (
-              <EmptyState
-                icon="search"
-                title={t('messages.noUsersFound', { query: debouncedQuery })}
-              />
-            ), [])}
+            ListEmptyComponent={searchListEmpty}
           />
         ) : (
           <SectionList
@@ -332,13 +342,7 @@ export default function NewConversationScreen() {
             )}
             renderItem={useCallback(({ item, index }) => renderUserRow(item, index), [])}
             stickySectionHeadersEnabled={false}
-            ListEmptyComponent={useMemo(() => (
-              <EmptyState
-                icon="user"
-                title={t('newConversation.noContacts')}
-                subtitle={t('messages.searchByNameOrUsername')}
-              />
-            ), [])}
+            ListEmptyComponent={sectionListEmpty}
           />
         )}
       </SafeAreaView>

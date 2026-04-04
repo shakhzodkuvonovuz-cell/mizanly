@@ -74,6 +74,26 @@ export default function MutedScreen() {
     },
   });
 
+  const listFooter = useMemo(() =>
+    query.isFetchingNextPage ? (
+      <View style={[styles.skeletonRow, { backgroundColor: tc.bgCard }]}>
+        <Skeleton.Circle size={46} />
+        <View style={{ flex: 1, gap: 6 }}>
+          <Skeleton.Rect width={120} height={14} />
+          <Skeleton.Rect width={80} height={11} />
+        </View>
+      </View>
+    ) : null
+  , [query.isFetchingNextPage, tc.bgCard]);
+
+  const listEmpty = useMemo(() => (
+    <EmptyState
+      icon="volume-x"
+      title={t('screens.muted.emptyTitle')}
+      subtitle={t('screens.muted.emptySubtitle')}
+    />
+  ), [t]);
+
   if (query.isError) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
@@ -157,24 +177,8 @@ export default function MutedScreen() {
             
             );
           }, [])}
-          ListFooterComponent={useMemo(() =>
-            query.isFetchingNextPage ? (
-              <View style={[styles.skeletonRow, { backgroundColor: tc.bgCard }]}>
-                <Skeleton.Circle size={46} />
-                <View style={{ flex: 1, gap: 6 }}>
-                  <Skeleton.Rect width={120} height={14} />
-                  <Skeleton.Rect width={80} height={11} />
-                </View>
-              </View>
-            ) : null
-          , [])ListEmptyComponent={useMemo(() => (
-            <EmptyState
-              icon="volume-x"
-              title={t('screens.muted.emptyTitle')}
-              subtitle={t('screens.muted.emptySubtitle')}
-            />
-          ), [])}
-          )}
+          ListFooterComponent={listFooter}
+          ListEmptyComponent={listEmpty}
         />
       )}
     </SafeAreaView>
