@@ -859,20 +859,8 @@ export class ReelsService {
   }
 
   async getComments(reelId: string, userId: string | undefined, cursor?: string, limit = 20) {
-    // Build excluded user IDs from blocks (both directions) + mutes
-    let excludedUserIds: string[] = [];
-    if (userId) {
-      const [blocks, reverseBlocks, mutes] = await Promise.all([
-        this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true }, take: 50 }),
-        this.prisma.block.findMany({ where: { blockedId: userId }, select: { blockerId: true }, take: 50 }),
-        this.prisma.mute.findMany({ where: { userId }, select: { mutedId: true }, take: 50 }),
-      ]);
-      excludedUserIds = [
-        ...blocks.map(b => b.blockedId),
-        ...reverseBlocks.map(b => b.blockerId),
-        ...mutes.map(m => m.mutedId),
-      ];
-    }
+    // Use shared cached utility (Redis-cached 60s) instead of 3 separate block/mute queries
+    const excludedUserIds = userId ? await getExcludedUserIds(this.prisma, this.redis, userId) : [];
 
     const comments = await this.prisma.reelComment.findMany({
       where: {
