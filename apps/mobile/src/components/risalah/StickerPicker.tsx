@@ -6,8 +6,8 @@ import {
   StyleSheet,
   FlatList,
   Pressable,
-  Dimensions,
   TextInput,
+  useWindowDimensions,
 } from 'react-native';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
@@ -29,11 +29,11 @@ interface StickerPickerProps {
 
 const GRID_SPACING = spacing.sm;
 const GRID_COLUMNS = 4;
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const ITEM_SIZE = (SCREEN_WIDTH - spacing.xl * 2 - GRID_SPACING * (GRID_COLUMNS - 1)) / GRID_COLUMNS;
 
 export const StickerPicker = memo(function StickerPicker({ visible, onClose, onStickerSelect }: StickerPickerProps) {
   const tc = useThemeColors();
+  const { width: screenWidth } = useWindowDimensions();
+  const ITEM_SIZE = (screenWidth - spacing.xl * 2 - GRID_SPACING * (GRID_COLUMNS - 1)) / GRID_COLUMNS;
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'recent' | 'myPacks'>('recent');
   const [searchQuery, setSearchQuery] = useState('');
@@ -111,7 +111,7 @@ export const StickerPicker = memo(function StickerPicker({ visible, onClose, onS
 
   const renderStickerItem = ({ item }: { item: StickerItem }) => (
     <Pressable
-      style={styles.stickerItem}
+      style={[styles.stickerItem, { width: ITEM_SIZE, height: ITEM_SIZE }]}
       onPress={() => handleStickerPress(item.imageUrl)}
       accessibilityLabel={`Sticker ${item.id}`}
       accessibilityRole="button"
@@ -444,17 +444,11 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
   },
   stickerItem: {
-    width: ITEM_SIZE,
-    height: ITEM_SIZE,
     borderRadius: radius.md,
     backgroundColor: colors.dark.bgElevated,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-  },
-  stickerImage: {
-    width: ITEM_SIZE - 12,
-    height: ITEM_SIZE - 12,
   },
   searchContainer: {
     flexDirection: 'row',

@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   FlatList, StatusBar,
@@ -49,6 +49,14 @@ function ContactRow({
   const router = useRouter();
   const tc = useThemeColors();
   const { t } = useTranslation();
+  const navLockRef = useRef(false);
+
+  const navigateToProfile = useCallback(() => {
+    if (navLockRef.current) return;
+    navLockRef.current = true;
+    router.push(`/(screens)/profile/${user.username}`);
+    setTimeout(() => { navLockRef.current = false; }, 500);
+  }, [router, user.username]);
 
   return (
     <Animated.View entering={index < 10 ? FadeInUp.delay(Math.min(index, 15) * 50).duration(400) : undefined}>
@@ -56,12 +64,12 @@ function ContactRow({
         colors={colors.gradient.cardDark}
         style={[styles.row, { borderColor: tc.border }]}
       >
-        <Pressable accessibilityRole="button" accessibilityLabel={user.displayName} onPress={() => router.push(`/(screens)/profile/${user.username}`)}>
+        <Pressable accessibilityRole="button" accessibilityLabel={user.displayName} onPress={navigateToProfile}>
           <Avatar uri={user.avatarUrl} name={user.displayName} size="md" />
         </Pressable>
 
         <View style={styles.info}>
-          <Pressable accessibilityRole="button" accessibilityLabel={`@${user.username}`} onPress={() => router.push(`/(screens)/profile/${user.username}`)}>
+          <Pressable accessibilityRole="button" accessibilityLabel={`@${user.username}`} onPress={navigateToProfile}>
             <View style={styles.nameRow}>
               <Text style={[styles.name, { color: tc.text.primary }]} numberOfLines={1}>{user.displayName}</Text>
               {user.isVerified && <VerifiedBadge size={13} />}
@@ -97,6 +105,14 @@ export default function ContactSyncScreen() {
   const tc = useThemeColors();
 
   const haptic = useContextualHaptic();
+  const backLockRef = useRef(false);
+  const handleBack = useCallback(() => {
+    if (backLockRef.current) return;
+    backLockRef.current = true;
+    haptic.tick();
+    router.back();
+    setTimeout(() => { backLockRef.current = false; }, 500);
+  }, [haptic, router]);
   const [contacts, setContacts] = useState<ContactUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -232,7 +248,7 @@ export default function ContactSyncScreen() {
         <View style={[styles.container, { backgroundColor: tc.bg }]}>
           <GlassHeader
             title={t('contactSync.title')}
-            leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+            leftAction={{ icon: 'arrow-left', onPress: handleBack, accessibilityLabel: t('common.back') }}
           />
           <View style={[styles.centeredContent, { paddingTop: insets.top + 80 }]}>
             <EmptyState
@@ -254,7 +270,7 @@ export default function ContactSyncScreen() {
           <StatusBar barStyle="light-content" />
           <GlassHeader
             title={t('contactSync.title')}
-            leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+            leftAction={{ icon: 'arrow-left', onPress: handleBack, accessibilityLabel: t('common.back') }}
           />
           <View style={[styles.centeredContent, { paddingTop: insets.top + 80 }]}>
             <EmptyState
@@ -276,7 +292,7 @@ export default function ContactSyncScreen() {
         <StatusBar barStyle="light-content" />
         <GlassHeader
           title={t('contactSync.title')}
-          leftAction={{ icon: 'arrow-left', onPress: () => { haptic.tick(); router.back(); }, accessibilityLabel: t('common.back') }}
+          leftAction={{ icon: 'arrow-left', onPress: handleBack, accessibilityLabel: t('common.back') }}
         />
 
         {loading && !refreshing ? (

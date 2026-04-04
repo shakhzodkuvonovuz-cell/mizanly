@@ -116,6 +116,10 @@ function ToastItem({ toast, index }: ToastItemProps) {
     }, animation.timing.normal);
   }, [toast.id, dismissToast, reducedMotion, translateY, opacity]);
 
+  // Keep a ref to the latest dismiss so the auto-dismiss timer never fires a stale closure
+  const dismissRef = useRef(dismiss);
+  dismissRef.current = dismiss;
+
   // Entrance animation + haptic feedback
   useEffect(() => {
     // Haptic feedback on show
@@ -137,9 +141,9 @@ function ToastItem({ toast, index }: ToastItemProps) {
       progressWidth.value = withTiming(0, { duration });
     }
 
-    // Auto-dismiss timer
+    // Auto-dismiss timer — uses ref to avoid stale closure over reducedMotion
     timerRef.current = setTimeout(() => {
-      runOnJS(dismiss)();
+      dismissRef.current();
     }, duration);
 
     return () => {

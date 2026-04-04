@@ -8,6 +8,8 @@ import {
   TextInput,
   Linking,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -154,10 +156,12 @@ export default function AppealModerationScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
       <GlassHeader title={t('appealModeration.title')} onBack={() => router.back()} />
 
+      <KeyboardAvoidingView style={styles.kavContainer} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={<BrandedRefreshControl refreshing={isRefetching} onRefresh={onRefresh} />}
         contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Moderation Action Card */}
         <Animated.View entering={FadeInUp.duration(400)}>
@@ -501,6 +505,7 @@ export default function AppealModerationScreen() {
         {/* Bottom Spacer */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Bottom Bar */}
       <View style={[styles.bottomBar, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
@@ -533,6 +538,9 @@ export default function AppealModerationScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  kavContainer: {
     flex: 1,
   },
   scrollContent: {
