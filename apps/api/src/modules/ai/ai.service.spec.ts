@@ -33,59 +33,106 @@ describe('AiService', () => {
     prisma = module.get(PrismaService) as any;
   });
 
-  describe('checkDailyQuota', () => {
+  describe('checkAiQuota (per-feature daily limits)', () => {
+    let redis: any;
+    const dateStr = new Date().toISOString().slice(0, 10);
+
+    beforeEach(() => {
+      redis = (service as any).redis;
+    });
+
+    it('should return true when user is under feature-specific quota', async () => {
+      redis.incr.mockResolvedValue(10);
+      const result = await service.checkAiQuota('user-1', 'translate');
+      expect(result).toBe(true);
+      expect(redis.incr).toHaveBeenCalledWith(`ai:quota:daily:user-1:translate:${dateStr}`);
+    });
+
+    it('should set TTL on first call (count === 1)', async () => {
+      redis.incr.mockResolvedValue(1);
+      redis.expire.mockResolvedValue(1);
+      await service.checkAiQuota('user-1', 'translate');
+      expect(redis.expire).toHaveBeenCalledWith(
+        `ai:quota:daily:user-1:translate:${dateStr}`,
+        expect.any(Number),
+      );
+    });
+
+    it('should NOT set TTL on subsequent calls (count > 1)', async () => {
+      redis.expire.mockClear();
+      redis.incr.mockResolvedValue(5);
+      await service.checkAiQuota('user-1', 'translate');
+      expect(redis.expire).not.toHaveBeenCalled();
+    });
+
+    it('should return false when translate quota exceeded (limit=50)', async () => {
+      redis.incr.mockResolvedValue(51);
+      const result = await service.checkAiQuota('user-1', 'translate');
+      expect(result).toBe(false);
+    });
+
+    it('should return true when translate at exactly limit (50)', async () => {
+      redis.incr.mockResolvedValue(50);
+      const result = await service.checkAiQuota('user-1', 'translate');
+      expect(result).toBe(true);
+    });
+
+    it('should enforce tighter limit for avatar (5/day)', async () => {
+      redis.incr.mockResolvedValue(6);
+      const result = await service.checkAiQuota('user-1', 'avatar');
+      expect(result).toBe(false);
+    });
+
+    it('should allow high limit for moderation (1000/day)', async () => {
+      redis.incr.mockResolvedValue(999);
+      const result = await service.checkAiQuota('user-1', 'moderate');
+      expect(result).toBe(true);
+    });
+
+    it('should use default limit (50) for unknown features', async () => {
+      redis.incr.mockResolvedValue(51);
+      const result = await service.checkAiQuota('user-1', 'unknown_feature');
+      expect(result).toBe(false);
+    });
+
+    it('should return false (deny) when Redis is unavailable — fail-closed', async () => {
+      redis.incr.mockRejectedValue(new Error('Redis connection lost'));
+      const result = await service.checkAiQuota('user-1', 'translate');
+      expect(result).toBe(false); // CODEX #18: fail-closed, not fail-open
+    });
+
+    it('should use per-user per-feature keys to track quotas independently', async () => {
+      redis.incr.mockResolvedValue(1);
+      redis.expire.mockResolvedValue(1);
+      await service.checkAiQuota('user-a', 'translate');
+      await service.checkAiQuota('user-b', 'captions');
+      expect(redis.incr).toHaveBeenCalledWith(`ai:quota:daily:user-a:translate:${dateStr}`);
+      expect(redis.incr).toHaveBeenCalledWith(`ai:quota:daily:user-b:captions:${dateStr}`);
+    });
+
+    it('should track different features for same user independently', async () => {
+      redis.incr.mockResolvedValue(1);
+      redis.expire.mockResolvedValue(1);
+      await service.checkAiQuota('user-1', 'translate');
+      await service.checkAiQuota('user-1', 'avatar');
+      expect(redis.incr).toHaveBeenCalledWith(`ai:quota:daily:user-1:translate:${dateStr}`);
+      expect(redis.incr).toHaveBeenCalledWith(`ai:quota:daily:user-1:avatar:${dateStr}`);
+    });
+  });
+
+  describe('checkDailyQuota (backward compat)', () => {
     let redis: any;
 
     beforeEach(() => {
       redis = (service as any).redis;
     });
 
-    it('should return true when user is under quota limit', async () => {
-      redis.incr.mockResolvedValue(50);
+    it('should delegate to checkAiQuota with "general" feature', async () => {
+      const spy = jest.spyOn(service, 'checkAiQuota').mockResolvedValue(true);
       const result = await service.checkDailyQuota('user-1');
       expect(result).toBe(true);
-      expect(redis.incr).toHaveBeenCalledWith('ai:daily:user-1');
-    });
-
-    it('should set TTL on first call (count === 1)', async () => {
-      redis.incr.mockResolvedValue(1);
-      redis.expire.mockResolvedValue(1);
-      await service.checkDailyQuota('user-1');
-      expect(redis.expire).toHaveBeenCalledWith('ai:daily:user-1', expect.any(Number));
-    });
-
-    it('should NOT set TTL on subsequent calls (count > 1)', async () => {
-      redis.expire.mockClear();
-      redis.incr.mockResolvedValue(5);
-      await service.checkDailyQuota('user-1');
-      expect(redis.expire).not.toHaveBeenCalled();
-    });
-
-    it('should return false when user exceeds daily quota (100)', async () => {
-      redis.incr.mockResolvedValue(101);
-      const result = await service.checkDailyQuota('user-1');
-      expect(result).toBe(false);
-    });
-
-    it('should return true when user is at exactly 100 calls', async () => {
-      redis.incr.mockResolvedValue(100);
-      const result = await service.checkDailyQuota('user-1');
-      expect(result).toBe(true);
-    });
-
-    it('should return false (deny) when Redis is unavailable — fail-closed', async () => {
-      redis.incr.mockRejectedValue(new Error('Redis connection lost'));
-      const result = await service.checkDailyQuota('user-1');
-      expect(result).toBe(false); // CODEX #18: fail-closed, not fail-open
-    });
-
-    it('should use per-user key to track quotas independently', async () => {
-      redis.incr.mockResolvedValue(1);
-      redis.expire.mockResolvedValue(1);
-      await service.checkDailyQuota('user-a');
-      await service.checkDailyQuota('user-b');
-      expect(redis.incr).toHaveBeenCalledWith('ai:daily:user-a');
-      expect(redis.incr).toHaveBeenCalledWith('ai:daily:user-b');
+      expect(spy).toHaveBeenCalledWith('user-1', 'general');
+      spy.mockRestore();
     });
   });
 

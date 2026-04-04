@@ -30,13 +30,29 @@ export interface SpaceRouting {
   reason: string;
 }
 
+/** Per-feature daily AI quota limits (cost control) */
+export const AI_DAILY_LIMITS: Readonly<Record<string, number>> = {
+  moderate: 1000,     // high — moderation is often automatic
+  moderate_image: 500, // image moderation
+  translate: 50,      // translations per user per day
+  smart_replies: 50,  // smart reply suggestions
+  captions: 30,       // caption generation
+  hashtags: 30,       // hashtag suggestions
+  summarize: 30,      // content summarization
+  video_captions: 10, // video transcription (Whisper — expensive)
+  voice_transcribe: 20, // voice message transcription
+  avatar: 5,          // AI avatar generation
+  alt_text: 100,      // accessibility alt text
+};
+
+/** Default daily limit for unlisted features */
+export const AI_DAILY_LIMIT_DEFAULT = 50;
+
 @Injectable()
 export class AiService {
   private readonly logger = new Logger(AiService.name);
   private readonly apiKey: string | undefined;
   private readonly apiAvailable: boolean;
-  /** Max AI API calls per user per day (cost control) */
-  private readonly DAILY_AI_QUOTA = 100;
 
   constructor(
     private prisma: PrismaService,
@@ -51,12 +67,18 @@ export class AiService {
   }
 
   /**
-   * Check and increment per-user daily AI quota.
+   * Check and increment per-user per-feature daily AI quota.
+   * Uses separate Redis keys per feature so expensive operations (avatar, video)
+   * have tighter limits than cheap ones (moderation, alt text).
+   *
+   * Key format: ai:quota:daily:{userId}:{feature}:{YYYY-MM-DD}
+   * Keys auto-expire at midnight UTC.
+   *
    * Returns true if under limit, false if quota exhausted.
-   * Key expires at midnight UTC, resetting the counter daily.
    */
-  async checkDailyQuota(userId: string): Promise<boolean> {
-    const key = `ai:daily:${userId}`;
+  async checkAiQuota(userId: string, feature: string): Promise<boolean> {
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const key = `ai:quota:daily:${userId}:${feature}:${dateStr}`;
     try {
       const count = await this.redis.incr(key);
       if (count === 1) {
@@ -67,13 +89,22 @@ export class AiService {
         const ttl = Math.ceil((midnight.getTime() - now.getTime()) / 1000);
         await this.redis.expire(key, ttl);
       }
-      return count <= this.DAILY_AI_QUOTA;
+      const limit = AI_DAILY_LIMITS[feature] ?? AI_DAILY_LIMIT_DEFAULT;
+      return count <= limit;
     } catch {
       // CODEX #18: Redis down = deny AI requests (fail-closed, not fail-open)
       // Permissive fallback was allowing unlimited AI usage when Redis is unavailable
-      this.logger.error('Redis unavailable for AI quota check — DENYING request (fail-closed)');
+      this.logger.error(`Redis unavailable for AI quota check (feature=${feature}) — DENYING request (fail-closed)`);
       return false;
     }
+  }
+
+  /**
+   * @deprecated Use checkAiQuota(userId, feature) for per-feature limits.
+   * Kept for backward compatibility — delegates to checkAiQuota with 'general' feature.
+   */
+  async checkDailyQuota(userId: string): Promise<boolean> {
+    return this.checkAiQuota(userId, 'general');
   }
 
   /**

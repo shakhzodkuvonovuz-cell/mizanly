@@ -19,12 +19,12 @@ import {
 export class AiController {
   constructor(private readonly aiService: AiService) {}
 
-  /** Enforce per-user daily AI quota — throws 429 if exhausted */
-  private async enforceQuota(userId: string): Promise<void> {
-    const allowed = await this.aiService.checkDailyQuota(userId);
+  /** Enforce per-user per-feature daily AI quota — throws 429 if exhausted */
+  private async enforceQuota(userId: string, feature: string): Promise<void> {
+    const allowed = await this.aiService.checkAiQuota(userId, feature);
     if (!allowed) {
       throw new HttpException(
-        'Daily AI usage limit reached. Try again tomorrow.',
+        `Daily AI usage limit reached for ${feature}. Try again tomorrow.`,
         HttpStatus.TOO_MANY_REQUESTS,
       );
     }
@@ -35,7 +35,7 @@ export class AiController {
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Get AI-suggested captions' })
   async suggestCaptions(@CurrentUser('id') userId: string, @Body() dto: SuggestCaptionsDto) {
-    await this.enforceQuota(userId);
+    await this.enforceQuota(userId, 'captions');
     return this.aiService.suggestCaptions(dto.content || '', dto.mediaDescription);
   }
 
@@ -44,7 +44,7 @@ export class AiController {
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Get AI-suggested hashtags' })
   async suggestHashtags(@CurrentUser('id') userId: string, @Body() dto: SuggestHashtagsDto) {
-    await this.enforceQuota(userId);
+    await this.enforceQuota(userId, 'hashtags');
     return this.aiService.suggestHashtags(dto.content);
   }
 
@@ -61,7 +61,7 @@ export class AiController {
   @Throttle({ default: { limit: 30, ttl: 60000 } })
   @ApiOperation({ summary: 'Translate text' })
   async translate(@CurrentUser('id') userId: string, @Body() dto: TranslateDto) {
-    await this.enforceQuota(userId);
+    await this.enforceQuota(userId, 'translate');
     return this.aiService.translateText(dto.text, dto.targetLanguage, dto.contentId, dto.contentType);
   }
 
@@ -70,7 +70,7 @@ export class AiController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Moderate content' })
   async moderate(@CurrentUser('id') userId: string, @Body() dto: ModerateDto) {
-    await this.enforceQuota(userId);
+    await this.enforceQuota(userId, 'moderate');
     return this.aiService.moderateContent(dto.text, dto.contentType);
   }
 
@@ -79,7 +79,7 @@ export class AiController {
   @Throttle({ default: { limit: 30, ttl: 60000 } })
   @ApiOperation({ summary: 'Get smart reply suggestions' })
   async smartReplies(@CurrentUser('id') userId: string, @Body() dto: SmartRepliesDto) {
-    await this.enforceQuota(userId);
+    await this.enforceQuota(userId, 'smart_replies');
     return this.aiService.suggestSmartReplies(dto.conversationContext, dto.lastMessages);
   }
 
@@ -88,7 +88,7 @@ export class AiController {
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Summarize content' })
   async summarize(@CurrentUser('id') userId: string, @Body() dto: SummarizeDto) {
-    await this.enforceQuota(userId);
+    await this.enforceQuota(userId, 'summarize');
     return this.aiService.summarizeContent(dto.text, dto.maxLength);
   }
 
@@ -105,7 +105,7 @@ export class AiController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Generate AI captions for video' })
   async generateCaptions(@CurrentUser('id') userId: string, @Param('videoId') videoId: string, @Body() dto: GenerateCaptionsDto) {
-    await this.enforceQuota(userId);
+    await this.enforceQuota(userId, 'video_captions');
     return this.aiService.generateVideoCaptions(videoId, dto.audioUrl, dto.language);
   }
 
@@ -121,7 +121,7 @@ export class AiController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Generate AI avatar' })
   async generateAvatar(@CurrentUser('id') userId: string, @Body() dto: GenerateAvatarDto) {
-    await this.enforceQuota(userId);
+    await this.enforceQuota(userId, 'avatar');
     return this.aiService.generateAvatar(userId, dto.sourceUrl, dto.style || 'default');
   }
 

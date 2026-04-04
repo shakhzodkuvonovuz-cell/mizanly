@@ -19,6 +19,7 @@ describe('AiController', () => {
         {
           provide: AiService,
           useValue: {
+            checkAiQuota: jest.fn().mockResolvedValue(true),
             checkDailyQuota: jest.fn().mockResolvedValue(true),
             suggestCaptions: jest.fn(),
             suggestHashtags: jest.fn(),
@@ -45,17 +46,17 @@ describe('AiController', () => {
 
   afterEach(() => jest.clearAllMocks());
 
-  describe('enforceQuota', () => {
-    it('should throw 429 HttpException when daily quota is exhausted', async () => {
-      service.checkDailyQuota.mockResolvedValue(false);
+  describe('enforceQuota (per-feature)', () => {
+    it('should throw 429 HttpException when feature quota is exhausted', async () => {
+      service.checkAiQuota.mockResolvedValue(false);
 
       await expect(controller.suggestCaptions(userId, { content: 'test' } as any))
         .rejects
-        .toThrow('Daily AI usage limit reached. Try again tomorrow.');
+        .toThrow(/Daily AI usage limit reached for captions/);
     });
 
     it('should throw HttpException with status 429', async () => {
-      service.checkDailyQuota.mockResolvedValue(false);
+      service.checkAiQuota.mockResolvedValue(false);
 
       try {
         await controller.suggestCaptions(userId, { content: 'test' } as any);
@@ -66,7 +67,7 @@ describe('AiController', () => {
     });
 
     it('should allow request when quota is not exhausted', async () => {
-      service.checkDailyQuota.mockResolvedValue(true);
+      service.checkAiQuota.mockResolvedValue(true);
       service.suggestCaptions.mockResolvedValue([]);
 
       await expect(controller.suggestCaptions(userId, { content: 'test' } as any))
@@ -74,28 +75,63 @@ describe('AiController', () => {
       expect(service.suggestCaptions).toHaveBeenCalled();
     });
 
-    it('should check quota for translate endpoint', async () => {
-      service.checkDailyQuota.mockResolvedValue(false);
+    it('should pass "captions" feature for suggest-captions', async () => {
+      service.checkAiQuota.mockResolvedValue(true);
+      service.suggestCaptions.mockResolvedValue([]);
+      await controller.suggestCaptions(userId, { content: 'test' } as any);
+      expect(service.checkAiQuota).toHaveBeenCalledWith(userId, 'captions');
+    });
+
+    it('should pass "hashtags" feature for suggest-hashtags', async () => {
+      service.checkAiQuota.mockResolvedValue(true);
+      service.suggestHashtags.mockResolvedValue([]);
+      await controller.suggestHashtags(userId, { content: 'test' } as any);
+      expect(service.checkAiQuota).toHaveBeenCalledWith(userId, 'hashtags');
+    });
+
+    it('should pass "translate" feature for translate endpoint', async () => {
+      service.checkAiQuota.mockResolvedValue(false);
 
       await expect(controller.translate(userId, { text: 'hello', targetLanguage: 'ar' } as any))
         .rejects
-        .toThrow('Daily AI usage limit reached. Try again tomorrow.');
+        .toThrow(/Daily AI usage limit reached for translate/);
     });
 
-    it('should check quota for smart-replies endpoint', async () => {
-      service.checkDailyQuota.mockResolvedValue(false);
+    it('should pass "smart_replies" feature for smart-replies endpoint', async () => {
+      service.checkAiQuota.mockResolvedValue(false);
 
       await expect(controller.smartReplies(userId, { conversationContext: 'ctx', lastMessages: ['hi'] } as any))
         .rejects
-        .toThrow('Daily AI usage limit reached. Try again tomorrow.');
+        .toThrow(/Daily AI usage limit reached for smart_replies/);
     });
 
-    it('should check quota for summarize endpoint', async () => {
-      service.checkDailyQuota.mockResolvedValue(false);
+    it('should pass "summarize" feature for summarize endpoint', async () => {
+      service.checkAiQuota.mockResolvedValue(false);
 
       await expect(controller.summarize(userId, { text: 'long text', maxLength: 100 } as any))
         .rejects
-        .toThrow('Daily AI usage limit reached. Try again tomorrow.');
+        .toThrow(/Daily AI usage limit reached for summarize/);
+    });
+
+    it('should pass "moderate" feature for moderate endpoint', async () => {
+      service.checkAiQuota.mockResolvedValue(true);
+      service.moderateContent.mockResolvedValue({ safe: true, flags: [], confidence: 1, suggestion: null, category: null });
+      await controller.moderate(userId, { text: 'test', contentType: 'post' } as any);
+      expect(service.checkAiQuota).toHaveBeenCalledWith(userId, 'moderate');
+    });
+
+    it('should pass "video_captions" feature for video captions', async () => {
+      service.checkAiQuota.mockResolvedValue(true);
+      service.generateVideoCaptions.mockResolvedValue('');
+      await controller.generateCaptions(userId, 'vid-1', { audioUrl: 'https://audio.url', language: 'en' } as any);
+      expect(service.checkAiQuota).toHaveBeenCalledWith(userId, 'video_captions');
+    });
+
+    it('should pass "avatar" feature for avatar generation', async () => {
+      service.checkAiQuota.mockResolvedValue(true);
+      service.generateAvatar.mockResolvedValue({ avatarUrl: 'https://avatar.url' });
+      await controller.generateAvatar(userId, { sourceUrl: 'https://photo.url', style: 'anime' } as any);
+      expect(service.checkAiQuota).toHaveBeenCalledWith(userId, 'avatar');
     });
   });
 
