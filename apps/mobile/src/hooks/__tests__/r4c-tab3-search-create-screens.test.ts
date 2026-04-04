@@ -264,9 +264,10 @@ describe('R4C-Tab3: create-event.tsx', () => {
     expect(src).toContain('useContextualHaptic');
   });
 
-  test('uses createStyles(tc) pattern', () => {
+  test('uses createStyles(tc) pattern via useMemo', () => {
     expect(src).toContain('const createStyles');
-    expect(src).toContain('const styles = createStyles(tc)');
+    // After hook extraction, styles are memoized
+    expect(src).toMatch(/const styles = (?:useMemo\(\(\) => )?createStyles\(tc/);
   });
 
   test('no colors.dark.* in styles', () => {
@@ -378,9 +379,10 @@ describe('R4C-Tab3: create-playlist.tsx', () => {
 describe('R4C-Tab3: create-post.tsx', () => {
   const src = readScreen('create-post.tsx');
 
-  test('uses createStyles(tc) pattern', () => {
+  test('uses createStyles(tc) pattern via useMemo', () => {
     expect(src).toContain('const createStyles');
-    expect(src).toContain('const styles = createStyles(tc)');
+    // After hook extraction, styles are memoized
+    expect(src).toMatch(/const styles = (?:useMemo\(\(\) => )?createStyles\(tc/);
   });
 
   test('no colors.dark.* in styles', () => {
@@ -404,8 +406,8 @@ describe('R4C-Tab3: create-post.tsx', () => {
   });
 
   test('draft load has error handling', () => {
-    // Draft persistence is delegated to useDraftPersistence hook (which has its own catch blocks + 14 tests)
-    expect(src).toContain('useDraftPersistence');
+    // Draft persistence is delegated to usePostMedia hook (which uses useDraftPersistence internally with catch blocks)
+    expect(src).toContain('usePostMedia');
   });
 
   test('uses fonts.bodyBold instead of hardcoded font family', () => {

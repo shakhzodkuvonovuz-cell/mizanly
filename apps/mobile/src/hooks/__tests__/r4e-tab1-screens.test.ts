@@ -186,8 +186,9 @@ describe('dua-collection', () => {
     expect(src).toContain("edges={['top', 'bottom']}");
   });
 
-  test('horizontal FlatList inverted for RTL', () => {
-    expect(src).toContain('inverted={isRTL}');
+  test('horizontal ScrollView RTL via scaleX transform', () => {
+    // Category chips now use ScrollView with scaleX: -1 for RTL (not FlatList inverted)
+    expect(src).toContain("isRTL ? { transform: [{ scaleX: -1 }] } : undefined");
   });
 
   test('DuaCard animation uses index-based delay', () => {
