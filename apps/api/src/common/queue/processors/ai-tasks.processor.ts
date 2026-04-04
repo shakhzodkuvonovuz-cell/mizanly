@@ -56,6 +56,7 @@ export class AiTasksProcessor implements OnModuleInit, OnModuleDestroy {
         prefix: 'mizanly',
         concurrency: 3,
         lockDuration: 120000,
+        maxStalledCount: 3,
         limiter: {
           max: 10,
           duration: 60000, // 10 AI calls per minute to stay within rate limits
@@ -75,7 +76,10 @@ export class AiTasksProcessor implements OnModuleInit, OnModuleDestroy {
     this.worker.on('failed', (job: Job | undefined, err: Error) => {
       const maxAttempts = job?.opts?.attempts ?? 2;
       if (job && job.attemptsMade >= maxAttempts) {
-        Sentry.captureException(err, { tags: { queue: 'ai-tasks', jobId: job?.id } });
+        Sentry.captureException(err, {
+          tags: { queue: 'ai-tasks', jobName: job.name },
+          extra: { jobId: job.id, attemptsMade: job.attemptsMade, data: job.data },
+        });
         this.queueService.moveToDlq(job, err, 'ai-tasks').catch((e) => this.logger.error('DLQ routing failed for ai-tasks', e?.message));
       }
       this.logger.error(`AI task ${job?.id} failed (attempt ${job?.attemptsMade ?? '?'}/${maxAttempts}): ${err.message}`);

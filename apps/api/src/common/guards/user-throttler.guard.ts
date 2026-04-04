@@ -1,6 +1,8 @@
 import { Injectable, ExecutionContext, Logger } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerException } from '@nestjs/throttler';
 import { createHash } from 'crypto';
+import { TARGET_THROTTLE_KEY } from '../decorators/target-throttle.decorator';
 
 /**
  * Custom throttler guard that uses userId (from Clerk auth) when available,
@@ -8,12 +10,52 @@ import { createHash } from 'crypto';
  *
  * This prevents authenticated users on shared IPs from being throttled by
  * each other's requests, and ensures per-user fair limits.
+ *
+ * #122 FIX: When `@TargetThrottle('paramName')` is present on the handler,
+ * the throttle key is composed from both actor AND target — preventing a
+ * single user from spam-following a specific user or spam-liking a specific post.
  */
 @Injectable()
 export class UserThrottlerGuard extends ThrottlerGuard {
   private readonly logger = new Logger(UserThrottlerGuard.name);
 
-  protected async getTracker(req: Record<string, unknown>): Promise<string> {
+  protected async getTracker(req: Record<string, unknown>, context: ExecutionContext): Promise<string> {
+    // Base key: authenticated userId or IP fallback
+    const baseKey = this.getBaseKey(req);
+
+    // #122: Check for per-target throttle metadata
+    if (context) {
+      try {
+        const reflector = this.getReflector();
+        if (reflector) {
+          const targetParam = reflector.get<string>(TARGET_THROTTLE_KEY, context.getHandler());
+          if (targetParam) {
+            const params = (req as { params?: Record<string, string> }).params || {};
+            const targetId = params[targetParam];
+            if (targetId) {
+              return `${baseKey}:target:${targetId}`;
+            }
+          }
+        }
+      } catch {
+        // Reflector not available (e.g., in test) — fall back to base key
+      }
+    }
+
+    return baseKey;
+  }
+
+  /** Retrieve reflector from DI container via the module ref stored on ThrottlerGuard */
+  private getReflector(): Reflector | null {
+    // ThrottlerGuard stores reflector as a private field; access via any
+    const self = this as Record<string, unknown>;
+    if (self['reflector'] instanceof Reflector) {
+      return self['reflector'] as Reflector;
+    }
+    return null;
+  }
+
+  private getBaseKey(req: Record<string, unknown>): string {
     // If the request has been authenticated and has a userId, use it
     const user = (req as { user?: { id?: string } }).user;
     if (user?.id) {

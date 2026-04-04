@@ -14,6 +14,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { FollowsService } from './follows.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { TargetThrottle } from '../../common/decorators/target-throttle.decorator';
 
 @ApiTags('Follows')
 // Throttle convention: 60/min (read), 30/min (write), 10/min (sensitive), 5/min (expensive AI/payment)
@@ -71,6 +72,7 @@ export class FollowsController {
 
   // --- Param routes AFTER static routes ---
 
+  @TargetThrottle('userId', 5, 60000) // 5 follow attempts per target per minute
   @Post(':userId')
   @ApiOperation({ summary: 'Follow a user (or create request if private)' })
   follow(
@@ -80,6 +82,7 @@ export class FollowsController {
     return this.followsService.follow(currentUserId, targetUserId);
   }
 
+  @TargetThrottle('userId', 5, 60000) // 5 unfollow attempts per target per minute
   @Delete(':userId')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Unfollow a user' })

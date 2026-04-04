@@ -100,6 +100,7 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
         prefix: 'mizanly',
         concurrency: 3,
         lockDuration: 120000,
+        maxStalledCount: 3,
         settings: {
           stalledInterval: 120000,
         },
@@ -115,7 +116,10 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
     this.worker.on('failed', (job: Job | undefined, err: Error) => {
       const maxAttempts = job?.opts?.attempts ?? 1;
       if (job && job.attemptsMade >= maxAttempts) {
-        Sentry.captureException(err, { tags: { queue: 'media-processing', jobId: job?.id } });
+        Sentry.captureException(err, {
+          tags: { queue: 'media-processing', jobName: job.name },
+          extra: { jobId: job.id, attemptsMade: job.attemptsMade, data: job.data },
+        });
         this.queueService.moveToDlq(job, err, 'media-processing').catch((e) => this.logger.error('DLQ routing failed for media-processing', e?.message));
       }
       this.logger.error(`Media job ${job?.id} failed (attempt ${job?.attemptsMade ?? '?'}/${maxAttempts}): ${err.message}`);

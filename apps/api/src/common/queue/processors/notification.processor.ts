@@ -56,6 +56,7 @@ export class NotificationProcessor implements OnModuleInit, OnModuleDestroy {
         prefix: 'mizanly',
         concurrency: 5,
         lockDuration: 60000,
+        maxStalledCount: 3,
         settings: {
           backoffStrategy: (attemptsMade: number) => {
             // Custom backoff: 1s, 10s, 60s
@@ -77,7 +78,10 @@ export class NotificationProcessor implements OnModuleInit, OnModuleDestroy {
     this.worker.on('failed', (job: Job | undefined, err: Error) => {
       const maxAttempts = job?.opts?.attempts ?? 3;
       if (job && job.attemptsMade >= maxAttempts) {
-        Sentry.captureException(err, { tags: { queue: 'notifications', jobId: job?.id } });
+        Sentry.captureException(err, {
+          tags: { queue: 'notifications', jobName: job.name },
+          extra: { jobId: job.id, attemptsMade: job.attemptsMade, data: job.data },
+        });
         this.queueService.moveToDlq(job, err, 'notifications').catch((e) => this.logger.error('DLQ routing failed for notifications', e?.message));
       }
       this.logger.error(`Notification job ${job?.id} failed (attempt ${job?.attemptsMade ?? '?'}/${maxAttempts}): ${err.message}`);

@@ -28,6 +28,7 @@ import { UpdatePostDto } from './dto/update-post.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { TargetThrottle } from '../../common/decorators/target-throttle.decorator';
 import { QueueService } from '../../common/queue/queue.service';
 import { Optional } from '@nestjs/common';
 
@@ -142,7 +143,7 @@ export class PostsController {
     return this.postsService.delete(id, userId);
   }
 
-  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @TargetThrottle('id', 5, 60000) // 5 reactions per post per minute
   @Post(':id/react')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
@@ -261,7 +262,7 @@ export class PostsController {
     return this.postsService.deleteComment(commentId, userId);
   }
 
-  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @TargetThrottle('commentId', 5, 60000) // 5 likes per comment per minute
   @Post(':id/comments/:commentId/like')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()

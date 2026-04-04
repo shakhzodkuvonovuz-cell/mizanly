@@ -314,6 +314,64 @@ describe('QueueService', () => {
       const jobData = webhooksQueue.add.mock.calls[0][1];
       expect(jobData.secret).toBeUndefined();
     });
+
+    it('should use content-hash-based jobId for dedup (#118)', async () => {
+      await service.addWebhookDeliveryJob({
+        url: 'https://example.com/hook',
+        secret: 'test-secret',
+        event: 'post.created',
+        payload: { id: 'p1' },
+        webhookId: 'wh-1',
+      });
+      const opts = webhooksQueue.add.mock.calls[0][2];
+      // jobId should be wh: followed by a 16-char hex hash
+      expect(opts.jobId).toMatch(/^wh:[a-f0-9]{16}$/);
+    });
+
+    it('should produce same jobId for identical payload (dedup)', async () => {
+      const data = {
+        url: 'https://example.com/hook',
+        secret: 'test-secret',
+        event: 'post.created',
+        payload: { id: 'p1' },
+        webhookId: 'wh-1',
+      };
+      await service.addWebhookDeliveryJob(data);
+      const firstJobId = webhooksQueue.add.mock.calls[0][2].jobId;
+
+      jest.clearAllMocks();
+      circuitBreaker.exec.mockImplementation((_name: string, fn: () => Promise<unknown>) => fn());
+
+      await service.addWebhookDeliveryJob(data);
+      const secondJobId = webhooksQueue.add.mock.calls[0][2].jobId;
+
+      expect(firstJobId).toBe(secondJobId);
+    });
+
+    it('should produce different jobId for different payloads', async () => {
+      await service.addWebhookDeliveryJob({
+        url: 'https://example.com/hook',
+        secret: 'test-secret',
+        event: 'post.created',
+        payload: { id: 'p1' },
+        webhookId: 'wh-1',
+      });
+      const firstJobId = webhooksQueue.add.mock.calls[0][2].jobId;
+
+      jest.clearAllMocks();
+      circuitBreaker.exec.mockImplementation((_name: string, fn: () => Promise<unknown>) => fn());
+
+      await service.addWebhookDeliveryJob({
+        url: 'https://example.com/hook',
+        secret: 'test-secret',
+        event: 'post.updated',
+        payload: { id: 'p2' },
+        webhookId: 'wh-2',
+      });
+      const secondJobId = webhooksQueue.add.mock.calls[0][2].jobId;
+
+      expect(firstJobId).not.toBe(secondJobId);
+    });
   });
 
   describe('addMediaProcessingJob', () => {

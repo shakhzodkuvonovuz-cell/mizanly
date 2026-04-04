@@ -44,6 +44,15 @@ describe('Queue Security', () => {
     });
   });
 
+  describe('#118: Webhook content-hash dedup', () => {
+    it('webhook jobId should use content hash not timestamp', () => {
+      const content = fs.readFileSync(path.join(ROOT, 'apps/api/src/common/queue/queue.service.ts'), 'utf8');
+      // Should use a hash-based jobId, not timestamp-based
+      expect(content).toContain('jobId: `wh:${payloadHash}`');
+      expect(content).toContain("createHash('sha256')");
+    });
+  });
+
   describe('K04-#9: Worker error handlers', () => {
     const processors = [
       'notification.processor.ts',
@@ -62,6 +71,39 @@ describe('Queue Security', () => {
     it.each(processors)('%s should have on(stalled) handler', (file) => {
       const content = fs.readFileSync(path.join(ROOT, 'apps/api/src/common/queue/processors', file), 'utf8');
       expect(content).toContain("on('stalled'");
+    });
+  });
+
+  describe('#117: maxStalledCount on all workers', () => {
+    const processors = [
+      'notification.processor.ts',
+      'webhook.processor.ts',
+      'analytics.processor.ts',
+      'media.processor.ts',
+      'search-indexing.processor.ts',
+      'ai-tasks.processor.ts',
+    ];
+
+    it.each(processors)('%s should have maxStalledCount: 3', (file) => {
+      const content = fs.readFileSync(path.join(ROOT, 'apps/api/src/common/queue/processors', file), 'utf8');
+      expect(content).toContain('maxStalledCount: 3');
+    });
+  });
+
+  describe('#121: Sentry DLQ context in failed handlers', () => {
+    const processors = [
+      'notification.processor.ts',
+      'webhook.processor.ts',
+      'analytics.processor.ts',
+      'media.processor.ts',
+      'search-indexing.processor.ts',
+      'ai-tasks.processor.ts',
+    ];
+
+    it.each(processors)('%s should include extra context in Sentry.captureException', (file) => {
+      const content = fs.readFileSync(path.join(ROOT, 'apps/api/src/common/queue/processors', file), 'utf8');
+      expect(content).toContain('extra: { jobId:');
+      expect(content).toContain('attemptsMade:');
     });
   });
 
@@ -144,6 +186,17 @@ describe('Docker & Deployment Config', () => {
       expect(e2e).toContain('golang:1.25-alpine');
       expect(livekit).toContain('golang:1.25-alpine');
     });
+  });
+});
+
+describe('Coverage Thresholds', () => {
+  it('#108: API jest config should have coverage thresholds', () => {
+    const content = fs.readFileSync(path.join(ROOT, 'apps/api/jest.config.ts'), 'utf8');
+    expect(content).toContain('coverageThreshold');
+    expect(content).toContain('branches: 60');
+    expect(content).toContain('functions: 60');
+    expect(content).toContain('lines: 70');
+    expect(content).toContain('statements: 70');
   });
 });
 

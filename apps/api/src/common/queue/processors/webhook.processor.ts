@@ -54,6 +54,7 @@ export class WebhookProcessor implements OnModuleInit, OnModuleDestroy {
         prefix: 'mizanly',
         concurrency: 25,
         lockDuration: 30000,
+        maxStalledCount: 3,
         settings: {
           backoffStrategy: (attemptsMade: number) => {
             // Custom backoff: 1s, 5s, 30s, 5min, 30min
@@ -74,7 +75,10 @@ export class WebhookProcessor implements OnModuleInit, OnModuleDestroy {
     this.worker.on('failed', (job: Job | undefined, err: Error) => {
       const maxAttempts = job?.opts?.attempts ?? 5;
       if (job && job.attemptsMade >= maxAttempts) {
-        Sentry.captureException(err, { tags: { queue: 'webhooks', jobId: job?.id } });
+        Sentry.captureException(err, {
+          tags: { queue: 'webhooks', jobName: job.name },
+          extra: { jobId: job.id, attemptsMade: job.attemptsMade, data: job.data },
+        });
         this.queueService.moveToDlq(job, err, 'webhooks').catch((e) => this.logger.error('DLQ routing failed for webhooks', e?.message));
       }
       this.logger.error(`Webhook job ${job?.id} failed (attempt ${job?.attemptsMade ?? '?'}/${maxAttempts}): ${err.message}`);

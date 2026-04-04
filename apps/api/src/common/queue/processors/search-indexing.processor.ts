@@ -48,6 +48,7 @@ export class SearchIndexingProcessor implements OnModuleInit, OnModuleDestroy {
         prefix: 'mizanly',
         concurrency: 5,
         lockDuration: 60000,
+        maxStalledCount: 3,
         settings: {
           stalledInterval: 60000,
         },
@@ -63,7 +64,10 @@ export class SearchIndexingProcessor implements OnModuleInit, OnModuleDestroy {
     this.worker.on('failed', (job: Job | undefined, err: Error) => {
       const maxAttempts = job?.opts?.attempts ?? 3;
       if (job && job.attemptsMade >= maxAttempts) {
-        Sentry.captureException(err, { tags: { queue: 'search-indexing', jobId: job?.id } });
+        Sentry.captureException(err, {
+          tags: { queue: 'search-indexing', jobName: job.name },
+          extra: { jobId: job.id, attemptsMade: job.attemptsMade, data: job.data },
+        });
         this.queueService.moveToDlq(job, err, 'search-indexing').catch((e) => this.logger.error('DLQ routing failed for search-indexing', e?.message));
       }
       this.logger.error(`Search index job ${job?.id} failed (attempt ${job?.attemptsMade ?? '?'}/${maxAttempts}): ${err.message}`);

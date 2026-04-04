@@ -195,9 +195,16 @@ export class QueueService implements OnModuleDestroy {
       timestamp,
     };
 
+    // #118 FIX: Use content hash as jobId for automatic dedup of duplicate webhook deliveries.
+    // Previous approach used timestamp in jobId which allowed duplicate processing of the same event.
+    const payloadHash = (await import('crypto')).createHash('sha256')
+      .update(JSON.stringify({ webhookId: data.webhookId, event: data.event, payload: data.payload }))
+      .digest('hex')
+      .slice(0, 16);
+
     const job = await this.circuitBreaker.exec('redis', () =>
       this.webhooksQueue.add('deliver', this.withCorrelation(jobData), {
-        jobId: `wh:${data.webhookId}:${data.event}:${timestamp}`,
+        jobId: `wh:${payloadHash}`,
         attempts: 5,
         backoff: { type: 'custom' },
       }),
