@@ -198,7 +198,7 @@ export class SearchService {
             return true;
           });
           const page = filtered.slice(0, safeLimit);
-          return { data: page, meta: { hasMore: filtered.length > safeLimit, cursor: undefined } };
+          return { data: page, meta: { hasMore: filtered.length > safeLimit, cursor: null } };
         }
       }
       // Fall through to Prisma if Meilisearch returns no results

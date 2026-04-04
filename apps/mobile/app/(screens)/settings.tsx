@@ -10,7 +10,7 @@ import { navigate } from '@/utils/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useClerk } from '@clerk/clerk-expo';
-import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSpring, withSequence } from 'react-native-reanimated';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -24,55 +24,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign, rtlChevron, rtlMargin } from '@/utils/rtl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-
-// Premium Toggle Switch Component
-function PremiumToggle({ value, onValueChange }: { value: boolean; onValueChange: (v: boolean) => void }) {
-  const tc = useThemeColors();
-  const styles = useMemo(() => createStyles(tc), [tc]);
-  const haptic = useContextualHaptic();
-  const translateX = useSharedValue(value ? 20 : 0);
-  const scale = useSharedValue(1);
-
-  useEffect(() => {
-    translateX.value = withSpring(value ? 20 : 0, { damping: 15, stiffness: 200 });
-  }, [value]);
-
-  const handlePress = () => {
-    haptic.tick();
-    scale.value = withSequence(
-      withSpring(0.95, { damping: 10 }),
-      withSpring(1, { damping: 10 })
-    );
-    onValueChange(!value);
-  };
-
-  const thumbStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }, { scale: scale.value }],
-  }));
-
-  return (
-        <Pressable
-      accessibilityRole="button"
-      onPress={handlePress}
-    >
-      <LinearGradient
-        colors={value ? [colors.emerald, colors.extended.greenDark] : [tc.border, tc.surface]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.toggleTrack}
-      >
-        <Animated.View style={[styles.toggleThumb, thumbStyle]}>
-          {value && (
-            <LinearGradient
-              colors={['#fff', '#f0f0f0']}
-              style={styles.toggleThumbGradient}
-            />
-          )}
-        </Animated.View>
-      </LinearGradient>
-    </Pressable>
-  );
-}
+import { PremiumToggle } from '@/components/ui/PremiumToggle';
 
 function Row({
   label,
@@ -1524,31 +1476,6 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     height: 1,
     backgroundColor: 'rgba(45,53,72,0.5)',
     marginStart: spacing.base + 40,
-  },
-
-  // Toggle Switch
-  toggleTrack: {
-    width: 50,
-    height: 28,
-    borderRadius: radius.lg,
-    padding: 4,
-    justifyContent: 'center',
-  },
-  toggleThumb: {
-    width: 20,
-    height: 20,
-    borderRadius: radius.md,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 3,
-  },
-  toggleThumbGradient: {
-    width: '100%',
-    height: '100%',
-    borderRadius: radius.md,
   },
 
   // Sign Out

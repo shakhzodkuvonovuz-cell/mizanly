@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,11 +9,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-  NativeSyntheticEvent,
-  TextInputSubmitEditingEventData,
 } from 'react-native';
-import { Stack, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
@@ -30,7 +29,6 @@ import type { BroadcastChannel as BroadcastChannelType, BroadcastMessage } from 
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
-import { useIsOffline } from '@/hooks/useIsOffline';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 
@@ -38,93 +36,89 @@ type BroadcastChannelWithSubscription = BroadcastChannelType & { isSubscribed?: 
 
 export default function BroadcastChannelScreen() {
   const tc = useThemeColors();
-  const isOffline = useIsOffline();
   const styles = useMemo(() => createStyles(tc), [tc]);
   const { id } = useLocalSearchParams<{ id: string }>();
-  const navigation = useNavigation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
-  const [channel, setChannel] = useState<BroadcastChannelWithSubscription | null>(null);
-  const [messages, setMessages] = useState<BroadcastMessage[]>([]);
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
+  const queryClient = useQueryClient();
   const [sending, setSending] = useState(false);
   const [newMessage, setNewMessage] = useState('');
   const [messageSheetVisible, setMessageSheetVisible] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<BroadcastMessage | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [channelError, setChannelError] = useState(false);
-  const [loadingRef] = useState({ current: false });
 
   const haptic = useContextualHaptic();
   const flatListRef = useRef<FlatList>(null);
 
-  const loadChannel = useCallback(async () => {
-    setChannelError(false);
-    try {
-      const data = await broadcastApi.getById(id);
-      setChannel(data);
-      setIsAdmin(data.role === 'owner' || data.role === 'admin');
-    } catch {
-      setChannelError(true);
-      showToast({ message: t('common.error.loadContent'), variant: 'error' });
-    }
-  }, [id, t]);
+  // Channel data via useQuery
+  const {
+    data: channel,
+    isLoading: isChannelLoading,
+    isError: channelError,
+    refetch: refetchChannel,
+  } = useQuery<BroadcastChannelWithSubscription>({
+    queryKey: ['broadcast-channel', id],
+    queryFn: () => broadcastApi.getById(id) as Promise<BroadcastChannelWithSubscription>,
+    enabled: !!id,
+  });
 
-  const loadMessages = useCallback(async (refresh = false) => {
-    if (loadingRef.current && !refresh) return;
-    loadingRef.current = true;
-    setLoading(true);
-    try {
-      const currentCursor = refresh ? undefined : cursor ?? undefined;
-      const response = await broadcastApi.getMessages(id, currentCursor);
-      setMessages(prev => refresh ? response.data : [...prev, ...response.data]);
-      setCursor(response.meta.cursor);
-      setHasMore(response.meta.hasMore);
-    } catch {
-      showToast({ message: t('common.error.loadContent'), variant: 'error' });
-    } finally {
-      loadingRef.current = false;
-      setLoading(false);
-      if (refresh) setRefreshing(false);
-    }
-  }, [id, cursor, loadingRef, t]);
+  const isAdmin = channel?.role === 'owner' || channel?.role === 'admin';
+
+  // Messages via useInfiniteQuery
+  const {
+    data: messagesData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: isMessagesLoading,
+    refetch: refetchMessages,
+  } = useInfiniteQuery({
+    queryKey: ['broadcast-messages', id],
+    queryFn: ({ pageParam }) => broadcastApi.getMessages(id, pageParam),
+    getNextPageParam: (lastPage) => lastPage.meta.hasMore ? lastPage.meta.cursor ?? undefined : undefined,
+    initialPageParam: undefined as string | undefined,
+    enabled: !!id,
+    staleTime: 30_000,
+  });
+
+  const messages = useMemo(
+    () => messagesData?.pages.flatMap((page) => page.data) ?? [],
+    [messagesData],
+  );
+  const loading = isMessagesLoading;
 
   const handleRefresh = useCallback(() => {
-    setRefreshing(true);
-    loadChannel();
-    loadMessages(true);
-  }, [loadChannel, loadMessages]);
+    refetchChannel();
+    refetchMessages();
+  }, [refetchChannel, refetchMessages]);
 
   const handleLoadMore = useCallback(() => {
-    if (hasMore && !loading) {
-      loadMessages();
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
     }
-  }, [hasMore, loading, loadMessages]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const handleSendMessage = useCallback(async () => {
     if (!newMessage.trim() || sending) return;
     haptic.tick();
     setSending(true);
     try {
-      const sent = await broadcastApi.sendMessage(id, { content: newMessage.trim() });
-      setMessages(prev => [sent, ...prev]);
+      await broadcastApi.sendMessage(id, { content: newMessage.trim() });
       setNewMessage('');
+      queryClient.invalidateQueries({ queryKey: ['broadcast-messages', id] });
     } catch {
       showToast({ message: t('broadcast.sendFailed'), variant: 'error' });
     } finally {
       setSending(false);
     }
-  }, [id, newMessage, sending, haptic, t]);
+  }, [id, newMessage, sending, haptic, t, queryClient]);
 
   const handleToggleMute = useCallback(async () => {
     if (!channel) return;
     haptic.tick();
     const wasMuted = channel.isMuted;
-    setChannel({ ...channel, isMuted: !wasMuted });
+    // Optimistic update
+    queryClient.setQueryData(['broadcast-channel', id], { ...channel, isMuted: !wasMuted });
     try {
       if (wasMuted) {
         await broadcastApi.unmute(channel.id);
@@ -132,17 +126,18 @@ export default function BroadcastChannelScreen() {
         await broadcastApi.mute(channel.id);
       }
     } catch {
-      setChannel({ ...channel, isMuted: wasMuted });
+      // Rollback
+      queryClient.setQueryData(['broadcast-channel', id], { ...channel, isMuted: wasMuted });
       showToast({ message: t('broadcast.muteFailed'), variant: 'error' });
     }
-  }, [channel, haptic, t]);
+  }, [channel, haptic, t, id, queryClient]);
 
   const handleSubscribe = useCallback(async () => {
     if (!channel) return;
     haptic.tick();
     const wasSubscribed = channel.isSubscribed;
     // Optimistic update
-    setChannel({
+    queryClient.setQueryData(['broadcast-channel', id], {
       ...channel,
       isSubscribed: !wasSubscribed,
       subscribersCount: wasSubscribed ? channel.subscribersCount - 1 : channel.subscribersCount + 1,
@@ -155,14 +150,14 @@ export default function BroadcastChannelScreen() {
       }
     } catch {
       // Rollback
-      setChannel({
+      queryClient.setQueryData(['broadcast-channel', id], {
         ...channel,
         isSubscribed: wasSubscribed,
         subscribersCount: channel.subscribersCount,
       });
       showToast({ message: t('broadcast.subscribeFailed'), variant: 'error' });
     }
-  }, [channel, haptic, t]);
+  }, [channel, haptic, t, id, queryClient]);
 
   const handleMessageLongPress = useCallback((message: BroadcastMessage) => {
     haptic.tick();
@@ -176,16 +171,15 @@ export default function BroadcastChannelScreen() {
     try {
       if (selectedMessage.isPinned) {
         await broadcastApi.unpinMessage(selectedMessage.id);
-        setMessages(prev => prev.map(m => m.id === selectedMessage.id ? { ...m, isPinned: false } : m));
       } else {
         await broadcastApi.pinMessage(selectedMessage.id);
-        setMessages(prev => prev.map(m => m.id === selectedMessage.id ? { ...m, isPinned: true } : m));
       }
+      queryClient.invalidateQueries({ queryKey: ['broadcast-messages', id] });
       setMessageSheetVisible(false);
     } catch {
       showToast({ message: t('broadcast.pinFailed'), variant: 'error' });
     }
-  }, [selectedMessage, channel, haptic, t]);
+  }, [selectedMessage, channel, haptic, t, id, queryClient]);
 
   const handleDeleteMessage = useCallback(async () => {
     if (!selectedMessage || !channel) return;
@@ -202,7 +196,7 @@ export default function BroadcastChannelScreen() {
             haptic.delete();
             try {
               await broadcastApi.deleteMessage(selectedMessage.id);
-              setMessages(prev => prev.filter(m => m.id !== selectedMessage.id));
+              queryClient.invalidateQueries({ queryKey: ['broadcast-messages', id] });
               setMessageSheetVisible(false);
             } catch {
               showToast({ message: t('broadcast.deleteFailed'), variant: 'error' });
@@ -211,12 +205,7 @@ export default function BroadcastChannelScreen() {
         },
       ],
     );
-  }, [selectedMessage, channel, haptic, t]);
-
-  useEffect(() => {
-    loadChannel();
-    loadMessages();
-  }, []);
+  }, [selectedMessage, channel, haptic, t, id, queryClient]);
 
   const renderMessageItem = useCallback(({ item, index }: { item: BroadcastMessage; index: number }) => (
     <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 80).duration(400)}>
@@ -304,12 +293,12 @@ export default function BroadcastChannelScreen() {
                 title={t('common.error.loadContent')}
                 subtitle={t('common.error.checkConnection')}
                 actionLabel={t('common.retry')}
-                onAction={loadChannel}
+                onAction={() => refetchChannel()}
               />
             </View>
           )}
           {/* Header skeleton placeholder while channel loads */}
-          {!channel && !channelError && (
+          {!channel && !channelError && isChannelLoading && (
             <View style={[styles.channelHeader, { paddingTop: insets.top + 52 + spacing.xl, alignItems: 'center' }]}>
               <Skeleton.Circle size={64} />
               <Skeleton.Rect width={160} height={20} style={{ marginTop: spacing.md }} />
@@ -363,10 +352,10 @@ export default function BroadcastChannelScreen() {
             inverted
             removeClippedSubviews={true}
             ListEmptyComponent={loading ? renderSkeleton : renderEmptyState}
-            ListFooterComponent={loading && messages.length > 0 ? renderSkeleton : null}
+            ListFooterComponent={isFetchingNextPage ? renderSkeleton : null}
             refreshControl={
               <BrandedRefreshControl
-                refreshing={refreshing}
+                refreshing={false}
                 onRefresh={handleRefresh}
               />
             }

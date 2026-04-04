@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   NativeSyntheticEvent,
   TextInputSubmitEditingEventData,
 } from 'react-native';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { showToast } from '@/components/ui/Toast';
 import { Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,7 +23,6 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { TabSelector } from '@/components/ui/TabSelector';
 import { BottomSheet } from '@/components/ui/BottomSheet';
-import { ActionButton } from '@/components/ui/ActionButton';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
@@ -46,12 +45,52 @@ export default function BroadcastChannelsScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const haptic = useContextualHaptic();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabKey>('discover');
   const [searchQuery, setSearchQuery] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
   const [showCreateSheet, setShowCreateSheet] = useState(false);
   const [newChannelName, setNewChannelName] = useState('');
   const [newChannelDesc, setNewChannelDesc] = useState('');
+
+  // Discover channels via useInfiniteQuery
+  const {
+    data: discoverData,
+    fetchNextPage: fetchNextDiscover,
+    hasNextPage: discoverHasMore,
+    isFetchingNextPage: isFetchingNextDiscover,
+    isLoading: discoverLoading,
+    isError: discoverError,
+    refetch: refetchDiscover,
+  } = useInfiniteQuery({
+    queryKey: ['broadcast-discover'],
+    queryFn: ({ pageParam }) => broadcastApi.discover(pageParam),
+    getNextPageParam: (lastPage) => lastPage.meta.hasMore ? lastPage.meta.cursor ?? undefined : undefined,
+    initialPageParam: undefined as string | undefined,
+    staleTime: 60_000,
+  });
+
+  const discoverChannels: BroadcastChannelWithSubscription[] = useMemo(
+    () => (discoverData?.pages.flatMap((page) => page.data) ?? []) as BroadcastChannelWithSubscription[],
+    [discoverData],
+  );
+
+  // My channels via useQuery
+  const {
+    data: myChannelsRaw,
+    isLoading: myChannelsLoading,
+    isError: myChannelsError,
+    refetch: refetchMyChannels,
+  } = useQuery({
+    queryKey: ['broadcast-my-channels'],
+    queryFn: () => broadcastApi.getMyChannels(),
+    enabled: activeTab === 'my',
+    staleTime: 30_000,
+  });
+
+  const myChannels: BroadcastChannelWithSubscription[] = useMemo(
+    () => (myChannelsRaw ?? []) as BroadcastChannelWithSubscription[],
+    [myChannelsRaw],
+  );
 
   const createMutation = useMutation({
     mutationFn: () => broadcastApi.create({ name: newChannelName, slug: newChannelName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''), description: newChannelDesc }),
@@ -59,89 +98,31 @@ export default function BroadcastChannelsScreen() {
       setShowCreateSheet(false);
       setNewChannelName('');
       setNewChannelDesc('');
-      loadMyChannels(true);
+      queryClient.invalidateQueries({ queryKey: ['broadcast-my-channels'] });
       navigate(`/(screens)/broadcast/${data.id}`);
     },
     onError: () => showToast({ message: t('broadcastChannels.createError'), variant: 'error' }),
   });
-  const [discoverChannels, setDiscoverChannels] = useState<BroadcastChannelWithSubscription[]>([]);
-  const [myChannels, setMyChannels] = useState<BroadcastChannelWithSubscription[]>([]);
-  const [discoverCursor, setDiscoverCursor] = useState<string | null>(null);
-  const [discoverHasMore, setDiscoverHasMore] = useState(true);
-  const [discoverLoading, setDiscoverLoading] = useState(false);
-  const [discoverError, setDiscoverError] = useState(false);
-  const [myChannelsLoading, setMyChannelsLoading] = useState(false);
-  const [myChannelsError, setMyChannelsError] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
 
   const searchInputRef = useRef<TextInput>(null);
 
-  const loadDiscoverChannels = useCallback(async (refresh = false) => {
-    if (discoverLoading && !refresh) return;
-    setDiscoverLoading(true);
-    setDiscoverError(false);
-    try {
-      const cursor = refresh ? undefined : discoverCursor ?? undefined;
-      const response = await broadcastApi.discover(cursor);
-      setDiscoverChannels(prev => refresh ? response.data : [...prev, ...response.data]);
-      setDiscoverCursor(response.meta.cursor);
-      setDiscoverHasMore(response.meta.hasMore);
-    } catch (error) {
-      if (__DEV__) console.error('Failed to load discover channels', error);
-      setDiscoverError(true);
-    } finally {
-      setDiscoverLoading(false);
-      if (refresh) setRefreshing(false);
-    }
-  }, [discoverCursor, discoverLoading]);
-
-  const loadMyChannels = useCallback(async (refresh = false) => {
-    if (myChannelsLoading && !refresh) return;
-    setMyChannelsLoading(true);
-    setMyChannelsError(false);
-    try {
-      const channels = await broadcastApi.getMyChannels();
-      setMyChannels(channels);
-    } catch (error) {
-      if (__DEV__) console.error('Failed to load my channels', error);
-      setMyChannelsError(true);
-    } finally {
-      setMyChannelsLoading(false);
-      if (refresh) setRefreshing(false);
-    }
-  }, [myChannelsLoading]);
-
-  // Load data on mount — intentionally empty deps (refresh=true resets cursor)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    loadDiscoverChannels(true);
-  }, []);
-
-  useEffect(() => {
-    if (activeTab === 'my') {
-      loadMyChannels(true);
-    }
-  }, [activeTab]);
-
   const handleRefresh = useCallback(() => {
-    setRefreshing(true);
     if (activeTab === 'discover') {
-      loadDiscoverChannels(true);
+      refetchDiscover();
     } else {
-      loadMyChannels(true);
+      refetchMyChannels();
     }
-  }, [activeTab, loadDiscoverChannels, loadMyChannels]);
+  }, [activeTab, refetchDiscover, refetchMyChannels]);
 
   const handleLoadMore = useCallback(() => {
-    if (activeTab === 'discover' && discoverHasMore && !discoverLoading) {
-      loadDiscoverChannels();
+    if (activeTab === 'discover' && discoverHasMore && !isFetchingNextDiscover) {
+      fetchNextDiscover();
     }
-  }, [activeTab, discoverHasMore, discoverLoading, loadDiscoverChannels]);
+  }, [activeTab, discoverHasMore, isFetchingNextDiscover, fetchNextDiscover]);
 
-  const handleSearchSubmit = useCallback((e: NativeSyntheticEvent<TextInputSubmitEditingEventData>) => {
+  const handleSearchSubmit = useCallback((_e: NativeSyntheticEvent<TextInputSubmitEditingEventData>) => {
     // Client-side search is handled by the filteredData memo
-    setIsSearching(!!searchQuery.trim());
-  }, [searchQuery]);
+  }, []);
 
   const handleChannelPress = useCallback((channel: BroadcastChannelWithSubscription) => {
     navigate(`/(screens)/broadcast/${channel.id}`);
@@ -150,32 +131,18 @@ export default function BroadcastChannelsScreen() {
   const handleSubscribe = useCallback(async (channel: BroadcastChannelWithSubscription) => {
     haptic.tick();
     const wasSubscribed = channel.isSubscribed;
-    // Optimistic update
-    if (wasSubscribed) {
-      setDiscoverChannels(prev => prev.map(c => c.id === channel.id ? { ...c, isSubscribed: false, subscribersCount: Math.max(0, c.subscribersCount - 1) } : c));
-      setMyChannels(prev => prev.filter(c => c.id !== channel.id));
-    } else {
-      setDiscoverChannels(prev => prev.map(c => c.id === channel.id ? { ...c, isSubscribed: true, subscribersCount: c.subscribersCount + 1 } : c));
-      setMyChannels(prev => [...prev, { ...channel, isSubscribed: true }]);
-    }
     try {
       if (wasSubscribed) {
         await broadcastApi.unsubscribe(channel.id);
       } else {
         await broadcastApi.subscribe(channel.id);
       }
+      queryClient.invalidateQueries({ queryKey: ['broadcast-discover'] });
+      queryClient.invalidateQueries({ queryKey: ['broadcast-my-channels'] });
     } catch {
-      // Rollback on error
-      if (wasSubscribed) {
-        setDiscoverChannels(prev => prev.map(c => c.id === channel.id ? { ...c, isSubscribed: true, subscribersCount: c.subscribersCount + 1 } : c));
-        setMyChannels(prev => [...prev, { ...channel, isSubscribed: true }]);
-      } else {
-        setDiscoverChannels(prev => prev.map(c => c.id === channel.id ? { ...c, isSubscribed: false, subscribersCount: Math.max(0, c.subscribersCount - 1) } : c));
-        setMyChannels(prev => prev.filter(c => c.id !== channel.id));
-      }
       showToast({ message: t('broadcastChannels.subscribeError'), variant: 'error' });
     }
-  }, [haptic, t]);
+  }, [haptic, t, queryClient]);
 
   const renderChannelItem = useCallback(({ item, index }: { item: BroadcastChannelWithSubscription; index: number }) => (
     <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 50).duration(400)}>
@@ -227,7 +194,7 @@ export default function BroadcastChannelsScreen() {
             title={t('common.error.loadContent')}
             subtitle={t('common.error.checkConnection')}
             actionLabel={t('common.retry')}
-            onAction={() => loadDiscoverChannels(true)}
+            onAction={() => refetchDiscover()}
           />
         );
       }
@@ -248,7 +215,7 @@ export default function BroadcastChannelsScreen() {
           title={t('common.error.loadContent')}
           subtitle={t('common.error.checkConnection')}
           actionLabel={t('common.retry')}
-          onAction={() => loadMyChannels(true)}
+          onAction={() => refetchMyChannels()}
         />
       );
     }
@@ -261,7 +228,7 @@ export default function BroadcastChannelsScreen() {
         onAction={() => setActiveTab('discover')}
       />
     );
-  }, [activeTab, handleRefresh, discoverError, myChannelsError, loadDiscoverChannels, loadMyChannels]);
+  }, [activeTab, handleRefresh, discoverError, myChannelsError, refetchDiscover, refetchMyChannels]);
 
   const renderSkeleton = useCallback(() => (
     Array.from({ length: 5 }).map((_, i) => (
@@ -337,10 +304,10 @@ export default function BroadcastChannelsScreen() {
             keyExtractor={item => item.id}
             contentContainerStyle={styles.listContent}
             ListEmptyComponent={loading ? renderSkeleton : renderEmptyState}
-            ListFooterComponent={loading && filteredData.length > 0 ? renderSkeleton : null}
+            ListFooterComponent={isFetchingNextDiscover && activeTab === 'discover' ? renderSkeleton : null}
             refreshControl={
               <BrandedRefreshControl
-                refreshing={refreshing}
+                refreshing={false}
                 onRefresh={handleRefresh}
               />
             }
