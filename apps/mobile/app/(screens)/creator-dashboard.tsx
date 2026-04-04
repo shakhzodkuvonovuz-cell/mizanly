@@ -6,7 +6,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown, FadeInRight } from 'react-native-reanimated';
@@ -31,8 +31,7 @@ import { navigate } from '@/utils/navigation';
 import { formatCount } from '@/utils/formatCount';
 import { formatCurrency } from '@/utils/localeFormat';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = SCREEN_WIDTH * 0.4;
+// SCREEN_WIDTH moved inside component via useWindowDimensions for iPad rotation
 
 const formatNumber = formatCount;
 
@@ -93,7 +92,9 @@ const TABS = [
 function CreatorDashboardContent() {
   const router = useRouter();
   const tc = useThemeColors();
-  const styles = useMemo(() => createStyles(tc), [tc]);
+  const { width: SCREEN_WIDTH } = useWindowDimensions();
+  const CARD_WIDTH = useMemo(() => SCREEN_WIDTH * 0.4, [SCREEN_WIDTH]);
+  const styles = useMemo(() => createStyles(tc, SCREEN_WIDTH, CARD_WIDTH), [tc, SCREEN_WIDTH, CARD_WIDTH]);
   const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -680,9 +681,9 @@ export default function CreatorDashboardScreen() {
 }
 
 const GRID_GAP = spacing.sm;
-const GRID_ITEM_WIDTH = (SCREEN_WIDTH - spacing.base * 2 - GRID_GAP * 2) / 3;
-
-const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>, SCREEN_WIDTH = 375, CARD_WIDTH = 150) => {
+  const GRID_ITEM_WIDTH = (SCREEN_WIDTH - spacing.base * 2 - GRID_GAP * 2) / 3;
+  return StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: tc.bg,
@@ -1083,3 +1084,4 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     fontSize: fontSize.base,
   },
 });
+};

@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, Dimensions } from 'react-native';
+import { useState, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, FlatList, Pressable, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,14 +21,13 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
 export default function BookmarkCollectionsScreen() {
   const router = useRouter();
   const tc = useThemeColors();
   const insets = useSafeAreaInsets();
   const haptic = useContextualHaptic();
   const { t } = useTranslation();
+  const { width: SCREEN_WIDTH } = useWindowDimensions();
   const [refreshing, setRefreshing] = useState(false);
 
   const { data: collections, isLoading, isError, refetch } = useQuery({
@@ -48,7 +47,7 @@ export default function BookmarkCollectionsScreen() {
     <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 50).duration(400)}>
       <Pressable
         accessibilityRole="button"
-        style={({ pressed }) => [styles.card, pressed && { opacity: 0.7 }]}
+        style={({ pressed }) => [styles.card, { maxWidth: (SCREEN_WIDTH - spacing.base * 2 - spacing.md) / 2 }, pressed && { opacity: 0.7 }]}
         android_ripple={{ color: 'rgba(255,255,255,0.1)' }}
         onPress={() => {
           haptic.navigate();
@@ -83,7 +82,7 @@ export default function BookmarkCollectionsScreen() {
         </LinearGradient>
       </Pressable>
     </Animated.View>
-  ), [haptic, tc.text.primary, tc.text.secondary, tc.text.tertiary, t]);
+  ), [haptic, tc.text.primary, tc.text.secondary, tc.text.tertiary, tc.bgElevated, t, SCREEN_WIDTH]);
 
   if (isError) {
     return (
@@ -186,7 +185,6 @@ const styles = StyleSheet.create({
   },
   card: {
     flex: 1,
-    maxWidth: (SCREEN_WIDTH - spacing.base * 2 - spacing.md) / 2,
     borderRadius: radius.lg,
     overflow: 'hidden',
   },

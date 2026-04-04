@@ -1,7 +1,7 @@
 import { useState, useCallback, memo, useRef, useMemo } from 'react';
 import {
   View, Text, StyleSheet,
-  FlatList, ScrollView, Dimensions, Pressable, Alert, Linking, Share,
+  FlatList, ScrollView, useWindowDimensions, Pressable, Alert, Linking, Share,
 } from 'react-native';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
@@ -45,8 +45,10 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useStore } from '@/store';
 import { rtlFlexRow, rtlTextAlign, rtlArrow, rtlMargin, rtlAbsoluteEnd } from '@/utils/rtl';
 
-const SCREEN_W = Dimensions.get('window').width;
-const GRID_ITEM = (SCREEN_W - 4) / 3;
+function useProfileGridWidth() {
+  const { width } = useWindowDimensions();
+  return useMemo(() => (width - 4) / 3, [width]);
+}
 const COVER_HEIGHT = 160;
 
 type Tab = 'posts' | 'threads' | 'reels' | 'liked';
@@ -54,6 +56,8 @@ type Tab = 'posts' | 'threads' | 'reels' | 'liked';
 
 const GridItem = memo(function GridItem({ post, onPress }: { post: Post; onPress: () => void }) {
   const tc = useThemeColors();
+  const { t } = useTranslation();
+  const GRID_ITEM = useProfileGridWidth();
   const styles = useMemo(() => createStyles(tc), [tc]);
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({
@@ -66,7 +70,7 @@ const GridItem = memo(function GridItem({ post, onPress }: { post: Post; onPress
         onPress={onPress}
         onPressIn={() => { scale.value = withSpring(0.96, animation.spring.snappy); }}
         onPressOut={() => { scale.value = withSpring(1, animation.spring.snappy); }}
-        style={styles.gridItem}
+        style={[styles.gridItem, { width: GRID_ITEM, height: GRID_ITEM }]}
         accessibilityLabel={t('accessibility.viewPost')}
         accessibilityRole="button"
       >
@@ -105,6 +109,8 @@ const GridItem = memo(function GridItem({ post, onPress }: { post: Post; onPress
 
 const ReelGridItem = memo(function ReelGridItem({ reel, onPress }: { reel: Reel; onPress: () => void }) {
   const tc = useThemeColors();
+  const { t } = useTranslation();
+  const GRID_ITEM = useProfileGridWidth();
   const styles = useMemo(() => createStyles(tc), [tc]);
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({
@@ -117,7 +123,7 @@ const ReelGridItem = memo(function ReelGridItem({ reel, onPress }: { reel: Reel;
         onPress={onPress}
         onPressIn={() => { scale.value = withSpring(0.96, animation.spring.snappy); }}
         onPressOut={() => { scale.value = withSpring(1, animation.spring.snappy); }}
-        style={styles.gridItem}
+        style={[styles.gridItem, { width: GRID_ITEM, height: GRID_ITEM }]}
         accessibilityLabel={t('accessibility.viewReel')}
         accessibilityRole="button"
       >
@@ -206,6 +212,7 @@ function FollowButton({ isFollowing, isPending, onPress }: FollowButtonProps) {
 
 export default function ProfileScreen() {
   const tc = useThemeColors();
+  const GRID_ITEM = useProfileGridWidth();
   const styles = useMemo(() => createStyles(tc), [tc]);
   const { username } = useLocalSearchParams<{ username: string }>();
   const router = useRouter();
@@ -1208,7 +1215,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   gridContainer: { paddingBottom: 100 },
   gridRow: { gap: 2 },
-  gridItem: { width: GRID_ITEM, height: GRID_ITEM, marginBottom: 2 },
+  gridItem: { marginBottom: 2 },
   gridImage: { width: '100%', height: '100%' },
   gridTextPost: {
     flex: 1, backgroundColor: tc.bgElevated,

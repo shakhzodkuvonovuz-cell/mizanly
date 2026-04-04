@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  FlatList, Dimensions,
+  FlatList, useWindowDimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -32,18 +32,21 @@ type HashtagPostsPage = {
   meta: { cursor: string | null; hasMore: boolean };
 };
 
-const SCREEN_W = Dimensions.get('window').width;
-const GRID_ITEM = (SCREEN_W - 2) / 3;
+function useGridItemWidth() {
+  const { width } = useWindowDimensions();
+  return useMemo(() => (width - 2) / 3, [width]);
+}
 
 function GridItem({ post, onPress }: { post: Post; onPress: () => void }) {
   const tc = useThemeColors();
+  const GRID_ITEM = useGridItemWidth();
   const styles = useMemo(() => createStyles(tc), [tc]);
   const haptic = useContextualHaptic();
   return (
     <Pressable
       accessibilityRole="button"
       onPress={() => { haptic.navigate(); onPress(); }}
-      style={({ pressed }) => [styles.gridItem, pressed && { opacity: 0.85 }]}
+      style={({ pressed }) => [styles.gridItem, { width: GRID_ITEM, height: GRID_ITEM }, pressed && { opacity: 0.85 }]}
     >
       {post.mediaUrls.length > 0 ? (
         <ProgressiveImage
@@ -67,6 +70,7 @@ function GridItem({ post, onPress }: { post: Post; onPress: () => void }) {
 
 export default function HashtagScreen() {
   const tc = useThemeColors();
+  const GRID_ITEM = useGridItemWidth();
   const styles = useMemo(() => createStyles(tc), [tc]);
   const { t, isRTL } = useTranslation();
   const { tag } = useLocalSearchParams<{ tag: string }>();
@@ -128,7 +132,7 @@ export default function HashtagScreen() {
         subtitle={t('screens.hashtag.emptySubtitle')}
       />
     )
-  , [postsQuery.isLoading, t]);
+  , [postsQuery.isLoading, t, GRID_ITEM, styles.skeletonGrid]);
 
   const listFooter = useMemo(() =>
     postsQuery.isFetchingNextPage ? (
@@ -138,7 +142,7 @@ export default function HashtagScreen() {
         ))}
       </View>
     ) : null
-  , [postsQuery.isFetchingNextPage]);
+  , [postsQuery.isFetchingNextPage, GRID_ITEM, styles.skeletonGrid]);
 
   const renderGridItem = useCallback(
     ({ item, index }: { item: Post; index: number }) => (
@@ -286,7 +290,6 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   skeletonGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 1 },
   gridRow: { gap: 1 },
   gridItem: {
-    width: GRID_ITEM, height: GRID_ITEM,
     backgroundColor: tc.bgElevated, position: 'relative',
   },
   gridImage: { width: '100%', height: '100%' },

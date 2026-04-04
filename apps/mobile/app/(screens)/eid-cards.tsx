@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet, Share, StatusBar } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, Pressable, ScrollView, StyleSheet, Share, StatusBar, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -45,11 +45,21 @@ const occasions: OccasionItem[] = [
 export default function EidCardsScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const { width: screenWidth } = useWindowDimensions();
 
   const [selectedOccasion, setSelectedOccasion] = useState<Occasion | null>(null);
   const [previewVisible, setPreviewVisible] = useState(false);
   const tc = useThemeColors();
   const haptic = useContextualHaptic();
+
+  // Responsive card width: 2 columns with gap
+  const cardWidth = (screenWidth - spacing.base * 2 - spacing.md) / 2;
+
+  // StatusBar management with cleanup
+  useEffect(() => {
+    StatusBar.setBarStyle('light-content');
+    return () => { StatusBar.setBarStyle('default'); };
+  }, []);
 
   const handleOccasionPress = (id: Occasion) => {
     haptic.tick();
@@ -82,7 +92,6 @@ export default function EidCardsScreen() {
   return (
     <ScreenErrorBoundary>
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top', 'bottom']}>
-        <StatusBar barStyle="light-content" />
         <GlassHeader
           title={t('eidCards.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => { haptic.tick(); router.back(); } }}
@@ -97,7 +106,7 @@ export default function EidCardsScreen() {
                   accessibilityRole="button"
                   accessibilityLabel={`${occ.name} - ${occ.nameAr}`}
                   onPress={() => handleOccasionPress(occ.id)}
-                  style={({ pressed }) => [styles.cardOuter, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
+                  style={({ pressed }) => [styles.cardOuter, { width: cardWidth }, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
                   android_ripple={{ color: 'rgba(255,255,255,0.1)' }}
                 >
                   <LinearGradient
@@ -165,7 +174,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   cardOuter: {
-    width: '47%',
     borderRadius: radius.lg,
     overflow: 'hidden',
   },

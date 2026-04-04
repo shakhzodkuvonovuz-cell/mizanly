@@ -39,7 +39,6 @@ const DURATION_OPTIONS = [2, 3, 5, 7];
 
 function PhotoMusicScreen() {
   const tc = useThemeColors();
-  const styles = useMemo(() => createStyles(tc, IMAGE_SIZE), [tc, IMAGE_SIZE]);
   const router = useRouter();
   const { t, isRTL } = useTranslation();
   const haptic = useContextualHaptic();
@@ -48,6 +47,7 @@ function PhotoMusicScreen() {
   // Use hook-based dimensions — previous module-level Dimensions.addEventListener leaked
   const { width: SCREEN_W } = useWindowDimensions();
   const IMAGE_SIZE = SCREEN_W - spacing.base * 2;
+  const styles = useMemo(() => createStyles(tc, IMAGE_SIZE), [tc, IMAGE_SIZE]);
 
   // ── State ──
   const [images, setImages] = useState<{ uri: string }[]>([]);

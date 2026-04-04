@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { View, Text, Pressable, StyleSheet, TextInput, ScrollView, Dimensions, Platform, Alert, ViewStyle, TextStyle } from 'react-native';
+import { View, Text, Pressable, StyleSheet, TextInput, ScrollView, useWindowDimensions, Platform, Alert, ViewStyle, TextStyle } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
@@ -32,8 +32,7 @@ import { useStoryEffects } from '@/hooks/create/useStoryEffects';
 import type { Sticker, StickerType } from '@/hooks/create/useStoryEffects';
 import { useStoryPublish, FILTERS, FONTS, BG_GRADIENTS } from '@/hooks/create/useStoryPublish';
 
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
-const CANVAS_H = SCREEN_H * 0.7;
+// SCREEN_W/SCREEN_H moved inside component via useWindowDimensions for iPad rotation
 
 // ── Text colors ──
 const TEXT_COLORS = [
@@ -143,6 +142,8 @@ export default function CreateStoryScreen() {
   const { t } = useTranslation();
   const { eidFrame: eidFrameParam } = useLocalSearchParams<{ eidFrame?: string }>();
   const haptic = useContextualHaptic();
+  const { width: SCREEN_W, height: SCREEN_H } = useWindowDimensions();
+  const CANVAS_H = SCREEN_H * 0.7;
 
   const EID_OCCASIONS: Array<{ id: Occasion; label: string }> = [
     { id: 'eid-fitr', label: 'Eid al-Fitr' },

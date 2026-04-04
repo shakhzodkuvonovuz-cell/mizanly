@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   Pressable,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
@@ -28,6 +28,7 @@ import { api } from '@/services/api';
 import { navigate } from '@/utils/navigation';
 import { showToast } from '@/components/ui/Toast';
 import { formatCount } from '@/utils/formatCount';
+// Removed module-scope Dimensions.get — iPad rotation-safe via useWindowDimensions
 
 interface StorefrontProduct {
   id: string;
@@ -48,9 +49,7 @@ interface CreatorProfile {
   followersCount: number;
 }
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COLUMN_GAP = spacing.md;
-const CARD_WIDTH = (SCREEN_WIDTH - spacing.base * 2 - COLUMN_GAP) / 2;
 
 function CreatorStorefrontContent() {
   const router = useRouter();
@@ -59,6 +58,8 @@ function CreatorStorefrontContent() {
   const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
   const { userId, username } = useLocalSearchParams<{ userId: string; username: string }>();
+  const { width: SCREEN_WIDTH } = useWindowDimensions();
+  const CARD_WIDTH = useMemo(() => (SCREEN_WIDTH - spacing.base * 2 - COLUMN_GAP) / 2, [SCREEN_WIDTH]);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -127,14 +128,14 @@ function CreatorStorefrontContent() {
     <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 50).duration(400)}>
       <Pressable
         onPress={() => handleProductPress(item.id)}
-        style={({ pressed }) => [styles.productCard, { backgroundColor: tc.bgCard, borderColor: tc.border }, pressed && { opacity: 0.7 }]}
+        style={({ pressed }) => [styles.productCard, { width: CARD_WIDTH, backgroundColor: tc.bgCard, borderColor: tc.border }, pressed && { opacity: 0.7 }]}
         accessibilityRole="button"
         accessibilityLabel={`${item.name}, ${item.currency}${item.price}`}
       >
         {item.imageUrl ? (
           <ProgressiveImage uri={item.imageUrl} width={CARD_WIDTH} height={CARD_WIDTH} style={{ backgroundColor: tc.surface }} borderRadius={0} />
         ) : (
-          <View style={[styles.productImage, styles.productImagePlaceholder]}>
+          <View style={[styles.productImage, { height: CARD_WIDTH }, styles.productImagePlaceholder]}>
             <Icon name="image" size="lg" color={tc.text.tertiary} />
           </View>
         )}
@@ -165,7 +166,7 @@ function CreatorStorefrontContent() {
         </View>
       </Pressable>
     </Animated.View>
-  ), [handleProductPress, t]);
+  ), [handleProductPress, t, CARD_WIDTH, tc.bgCard, tc.border, tc.surface, tc.text.tertiary]);
 
   const renderHeader = useCallback(() => {
     if (loading) {
@@ -214,7 +215,7 @@ function CreatorStorefrontContent() {
         </View>
       </Animated.View>
     );
-  }, [loading, creator, products.length, t]);
+  }, [loading, creator, products.length, t, CARD_WIDTH, tc.text.primary, tc.text.secondary, tc.text.tertiary, tc.bgCard, tc.border]);
 
   const shopTitle = username
     ? t('storefront.userShop', { username })
@@ -385,7 +386,6 @@ const styles = StyleSheet.create({
     marginBottom: COLUMN_GAP,
   },
   productCard: {
-    width: CARD_WIDTH,
     backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
@@ -394,7 +394,6 @@ const styles = StyleSheet.create({
   },
   productImage: {
     width: '100%',
-    height: CARD_WIDTH,
     backgroundColor: colors.dark.surface,
   },
   productImagePlaceholder: {

@@ -6,7 +6,7 @@ import {
   FlatList,
   Pressable,
   ScrollView,
-  Dimensions,
+  useWindowDimensions,
   Share,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
@@ -32,7 +32,7 @@ import { showToast } from '@/components/ui/Toast';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { rtlFlexRow } from '@/utils/rtl';
 
-const { width } = Dimensions.get('window');
+// width moved inside component via useWindowDimensions for iPad rotation
 
 interface Hadith {
   id: string;
@@ -126,6 +126,7 @@ export default function HadithScreen() {
   const router = useRouter();
   const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
+  const { width } = useWindowDimensions();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

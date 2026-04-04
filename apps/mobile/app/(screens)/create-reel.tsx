@@ -1,7 +1,7 @@
 import { useRef, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TextInput,
-  ScrollView, Alert, Dimensions, Pressable,
+  ScrollView, Alert, useWindowDimensions, Pressable,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,17 +29,16 @@ import { useReelCapture } from '@/hooks/create/useReelCapture';
 import { useReelEdit, type ReelTransitionType } from '@/hooks/create/useReelEdit';
 import { useReelPublish } from '@/hooks/create/useReelPublish';
 
-const { width: SCREEN_W } = Dimensions.get('window');
-const VIDEO_PREVIEW_WIDTH = SCREEN_W - spacing.base * 2;
-const VIDEO_PREVIEW_HEIGHT = VIDEO_PREVIEW_WIDTH * (16 / 9);
-
 export default function CreateReelScreen() {
   const routeParams = useLocalSearchParams<{ videoUri?: string; edited?: string; isDuet?: string; duetOfId?: string; isStitch?: string; stitchOfId?: string }>();
   const tc = useThemeColors();
   const insets = useSafeAreaInsets();
   const { user } = useUser();
   const { t } = useTranslation();
-  const styles = useMemo(() => createStyles(tc), [tc]);
+  const { width: SCREEN_W } = useWindowDimensions();
+  const VIDEO_PREVIEW_WIDTH = useMemo(() => SCREEN_W - spacing.base * 2, [SCREEN_W]);
+  const VIDEO_PREVIEW_HEIGHT = useMemo(() => VIDEO_PREVIEW_WIDTH * (16 / 9), [VIDEO_PREVIEW_WIDTH]);
+  const styles = useMemo(() => createStyles(tc, VIDEO_PREVIEW_WIDTH, VIDEO_PREVIEW_HEIGHT), [tc, VIDEO_PREVIEW_WIDTH, VIDEO_PREVIEW_HEIGHT]);
 
   const videoRef = useRef<Video>(null);
 
@@ -419,7 +418,7 @@ export default function CreateReelScreen() {
   );
 }
 
-const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>, VIDEO_PREVIEW_WIDTH = 0, VIDEO_PREVIEW_HEIGHT = 0) => StyleSheet.create({
   container: { flex: 1, backgroundColor: tc.bg },
   scroll: { flex: 1 },
   scrollContent: { padding: spacing.base },

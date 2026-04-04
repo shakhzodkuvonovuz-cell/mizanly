@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -196,6 +196,8 @@ export default function DhikrCounterScreen() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { width: screenWidth } = useWindowDimensions();
+  // Responsive counter size: ~53% of screen width, capped 200-320px for phone/iPad
+  const COUNTER_SIZE = useMemo(() => Math.min(320, Math.max(200, Math.round(screenWidth * 0.53))), [screenWidth]);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedPhrase, setSelectedPhrase] = useState(PRESET_PHRASES[0]);
   const [count, setCount] = useState(0);
@@ -430,12 +432,12 @@ export default function DhikrCounterScreen() {
                 {/* Outer Ring Gradient */}
                 <LinearGradient
                   colors={[colors.emerald, colors.goldLight]}
-                  style={styles.counterOuterRing}
+                  style={[styles.counterOuterRing, { width: COUNTER_SIZE, height: COUNTER_SIZE }]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                 >
                   {/* Inner Circle */}
-                  <View style={[styles.counterInnerCircle, { backgroundColor: tc.bgCard }]}>
+                  <View style={[styles.counterInnerCircle, { width: COUNTER_SIZE - 12, height: COUNTER_SIZE - 12, backgroundColor: tc.bgCard }]}>
                     {/* Count Number */}
                     <Text style={[styles.countNumber, { color: tc.text.primary }]}>{count}</Text>
 
@@ -560,7 +562,7 @@ export default function DhikrCounterScreen() {
   );
 }
 
-const COUNTER_SIZE = 200;
+// COUNTER_SIZE moved inside component as responsive useMemo
 
 const styles = StyleSheet.create({
   container: {
@@ -633,16 +635,12 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   counterOuterRing: {
-    width: COUNTER_SIZE,
-    height: COUNTER_SIZE,
     borderRadius: radius.full,
     padding: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
   counterInnerCircle: {
-    width: COUNTER_SIZE - 12,
-    height: COUNTER_SIZE - 12,
     borderRadius: radius.full,
     backgroundColor: colors.dark.bgCard,
     alignItems: 'center',

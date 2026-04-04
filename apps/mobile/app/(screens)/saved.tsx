@@ -1,7 +1,7 @@
 import { useState, useRef, useMemo, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  FlatList, Dimensions,
+  FlatList, useWindowDimensions,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -25,8 +25,10 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { navigate } from '@/utils/navigation';
 
-const SCREEN_W = Dimensions.get('window').width;
-const GRID_ITEM = (SCREEN_W - 2) / 3;
+function useSavedGridWidth() {
+  const { width } = useWindowDimensions();
+  return useMemo(() => (width - 2) / 3, [width]);
+}
 
 const formatDuration = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
@@ -38,13 +40,14 @@ type Tab = 'posts' | 'threads' | 'reels' | 'videos';
 
 function PostGrid({ post, onPress }: { post: Post; onPress: () => void }) {
   const tc = useThemeColors();
+  const GRID_ITEM = useSavedGridWidth();
   const styles = useMemo(() => createStyles(tc), [tc]);
   const { t } = useTranslation();
   return (
     <Pressable
       onPress={onPress}
 
-      style={styles.gridItem}
+      style={[styles.gridItem, { width: GRID_ITEM, height: GRID_ITEM }]}
       accessibilityRole="button"
       accessibilityLabel={t('accessibility.viewPost')}
     >
@@ -70,6 +73,7 @@ function PostGrid({ post, onPress }: { post: Post; onPress: () => void }) {
 
 function ReelGrid({ reel, onPress }: { reel: Reel; onPress: () => void }) {
   const tc = useThemeColors();
+  const GRID_ITEM = useSavedGridWidth();
   const styles = useMemo(() => createStyles(tc), [tc]);
   const { t } = useTranslation();
   const hasThumbnail = reel.thumbnailUrl != null;
@@ -77,7 +81,7 @@ function ReelGrid({ reel, onPress }: { reel: Reel; onPress: () => void }) {
     <Pressable
       onPress={onPress}
 
-      style={styles.gridItem}
+      style={[styles.gridItem, { width: GRID_ITEM, height: GRID_ITEM }]}
       accessibilityRole="button"
       accessibilityLabel={t('accessibility.viewReel')}
     >
@@ -135,6 +139,7 @@ function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
 
 export default function SavedScreen() {
   const tc = useThemeColors();
+  const GRID_ITEM = useSavedGridWidth();
   const styles = useMemo(() => createStyles(tc), [tc]);
   const { t } = useTranslation();
   const haptic = useContextualHaptic();
@@ -499,7 +504,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
 
   gridContainer: { paddingBottom: 100 },
   gridRow: { gap: 1 },
-  gridItem: { width: GRID_ITEM, height: GRID_ITEM, backgroundColor: tc.bgElevated, marginBottom: 1 },
+  gridItem: { backgroundColor: tc.bgElevated, marginBottom: 1 },
   gridImage: { width: '100%', height: '100%' },
   gridTextPost: { flex: 1, padding: spacing.xs, backgroundColor: tc.bgCard, justifyContent: 'center' },
   gridText: { color: tc.text.primary, fontSize: fontSize.xs },
@@ -531,8 +536,6 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: 1,
   },
   gridShimmerItem: {
-    width: GRID_ITEM,
-    height: GRID_ITEM,
     backgroundColor: tc.bgElevated,
     justifyContent: 'center',
     alignItems: 'center',

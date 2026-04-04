@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
-  FlatList, Dimensions, Share,
+  FlatList, useWindowDimensions, Share,
 } from 'react-native';
 import { showToast } from '@/components/ui/Toast';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -34,10 +34,15 @@ import { getDateFnsLocale } from '@/utils/localeFormat';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 
-const SCREEN_W = Dimensions.get('window').width;
-const BANNER_HEIGHT = SCREEN_W / 2.5; // 2.5:1 ratio for cinematic look
-const FEATURED_HEIGHT = SCREEN_W * 0.56; // 16:9 ratio
-const THUMB_16_9 = Math.round(SCREEN_W * 9 / 16);
+function useChannelSizes() {
+  const { width: SCREEN_W } = useWindowDimensions();
+  return useMemo(() => ({
+    SCREEN_W,
+    BANNER_HEIGHT: SCREEN_W / 2.5,
+    FEATURED_HEIGHT: SCREEN_W * 0.56,
+    THUMB_16_9: Math.round(SCREEN_W * 9 / 16),
+  }), [SCREEN_W]);
+}
 
 type Tab = 'videos' | 'playlists' | 'about';
 
@@ -53,6 +58,7 @@ function VideoCard({ video }: { video: Video }) {
   const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const tc = useThemeColors();
+  const { THUMB_16_9 } = useChannelSizes();
   const durationMinutes = Math.floor(video.duration / 60);
   const durationSeconds = Math.floor(video.duration % 60);
   const durationText = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
@@ -128,6 +134,7 @@ function VideoCard({ video }: { video: Video }) {
   function FeaturedVideoCard({ video, onPress }: { video: Video; onPress: () => void }) {
     const { t } = useTranslation();
     const tc = useThemeColors();
+    const { FEATURED_HEIGHT } = useChannelSizes();
     const durationMinutes = Math.floor(video.duration / 60);
     const durationSeconds = Math.floor(video.duration % 60);
     const durationText = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
@@ -144,7 +151,7 @@ function VideoCard({ video }: { video: Video }) {
           <LinearGradient
             colors={['transparent', 'rgba(13,17,23,0.8)', 'rgba(13,17,23,0.98)']}
             locations={[0.3, 0.7, 1]}
-            style={styles.featuredGradient}
+            style={[styles.featuredGradient, { height: FEATURED_HEIGHT * 0.6 }]}
           >
             <View style={styles.featuredContent}>
               <View style={styles.featuredBadge}>
@@ -206,6 +213,7 @@ export default function ChannelScreen() {
   const { user } = useUser();
   const haptic = useContextualHaptic();
   const { t } = useTranslation();
+  const { BANNER_HEIGHT, FEATURED_HEIGHT } = useChannelSizes();
   const CHANNEL_TABS = useMemo(() => [
     { key: 'videos', label: t('minbar.videos') },
     { key: 'playlists', label: t('minbar.playlists') },
@@ -389,7 +397,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
             colors={[tc.bgElevated, tc.surface, tc.bgElevated]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={[styles.banner, { backgroundColor: tc.bgElevated }, styles.bannerPlaceholder]}
+            style={[styles.banner, { height: BANNER_HEIGHT, backgroundColor: tc.bgElevated }, styles.bannerPlaceholder]}
           >
             <View style={styles.bannerPattern}>
               {[...Array(6)].map((_, i) => (
@@ -488,14 +496,14 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
             {channel.trailerVideo.thumbnailUrl ? (
               <ProgressiveImage uri={channel.trailerVideo.thumbnailUrl} width="100%" height={FEATURED_HEIGHT} contentFit="cover" />
             ) : (
-              <View style={[styles.trailerThumbnail, styles.trailerThumbnailPlaceholder, { backgroundColor: tc.bgCard }]}>
+              <View style={[styles.trailerThumbnail, { height: FEATURED_HEIGHT }, styles.trailerThumbnailPlaceholder, { backgroundColor: tc.bgCard }]}>
                 <Icon name="video" size="xl" color={tc.text.secondary} />
               </View>
             )}
             <LinearGradient
               colors={['transparent', 'rgba(13,17,23,0.7)', 'rgba(13,17,23,0.95)']}
               locations={[0.2, 0.6, 1]}
-              style={styles.trailerGradient}
+              style={[styles.trailerGradient, { height: FEATURED_HEIGHT * 0.7 }]}
             >
               <View style={styles.trailerOverlay}>
                 <View style={styles.trailerPlayButton}>
@@ -844,7 +852,6 @@ const styles = StyleSheet.create({
   },
   banner: {
     width: '100%',
-    height: BANNER_HEIGHT,
   },
   bannerPlaceholder: {
   },
@@ -1179,14 +1186,12 @@ const styles = StyleSheet.create({
   },
   featuredThumbnail: {
     width: '100%',
-    height: FEATURED_HEIGHT,
   },
   featuredGradient: {
     position: 'absolute',
     bottom: 0,
     start: 0,
     end: 0,
-    height: FEATURED_HEIGHT * 0.6,
     justifyContent: 'flex-end',
     padding: spacing.md,
   },
@@ -1255,7 +1260,6 @@ const styles = StyleSheet.create({
   },
   trailerThumbnail: {
     width: '100%',
-    height: FEATURED_HEIGHT,
   },
   trailerThumbnailPlaceholder: {
     alignItems: 'center',
@@ -1267,7 +1271,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     start: 0,
     end: 0,
-    height: FEATURED_HEIGHT * 0.7,
     justifyContent: 'flex-end',
     padding: spacing.md,
   },

@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Pressable, FlatList,
-  Dimensions, Alert,
+  useWindowDimensions, Alert,
 } from 'react-native';
 import { showToast } from '@/components/ui/Toast';
 import { useRouter } from 'expo-router';
@@ -22,9 +22,6 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 
-const SCREEN_W = Dimensions.get('window').width;
-const FOLDER_CARD_WIDTH = (SCREEN_W - spacing.base * 2 - spacing.sm) / 2;
-
 type Folder = {
   id: string;
   name: string;
@@ -41,6 +38,8 @@ function FolderCard({ folder, onPress, onLongPress }: FolderCardProps) {
   const itemCount = folder.count;
   const { t } = useTranslation();
   const tc = useThemeColors();
+  const { width: screenW } = useWindowDimensions();
+  const cardWidth = (screenW - spacing.base * 2 - spacing.sm) / 2;
   // For now, no cover thumbnail; we could later fetch first item's image
   return (
     <Pressable
@@ -48,7 +47,7 @@ function FolderCard({ folder, onPress, onLongPress }: FolderCardProps) {
       accessibilityLabel={t('accessibility.bookmark')}
       onPress={onPress}
       onLongPress={onLongPress}
-      style={({ pressed }) => [styles.folderCard, { backgroundColor: tc.bgCard }, pressed && { opacity: 0.7 }]}
+      style={({ pressed }) => [styles.folderCard, { width: cardWidth, backgroundColor: tc.bgCard }, pressed && { opacity: 0.7 }]}
       android_ripple={{ color: 'rgba(255,255,255,0.1)' }}
     >
       <View style={[styles.folderIcon, { backgroundColor: tc.bgElevated }]}>
@@ -69,6 +68,8 @@ export default function BookmarkFoldersScreen() {
   const tc = useThemeColors();
   const haptic = useContextualHaptic();
   const queryClient = useQueryClient();
+  const { width: screenW } = useWindowDimensions();
+  const FOLDER_CARD_WIDTH = (screenW - spacing.base * 2 - spacing.sm) / 2;
   // Collections are now fetched from API via collectionsQuery
   const [refreshing, setRefreshing] = useState(false);
   const [createSheetVisible, setCreateSheetVisible] = useState(false);
@@ -282,7 +283,6 @@ const styles = StyleSheet.create({
   gridContainer: { paddingBottom: 100 },
   gridRow: { paddingHorizontal: spacing.base, gap: spacing.sm, marginBottom: spacing.sm },
   folderCard: {
-    width: FOLDER_CARD_WIDTH,
     borderRadius: radius.md,
     padding: spacing.md,
     alignItems: 'center',

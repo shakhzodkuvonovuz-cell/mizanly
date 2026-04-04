@@ -5,7 +5,7 @@ import {
   StyleSheet,
   FlatList,
   Pressable,
-  Dimensions,
+  useWindowDimensions,
   ScrollView,
 } from 'react-native';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
@@ -36,11 +36,17 @@ type CategoryKey = typeof CATEGORY_KEYS[number];
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-const { width: screenWidth } = Dimensions.get('window');
 const GRID_GAP = spacing.xs;
-const ITEM_WIDTH = (screenWidth - spacing.base * 2 - GRID_GAP * 2) / 3;
-const FEATURED_WIDTH = screenWidth * 0.75;
-const FEATURED_HEIGHT = FEATURED_WIDTH * (9 / 16);
+
+function useResponsiveSizes() {
+  const { width: screenWidth } = useWindowDimensions();
+  return useMemo(() => ({
+    screenWidth,
+    ITEM_WIDTH: (screenWidth - spacing.base * 2 - GRID_GAP * 2) / 3,
+    FEATURED_WIDTH: screenWidth * 0.75,
+    FEATURED_HEIGHT: screenWidth * 0.75 * (9 / 16),
+  }), [screenWidth]);
+}
 
 // Instagram Explore-like masonry pattern:
 // Every 3rd row (rows 0, 3, 6, 9...) has one featured (taller) item.
@@ -166,11 +172,12 @@ interface FeaturedItem {
 function FeaturedCard({ item, onPress }: { item: FeaturedItem; onPress: () => void }) {
   const tc = useThemeColors();
   const { t } = useTranslation();
+  const { FEATURED_WIDTH, FEATURED_HEIGHT } = useResponsiveSizes();
   const { onPressIn, onPressOut, animatedStyle } = useAnimatedPress({ scaleTo: 0.97 });
 
   return (
     <AnimatedPressable
-      style={[styles.featuredCard, { backgroundColor: tc.bgCard, borderColor: tc.borderLight }, animatedStyle]}
+      style={[styles.featuredCard, { width: FEATURED_WIDTH, height: FEATURED_HEIGHT, backgroundColor: tc.bgCard, borderColor: tc.borderLight }, animatedStyle]}
       onPress={onPress}
       onPressIn={onPressIn}
       onPressOut={onPressOut}
@@ -215,6 +222,7 @@ function FeaturedSection({ items }: { items: FeaturedItem[] }) {
   const tc = useThemeColors();
   const router = useRouter();
   const { t } = useTranslation();
+  const { FEATURED_WIDTH } = useResponsiveSizes();
 
   if (!items.length) return null;
 
@@ -249,6 +257,7 @@ type ExploreItem = Post | Reel | Thread | Video;
 const ExploreGridItem = memo(function ExploreGridItem({ item, isFeature }: { item: ExploreItem; isFeature?: boolean }) {
   const { t } = useTranslation();
   const tc = useThemeColors();
+  const { ITEM_WIDTH } = useResponsiveSizes();
   const isNavigatingRef = useRef(false);
 
   // Determine type
@@ -289,7 +298,7 @@ const ExploreGridItem = memo(function ExploreGridItem({ item, isFeature }: { ite
       accessibilityLabel={t('accessibility.viewPost')}
       style={({ pressed }) => [
         styles.gridItem,
-        { height: itemHeight, backgroundColor: tc.bgCard, borderColor: tc.borderLight },
+        { width: ITEM_WIDTH, height: itemHeight, backgroundColor: tc.bgCard, borderColor: tc.borderLight },
         pressed && { transform: [{ scale: 0.97 }], opacity: 0.9 },
       ]}
     >
@@ -309,6 +318,7 @@ const ExploreGridItem = memo(function ExploreGridItem({ item, isFeature }: { ite
 });
 
 function ExploreGridSkeleton() {
+  const { ITEM_WIDTH } = useResponsiveSizes();
   const items = Array.from({ length: 9 }, (_, i) => i);
   return (
     <View style={styles.grid}>
@@ -331,6 +341,7 @@ export default function DiscoverScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [activeCategory, setActiveCategory] = useState<CategoryKey>('all');
   const tc = useThemeColors();
+  const { ITEM_WIDTH } = useResponsiveSizes();
   const { onScroll: onScrollElastic, headerAnimatedStyle } = useScrollLinkedHeader(HEADER_HEIGHT + 44);
 
   const CATEGORIES: { key: CategoryKey; label: string; icon: IconName }[] = [
@@ -595,8 +606,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   featuredCard: {
-    width: FEATURED_WIDTH,
-    height: FEATURED_HEIGHT,
     borderRadius: radius.lg,
     overflow: 'hidden',
     backgroundColor: colors.dark.bgCard,
@@ -734,7 +743,6 @@ const styles = StyleSheet.create({
     marginBottom: GRID_GAP,
   },
   gridItem: {
-    width: ITEM_WIDTH,
     height: STANDARD_HEIGHT,
     borderRadius: radius.md,
     overflow: 'hidden',

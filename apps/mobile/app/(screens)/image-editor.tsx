@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, ScrollView, Dimensions,
+  View, Text, StyleSheet, Pressable, ScrollView, useWindowDimensions,
   Image as RNImage, StatusBar, Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -19,7 +19,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
-const { width: screenWidth } = Dimensions.get('window');
+// screenWidth moved inside component via useWindowDimensions for iPad rotation
 
 type AspectRatio = 'free' | '1:1' | '4:5' | '16:9';
 type FilterType = 'normal' | 'warm' | 'cool' | 'vivid' | 'noir' | 'emerald' | 'gold' | 'fade' | 'sharp' | 'dreamy';
@@ -49,6 +49,7 @@ export default function ImageEditorScreen() {
   const router = useRouter();
   const { imageUri } = useLocalSearchParams<{ imageUri?: string }>();
   const { t } = useTranslation();
+  const { width: screenWidth } = useWindowDimensions();
   const [activeTab, setActiveTab] = useState<EditTab>('filter');
   const [selectedFilter, setSelectedFilter] = useState<FilterType>('normal');
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('free');
