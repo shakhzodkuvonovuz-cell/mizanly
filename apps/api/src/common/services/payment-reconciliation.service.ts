@@ -41,7 +41,8 @@ export class PaymentReconciliationService {
     if (!secretKey) {
       this.logger.warn('STRIPE_SECRET_KEY not set — payment reconciliation will skip Stripe queries');
     }
-    this.stripe = new Stripe(secretKey || '', {
+    // Placeholder key when not configured — stripeAvailable guard prevents any API calls
+    this.stripe = new Stripe(secretKey || 'sk_not_configured', {
       apiVersion: '2025-02-24.acacia' as Stripe.LatestApiVersion,
     });
   }

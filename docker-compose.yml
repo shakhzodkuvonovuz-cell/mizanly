@@ -33,6 +33,64 @@ services:
     volumes:
       - meilisearch_data:/meili_data
 
+  # ── Application services (optional — for local Docker testing) ──
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: mizanly-api
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+      - meilisearch
+    ports:
+      - '127.0.0.1:3000:3000'
+    environment:
+      DATABASE_URL: postgresql://mizanly:${POSTGRES_PASSWORD:-mizanly_dev}@postgres:5432/mizanly
+      DIRECT_DATABASE_URL: postgresql://mizanly:${POSTGRES_PASSWORD:-mizanly_dev}@postgres:5432/mizanly
+      REDIS_URL: redis://redis:6379
+      MEILISEARCH_HOST: http://meilisearch:7700
+      MEILISEARCH_API_KEY: ${MEILI_MASTER_KEY:-mizanly_dev_master_key}
+      NODE_ENV: development
+    profiles:
+      - app
+
+  e2e-server:
+    build:
+      context: apps/e2e-server
+      dockerfile: Dockerfile
+    container_name: mizanly-e2e-server
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - '127.0.0.1:8080:8080'
+    environment:
+      DATABASE_URL: postgresql://mizanly:${POSTGRES_PASSWORD:-mizanly_dev}@postgres:5432/mizanly?sslmode=disable
+      REDIS_URL: redis://redis:6379
+    profiles:
+      - app
+
+  livekit-server:
+    build:
+      context: apps/livekit-server
+      dockerfile: Dockerfile
+    container_name: mizanly-livekit-server
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - '127.0.0.1:8081:8081'
+    environment:
+      DATABASE_URL: postgresql://mizanly:${POSTGRES_PASSWORD:-mizanly_dev}@postgres:5432/mizanly?sslmode=disable
+      REDIS_URL: redis://redis:6379
+    profiles:
+      - app
+
 volumes:
   postgres_data:
   meilisearch_data:

@@ -39,7 +39,8 @@ export class StripeWebhookController {
     private prisma: PrismaService,
     @Inject('REDIS') private redis: Redis,
   ) {
-    const secretKey = this.config.get<string>('STRIPE_SECRET_KEY') || '';
+    // Placeholder key when not configured — webhook verification will fail if secret is wrong
+    const secretKey = this.config.get<string>('STRIPE_SECRET_KEY') || 'sk_not_configured';
     this.stripe = new Stripe(secretKey, {
       apiVersion: '2025-02-24.acacia' as Stripe.LatestApiVersion,
     });

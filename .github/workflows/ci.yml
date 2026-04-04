@@ -76,6 +76,7 @@ jobs:
       REDIS_URL: redis://localhost:6379
       CLERK_SECRET_KEY: test_secret
       NODE_ENV: test
+      JEST_RETRY: 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

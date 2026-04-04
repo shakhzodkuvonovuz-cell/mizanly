@@ -125,6 +125,7 @@ export class FeedService {
         postType: true, likesCount: true, createdAt: true,
       },
       orderBy: { createdAt: 'desc' },
+      // Over-fetch then filter by month/day in JS. 100 is enough to cover several years of posts.
       take: 100,
     });
 
@@ -546,6 +547,8 @@ export class FeedService {
     const excludeIds: string[] = userId ? [userId] : [];
     if (userId) {
       const [following, blockedMutedIds] = await Promise.all([
+        // Cap at 5000 to bound memory and query time for exclusion list.
+        // Users following >5000 may see a few already-followed users in suggestions — acceptable trade-off.
         this.prisma.follow.findMany({
           where: { followerId: userId },
           select: { followingId: true },

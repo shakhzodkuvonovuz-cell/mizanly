@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { randomInt } from 'crypto';
 import { PrismaService } from '../../config/prisma.service';
 import { ThumbnailContentType } from '@prisma/client';
 
@@ -105,7 +106,7 @@ export class ThumbnailsService {
 
     // Random assignment for A/B testing — return variantId so the client
     // can report impressions/clicks back via trackImpression/trackClick
-    const idx = Math.floor(Math.random() * variants.length);
+    const idx = randomInt(variants.length);
     const selected = variants[idx];
 
     // Auto-track impression on serve (fire-and-forget)

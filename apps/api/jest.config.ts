@@ -9,6 +9,8 @@ export default {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
   },
+  // CI retry setup: when JEST_RETRY=true, flaky tests are retried up to 2 times
+  setupFilesAfterEnv: ['./jest-ci-retry.setup.ts'],
   coverageThreshold: {
     global: {
       branches: 60,

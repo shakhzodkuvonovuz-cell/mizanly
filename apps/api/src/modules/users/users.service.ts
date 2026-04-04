@@ -811,12 +811,16 @@ export class UsersService {
   async sendWeeklyScreenTimeDigest() {
     try {
       // Dedup: prevent duplicate digests if cron restarts mid-execution
-      // ISO week number calculation (handles year boundaries correctly)
+      // ISO 8601 week number — Jan 4 is always in week 1, Thursday defines the week's year.
+      // This correctly handles year boundaries (e.g. Dec 31 can be W01 of next year).
       const now = new Date();
-      const jan4 = new Date(now.getFullYear(), 0, 4); // Jan 4 is always in ISO week 1
-      const msPerWeek = 7 * 24 * 60 * 60 * 1000;
-      const weekNum = Math.ceil(((now.getTime() - jan4.getTime()) / msPerWeek) + 1);
-      const weekId = `${now.getFullYear()}-W${weekNum}`;
+      const target = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+      // Set to nearest Thursday: current date + 4 - current day (Mon=1, Sun=7)
+      const dayNum = target.getUTCDay() || 7; // Convert Sunday=0 to 7
+      target.setUTCDate(target.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(target.getUTCFullYear(), 0, 1));
+      const weekNum = Math.ceil((((target.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+      const weekId = `${target.getUTCFullYear()}-W${String(weekNum).padStart(2, '0')}`;
       const dedupKey = `digest_sent:screen_time:${weekId}`;
       const alreadySent = await this.redis.set(dedupKey, '1', 'EX', 8 * 24 * 3600, 'NX');
       if (!alreadySent) {

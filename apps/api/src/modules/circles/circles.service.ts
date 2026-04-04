@@ -2,6 +2,7 @@ import { Injectable, Inject, NotFoundException, ForbiddenException, InternalServ
 import { Cron } from '@nestjs/schedule';
 import { Prisma } from '@prisma/client';
 import Redis from 'ioredis';
+import { randomBytes } from 'crypto';
 import { PrismaService } from '../../config/prisma.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { NOTIFICATION_REQUESTED, NotificationRequestedEvent } from '../../common/events/notification.events';
@@ -15,7 +16,7 @@ function generateSlug(name: string): string {
     .replace(/-+/g, '-')
     .trim()
     .slice(0, 50)
-    + '-' + Math.random().toString(36).slice(2, 7);
+    + '-' + randomBytes(4).toString('hex');
 }
 
 @Injectable()

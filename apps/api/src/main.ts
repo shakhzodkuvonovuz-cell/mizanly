@@ -10,6 +10,13 @@ import * as express from 'express';
 import helmet from 'helmet';
 import * as compression from 'compression';
 
+/**
+ * Env access pattern:
+ *   - `process.env.*` is used here in bootstrap/main.ts (before DI container).
+ *   - Inside DI services, use `ConfigService.get<string>(...)` (injected, testable).
+ *   - Existing `process.env` usage in services is acceptable (legacy), but new code
+ *     should prefer ConfigService for consistency and test mockability.
+ */
 function validateEnv() {
   const logger = new Logger('EnvValidation');
   const isProduction = process.env.NODE_ENV === 'production';
