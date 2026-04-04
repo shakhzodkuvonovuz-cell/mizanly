@@ -211,6 +211,28 @@ function ProductDetailContent() {
     );
   }
 
+  if (productQuery.isError) {
+    return (
+      <View style={styles.container}>
+        <GlassHeader
+          title={t('product.title', 'Product')}
+          leftAction={{
+            icon: 'arrow-left',
+            onPress: () => router.back(),
+            accessibilityLabel: t('common.back', 'Back'),
+          }}
+        />
+        <EmptyState
+          icon="alert-circle"
+          title={t('product.errorTitle', 'Failed to load product')}
+          subtitle={t('product.errorSubtitle', 'Check your connection and try again.')}
+          actionLabel={t('common.retry', 'Retry')}
+          onAction={() => productQuery.refetch()}
+        />
+      </View>
+    );
+  }
+
   if (!product) {
     return (
       <View style={styles.container}>

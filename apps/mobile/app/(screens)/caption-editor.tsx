@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, FlatList, useWindowDimensions, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, useWindowDimensions, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -457,13 +457,13 @@ export default function CaptionEditorScreen() {
                 onAction={handleAutoGenerate}
               />
             ) : (
-              <FlatList
-                data={captions}
-                renderItem={renderCaptionItem}
-                keyExtractor={(item) => item.id}
-                scrollEnabled={false}
-                contentContainerStyle={styles.captionList}
-              />
+              <View style={styles.captionList}>
+                {captions.map((item, index) => (
+                  <View key={item.id}>
+                    {renderCaptionItem({ item, index })}
+                  </View>
+                ))}
+              </View>
             )}
           </Animated.View>
 

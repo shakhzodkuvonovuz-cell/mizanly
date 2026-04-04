@@ -25,6 +25,7 @@ export default function QRScannerScreen() {
   const insets = useSafeAreaInsets();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const cameraRef = useRef<CameraView>(null);
   const haptic = useContextualHaptic();
 
@@ -100,6 +101,27 @@ export default function QRScannerScreen() {
     );
   }
 
+  if (cameraError) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader
+          title={t('screens.qr-scanner.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
+        />
+        <View style={[styles.centered, { paddingTop: insets.top + 52 }]}>
+          <EmptyState
+            icon="alert-circle"
+            title={t('screens.qr-scanner.cameraError', 'Camera error')}
+            subtitle={cameraError}
+            actionLabel={t('common.retry', 'Retry')}
+            onAction={() => setCameraError(null)}
+          />
+          <GradientButton label={t('accessibility.goBack')} onPress={() => router.back()} variant="ghost" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <ScreenErrorBoundary>
       <SafeAreaView style={styles.container} edges={['top']}>
@@ -116,6 +138,9 @@ export default function QRScannerScreen() {
             barcodeTypes: ['qr'],
           }}
           onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+          onMountError={(event) => {
+            setCameraError(event.message || t('screens.qr-scanner.cameraError', 'Camera initialization failed'));
+          }}
         >
           <View style={styles.overlay}>
             <Animated.View entering={FadeInUp.delay(0).duration(400)}>

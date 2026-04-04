@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
@@ -377,7 +377,7 @@ export default function ReelDetailScreen() {
 
   if (reelQuery.isError) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
           title={t('errors.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
@@ -387,11 +387,11 @@ export default function ReelDetailScreen() {
             icon="slash"
             title={t('common.error')}
             subtitle={t('errors.loadContentFailed')}
-            actionLabel={t('common.goBack')}
-            onAction={() => router.back()}
+            actionLabel={t('common.retry')}
+            onAction={() => reelQuery.refetch()}
           />
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -595,7 +595,7 @@ export default function ReelDetailScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
           title={t('bakra.reel')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
@@ -721,7 +721,7 @@ export default function ReelDetailScreen() {
             />
           )}
         </BottomSheet>
-      </View>
+      </SafeAreaView>
 
     </ScreenErrorBoundary>
   );

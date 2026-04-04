@@ -78,12 +78,16 @@ export default function QuietModeScreen() {
       showToast({ message: t('common.saved', { defaultValue: 'Saved' }), variant: 'success' });
     },
     onError: () => {
+      // Rollback to server state on error
+      query.refetch();
       showToast({ message: t('common.error'), variant: 'error' });
       haptic.error();
     },
   });
 
   const save = (updates: Parameters<typeof settingsApi.updateQuietMode>[0]) => {
+    // Guard against concurrent mutations — skip if already in flight
+    if (mutation.isPending) return;
     mutation.mutate(updates);
   };
 

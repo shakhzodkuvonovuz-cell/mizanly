@@ -420,6 +420,40 @@ export default function RamadanModeScreen() {
             />
           </View>
 
+          {/* Offline / location error notice */}
+          {(locationQuery.isError || prayerTimesQuery.isError) && (
+            <Animated.View entering={FadeInUp.delay(100).duration(300)}>
+              <LinearGradient
+                colors={['rgba(200,150,62,0.15)', 'rgba(200,150,62,0.05)']}
+                style={styles.offlineNotice}
+              >
+                <Icon name="alert-circle" size="sm" color={colors.gold} />
+                <View style={styles.offlineNoticeText}>
+                  <Text style={styles.offlineTitle}>
+                    {locationQuery.isError
+                      ? t('screens.ramadanMode.locationUnavailable', 'Location unavailable')
+                      : t('screens.ramadanMode.offlineNotice', 'Prayer times unavailable')}
+                  </Text>
+                  <Text style={styles.offlineSubtitle}>
+                    {t('screens.ramadanMode.offlineHint', 'Using default schedule. Pull to refresh.')}
+                  </Text>
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('common.retry')}
+                  onPress={() => {
+                    haptic.tick();
+                    locationQuery.refetch();
+                    prayerTimesQuery.refetch();
+                  }}
+                  hitSlop={8}
+                >
+                  <Icon name="repeat" size="sm" color={colors.gold} />
+                </Pressable>
+              </LinearGradient>
+            </Animated.View>
+          )}
+
           {/* Today's Schedule */}
           <Animated.View entering={FadeInUp.delay(150).duration(400)}>
             <Text style={styles.sectionTitle}>{t('screens.ramadanMode.todaysSchedule')}</Text>
@@ -574,6 +608,30 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flexDirection: 'row',
     gap: spacing.md,
     marginBottom: spacing.lg,
+  },
+  offlineNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.active.gold15,
+    marginBottom: spacing.lg,
+  },
+  offlineNoticeText: {
+    flex: 1,
+  },
+  offlineTitle: {
+    fontFamily: fonts.bodySemiBold,
+    fontSize: fontSize.sm,
+    color: colors.gold,
+  },
+  offlineSubtitle: {
+    fontFamily: fonts.body,
+    fontSize: fontSize.xs,
+    color: tc.text.tertiary,
+    marginTop: 2,
   },
   countdownCard: {
     flex: 1,
