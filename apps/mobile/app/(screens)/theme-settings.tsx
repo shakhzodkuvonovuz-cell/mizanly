@@ -26,11 +26,12 @@ interface ThemeRadioProps {
 
 function ThemeRadio({ icon, label, description, isActive, onPress }: ThemeRadioProps) {
   const tc = useThemeColors();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(tc), [tc]);
   return (
     <Pressable
       onPress={onPress}
-      accessibilityLabel={`Select ${label} theme`}
+      accessibilityLabel={t('accessibility.selectTheme', { label })}
       accessibilityRole="radio"
       accessibilityState={{ selected: isActive }}
     >

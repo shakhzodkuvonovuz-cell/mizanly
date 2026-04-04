@@ -150,7 +150,7 @@ const SuggestedUserRow = memo(function SuggestedUserRow({
           onFollow();
         }}
         style={suggestedStyles.followBtn}
-        accessibilityLabel={`Follow ${user.displayName ?? user.username}`}
+        accessibilityLabel={t('accessibility.followUser', { name: user.displayName ?? user.username })}
         accessibilityRole="button"
         hitSlop={8}
       >
