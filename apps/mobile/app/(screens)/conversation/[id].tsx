@@ -12,16 +12,14 @@ import Animated, {
   FadeIn,
   FadeOut,
 } from 'react-native-reanimated';
-import * as ImagePicker from 'expo-image-picker';
-import { Audio } from 'expo-av';
 import * as Clipboard from 'expo-clipboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useUser, useAuth } from '@clerk/clerk-expo';
+import { useUser } from '@clerk/clerk-expo';
 import { format, isToday, isYesterday, isSameDay, differenceInMinutes, formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
 import { Avatar } from '@/components/ui/Avatar';
@@ -35,84 +33,44 @@ import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { showToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useStore } from '@/store';
 import { colors, spacing, fontSize, radius, animation, fontSizeExt, fonts } from '@/theme';
-import { messagesApi, uploadApi, aiApi } from '@/services/api';
-import { resizeForUpload } from '@/utils/imageResize';
+import { messagesApi } from '@/services/api';
 import {
   encryptMessage as signalEncrypt,
-  decryptMessage as signalDecrypt,
   hasEstablishedSession,
   createInitiatorSession,
-  createResponderSession,
   fetchPreKeyBundle,
-  cacheDecryptedMessage,
-  indexMessage,
   generateSenderKey,
   encryptGroupMessage,
-  decryptGroupMessage,
-  resetSession,
-  encryptSmallMediaFile,
-  uploadEncryptedMedia,
 } from '@/services/signal';
-import { encryptMessage as signalEncryptRaw } from '@/services/signal/session';
-import { uploadSenderKey } from '@/services/signal/e2eApi';
-import { toBase64, fromBase64, utf8Encode } from '@/services/signal/crypto';
-import { loadIdentityKeyPair, loadRegistrationId, loadKnownIdentityKey } from '@/services/signal/storage';
+import { toBase64 } from '@/services/signal/crypto';
+import { loadKnownIdentityKey, loadIdentityKeyPair } from '@/services/signal/storage';
 import { sealMessage } from '@/services/signal/sealed-sender';
-import type { PreKeySignalMessage } from '@/services/signal/types';
 import type { Message, Conversation, ConversationMember } from '@/types';
 import { rtlFlexRow, rtlTextAlign, rtlArrow, rtlMargin, rtlBorderStart } from '@/utils/rtl';
-import { useSocket } from '@/providers/SocketProvider';
-import {
-  enqueueMessage as enqueueOfflineMessage,
-  dequeueMessage as dequeueOfflineMessage,
-  getRetryableMessages,
-  processQueue,
-} from '@/services/offlineMessageQueue';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { RichText } from '@/components/ui/RichText';
 import { navigate } from '@/utils/navigation';
 import { TypingIndicator } from '@/components/risalah/TypingIndicator';
+import { Audio } from 'expo-av';
+import { aiApi } from '@/services/api';
+
+// Hooks
+import {
+  useConversationMessages,
+  useMessageSend,
+  useVoiceRecording,
+  useConversationEncryption,
+} from '@/hooks/conversation';
+import type { PendingMessage, EmitEncryptedMessageFn, EncryptedMessage } from '@/hooks/conversation';
 
 // #region Types & Constants
 import { TenorGifResult, searchTenorGifs, getTenorFeatured } from '@/services/tenorService';
 
-// Extended message type for Signal Protocol E2E encryption fields (server passthrough)
-interface EncryptedMessage extends Message {
-  isEncrypted?: boolean;
-  encryptedContent?: string; // Base64 ciphertext
-  e2eVersion?: number;
-  e2eSenderDeviceId?: number;
-  e2eSenderRatchetKey?: string; // Base64: DH public key (1:1) or signature (group)
-  e2eCounter?: number;
-  e2ePreviousCounter?: number;
-  e2eSenderKeyId?: number;       // Present ONLY for group messages (Sender Key chainId)
-  senderId?: string;
-  // PreKeySignalMessage fields (present only on first-contact messages)
-  e2eIdentityKey?: string;       // Base64: sender's Ed25519 identity key
-  e2eEphemeralKey?: string;      // Base64: sender's X25519 ephemeral key
-  e2eSignedPreKeyId?: number;    // ID of our SPK they used
-  e2ePreKeyId?: number;          // ID of our OTP they used (optional)
-  e2eRegistrationId?: number;    // Sender's registration ID
-}
-
-
 const QUICK_REACTION_EMOJIS = ['❤️', '👍', '😂', '😮', '😢', '🤲'];
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
-// Stable module-level select function — React Query memoizes when reference is stable
-function selectMessagesReversed(data: { pages: Array<{ data: Message[]; meta: { cursor: string | null; hasMore: boolean } }>; pageParams: unknown[] }) {
-  return {
-    ...data,
-    pages: [...data.pages].reverse().map((p) => ({
-      ...p,
-      data: [...p.data].reverse(),
-    })),
-  };
-}
 
 function messageTimestamp(dateStr: string, t: (key: string) => string): string {
   const d = new Date(dateStr);
@@ -153,37 +111,6 @@ function highlightSearchText(text: string, query: string) {
 
 // ── Message list with grouping + date separators ──────────────────────────
 const GROUP_GAP_MS = 2 * 60 * 1000; // 2 min gap breaks a group
-
-type PendingMessage = {
-  id: string; // client-generated temporary ID
-  content: string;
-  createdAt: string;
-  status: 'pending' | 'failed';
-  replyToId?: string;
-  // Signal Protocol E2E fields (populated by encrypt, used by emit)
-  e2ePayload?: {
-    encryptedContent: string;
-    e2eVersion: number;
-    e2eSenderDeviceId: number;
-    e2eSenderRatchetKey: string;
-    e2eCounter: number;
-    e2ePreviousCounter: number;
-    clientMessageId: string;
-    // Group messages: sender key chainId for disambiguation
-    e2eSenderKeyId?: number;
-    // PreKeySignalMessage fields (first-contact only)
-    e2eIdentityKey?: string;
-    e2eEphemeralKey?: string;
-    e2eSignedPreKeyId?: number;
-    e2ePreKeyId?: number;
-    e2eRegistrationId?: number;
-    // Message type + media (encrypted payload metadata)
-    messageType?: string;
-    mediaUrl?: string;
-  };
-  // Sealed sender envelope for 1:1 retries
-  sealedEnvelope?: { recipientId: string; ephemeralKey: string; sealedCiphertext: string };
-};
 
 type ListItem =
   | { type: 'date'; label: string; key: string }
@@ -260,7 +187,7 @@ function VoicePlayer({ mediaUrl, isOwn }: { mediaUrl: string; isOwn: boolean }) 
       }
       setPlaying(true);
     }
-  }, [playing, mediaUrl]);
+  }, [playing, mediaUrl, speedIndex]);
 
   useEffect(() => {
     return () => { soundRef.current?.unloadAsync(); };
@@ -325,7 +252,7 @@ function GifPicker({ visible, onClose, onSelect }: {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (visible) {
@@ -789,86 +716,109 @@ export default function ConversationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useUser();
-  const { getToken } = useAuth();
   const queryClient = useQueryClient();
-  const isOffline = useStore((s) => s.isOffline);
   const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
-  const flatListRef = useRef<FlatList>(null);
-  const initialScrollDoneRef = useRef(false); // #27: Only scroll to end on initial load
-  const { socket, isConnected: socketConnected } = useSocket();
-  const socketRef = useRef(socket);
-  useEffect(() => { socketRef.current = socket; }, [socket]);
-  const inputRef = useRef<TextInput>(null);
-  const newMessageIdsRef = useRef(new Set<string>());
-  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [text, setText] = useState('');
-  const [sendAsSpoiler, setSendAsSpoiler] = useState(false);
-  const [sendAsViewOnce, setSendAsViewOnce] = useState(false);
-  const [replyTo, setReplyTo] = useState<{ id: string; content?: string; username: string } | null>(null);
-  const [pendingMessages, setPendingMessages] = useState<PendingMessage[]>([]);
-  const [deliveredMessages, setDeliveredMessages] = useState<Set<string>>(() => new Set());
-  const [pinnedMessage, setPinnedMessage] = useState<Message | null>(null);
-  const pendingMessagesRef = useRef(pendingMessages);
-  useEffect(() => {
-    pendingMessagesRef.current = pendingMessages;
-  }, [pendingMessages]);
+  const tc = useThemeColors();
 
-  // Load persisted offline queue messages into React state on mount.
-  // This ensures messages survive app crash / kill and are displayed immediately.
-  useEffect(() => {
-    const queued = getRetryableMessages(id);
-    if (queued.length > 0) {
-      const restored: PendingMessage[] = queued.map(q => ({
-        id: q.id,
-        content: q.content,
-        createdAt: new Date(q.createdAt).toISOString(),
-        status: 'pending' as const,
-        replyToId: q.replyToId,
-        e2ePayload: q.e2ePayload,
-        sealedEnvelope: q.sealedEnvelope,
-      }));
-      setPendingMessages(prev => {
-        // Avoid duplicates: only add messages not already in state
-        const existingIds = new Set(prev.map(p => p.id));
-        const newMsgs = restored.filter(r => !existingIds.has(r.id));
-        return newMsgs.length > 0 ? [...prev, ...newMsgs] : prev;
-      });
-    }
-  // Only run on mount (id is stable for this screen instance)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  // Ref-based bridge to break circular dependency between useMessageSend and useConversationMessages.
+  // useMessageSend creates emitEncryptedMessage; useConversationMessages needs it for socket reconnect.
+  // We assign the ref after useMessageSend returns, so useConversationMessages reads it lazily.
+  const emitEncryptedMessageRef = useRef<EmitEncryptedMessageFn | null>(null);
 
-  const [isTyping, setIsTyping] = useState(false);
-  const [otherTyping, setOtherTyping] = useState(false);
-  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
-  const [uploadingMedia, setUploadingMedia] = useState(false);
-  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Voice recording
-  const [isRecording, setIsRecording] = useState(false);
-  const [uploadingVoice, setUploadingVoice] = useState(false);
-  const recordingRef = useRef<Audio.Recording | null>(null);
-  const [recordingTime, setRecordingTime] = useState(0);
-  const [slideOffset, setSlideOffset] = useState(0);
-  const [cancelled, setCancelled] = useState(false);
-  const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pendingCounterRef = useRef(0);
-  // Context menu
+  // ── Hook: Messages (queries, socket listeners, pending state) ──
+  const {
+    convoQuery,
+    messagesQuery,
+    messages,
+    pendingMessages,
+    setPendingMessages,
+    pendingMessagesRef,
+    deliveredMessages,
+    pinnedMessage,
+    setPinnedMessage,
+    refreshing,
+    onRefresh,
+    otherTyping,
+    flatListRef,
+    initialScrollDoneRef,
+    newMessageIdsRef,
+    socketRef,
+  } = useConversationMessages({
+    conversationId: id,
+    emitEncryptedMessageRef,
+  });
+
+  // ── Hook: Send (text, media, typing, undo) ──
+  const {
+    text,
+    setText,
+    handleChangeText,
+    handleSend,
+    isSending,
+    pickAndSendMedia,
+    uploadingMedia,
+    undoPending,
+    handleUndoSend,
+    replyTo,
+    setReplyTo,
+    editingMsg,
+    setEditingMsg,
+    sendAsSpoiler,
+    setSendAsSpoiler,
+    sendAsViewOnce,
+    setSendAsViewOnce,
+    inputRef,
+    emitEncryptedMessage,
+  } = useMessageSend({
+    conversationId: id,
+    conversationData: convoQuery.data,
+    setPendingMessages,
+    socketRef,
+  });
+
+  // Bridge: assign emitEncryptedMessage to the ref so useConversationMessages can read it
+  emitEncryptedMessageRef.current = emitEncryptedMessage;
+
+  // ── Hook: Voice recording ──
+  const {
+    isRecording,
+    uploadingVoice,
+    recordingTime,
+    slideOffset,
+    setSlideOffset,
+    cancelled,
+    setCancelled,
+    handleVoiceStart,
+    handleVoiceStop,
+    cancelRecording,
+  } = useVoiceRecording({
+    conversationId: id,
+    conversationData: convoQuery.data,
+    replyTo,
+    setReplyTo,
+    emitEncryptedMessage,
+  });
+
+  // ── Hook: Encryption (decrypt, cache, disappearing) ──
+  const {
+    isEncrypted,
+    decryptedContents,
+  } = useConversationEncryption({
+    conversationId: id,
+    conversationData: convoQuery.data,
+    messages,
+  });
+
+  // ── Local UI state ──
   const [contextMenuMsg, setContextMenuMsg] = useState<Message | null>(null);
   const [forwardMsg, setForwardMsg] = useState<Message | null>(null);
-  const [editingMsg, setEditingMsg] = useState<Message | null>(null);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
-  // GIF picker
   const [showGifPicker, setShowGifPicker] = useState(false);
-  const [gifSearchQuery, setGifSearchQuery] = useState("");
-  const [gifResults, setGifResults] = useState<TenorGifResult[]>([]);
-  const [gifLoading, setGifLoading] = useState(false);
-  // Message search
   const [searchMode, setSearchMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [refreshing, setRefreshing] = useState(false);
-  // Chat theme
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [chatThemeBg, setChatThemeBg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -876,7 +826,6 @@ export default function ConversationScreen() {
       if (val) {
         try {
           const saved = JSON.parse(val) as { themeId: string; opacity: number; blur: number };
-          // Map theme ID to background color
           const THEME_COLORS: Record<string, string> = {
             'default': '', midnight: '#1a1a2e', purple: '#2d1b4e', forest: '#0d3322',
             charcoal: '#242424', navy: '#1a237e', slate: '#263238', burgundy: '#3e1c1c',
@@ -887,159 +836,6 @@ export default function ConversationScreen() {
         } catch { /* ignore */ }
       }
     });
-  }, [id]);
-
-  // E2E encryption — Signal Protocol is always on for all conversations.
-  // Signal init happens in _layout.tsx at app startup. Here we just track
-  // session readiness for UI indicators and decrypted content cache.
-  const [isEncrypted] = useState(true); // Always encrypted via Signal Protocol
-  const [decryptedContents, setDecryptedContents] = useState<Map<string, string>>(new Map());
-
-  // Clean up timers on unmount
-  useEffect(() => {
-    return () => {
-      if (recordingTimerRef.current) {
-        clearInterval(recordingTimerRef.current);
-      }
-      if (typingTimerRef.current) {
-        clearTimeout(typingTimerRef.current);
-      }
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // C7: Disappearing message enforcement is below, after convoQuery declaration.
-
-  // Decrypt incoming E2E encrypted messages via Signal Protocol.
-  // Handles 3 message types:
-  //   1. PreKeySignalMessage (first contact — has e2eIdentityKey + e2eEphemeralKey)
-  //   2. Regular SignalMessage (established session — has e2eSenderRatchetKey, no e2eIdentityKey)
-  //   3. SenderKeyMessage (group — has e2eSenderKeyId)
-  const getDecryptedContent = useCallback(async (message: EncryptedMessage) => {
-    if (!message.encryptedContent || !message.e2eVersion) {
-      // V5-F1: SYSTEM messages (join/leave, security code changed) are legitimately
-      // plaintext from the server. All other message types MUST have E2E encryption
-      // fields. A message without encryptedContent in an E2E conversation is either
-      // a legacy pre-E2E message or a server-injected forgery. Show a warning.
-      if (message.messageType === 'SYSTEM') {
-        return message.content;
-      }
-      // Telemetry: a non-SYSTEM plaintext message in an E2E conversation
-      // is either a legacy pre-E2E message or a server-injected forgery.
-      import('@/services/signal/telemetry').then(({ recordE2EEvent }) =>
-        recordE2EEvent({ event: 'message_decrypt_failed', metadata: { reason: 'plaintext_in_e2e_conversation', messageType: message.messageType ?? 'unknown' } }),
-      ).catch(() => {});
-      return '[This message was not end-to-end encrypted]';
-    }
-    const senderId = message.senderId ?? message.sender?.id;
-    if (!senderId) return '[Encrypted message]';
-
-    let decrypted: string;
-    try {
-      const isGroupMsg = message.e2eSenderKeyId !== undefined && message.e2eSenderKeyId !== null;
-      const isPreKeyMsg = !!message.e2eIdentityKey && !!message.e2eEphemeralKey;
-
-      if (isGroupMsg) {
-        // ── GROUP MESSAGE (Sender Key) ──
-        decrypted = await decryptGroupMessage(id, senderId, {
-          groupId: id,
-          chainId: message.e2eSenderKeyId!,
-          generation: message.e2ePreviousCounter ?? 0,
-          counter: message.e2eCounter ?? 0,
-          ciphertext: fromBase64(message.encryptedContent),
-          signature: fromBase64(message.e2eSenderRatchetKey ?? ''),
-        });
-      } else if (isPreKeyMsg) {
-        // ── FIRST-CONTACT MESSAGE (PreKeySignalMessage → create responder session) ──
-        const preKeyMsg: PreKeySignalMessage = {
-          registrationId: message.e2eRegistrationId ?? 0,
-          deviceId: message.e2eSenderDeviceId ?? 1,
-          preKeyId: message.e2ePreKeyId,
-          signedPreKeyId: message.e2eSignedPreKeyId ?? 0,
-          identityKey: fromBase64(message.e2eIdentityKey!),
-          ephemeralKey: fromBase64(message.e2eEphemeralKey!),
-          message: {
-            header: {
-              senderRatchetKey: fromBase64(message.e2eSenderRatchetKey ?? ''),
-              counter: message.e2eCounter ?? 0,
-              previousCounter: message.e2ePreviousCounter ?? 0,
-            },
-            ciphertext: fromBase64(message.encryptedContent),
-          },
-        };
-        // Create responder session from X3DH material, then decrypt
-        await createResponderSession(senderId, preKeyMsg.deviceId, preKeyMsg);
-        decrypted = await signalDecrypt(
-          senderId,
-          preKeyMsg.deviceId,
-          preKeyMsg.message,
-          preKeyMsg.preKeyId,
-        );
-      } else {
-        // ── REGULAR MESSAGE (established Double Ratchet session) ──
-        decrypted = await signalDecrypt(
-          senderId,
-          message.e2eSenderDeviceId ?? 1,
-          {
-            header: {
-              senderRatchetKey: fromBase64(message.e2eSenderRatchetKey ?? ''),
-              counter: message.e2eCounter ?? 0,
-              previousCounter: message.e2ePreviousCounter ?? 0,
-            },
-            ciphertext: fromBase64(message.encryptedContent),
-          },
-        );
-      }
-
-      // E3: Unwrap the JSON envelope to extract real message type + content.
-      // The envelope format is { t: 'TEXT', c: 'actual content' }.
-      // Backward compat: if decrypted string is not valid JSON or has no 't' field,
-      // treat the entire string as plaintext TEXT content.
-      let realContent = decrypted;
-      let realMessageType = message.messageType ?? 'TEXT';
-      try {
-        const envelope = JSON.parse(decrypted);
-        if (envelope && typeof envelope.c === 'string' && typeof envelope.t === 'string') {
-          realContent = envelope.c;
-          realMessageType = envelope.t;
-        }
-      } catch {
-        // Not a JSON envelope — legacy plaintext message, use as-is
-      }
-
-      // Cache and index for search.
-      // C7: Disappearing messages — if conversation has a timer, set expiresAt.
-      const convo = convoQuery.data;
-      const disappearSec = convo?.disappearingDuration;
-      const createdAtMs = new Date(message.createdAt).getTime();
-      const expiresAt = disappearSec && disappearSec > 0
-        ? createdAtMs + disappearSec * 1000
-        : undefined;
-
-      cacheDecryptedMessage({
-        messageId: message.id,
-        conversationId: id,
-        senderId,
-        content: realContent,
-        messageType: realMessageType,
-        createdAt: createdAtMs,
-        expiresAt,
-      }).catch(() => {});
-      // Don't index disappearing messages for search (they should vanish completely)
-      if (!expiresAt) {
-        indexMessage(message.id, id, realContent, createdAtMs).catch(() => {});
-      }
-      return realContent;
-    } catch (err) {
-      // V5-F3: Do NOT auto-reset sessions on decrypt failure.
-      // Previously: a corrupted message from a malicious server triggered resetSession(),
-      // forcing re-establishment via X3DH with a potentially substituted bundle (MITM).
-      // Now: display error, let the user manually reset if needed via conversation info.
-      // The session state is preserved — subsequent messages may still decrypt.
-      return '[Encrypted message]';
-    }
   }, [id]);
 
   // Send button animation
@@ -1053,950 +849,11 @@ export default function ConversationScreen() {
     opacity: sendScale.value,
   }));
 
-  const convoQuery = useQuery({
-    queryKey: ['conversation', id],
-    queryFn: () => messagesApi.getConversation(id),
-  });
-
-  // C7: Disappearing message enforcement — periodic cleanup of expired cached messages.
-  useEffect(() => {
-    const disappearSec = convoQuery.data?.disappearingDuration;
-    if (!disappearSec || disappearSec <= 0) return;
-    const interval = setInterval(() => {
-      setDecryptedContents(prev => new Map(prev)); // Force re-render → cache filters expired
-    }, Math.min(disappearSec * 1000, 30000));
-    return () => clearInterval(interval);
-  }, [convoQuery.data]);
-
-  const messagesQuery = useInfiniteQuery({
-    queryKey: ['messages', id],
-    queryFn: ({ pageParam }) =>
-      messagesApi.getMessages(id, pageParam as string | undefined),
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (last) =>
-      last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
-    select: selectMessagesReversed,
-  });
-
   const conversationsQuery = useQuery({
     queryKey: ['conversations'],
     queryFn: () => messagesApi.getConversations(),
     enabled: !!forwardMsg,
   });
-
-  // Pinned messages query
-  const pinnedQuery = useQuery({
-    queryKey: ['pinned-messages', id],
-    queryFn: () => messagesApi.getPinned(id as string),
-    enabled: !!id,
-  });
-
-  useEffect(() => {
-    if (pinnedQuery.data && Array.isArray(pinnedQuery.data) && pinnedQuery.data.length > 0) {
-      setPinnedMessage(pinnedQuery.data[0]);
-    }
-  }, [pinnedQuery.data]);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await Promise.all([messagesQuery.refetch(), convoQuery.refetch()]);
-    setRefreshing(false);
-  }, [messagesQuery, convoQuery]);
-
-  const messages = (messagesQuery.data?.pages.flatMap((p) => p.data) ?? []) as EncryptedMessage[];
-
-  // Pre-decrypt E2E encrypted messages with concurrency limit to avoid ANR (#2)
-  useEffect(() => {
-    const DECRYPT_BATCH_SIZE = 5;
-    const toDecrypt = messages.filter(
-      msg => msg.encryptedContent && msg.e2eVersion && !decryptedContents.has(msg.id),
-    );
-    if (toDecrypt.length === 0) return;
-
-    let cancelled = false;
-    (async () => {
-      for (let i = 0; i < toDecrypt.length; i += DECRYPT_BATCH_SIZE) {
-        if (cancelled) break;
-        const batch = toDecrypt.slice(i, i + DECRYPT_BATCH_SIZE);
-        const results = await Promise.allSettled(
-          batch.map(msg => getDecryptedContent(msg).then(d => ({ id: msg.id, content: d }))),
-        );
-        if (cancelled) break;
-        setDecryptedContents(prev => {
-          const next = new Map(prev);
-          let changed = false;
-          for (const r of results) {
-            if (r.status === 'fulfilled' && r.value.content && !next.has(r.value.id)) {
-              next.set(r.value.id, r.value.content);
-              changed = true;
-            }
-          }
-          return changed ? next : prev;
-        });
-      }
-    })();
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages.length]);
-
-  const combinedMessages = [...messages, ...pendingMessages.map(p => ({
-    ...p,
-    // Convert PendingMessage to a shape compatible with Message
-    id: p.id,
-    content: p.content,
-    createdAt: p.createdAt,
-    sender: user ? { id: user.id, displayName: user.fullName || user.username, avatarUrl: user.imageUrl, username: user.username } : { id: 'pending', displayName: 'You', avatarUrl: '', username: 'pending' },
-    messageType: 'TEXT',
-    replyToId: p.replyToId,
-  isForwarded: false, isDeleted: false,
-  } as Message))];
-  const filteredMessages = searchQuery.trim()
-    ? combinedMessages.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase()))
-    : combinedMessages;
-  // We'll need to adjust buildMessageList to handle pending vs real messages
-
-  // Register event listeners on the shared socket for this conversation
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleConnect = () => {
-      socket.emit('join_conversation', { conversationId: id });
-      // Refetch messages to catch any missed during disconnection
-      queryClient.invalidateQueries({ queryKey: ['messages', id] });
-      // Process persistent offline queue — messages survive app crash.
-      // Only retries messages with e2ePayload (already encrypted before disconnect).
-      // Codex-V7-F1 FIX: Never sends plaintext on reconnect.
-      processQueue(async (queuedMsg) => {
-        if (!queuedMsg.e2ePayload) return false; // Never send unencrypted
-        const result = await emitEncryptedMessage({
-          e2ePayload: queuedMsg.e2ePayload,
-          replyToId: queuedMsg.replyToId,
-          sealedEnvelope: queuedMsg.sealedEnvelope,
-        });
-        return result !== null; // null = still offline
-      }, id).then(({ sent }) => {
-        if (sent > 0) {
-          // Remove successfully sent messages from React state
-          const retryable = new Set(getRetryableMessages(id).map(m => m.id));
-          setPendingMessages(prev => prev.filter(p => retryable.has(p.id)));
-          queryClient.invalidateQueries({ queryKey: ['messages', id] });
-        }
-      });
-      // Also retry React-state-only pending messages (sent in current session, not yet in MMKV)
-      const pending = pendingMessagesRef.current.filter(p => p.status === 'pending' && p.e2ePayload);
-      pending.forEach(p => {
-        if (p.e2ePayload) {
-          emitEncryptedMessage({
-            e2ePayload: p.e2ePayload,
-            replyToId: p.replyToId,
-            sealedEnvelope: p.sealedEnvelope,
-          });
-        }
-      });
-    };
-
-    const handleNewMessage = (msg: Message & { clientId?: string }) => {
-      // Note: LayoutAnimation removed to avoid conflicts with react-native-reanimated
-      newMessageIdsRef.current.add(msg.id);
-      // Remove any pending message that matches this incoming message
-      const pending = pendingMessagesRef.current;
-      const matchedIndex = pending.findIndex(p =>
-        p.id === msg.clientId ||
-        (p.content === msg.content && Date.now() - new Date(p.createdAt).getTime() < 30000)
-      );
-      if (matchedIndex >= 0) {
-        // Also remove from persistent MMKV queue if it was a crash-survived message
-        const matchedMsg = pending[matchedIndex];
-        if (matchedMsg.id.startsWith('q_')) {
-          dequeueOfflineMessage(matchedMsg.id);
-        }
-        setPendingMessages(prev => prev.filter((_, i) => i !== matchedIndex));
-      }
-      queryClient.setQueryData<{ pages: { data: Message[]; meta: { cursor: string | null; hasMore: boolean } }[]; pageParams: (string | undefined)[] }>(['messages', id], (old) => {
-        if (!old) return old;
-        const pages = [...old.pages];
-        const lastPage = { ...pages[pages.length - 1] };
-        lastPage.data = [...lastPage.data, msg];
-        pages[pages.length - 1] = lastPage;
-        return { ...old, pages };
-      });
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
-      // Remove from new message set after animation completes
-      setTimeout(() => {
-        newMessageIdsRef.current.delete(msg.id);
-      }, 500);
-      // Delivery receipt: the messageId is a server-assigned ID that the server
-      // already knows (it created the message record). Encrypting it provides
-      // zero additional confidentiality. The real metadata concern (C8) is WHEN
-      // you read — which is the event timestamp, visible regardless of encryption.
-      // True receipt privacy requires sealed sender (C11) to hide WHO read it.
-      if (msg.sender?.id !== user?.id) {
-        socket.emit('message_delivered', { messageId: msg.id, conversationId: id });
-      }
-    };
-
-    const handleDeliveryReceipt = ({ messageId }: { messageId: string; deliveredAt: string; deliveredTo: string }) => {
-      setDeliveredMessages(prev => {
-        const next = new Set(prev);
-        next.add(messageId);
-        return next;
-      });
-    };
-
-    const handleUserTyping = ({ userId, isTyping: typing }: { userId: string; isTyping: boolean }) => {
-      if (userId !== user?.id) {
-        setOtherTyping(typing);
-        // Auto-clear typing indicator after 5 seconds in case isTyping:false is never sent
-        if (typing) {
-          if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-          typingTimeoutRef.current = setTimeout(() => setOtherTyping(false), 5000);
-        } else if (typingTimeoutRef.current) {
-          clearTimeout(typingTimeoutRef.current);
-          typingTimeoutRef.current = null;
-        }
-      }
-    };
-
-    // Listen for read receipts — refetch conversation to update readByMembers timestamps
-    const handleMessagesRead = ({ userId: readerId }: { userId: string }) => {
-      if (readerId !== user?.id) {
-        queryClient.invalidateQueries({ queryKey: ['conversation', id] });
-      }
-    };
-
-    // F5: Handle sealed sender messages — unseal the envelope to reveal sender + inner ciphertext
-    const handleSealedMessage = async (data: {
-      ephemeralKey: string;
-      sealedCiphertext: string;
-      conversationId: string;
-    }) => {
-      if (data.conversationId !== id) return;
-      try {
-        const { unsealMessage } = await import('@/services/signal/sealed-sender');
-        const unsealed = await unsealMessage({
-          recipientId: user?.id ?? '',
-          ephemeralKey: data.ephemeralKey,
-          sealedCiphertext: data.sealedCiphertext,
-        });
-        // The unsealed content reveals the sender and the inner Signal ciphertext.
-        // The actual message will arrive via new_message from the server's persistence.
-        // This sealed_message event is for real-time delivery — the DB message follows.
-        // For now, we just log that sealed delivery succeeded (the new_message handler
-        // will add the message to the UI when the server broadcasts it).
-      } catch {
-        // Unsealing failed — the message may be forged or from an unknown sender.
-        // The regular new_message event will still arrive from server persistence.
-      }
-    };
-
-    socket.on('connect', handleConnect);
-    socket.on('new_message', handleNewMessage);
-    socket.on('delivery_receipt', handleDeliveryReceipt);
-    socket.on('user_typing', handleUserTyping);
-    socket.on('messages_read', handleMessagesRead);
-    socket.on('sealed_message', handleSealedMessage);
-
-    // If already connected when this effect runs, join the room
-    if (socket.connected) {
-      handleConnect();
-    }
-
-    return () => {
-      // Leave conversation room on unmount
-      socket.emit('leave_conversation', { conversationId: id });
-      socket.off('connect', handleConnect);
-      socket.off('new_message', handleNewMessage);
-      socket.off('delivery_receipt', handleDeliveryReceipt);
-      socket.off('user_typing', handleUserTyping);
-      socket.off('messages_read', handleMessagesRead);
-      socket.off('sealed_message', handleSealedMessage);
-    };
-  }, [socket, id, user?.id, queryClient]);
-
-  const markedReadRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (markedReadRef.current === id) return;
-    markedReadRef.current = id;
-    messagesApi.markRead(id)
-      .then(() => queryClient.invalidateQueries({ queryKey: ['conversations'] }))
-      .catch(() => {});
-  }, [id, queryClient]);
-
-  const [isSending, setIsSending] = useState(false);
-  const isSendingRef = useRef(false); // #15: Ref-based guard to prevent double-tap (setState is async)
-  const tc = useThemeColors();
-  // Undo-via-delete: message is sent IMMEDIATELY to server (Telegram-fast),
-  // but user has 5 seconds to undo. Undo = server-side delete before recipient reads.
-  // This gives ~100ms recipient latency instead of 5000ms.
-  const [undoPending, setUndoPending] = useState<{
-    pendingId: string;
-    serverMessageId: string | null; // Set after ACK from server
-    timer: ReturnType<typeof setTimeout>;
-  } | null>(null);
-
-  // Clean up undo timer on unmount
-  useEffect(() => {
-    return () => {
-      if (undoPending?.timer) clearTimeout(undoPending.timer);
-    };
-  }, [undoPending]);
-
-  const handleUndoSend = useCallback(() => {
-    if (!undoPending) return;
-    clearTimeout(undoPending.timer);
-    // Remove optimistic pending message from UI
-    setPendingMessages(prev => prev.filter(p => p.id !== undoPending.pendingId));
-    // Delete from server (message was already sent — undo = "delete for everyone")
-    if (undoPending.serverMessageId) {
-      messagesApi.deleteMessage(id, undoPending.serverMessageId).catch(() => {
-        // Server delete failed — message stays. This is the edge case where
-        // recipient may have already seen it. Same as WhatsApp "Delete for Everyone".
-      });
-    }
-    setUndoPending(null);
-    haptic.delete();
-  }, [undoPending, haptic, id]);
-
-  /**
-   * Emit an encrypted message to the server IMMEDIATELY via socket.
-   * Returns the server-assigned messageId from the ACK callback.
-   * The message reaches the recipient in ~100ms (network latency only).
-   *
-   * F5: For 1:1 messages, wraps in a sealed envelope and sends via
-   * `send_sealed_message` — the server cannot determine the sender from
-   * socket metadata. For group messages, uses regular `send_message`.
-   */
-  const emitEncryptedMessage = useCallback((payload: {
-    e2ePayload: NonNullable<PendingMessage['e2ePayload']>;
-    replyToId?: string;
-    isSpoiler?: boolean;
-    isViewOnce?: boolean;
-    messageType?: string;
-    mediaUrl?: string;
-    // F5: Sealed sender fields (1:1 only)
-    sealedEnvelope?: { recipientId: string; ephemeralKey: string; sealedCiphertext: string };
-  }): Promise<string | null> => {
-    return new Promise((resolve) => {
-      if (isOffline || !socketRef.current?.connected) {
-        resolve(null);
-        return;
-      }
-
-      const isGroupMessage = payload.e2ePayload.e2eSenderKeyId !== undefined;
-
-      if (!isGroupMessage && payload.sealedEnvelope) {
-        // F5: 1:1 message — use sealed sender (server can't see sender identity)
-        socketRef.current.emit('send_sealed_message', {
-          conversationId: id,
-          recipientId: payload.sealedEnvelope.recipientId,
-          ephemeralKey: payload.sealedEnvelope.ephemeralKey,
-          sealedCiphertext: payload.sealedEnvelope.sealedCiphertext,
-          // Pass through E2E fields for server-side persistence
-          clientMessageId: payload.e2ePayload.clientMessageId,
-          encryptedContent: payload.e2ePayload.encryptedContent,
-          e2eVersion: payload.e2ePayload.e2eVersion,
-          e2eSenderDeviceId: payload.e2ePayload.e2eSenderDeviceId,
-          e2eSenderRatchetKey: payload.e2ePayload.e2eSenderRatchetKey,
-          e2eCounter: payload.e2ePayload.e2eCounter,
-          e2ePreviousCounter: payload.e2ePayload.e2ePreviousCounter,
-          ...(payload.e2ePayload.e2eIdentityKey ? { e2eIdentityKey: payload.e2ePayload.e2eIdentityKey } : {}),
-          ...(payload.e2ePayload.e2eEphemeralKey ? { e2eEphemeralKey: payload.e2ePayload.e2eEphemeralKey } : {}),
-          ...(payload.e2ePayload.e2eSignedPreKeyId !== undefined ? { e2eSignedPreKeyId: payload.e2ePayload.e2eSignedPreKeyId } : {}),
-          ...(payload.e2ePayload.e2ePreKeyId !== undefined ? { e2ePreKeyId: payload.e2ePayload.e2ePreKeyId } : {}),
-          ...(payload.e2ePayload.e2eRegistrationId !== undefined ? { e2eRegistrationId: payload.e2ePayload.e2eRegistrationId } : {}),
-          messageType: payload.e2ePayload.messageType ?? payload.messageType ?? 'TEXT',
-          replyToId: payload.replyToId,
-          mediaUrl: payload.mediaUrl,
-          ...(payload.isSpoiler ? { isSpoiler: true } : {}),
-          ...(payload.isViewOnce ? { isViewOnce: true } : {}),
-        }, (ack: { success?: boolean; messageId?: string } | undefined) => {
-          resolve(ack?.messageId ?? null);
-        });
-      } else {
-        // Group message or no sealed envelope — use regular send_message
-        socketRef.current.emit('send_message', {
-          conversationId: id,
-          clientMessageId: payload.e2ePayload.clientMessageId,
-          encryptedContent: payload.e2ePayload.encryptedContent,
-          e2eVersion: payload.e2ePayload.e2eVersion,
-          e2eSenderDeviceId: payload.e2ePayload.e2eSenderDeviceId,
-          e2eSenderRatchetKey: payload.e2ePayload.e2eSenderRatchetKey,
-          e2eCounter: payload.e2ePayload.e2eCounter,
-          e2ePreviousCounter: payload.e2ePayload.e2ePreviousCounter,
-          ...(payload.e2ePayload.e2eSenderKeyId !== undefined ? { e2eSenderKeyId: payload.e2ePayload.e2eSenderKeyId } : {}),
-          ...(payload.e2ePayload.e2eIdentityKey ? { e2eIdentityKey: payload.e2ePayload.e2eIdentityKey } : {}),
-          ...(payload.e2ePayload.e2eEphemeralKey ? { e2eEphemeralKey: payload.e2ePayload.e2eEphemeralKey } : {}),
-          ...(payload.e2ePayload.e2eSignedPreKeyId !== undefined ? { e2eSignedPreKeyId: payload.e2ePayload.e2eSignedPreKeyId } : {}),
-          ...(payload.e2ePayload.e2ePreKeyId !== undefined ? { e2ePreKeyId: payload.e2ePayload.e2ePreKeyId } : {}),
-          ...(payload.e2ePayload.e2eRegistrationId !== undefined ? { e2eRegistrationId: payload.e2ePayload.e2eRegistrationId } : {}),
-          messageType: payload.e2ePayload.messageType ?? payload.messageType ?? 'TEXT',
-          replyToId: payload.replyToId,
-          mediaUrl: payload.mediaUrl,
-          ...(payload.isSpoiler ? { isSpoiler: true } : {}),
-          ...(payload.isViewOnce ? { isViewOnce: true } : {}),
-        }, (ack: { success?: boolean; messageId?: string } | undefined) => {
-          resolve(ack?.messageId ?? null);
-        });
-      }
-      setTimeout(() => resolve(null), 3000);
-    });
-  }, [id, isOffline]);
-
-  const lastSentRef = useRef<number>(0);
-  const handleSend = useCallback(async () => {
-    if (!text.trim() || isSending || isSendingRef.current) return;
-    isSendingRef.current = true;
-
-    // Finding #366: Slow mode enforcement — check client-side cooldown
-    const slowMode = (convo as Record<string, unknown> | undefined)?.slowModeSeconds as number | undefined;
-    if (slowMode && slowMode > 0) {
-      const elapsed = (Date.now() - lastSentRef.current) / 1000;
-      if (elapsed < slowMode) {
-        const remaining = Math.ceil(slowMode - elapsed);
-        showToast({ message: t('messages.slowMode', { seconds: remaining }), variant: 'info' });
-        return;
-      }
-    }
-
-    // Edit mode
-    if (editingMsg) {
-      setIsSending(true);
-      messagesApi.editMessage(id, editingMsg.id, text.trim())
-        .then(() => {
-          queryClient.invalidateQueries({ queryKey: ['messages', id] });
-          setEditingMsg(null);
-          setText('');
-        })
-        .catch(() => showToast({ message: t('errors.editMessageFailed'), variant: 'error' }))
-        .finally(() => setIsSending(false));
-      return;
-    }
-    haptic.send();
-    setIsSending(true);
-
-    // E2E encryption via Signal Protocol — always on, never falls back to plaintext
-    const messageContent = text.trim();
-    let e2ePayload: PendingMessage['e2ePayload'] | undefined;
-    // F5: Sealed sender envelope for 1:1 messages (set in the 1:1 encryption branch)
-    let sealedEnvelopeForEmit: { recipientId: string; ephemeralKey: string; sealedCiphertext: string } | undefined;
-
-    // Find the other conversation member for 1:1 encryption
-    const convoData = convoQuery.data;
-    const otherMember = convoData?.members?.find((m: ConversationMember) => m.userId !== user?.id);
-    const recipientId = otherMember?.userId;
-
-    const isGroupChat = convoData?.isGroup === true;
-
-    if (isGroupChat) {
-      // ── GROUP ENCRYPTION: Sender Keys (O(1) encrypt per message) ──
-      try {
-        // Helper: generate + distribute sender key to all members
-        const ensureSenderKeyDistributed = async () => {
-          await generateSenderKey(id);
-          const memberIds = convoData?.members
-            ?.map((m: ConversationMember) => m.userId)
-            .filter((uid): uid is string => !!uid && uid !== user?.id) ?? [];
-          // Establish pairwise sessions with each member for key distribution
-          for (const memberId of memberIds) {
-            const has = await hasEstablishedSession(memberId);
-            if (!has) {
-              try {
-                const { bundle } = await fetchPreKeyBundle(memberId);
-                await createInitiatorSession(memberId, 1, bundle);
-              } catch { /* Member may not have E2E keys yet — they'll request redistribution */ }
-            }
-          }
-          // Distribute: encrypt sender key bytes with each member's pairwise Double Ratchet session.
-          // We use the session's encrypt function which produces a SignalMessage.
-          // The sender key bytes (76 bytes) are small enough to fit in a single message.
-          // We base64-encode the sender key bytes and encrypt as a text message,
-          // then the recipient base64-decodes after decryption.
-          const encryptForMember = async (rid: string, senderKeyBytes: Uint8Array): Promise<Uint8Array> => {
-            const b64 = toBase64(senderKeyBytes);
-            const msg = await signalEncryptRaw(rid, 1, b64);
-            // Serialize: [ratchetKey:32][counter:4BE][prevCounter:4BE][ciphertextLen:4BE][ciphertext]
-            const ct = msg.ciphertext;
-            const serialized = new Uint8Array(32 + 4 + 4 + 4 + ct.length);
-            serialized.set(msg.header.senderRatchetKey, 0);
-            const view = new DataView(serialized.buffer);
-            view.setUint32(32, msg.header.counter, false);
-            view.setUint32(36, msg.header.previousCounter, false);
-            view.setUint32(40, ct.length, false);
-            serialized.set(ct, 44);
-            return serialized;
-          };
-          const uploadToServer = async (groupId: string, recipientId: string, encKey: Uint8Array, chainId: number, gen: number) => {
-            await uploadSenderKey(groupId, recipientId, encKey, chainId, gen);
-          };
-          await import('@/services/signal').then(s =>
-            s.distributeSenderKeyToMembers(id, memberIds, encryptForMember, uploadToServer)
-          );
-        };
-
-        let senderKeyMsg;
-        try {
-          senderKeyMsg = await encryptGroupMessage(id, messageContent);
-        } catch (err) {
-          if (String(err).includes('No sender key')) {
-            await ensureSenderKeyDistributed();
-            senderKeyMsg = await encryptGroupMessage(id, messageContent);
-          } else {
-            throw err;
-          }
-        }
-
-        const clientMessageId = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
-        e2ePayload = {
-          encryptedContent: toBase64(senderKeyMsg.ciphertext),
-          e2eVersion: 1,
-          e2eSenderDeviceId: 1,
-          e2eSenderRatchetKey: toBase64(senderKeyMsg.signature),
-          e2eCounter: senderKeyMsg.counter,
-          e2ePreviousCounter: senderKeyMsg.generation,
-          clientMessageId,
-          e2eSenderKeyId: senderKeyMsg.chainId, // A3: group message disambiguation
-        };
-      } catch {
-        showToast({ message: t('errors.encryptionFailed'), variant: 'error' });
-        setIsSending(false);
-        isSendingRef.current = false;
-        return;
-      }
-    } else if (recipientId) {
-      // ── 1:1 ENCRYPTION: Double Ratchet ──
-      try {
-        const isFirstMessage = !(await hasEstablishedSession(recipientId));
-        let signedPreKeyId: number | undefined;
-        let oneTimePreKeyId: number | undefined;
-
-        if (isFirstMessage) {
-          // First contact: X3DH session establishment
-          const { bundle } = await fetchPreKeyBundle(recipientId);
-          const result = await createInitiatorSession(recipientId, 1, bundle);
-          signedPreKeyId = result.signedPreKeyId;
-          oneTimePreKeyId = result.oneTimePreKeyId;
-        }
-
-        // E3: Wrap plaintext with message type INSIDE the encryption envelope.
-        // The server sees messageType:'TEXT' (opaque) for all encrypted messages.
-        // The real type is inside the ciphertext — an observer cannot distinguish
-        // text from images from voice notes by looking at the wire format.
-        const wrappedContent = JSON.stringify({ t: 'TEXT', c: messageContent });
-        const signalMsg = await signalEncrypt(recipientId, 1, wrappedContent);
-        const clientMessageId = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
-
-        e2ePayload = {
-          encryptedContent: toBase64(signalMsg.ciphertext),
-          e2eVersion: 1,
-          e2eSenderDeviceId: 1,
-          e2eSenderRatchetKey: toBase64(signalMsg.header.senderRatchetKey),
-          e2eCounter: signalMsg.header.counter,
-          e2ePreviousCounter: signalMsg.header.previousCounter,
-          clientMessageId,
-        };
-
-        // A1: For first-contact messages, include PreKeySignalMessage fields
-        // so the RECEIVER can establish a responder session via X3DH
-        if (isFirstMessage) {
-          const identityKeyPair = await loadIdentityKeyPair();
-          const regId = await loadRegistrationId();
-          if (identityKeyPair && regId !== null) {
-            e2ePayload.e2eIdentityKey = toBase64(identityKeyPair.publicKey);
-            e2ePayload.e2eEphemeralKey = e2ePayload.e2eSenderRatchetKey;
-            e2ePayload.e2eSignedPreKeyId = signedPreKeyId;
-            e2ePayload.e2ePreKeyId = oneTimePreKeyId;
-            e2ePayload.e2eRegistrationId = regId;
-          }
-        }
-
-        // F5: Create sealed envelope for 1:1 messages.
-        // The sealed envelope hides the sender's identity from the server.
-        // The recipient unseals it client-side to reveal who sent it.
-        try {
-          const recipientIdentityKey = await loadKnownIdentityKey(recipientId);
-          const senderIdentityPair = await loadIdentityKeyPair();
-          if (recipientIdentityKey && senderIdentityPair && user?.id) {
-            const envelope = await sealMessage(
-              recipientId,
-              recipientIdentityKey,
-              user.id,
-              1, // deviceId
-              toBase64(signalMsg.ciphertext), // Inner content = Signal ciphertext
-            );
-            sealedEnvelopeForEmit = {
-              recipientId: envelope.recipientId,
-              ephemeralKey: envelope.ephemeralKey,
-              sealedCiphertext: envelope.sealedCiphertext,
-            };
-          }
-        } catch {
-          // Sealed sender creation failed — fall back to regular send_message.
-          // This is non-fatal: the message is still E2E encrypted, just without
-          // the additional metadata protection layer.
-        }
-      } catch (err) {
-        // CRITICAL: never send plaintext on encryption failure
-        showToast({ message: t('errors.encryptionFailed'), variant: 'error' });
-        setIsSending(false);
-        isSendingRef.current = false;
-        return;
-      }
-    }
-
-    const pendingId = `pending_${Date.now()}_${++pendingCounterRef.current}`;
-    const pendingMessage: PendingMessage = {
-      id: pendingId,
-      content: messageContent, // Displayed locally (never sent unencrypted)
-      createdAt: new Date().toISOString(),
-      status: 'pending',
-      replyToId: replyTo?.id,
-      e2ePayload,
-    };
-    setPendingMessages(prev => [...prev, pendingMessage]);
-    lastSentRef.current = Date.now(); // Slow mode: track last send time
-    const savedReplyToId = replyTo?.id;
-    const savedSpoiler = sendAsSpoiler;
-    const savedViewOnce = sendAsViewOnce;
-    setText('');
-    setReplyTo(null);
-    setIsSending(false);
-    isSendingRef.current = false;
-
-    // Cancel any existing undo timer (previous undo window ends)
-    if (undoPending?.timer) {
-      clearTimeout(undoPending.timer);
-    }
-
-    // TELEGRAM-FAST: Send encrypted message IMMEDIATELY to server.
-    // Recipient sees it in ~100ms (network latency only).
-    // Undo = server-side delete within 5 seconds (like WhatsApp "Delete for Everyone").
-    if (e2ePayload) {
-      emitEncryptedMessage({
-        e2ePayload,
-        replyToId: savedReplyToId,
-        sealedEnvelope: sealedEnvelopeForEmit, // F5: sealed sender for 1:1
-        isSpoiler: savedSpoiler || undefined,
-        isViewOnce: savedViewOnce || undefined,
-      }).then((serverMessageId) => {
-        if (serverMessageId === null) {
-          // Offline or socket disconnected — persist to MMKV so message survives app crash.
-          // The message is already in React state (pendingMessages) for immediate display.
-          enqueueOfflineMessage({
-            conversationId: id,
-            content: messageContent,
-            e2ePayload,
-            sealedEnvelope: sealedEnvelopeForEmit,
-            replyToId: savedReplyToId,
-          });
-          return;
-        }
-        // Start 5-second undo window AFTER emit (message is already in transit)
-        const timer = setTimeout(() => {
-          setUndoPending(null);
-          // Remove from pending — server message takes over in the query cache
-          setPendingMessages(prev => prev.filter(p => p.id !== pendingId));
-          queryClient.invalidateQueries({ queryKey: ['messages', id] });
-        }, 5000);
-        setUndoPending({ pendingId, serverMessageId, timer });
-      });
-    }
-
-    setSendAsSpoiler(false);
-    setSendAsViewOnce(false);
-  }, [text, replyTo, id, isSending, haptic, isOffline, editingMsg, queryClient, convoQuery.data, user?.id, undoPending, emitEncryptedMessage]);
-
-  // Retry pending messages when network comes back online — process persistent MMKV queue.
-  useEffect(() => {
-    if (isOffline || !socketRef.current?.connected) return;
-    // Process the persistent queue (MMKV) — handles crash-survived messages
-    processQueue(async (queuedMsg) => {
-      if (!queuedMsg.e2ePayload) return false;
-      const result = await emitEncryptedMessage({
-        e2ePayload: queuedMsg.e2ePayload,
-        replyToId: queuedMsg.replyToId,
-        sealedEnvelope: queuedMsg.sealedEnvelope,
-      });
-      return result !== null;
-    }, id).then(({ sent }) => {
-      if (sent > 0) {
-        // Remove sent messages from React state
-        const retryable = new Set(getRetryableMessages(id).map(m => m.id));
-        setPendingMessages(prev => prev.filter(p => retryable.has(p.id)));
-        queryClient.invalidateQueries({ queryKey: ['messages', id] });
-      }
-    });
-    // Also retry React-state-only pending messages (current session, not in MMKV)
-    const toRetry = pendingMessages.filter(p => p.status === 'pending' && p.e2ePayload);
-    toRetry.forEach(pending => {
-      if (pending.e2ePayload) {
-        emitEncryptedMessage({ e2ePayload: pending.e2ePayload, replyToId: pending.replyToId }).then((result) => {
-          if (result !== null) {
-            setPendingMessages(prev => prev.filter(p => p.id !== pending.id));
-            queryClient.invalidateQueries({ queryKey: ['messages', id] });
-          }
-        });
-      }
-    });
-  }, [isOffline, pendingMessages, id]);
-
-  const pickAndSendMedia = useCallback(async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 0.85,
-      exif: false,
-    });
-    if (result.canceled || !result.assets[0]) return;
-    const asset = result.assets[0];
-    setUploadingMedia(true);
-    try {
-      // Resize + strip EXIF before encryption (prevents GPS leak in encrypted payload)
-      const resized = await resizeForUpload(asset.uri, asset.width, asset.height);
-
-      // A4: Encrypt media file with per-file random key, upload encrypted blob to R2
-      const encResult = await encryptSmallMediaFile(resized.uri, resized.mimeType, {
-        width: resized.width,
-        height: resized.height,
-      });
-
-      // Upload the encrypted file to R2
-      const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? '';
-      const token = await getToken() ?? '';
-      const mediaUrl = await uploadEncryptedMedia(
-        encResult.encryptedFileUri,
-        // Encrypted size: header(11) + totalChunks * authTag(16) + fileSize
-        11 + encResult.totalChunks * 16 + encResult.fileSize,
-        apiUrl.replace('/api/v1', ''),
-        token,
-      );
-
-      // Encrypt the media metadata (key, hash, URL) as the message content
-      // The mediaKey travels INSIDE the E2E message — server never sees it
-      const mediaPayload = JSON.stringify({
-        type: 'IMAGE',
-        mediaUrl,
-        mediaKey: encResult.mediaKey ? toBase64(encResult.mediaKey) : '',
-        mediaSha256: encResult.mediaSha256 ? toBase64(encResult.mediaSha256) : '',
-        totalChunks: encResult.totalChunks,
-        fileSize: encResult.fileSize,
-        mimeType: resized.mimeType,
-        width: resized.width,
-        height: resized.height,
-      });
-
-      // Codex-V7-F7+F6 FIX: Encrypt media for group (sender keys) OR 1:1 (Double Ratchet).
-      // Previously: always used 1:1 signalEncrypt to otherMember — in groups, only one
-      // member could decrypt. Now mirrors the text send path's group/1:1 branching.
-      // F6: Wrap type inside ciphertext — server sees opaque 'TEXT', not 'IMAGE'.
-      const convoData = convoQuery.data;
-      const isGroup = convoData?.isGroup === true;
-      const wrappedMedia = JSON.stringify({ t: 'IMAGE', c: mediaPayload });
-      const clientMessageId = `media_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-
-      if (isGroup) {
-        // Group: use sender keys (O(1) encrypt for all members)
-        let senderKeyMsg;
-        try {
-          senderKeyMsg = await encryptGroupMessage(id, wrappedMedia);
-        } catch (err) {
-          if (String(err).includes('No sender key')) {
-            await generateSenderKey(id);
-            senderKeyMsg = await encryptGroupMessage(id, wrappedMedia);
-          } else { throw err; }
-        }
-        emitEncryptedMessage({
-          e2ePayload: {
-            encryptedContent: toBase64(senderKeyMsg.ciphertext),
-            e2eVersion: 1,
-            e2eSenderDeviceId: 1,
-            e2eSenderRatchetKey: toBase64(senderKeyMsg.signature),
-            e2eCounter: senderKeyMsg.counter,
-            e2ePreviousCounter: senderKeyMsg.generation,
-            clientMessageId,
-            e2eSenderKeyId: senderKeyMsg.chainId,
-          },
-          replyToId: replyTo?.id,
-        });
-      } else {
-        const otherMember = convoData?.members?.find((m: ConversationMember) => m.userId !== user?.id);
-        if (otherMember?.userId) {
-          const has = await hasEstablishedSession(otherMember.userId);
-          if (!has) {
-            const { bundle } = await fetchPreKeyBundle(otherMember.userId);
-            await createInitiatorSession(otherMember.userId, 1, bundle);
-          }
-          const signalMsg = await signalEncrypt(otherMember.userId, 1, wrappedMedia);
-          emitEncryptedMessage({
-            e2ePayload: {
-              encryptedContent: toBase64(signalMsg.ciphertext),
-              e2eVersion: 1,
-              e2eSenderDeviceId: 1,
-              e2eSenderRatchetKey: toBase64(signalMsg.header.senderRatchetKey),
-              e2eCounter: signalMsg.header.counter,
-              e2ePreviousCounter: signalMsg.header.previousCounter,
-              clientMessageId,
-            },
-            replyToId: replyTo?.id,
-          });
-        }
-      }
-      haptic.success();
-      setReplyTo(null);
-      queryClient.invalidateQueries({ queryKey: ['messages', id] });
-    } catch {
-      showToast({ message: t('errors.sendImageFailed'), variant: 'error' });
-    } finally {
-      setUploadingMedia(false);
-    }
-  }, [id, replyTo, queryClient, haptic, convoQuery.data, user?.id, emitEncryptedMessage]);
-
-  const handleVoiceStart = useCallback(async () => {
-    const { granted } = await Audio.requestPermissionsAsync();
-    if (!granted) { showToast({ message: t('errors.microphoneAccessRequired'), variant: 'error' }); return; }
-    await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
-    const recording = new Audio.Recording();
-    await recording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
-    await recording.startAsync();
-    recordingRef.current = recording;
-    // Reset states
-    setRecordingTime(0);
-    setSlideOffset(0);
-    setCancelled(false);
-    setIsRecording(true);
-    // Start timer
-    recordingTimerRef.current = setInterval(() => {
-      setRecordingTime((prev) => prev + 1);
-    }, 1000);
-    haptic.longPress();
-  }, [haptic]);
-
-  const cancelRecording = useCallback(async () => {
-    if (!recordingRef.current) return;
-    // Clear timer
-    if (recordingTimerRef.current) {
-      clearInterval(recordingTimerRef.current);
-      recordingTimerRef.current = null;
-    }
-    const recording = recordingRef.current;
-    recordingRef.current = null;
-    await recording.stopAndUnloadAsync();
-    setCancelled(true);
-    setIsRecording(false);
-    setRecordingTime(0);
-    setSlideOffset(0);
-    await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
-  }, []);
-
-  const handleVoiceStop = useCallback(async () => {
-    if (!recordingRef.current) return;
-    // Clear timer
-    if (recordingTimerRef.current) {
-      clearInterval(recordingTimerRef.current);
-      recordingTimerRef.current = null;
-    }
-    // If cancelled, do not send
-    if (cancelled) {
-      setCancelled(false);
-      setIsRecording(false);
-      setRecordingTime(0);
-      setSlideOffset(0);
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
-      return;
-    }
-    setIsRecording(false);
-    const recording = recordingRef.current;
-    recordingRef.current = null;
-    await recording.stopAndUnloadAsync();
-    const uri = recording.getURI();
-    if (!uri) return;
-    setUploadingVoice(true);
-    try {
-      // A4: Encrypt voice note with per-file key, upload encrypted blob
-      const encResult = await encryptSmallMediaFile(uri, 'audio/m4a', {
-        duration: recordingTime,
-      });
-
-      const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? '';
-      const token = await getToken() ?? '';
-      const mediaUrl = await uploadEncryptedMedia(
-        encResult.encryptedFileUri,
-        encResult.fileSize + 200,
-        apiUrl.replace('/api/v1', ''),
-        token,
-      );
-
-      // Encrypt voice metadata (key, hash, duration) inside E2E message
-      const voicePayload = JSON.stringify({
-        type: 'VOICE',
-        mediaUrl,
-        mediaKey: encResult.mediaKey ? toBase64(encResult.mediaKey) : '',
-        mediaSha256: encResult.mediaSha256 ? toBase64(encResult.mediaSha256) : '',
-        totalChunks: encResult.totalChunks,
-        fileSize: encResult.fileSize,
-        mimeType: 'audio/m4a',
-        duration: recordingTime,
-      });
-
-      // Codex-V7-F7+F6 FIX: Group voice uses sender keys, type wrapped inside ciphertext
-      const convoData = convoQuery.data;
-      const isGroup = convoData?.isGroup === true;
-      const wrappedVoice = JSON.stringify({ t: 'VOICE', c: voicePayload });
-      const clientMessageId = `voice_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-
-      if (isGroup) {
-        let senderKeyMsg;
-        try {
-          senderKeyMsg = await encryptGroupMessage(id, wrappedVoice);
-        } catch (err) {
-          if (String(err).includes('No sender key')) {
-            await generateSenderKey(id);
-            senderKeyMsg = await encryptGroupMessage(id, wrappedVoice);
-          } else { throw err; }
-        }
-        emitEncryptedMessage({
-          e2ePayload: {
-            encryptedContent: toBase64(senderKeyMsg.ciphertext),
-            e2eVersion: 1,
-            e2eSenderDeviceId: 1,
-            e2eSenderRatchetKey: toBase64(senderKeyMsg.signature),
-            e2eCounter: senderKeyMsg.counter,
-            e2ePreviousCounter: senderKeyMsg.generation,
-            clientMessageId,
-            e2eSenderKeyId: senderKeyMsg.chainId,
-          },
-          replyToId: replyTo?.id,
-        });
-      } else {
-        const otherMember = convoData?.members?.find((m: ConversationMember) => m.userId !== user?.id);
-        if (otherMember?.userId) {
-          const has = await hasEstablishedSession(otherMember.userId);
-          if (!has) {
-            const { bundle } = await fetchPreKeyBundle(otherMember.userId);
-            await createInitiatorSession(otherMember.userId, 1, bundle);
-          }
-          const signalMsg = await signalEncrypt(otherMember.userId, 1, wrappedVoice);
-          emitEncryptedMessage({
-            e2ePayload: {
-              encryptedContent: toBase64(signalMsg.ciphertext),
-              e2eVersion: 1,
-              e2eSenderDeviceId: 1,
-              e2eSenderRatchetKey: toBase64(signalMsg.header.senderRatchetKey),
-              e2eCounter: signalMsg.header.counter,
-              e2ePreviousCounter: signalMsg.header.previousCounter,
-              clientMessageId,
-            },
-            replyToId: replyTo?.id,
-          });
-        }
-      }
-      setReplyTo(null);
-      haptic.success();
-    } catch {
-      showToast({ message: t('errors.sendVoiceFailed'), variant: 'error' });
-    } finally {
-      setUploadingVoice(false);
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
-    }
-  }, [id, replyTo, haptic, cancelled]);
 
   const handleContextMenu = useCallback((msg: Message) => {
     haptic.longPress();
@@ -2011,7 +868,7 @@ export default function ConversationScreen() {
       username: msg.sender.username,
     });
     inputRef.current?.focus();
-  }, [haptic]);
+  }, [haptic, setReplyTo, inputRef]);
 
   const isMessageEditable = useCallback((msg: Message): boolean => {
     if (msg.sender.id !== user?.id) return false;
@@ -2027,30 +884,11 @@ export default function ConversationScreen() {
 
   const scrollToMessageIndex = useCallback((index: number) => {
     flatListRef.current?.scrollToIndex({ index, animated: true });
-  }, []);
+  }, [flatListRef]);
 
   const handleSearchResultPress = useCallback((index: number) => {
     scrollToMessageIndex(index);
   }, [scrollToMessageIndex]);
-
-  // Typing indicators: the server needs { conversationId, isTyping } to route
-  // the event to the correct conversation room. Encrypting the boolean is
-  // security theater — the server sees the event EXISTS (timing metadata).
-  // True typing privacy requires sealed sender (C11) to hide WHO is typing.
-  // That's implemented in sealed-sender.ts and will be wired when the server
-  // supports sealed sender envelope routing.
-  const handleChangeText = (val: string) => {
-    setText(val);
-    if (!isTyping) {
-      setIsTyping(true);
-      socketRef.current?.emit('typing', { conversationId: id, isTyping: true });
-    }
-    if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
-    typingTimerRef.current = setTimeout(() => {
-      setIsTyping(false);
-      socketRef.current?.emit('typing', { conversationId: id, isTyping: false });
-    }, 2000);
-  };
 
   const convo = convoQuery.data;
   const name = convo ? conversationName(convo, user?.id, t) : '';
@@ -2080,22 +918,16 @@ export default function ConversationScreen() {
       new Date(member.lastReadAt) >= new Date(item.message.createdAt)
     ).slice(0, 3) ?? [];
     const encMsg = item.message as EncryptedMessage;
-    // V6-F2a: Client-side E2E enforcement. Three cases:
-    // 1. Encrypted + decrypted → show decrypted content
-    // 2. Encrypted + not yet decrypted → show "[Encrypted message]"
-    // 3. Not encrypted (no encryptedContent) → block plaintext injection
-    //    EXCEPT for SYSTEM messages (join/leave/security code changed)
+    // V6-F2a: Client-side E2E enforcement.
     let displayMessage: typeof item.message;
     if (encMsg.encryptedContent && decryptedContents.has(encMsg.id)) {
       displayMessage = { ...item.message, content: decryptedContents.get(encMsg.id) ?? item.message.content };
     } else if (encMsg.encryptedContent) {
       displayMessage = { ...item.message, content: '🔒' };
     } else if (item.message.messageType !== 'SYSTEM') {
-      // V6-F2a: Plaintext message in an E2E conversation — possible server injection.
-      // Display a warning instead of the attacker-controlled content.
       displayMessage = { ...item.message, content: '⚠ This message was not end-to-end encrypted' };
     } else {
-      displayMessage = item.message; // SYSTEM messages are legitimate plaintext
+      displayMessage = item.message;
     }
     return (
       <Swipeable
@@ -2122,7 +954,7 @@ export default function ConversationScreen() {
         />
       </Swipeable>
     );
-  }, [convoQuery.data?.members, user?.id, decryptedContents, handleSwipeReply, handleContextMenu, searchQuery, handleSearchResultPress, id, deliveredMessages]);
+  }, [convoQuery.data?.members, user?.id, decryptedContents, handleSwipeReply, handleContextMenu, searchQuery, handleSearchResultPress, id, deliveredMessages, tc.bgElevated, newMessageIdsRef]);
 
   const glassHeaderHeight = insets.top + 52;
 
@@ -2658,7 +1490,7 @@ export default function ConversationScreen() {
                     queryClient.invalidateQueries({ queryKey: ['messages', id] });
                   }).catch(() => {
                     showToast({ message: t('errors.deleteMessageFailed'), variant: 'error' });
-                    queryClient.invalidateQueries({ queryKey: ['messages', id] }); // Refetch to restore message on failure
+                    queryClient.invalidateQueries({ queryKey: ['messages', id] });
                   });
                   setContextMenuMsg(null);
                 }}
@@ -2673,7 +1505,7 @@ export default function ConversationScreen() {
                     queryClient.invalidateQueries({ queryKey: ['messages', id] });
                   }).catch(() => {
                     showToast({ message: t('errors.deleteMessageFailed'), variant: 'error' });
-                    queryClient.invalidateQueries({ queryKey: ['messages', id] }); // Refetch to restore message on failure
+                    queryClient.invalidateQueries({ queryKey: ['messages', id] });
                   });
                   setContextMenuMsg(null);
                 }}
@@ -2701,13 +1533,11 @@ export default function ConversationScreen() {
               onPress={async () => {
                 if (!forwardMsg) return;
                 try {
-                  // E2E encrypt for the TARGET conversation's recipient
                   const targetMember = conv.members?.find((m: ConversationMember) => m.userId !== user?.id);
                   const targetRecipientId = targetMember?.userId;
                   const forwardContent = forwardMsg.content || forwardMsg.mediaUrl || '';
 
                   if (targetRecipientId && forwardContent) {
-                    // Ensure session with target recipient
                     const has = await hasEstablishedSession(targetRecipientId);
                     if (!has) {
                       const { bundle } = await fetchPreKeyBundle(targetRecipientId);
@@ -2798,11 +1628,8 @@ export default function ConversationScreen() {
         visible={showGifPicker}
         onClose={() => setShowGifPicker(false)}
         onSelect={async (gifUrl) => {
-          // Codex-V7-F7+F6 FIX: Group GIF uses sender keys. Type + URL wrapped inside ciphertext.
-          // Previously: 1:1 encrypt only + mediaUrl in cleartext outside ciphertext.
           const convoData = convoQuery.data;
           const isGroup = convoData?.isGroup === true;
-          // F6: Wrap GIF URL and type INSIDE the ciphertext — server sees opaque blob only
           const wrappedGif = JSON.stringify({ t: 'GIF', c: gifUrl });
           const clientMessageId = `gif_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 
@@ -2829,7 +1656,6 @@ export default function ConversationScreen() {
                   e2eSenderKeyId: senderKeyMsg.chainId,
                 },
                 replyToId: replyTo?.id,
-                // F6: NO messageType or mediaUrl outside ciphertext
               });
             } else {
               const otherMember = convoData?.members?.find((m: ConversationMember) => m.userId !== user?.id);
@@ -2911,7 +1737,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.bgSheet, // Overridden inline with tc.bgElevated
+    backgroundColor: colors.dark.bgSheet,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -3009,7 +1835,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.dark.surface,
     borderRadius: radius.full,
-    paddingHorizontal: spacing.sm, // 8 — use token instead of arithmetic
+    paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     marginEnd: spacing.xs,
     marginTop: spacing.xs,
