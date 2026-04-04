@@ -66,6 +66,29 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       `ALTER TABLE users ADD CONSTRAINT IF NOT EXISTS users_followers_non_negative CHECK ("followersCount" >= 0)`,
       `ALTER TABLE users ADD CONSTRAINT IF NOT EXISTS users_following_non_negative CHECK ("followingCount" >= 0)`,
       `ALTER TABLE users ADD CONSTRAINT IF NOT EXISTS users_posts_non_negative CHECK ("postsCount" >= 0)`,
+      // Additional counter fields — posts
+      `ALTER TABLE posts ADD CONSTRAINT IF NOT EXISTS posts_shares_non_negative CHECK ("sharesCount" >= 0)`,
+      `ALTER TABLE posts ADD CONSTRAINT IF NOT EXISTS posts_saves_non_negative CHECK ("savesCount" >= 0)`,
+      `ALTER TABLE posts ADD CONSTRAINT IF NOT EXISTS posts_views_non_negative CHECK ("viewsCount" >= 0)`,
+      // Additional counter fields — reels
+      `ALTER TABLE reels ADD CONSTRAINT IF NOT EXISTS reels_comments_non_negative CHECK ("commentsCount" >= 0)`,
+      `ALTER TABLE reels ADD CONSTRAINT IF NOT EXISTS reels_shares_non_negative CHECK ("sharesCount" >= 0)`,
+      `ALTER TABLE reels ADD CONSTRAINT IF NOT EXISTS reels_saves_non_negative CHECK ("savesCount" >= 0)`,
+      `ALTER TABLE reels ADD CONSTRAINT IF NOT EXISTS reels_loops_non_negative CHECK ("loopsCount" >= 0)`,
+      // Additional counter fields — threads
+      `ALTER TABLE threads ADD CONSTRAINT IF NOT EXISTS threads_replies_non_negative CHECK ("repliesCount" >= 0)`,
+      `ALTER TABLE threads ADD CONSTRAINT IF NOT EXISTS threads_reposts_non_negative CHECK ("repostsCount" >= 0)`,
+      `ALTER TABLE threads ADD CONSTRAINT IF NOT EXISTS threads_quotes_non_negative CHECK ("quotesCount" >= 0)`,
+      `ALTER TABLE threads ADD CONSTRAINT IF NOT EXISTS threads_views_non_negative CHECK ("viewsCount" >= 0)`,
+      `ALTER TABLE threads ADD CONSTRAINT IF NOT EXISTS threads_bookmarks_non_negative CHECK ("bookmarksCount" >= 0)`,
+      // Additional counter fields — videos
+      `ALTER TABLE videos ADD CONSTRAINT IF NOT EXISTS videos_dislikes_non_negative CHECK ("dislikesCount" >= 0)`,
+      `ALTER TABLE videos ADD CONSTRAINT IF NOT EXISTS videos_comments_non_negative CHECK ("commentsCount" >= 0)`,
+      `ALTER TABLE videos ADD CONSTRAINT IF NOT EXISTS videos_shares_non_negative CHECK ("sharesCount" >= 0)`,
+      `ALTER TABLE videos ADD CONSTRAINT IF NOT EXISTS videos_saves_non_negative CHECK ("savesCount" >= 0)`,
+      // Stories
+      `ALTER TABLE stories ADD CONSTRAINT IF NOT EXISTS stories_views_non_negative CHECK ("viewsCount" >= 0)`,
+      `ALTER TABLE stories ADD CONSTRAINT IF NOT EXISTS stories_replies_non_negative CHECK ("repliesCount" >= 0)`,
     ];
     for (const sql of constraints) {
       try {
@@ -74,7 +97,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         // Constraint already exists or table doesn't exist yet — skip silently
       }
     }
-    this.logger.log('CHECK constraints applied (12 non-negative guards)');
+    this.logger.log('CHECK constraints applied (31 non-negative guards)');
 
     // Apply pg_trgm GIN indexes for fast ILIKE search (replaces sequential scan)
     try {

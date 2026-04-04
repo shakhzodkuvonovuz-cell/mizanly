@@ -181,6 +181,11 @@ export class DiscordFeaturesService {
       where: { id: reply.threadId },
       data: { replyCount: { decrement: 1 } },
     });
+    // Floor at 0 to prevent negative on race
+    await this.prisma.forumThread.updateMany({
+      where: { id: reply.threadId, replyCount: { lt: 0 } },
+      data: { replyCount: 0 },
+    });
 
     return { success: true };
   }

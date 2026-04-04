@@ -44,6 +44,7 @@ describe('DiscordFeaturesService', () => {
               findMany: jest.fn().mockResolvedValue([mockThread]),
               findUnique: jest.fn().mockResolvedValue(mockThread),
               update: jest.fn().mockResolvedValue(mockThread),
+              updateMany: jest.fn().mockResolvedValue({ count: 0 }),
               delete: jest.fn().mockResolvedValue(mockThread),
             },
             forumReply: {

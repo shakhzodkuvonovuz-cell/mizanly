@@ -1095,59 +1095,59 @@ model User {
   liveGuests              LiveGuest[]            @relation("LiveGuest")
 
   // Batch 4: Relations from dangling FK fix
-  generatedStickers        GeneratedSticker[]          @relation("generatedStickers")
-  storyChains              StoryChain[]                @relation("storyChains")
-  storyChainEntries        StoryChainEntry[]           @relation("storyChainEntries")
-  reelTemplates            ReelTemplate[]              @relation("reelTemplates")
-  videoReplies             VideoReply[]                @relation("videoReplies")
-  hashtagFollows           HashtagFollow[]             @relation("hashtagFollows")
-  coinBalanceRecord        CoinBalance?                @relation("coinBalanceRecord")
-  coinTransactions         CoinTransaction[]           @relation("coinTransactions")
-  giftsSent                GiftRecord[]                @relation("giftsSent")
-  giftsReceived            GiftRecord[]                @relation("giftsReceived")
-  postPromotions           PostPromotion[]             @relation("postPromotions")
-  postReminders            PostReminder[]              @relation("postReminders")
-  quranReadingPlans        QuranReadingPlan[]          @relation("quranReadingPlans")
-  dhikrSessions            DhikrSession[]              @relation("dhikrSessions")
-  dailyTaskCompletions     DailyTaskCompletion[]       @relation("dailyTaskCompletions")
-  dhikrChallenges          DhikrChallenge[]            @relation("dhikrChallenges")
-  dhikrParticipations      DhikrChallengeParticipant[] @relation("dhikrParticipations")
-  charityDonations         CharityDonation[]           @relation("charityDonations")
-  charityDonationsReceived CharityDonation[]           @relation("charityDonationsReceived")
-  charityCampaigns         CharityCampaign[]           @relation("charityCampaigns")
-  hajjProgressRecords      HajjProgress[]              @relation("hajjProgress")
-  prayerNotifications      PrayerNotificationSetting?  @relation("prayerNotifications")
-  contentFilter            ContentFilterSetting?       @relation("contentFilter")
-  scholarVerificationApp   ScholarVerification?        @relation("scholarVerification")
-  restrictsCreated         Restrict[]                  @relation("restrictsCreated")
-  restrictsReceived        Restrict[]                  @relation("restrictsReceived")
-  dmNotes                  DMNote?                     @relation("dmNotes")
-  screenTimeLogs           ScreenTimeLog[]             @relation("screenTimeLogs")
-  quietMode                QuietModeSetting?           @relation("quietMode")
-  premiereReminders        PremiereReminder[]          @relation("premiereReminders")
-  seriesFollows            SeriesFollower[]            @relation("seriesFollows")
-  seriesProgressRecords    SeriesProgress[]            @relation("seriesProgress")
-  communityNotes           CommunityNote[]             @relation("communityNotes")
-  communityNoteRatings     CommunityNoteRating[]       @relation("communityNoteRatings")
-  collabInvitesSent        CollabInvite[]              @relation("collabInvitesSent")
-  collabInvitesReceived    CollabInvite[]              @relation("collabInvitesReceived")
-  messageChecklists        MessageChecklist[]          @relation("messageChecklists")
-  fastingLogs              FastingLog[]                @relation("fastingLogs")
-  halalRestaurantsAdded    HalalRestaurant[]           @relation("halalRestaurantsAdded")
-  halalRestaurantReviews   HalalRestaurantReview[]     @relation("halalRestaurantReviews")
+  generatedStickers          GeneratedSticker[]          @relation("generatedStickers")
+  storyChains                StoryChain[]                @relation("storyChains")
+  storyChainEntries          StoryChainEntry[]           @relation("storyChainEntries")
+  reelTemplates              ReelTemplate[]              @relation("reelTemplates")
+  videoReplies               VideoReply[]                @relation("videoReplies")
+  hashtagFollows             HashtagFollow[]             @relation("hashtagFollows")
+  coinBalanceRecord          CoinBalance?                @relation("coinBalanceRecord")
+  coinTransactions           CoinTransaction[]           @relation("coinTransactions")
+  giftsSent                  GiftRecord[]                @relation("giftsSent")
+  giftsReceived              GiftRecord[]                @relation("giftsReceived")
+  postPromotions             PostPromotion[]             @relation("postPromotions")
+  postReminders              PostReminder[]              @relation("postReminders")
+  quranReadingPlans          QuranReadingPlan[]          @relation("quranReadingPlans")
+  dhikrSessions              DhikrSession[]              @relation("dhikrSessions")
+  dailyTaskCompletions       DailyTaskCompletion[]       @relation("dailyTaskCompletions")
+  dhikrChallenges            DhikrChallenge[]            @relation("dhikrChallenges")
+  dhikrParticipations        DhikrChallengeParticipant[] @relation("dhikrParticipations")
+  charityDonations           CharityDonation[]           @relation("charityDonations")
+  charityDonationsReceived   CharityDonation[]           @relation("charityDonationsReceived")
+  charityCampaigns           CharityCampaign[]           @relation("charityCampaigns")
+  hajjProgressRecords        HajjProgress[]              @relation("hajjProgress")
+  prayerNotifications        PrayerNotificationSetting?  @relation("prayerNotifications")
+  contentFilter              ContentFilterSetting?       @relation("contentFilter")
+  scholarVerificationApp     ScholarVerification?        @relation("scholarVerification")
+  restrictsCreated           Restrict[]                  @relation("restrictsCreated")
+  restrictsReceived          Restrict[]                  @relation("restrictsReceived")
+  dmNotes                    DMNote?                     @relation("dmNotes")
+  screenTimeLogs             ScreenTimeLog[]             @relation("screenTimeLogs")
+  quietMode                  QuietModeSetting?           @relation("quietMode")
+  premiereReminders          PremiereReminder[]          @relation("premiereReminders")
+  seriesFollows              SeriesFollower[]            @relation("seriesFollows")
+  seriesProgressRecords      SeriesProgress[]            @relation("seriesProgress")
+  communityNotes             CommunityNote[]             @relation("communityNotes")
+  communityNoteRatings       CommunityNoteRating[]       @relation("communityNoteRatings")
+  collabInvitesSent          CollabInvite[]              @relation("collabInvitesSent")
+  collabInvitesReceived      CollabInvite[]              @relation("collabInvitesReceived")
+  messageChecklists          MessageChecklist[]          @relation("messageChecklists")
+  fastingLogs                FastingLog[]                @relation("fastingLogs")
+  halalRestaurantsAdded      HalalRestaurant[]           @relation("halalRestaurantsAdded")
+  halalRestaurantReviews     HalalRestaurantReview[]     @relation("halalRestaurantReviews")
   halalRestaurantVerifyVotes HalalRestaurantVerifyVote[] @relation("halalRestaurantVerifyVotes")
-  hifzProgressRecords      HifzProgress[]              @relation("hifzProgressRecords")
-  mosqueCommunitiesCreated MosqueCommunity[]           @relation("mosqueCommunitiesCreated")
-  mosqueMemberships        MosqueMembership[]          @relation("mosqueMemberships")
-  mosquePosts              MosquePost[]                @relation("mosquePosts")
-  scholarQAs               ScholarQA[]                 @relation("scholarQAs")
-  scholarQuestions         ScholarQuestion[]           @relation("scholarQuestions")
-  duaBookmarks             DuaBookmark[]               @relation("duaBookmarks")
-  hadithBookmarks          HadithBookmark[]            @relation("hadithBookmarks")
-  altProfileAccessGrants   AltProfileAccess[]          @relation("altProfileAccess")
-  groupTopicsCreated       GroupTopic[]                @relation("groupTopics")
-  encryptionKeyRecord      EncryptionKey?              @relation("encryptionKey")
-  conversationKeyEnvelopes ConversationKeyEnvelope[]   @relation("conversationKeyEnvelopes")
+  hifzProgressRecords        HifzProgress[]              @relation("hifzProgressRecords")
+  mosqueCommunitiesCreated   MosqueCommunity[]           @relation("mosqueCommunitiesCreated")
+  mosqueMemberships          MosqueMembership[]          @relation("mosqueMemberships")
+  mosquePosts                MosquePost[]                @relation("mosquePosts")
+  scholarQAs                 ScholarQA[]                 @relation("scholarQAs")
+  scholarQuestions           ScholarQuestion[]           @relation("scholarQuestions")
+  duaBookmarks               DuaBookmark[]               @relation("duaBookmarks")
+  hadithBookmarks            HadithBookmark[]            @relation("hadithBookmarks")
+  altProfileAccessGrants     AltProfileAccess[]          @relation("altProfileAccess")
+  groupTopicsCreated         GroupTopic[]                @relation("groupTopics")
+  encryptionKeyRecord        EncryptionKey?              @relation("encryptionKey")
+  conversationKeyEnvelopes   ConversationKeyEnvelope[]   @relation("conversationKeyEnvelopes")
 
   // Signal Protocol E2E
   e2eIdentityKeys          E2EIdentityKey[]       @relation("e2eIdentityKey")
@@ -1572,6 +1572,7 @@ model Thread {
   @@index([isChainHead, createdAt(sort: Desc)]) // P0: thread feeds filter chain heads+sort
   @@index([isRemoved, visibility, likesCount(sort: Desc)]) // Trending: engagement-sorted candidates
   @@index([isRemoved, visibility, isChainHead, likesCount(sort: Desc)]) // J02-C5: search/trending chain-head threads
+  @@index([repostOfId]) // #544: repost chain lookup
   @@map("threads")
 }
 
@@ -1950,6 +1951,7 @@ model ConversationMember {
   @@id([conversationId, userId])
   @@index([userId])
   @@index([userId, lastMessageAt(sort: Desc)])
+  @@index([userId, isPinned]) // #544: pinned conversations lookup
   @@map("conversation_members")
 }
 
@@ -2997,6 +2999,8 @@ model ReelInteraction {
   @@map("reel_interactions")
 }
 
+// @deprecated — Zero code references in API or mobile. Retained for potential production data.
+// Superseded by FeedInteraction for unified engagement tracking.
 model VideoInteraction {
   id              String   @id @default(cuid())
   userId          String
@@ -3756,6 +3760,8 @@ model PremiereReminder {
   @@map("premiere_reminders")
 }
 
+// @deprecated — Zero code references in API. Mobile has unused type definition only.
+// Video clipping feature never implemented beyond schema. Retained for potential production data.
 model VideoClip {
   id            String   @id @default(uuid())
   userId        String
@@ -5118,7 +5124,7 @@ model HalalRestaurant {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt // S02-#37: rating/verify tracking
 
-  reviews          HalalRestaurantReview[]
+  reviews           HalalRestaurantReview[]
   verifyVoteRecords HalalRestaurantVerifyVote[]
 
   @@index([latitude, longitude])
@@ -5161,6 +5167,9 @@ model HalalRestaurantVerifyVote {
 // VIDEO COMMENT LIKES — Like tracking for video comments
 // ============================================================
 
+// @deprecated — Zero code references in API or mobile.
+// VideoComment.likesCount is incremented directly; this join table was never wired.
+// Retained for potential production data.
 model VideoCommentLike {
   id        String       @id @default(cuid())
   userId    String
@@ -5274,6 +5283,7 @@ model WaitlistEntry {
   createdAt    DateTime @default(now())
 
   // @@index([referralCode]) — redundant: referralCode is @unique
+  @@index([referredBy]) // #556: referral tracking lookup
   @@index([createdAt(sort: Desc)])
   @@map("waitlist_entries")
 }

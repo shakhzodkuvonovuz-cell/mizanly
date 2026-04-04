@@ -25,6 +25,7 @@ describe('PlaylistsService', () => {
               findUnique: jest.fn(),
               findMany: jest.fn(),
               update: jest.fn(),
+              updateMany: jest.fn().mockResolvedValue({ count: 0 }),
               delete: jest.fn(),
             },
             playlistItem: {

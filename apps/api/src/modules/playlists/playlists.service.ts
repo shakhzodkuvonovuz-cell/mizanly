@@ -343,6 +343,11 @@ export class PlaylistsService {
         data: { videosCount: { decrement: 1 } },
       }),
     ]);
+    // Floor at 0 to prevent negative on race
+    await this.prisma.playlist.updateMany({
+      where: { id: playlistId, videosCount: { lt: 0 } },
+      data: { videosCount: 0 },
+    });
     return { removed: true };
   }
 
