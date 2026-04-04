@@ -1673,27 +1673,31 @@ export class MessagesService {
       });
 
       // Update conversation metadata per unique conversation (dedup to avoid N updates for same convo)
+      // Batched: single $transaction instead of 2N individual queries
       const convMap = new Map<string, typeof overdue[0]>();
       for (const msg of overdue) {
         convMap.set(msg.conversationId, msg); // Last message per convo wins
       }
-      for (const [convId, msg] of convMap) {
-        await this.prisma.conversation.update({
+      const convOps = [...convMap.entries()].flatMap(([convId, msg]) => [
+        this.prisma.conversation.update({
           where: { id: convId },
           data: {
             lastMessageAt: now,
             lastMessageText: msg.content?.slice(0, 100) ?? null,
             lastMessageById: msg.senderId,
           },
-        }).catch(err => this.logger.warn(`Failed to update conversation ${convId} for scheduled message`, err?.message));
-
-        // Increment unread count for other members
-        if (msg.senderId) {
-          await this.prisma.conversationMember.updateMany({
+        }),
+        ...(msg.senderId ? [
+          this.prisma.conversationMember.updateMany({
             where: { conversationId: convId, userId: { not: msg.senderId } },
             data: { unreadCount: { increment: 1 } },
-          }).catch(err => this.logger.warn(`Failed to increment unread for conv ${convId}`, err?.message));
-        }
+          }),
+        ] : []),
+      ]);
+      if (convOps.length > 0) {
+        await this.prisma.$transaction(convOps).catch(err =>
+          this.logger.warn(`Failed to batch-update conversations for scheduled messages`, err instanceof Error ? err.message : err),
+        );
       }
 
       const published = overdue.length;

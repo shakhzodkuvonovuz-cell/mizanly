@@ -100,27 +100,26 @@ export class AltProfileService {
       throw new BadRequestException('Cannot add more than 100 users at once');
     }
 
-    const results = [];
-    for (const targetId of targetUserIds) {
-      try {
-        const access = await this.prisma.altProfileAccess.upsert({
-          where: {
-            altProfileId_userId: {
-              altProfileId: profile.id,
-              userId: targetId,
-            },
-          },
-          create: {
-            altProfileId: profile.id,
-            userId: targetId,
-          },
-          update: {},
-        });
-        results.push({ userId: targetId, added: true });
-      } catch {
-        results.push({ userId: targetId, added: false });
-      }
-    }
+    // Batch: single createMany instead of N individual upserts
+    const createResult = await this.prisma.altProfileAccess.createMany({
+      data: targetUserIds.map(targetId => ({
+        altProfileId: profile.id,
+        userId: targetId,
+      })),
+      skipDuplicates: true,
+    });
+
+    // Determine which IDs were actually added vs already existed
+    const existingAccess = await this.prisma.altProfileAccess.findMany({
+      where: { altProfileId: profile.id, userId: { in: targetUserIds } },
+      select: { userId: true },
+    });
+    const existingSet = new Set(existingAccess.map(a => a.userId));
+
+    const results = targetUserIds.map(targetId => ({
+      userId: targetId,
+      added: existingSet.has(targetId),
+    }));
 
     return results;
   }

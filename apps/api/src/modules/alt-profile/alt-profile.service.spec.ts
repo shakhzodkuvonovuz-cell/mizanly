@@ -16,6 +16,7 @@ describe('AltProfileService', () => {
     altProfileAccess: {
       findUnique: jest.fn().mockResolvedValue(null),
       create: jest.fn(),
+      createMany: jest.fn().mockResolvedValue({ count: 0 }),
       delete: jest.fn(),
       findMany: jest.fn().mockResolvedValue([]),
     },
@@ -121,9 +122,20 @@ describe('AltProfileService', () => {
   describe('addAccess', () => {
     it('should add access for target users', async () => {
       mockPrisma.altProfile.findUnique.mockResolvedValue({ id: 'ap-1', userId: 'user-1' });
-      mockPrisma.altProfileAccess.create.mockResolvedValue({});
+      mockPrisma.altProfileAccess.createMany.mockResolvedValue({ count: 2 });
+      mockPrisma.altProfileAccess.findMany.mockResolvedValue([
+        { userId: 'friend-1' },
+        { userId: 'friend-2' },
+      ]);
       const result = await service.addAccess('user-1', ['friend-1', 'friend-2']);
       expect(result).toHaveLength(2);
+      expect(mockPrisma.altProfileAccess.createMany).toHaveBeenCalledWith({
+        data: [
+          { altProfileId: 'ap-1', userId: 'friend-1' },
+          { altProfileId: 'ap-1', userId: 'friend-2' },
+        ],
+        skipDuplicates: true,
+      });
     });
 
     it('should throw NotFoundException when no profile exists', async () => {

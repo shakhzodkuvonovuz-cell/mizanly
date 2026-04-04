@@ -134,11 +134,9 @@ export class BlocksService {
         const result = await this.prisma.circleMember.deleteMany({
           where: { circleId: { in: circleIds }, userId: blockedId },
         });
-        // Decrement membersCount for affected circles
+        // Decrement membersCount for affected circles — single batch SQL instead of N individual queries
         if (result.count > 0) {
-          for (const circleId of circleIds) {
-            await this.prisma.$executeRaw`UPDATE circles SET "membersCount" = GREATEST("membersCount" - 1, 1) WHERE id = ${circleId}`.catch(err => this.logger.warn('Failed to update circle member count', err instanceof Error ? err.message : err));
-          }
+          await this.prisma.$executeRaw`UPDATE circles SET "membersCount" = GREATEST("membersCount" - 1, 1) WHERE id = ANY(${circleIds}::text[])`.catch(err => this.logger.warn('Failed to update circle member counts', err instanceof Error ? err.message : err));
         }
       }
     } catch (err) {

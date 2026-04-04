@@ -1745,32 +1745,29 @@ export class PostsService {
     if (targets.length === 0) throw new BadRequestException('No valid target spaces');
 
     // Wrap all cross-posts + counter in a transaction to prevent partial failures
+    // All creates run in parallel within the transaction (max 4 spaces)
     const newPosts = await this.prisma.$transaction(async (tx) => {
-      const posts = [];
-      for (const space of targets) {
-        const newPost = await tx.post.create({
-          data: {
-            userId,
-            content: dto.captionOverride ?? post.content,
-            mediaUrls: post.mediaUrls,
-            mediaTypes: post.mediaTypes,
-            thumbnailUrl: post.thumbnailUrl,
-            mediaWidth: post.mediaWidth,
-            mediaHeight: post.mediaHeight,
-            postType: post.postType,
-            space: space as ContentSpace, // Safe: filtered by validSpaces whitelist above
-            hashtags: post.hashtags,
-            mentions: post.mentions,
-          },
-          select: POST_SELECT,
-        });
-        posts.push(newPost);
-      }
-
-      // Increment user's post count atomically with GREATEST protection
-      if (posts.length > 0) {
-        await tx.$executeRaw`UPDATE "users" SET "postsCount" = "postsCount" + ${posts.length} WHERE id = ${userId}`;
-      }
+      const [posts] = await Promise.all([
+        Promise.all(targets.map(space =>
+          tx.post.create({
+            data: {
+              userId,
+              content: dto.captionOverride ?? post.content,
+              mediaUrls: post.mediaUrls,
+              mediaTypes: post.mediaTypes,
+              thumbnailUrl: post.thumbnailUrl,
+              mediaWidth: post.mediaWidth,
+              mediaHeight: post.mediaHeight,
+              postType: post.postType,
+              space: space as ContentSpace, // Safe: filtered by validSpaces whitelist above
+              hashtags: post.hashtags,
+              mentions: post.mentions,
+            },
+            select: POST_SELECT,
+          }),
+        )),
+        tx.$executeRaw`UPDATE "users" SET "postsCount" = "postsCount" + ${targets.length} WHERE id = ${userId}`,
+      ]);
 
       return posts;
     });
