@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!--
+    CONCEPT 10: "THE SEEDLING"
+    A single sprout with two symmetrical leaves growing from a stem.
+    The two leaves = balance (equal on both sides).
+    The stem = growth, roots, foundation.
+    The whole shape subtly forms an upward arrow / letter M.
+    Meaning: Growth, new beginnings, nurturing community, organic balance.
+    Think: Robinhood's feather, but it's a sprout.
+    Universal, organic, optimistic.
+  -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0E9B5F"/>
+      <stop offset="45%" stop-color="#0A7B4F"/>
+      <stop offset="100%" stop-color="#06633C"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0.5" y1="1" x2="0.5" y2="0">
+      <stop offset="0%" stop-color="#A67A2E"/>
+      <stop offset="45%" stop-color="#C8963E"/>
+      <stop offset="100%" stop-color="#EDD07A"/>
+    </linearGradient>
+    <linearGradient id="goldH" x1="0" y1="0.5" x2="1" y2="0.5">
+      <stop offset="0%" stop-color="#A67A2E"/>
+      <stop offset="50%" stop-color="#C8963E"/>
+      <stop offset="100%" stop-color="#A67A2E"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.35">
+      <stop offset="0%" stop-color="rgba(232,196,106,0.1)"/>
+      <stop offset="100%" stop-color="rgba(200,150,62,0)"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
+  <circle cx="512" cy="480" r="300" fill="url(#glow)"/>
+
+  <!-- Stem — vertical line -->
+  <path
+    d="M 512,720 L 512,420"
+    fill="none"
+    stroke="url(#gold)"
+    stroke-width="18"
+    stroke-linecap="round"
+  />
+
+  <!-- Left leaf — curves outward and up -->
+  <path
+    d="M 512,420
+       Q 510,380 480,340
+       Q 440,280 370,260
+       Q 320,248 300,270
+       Q 280,295 310,340
+       Q 360,400 420,430
+       Q 470,450 512,450"
+    fill="url(#gold)"
+    opacity="0.9"
+  />
+
+  <!-- Right leaf — mirror of left -->
+  <path
+    d="M 512,420
+       Q 514,380 544,340
+       Q 584,280 654,260
+       Q 704,248 724,270
+       Q 744,295 714,340
+       Q 664,400 604,430
+       Q 554,450 512,450"
+    fill="url(#gold)"
+    opacity="0.9"
+  />
+
+  <!-- Leaf veins (subtle center lines) -->
+  <path
+    d="M 512,425 Q 460,370 360,275"
+    fill="none" stroke="rgba(10,123,79,0.3)" stroke-width="4" stroke-linecap="round"
+  />
+  <path
+    d="M 512,425 Q 564,370 664,275"
+    fill="none" stroke="rgba(10,123,79,0.3)" stroke-width="4" stroke-linecap="round"
+  />
+</svg>
