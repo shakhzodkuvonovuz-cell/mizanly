@@ -154,21 +154,34 @@ export class HalalService {
     const restaurant = await this.prisma.halalRestaurant.findUnique({ where: { id: restaurantId } });
     if (!restaurant) throw new NotFoundException('Restaurant not found');
 
-    // Check if user already voted (use review as proxy for vote tracking)
-    const existingReview = await this.prisma.halalRestaurantReview.findUnique({
-      where: { restaurantId_userId: { restaurantId, userId } },
+    // Check if user already voted using the dedicated verify vote table
+    const existingVote = await this.prisma.halalRestaurantVerifyVote.findUnique({
+      where: { userId_restaurantId: { userId, restaurantId } },
     });
-    if (existingReview) throw new ConflictException('Already verified this restaurant');
+    if (existingVote) throw new ConflictException('Already verified this restaurant');
 
-    const updated = await this.prisma.halalRestaurant.update({
-      where: { id: restaurantId },
-      data: {
-        verifyVotes: { increment: 1 },
-        isVerified: restaurant.verifyVotes + 1 >= 5 ? true : restaurant.isVerified,
-      },
-    });
+    try {
+      const [, updated] = await this.prisma.$transaction([
+        this.prisma.halalRestaurantVerifyVote.create({
+          data: { userId, restaurantId },
+        }),
+        this.prisma.halalRestaurant.update({
+          where: { id: restaurantId },
+          data: {
+            verifyVotes: { increment: 1 },
+            isVerified: restaurant.verifyVotes + 1 >= 5 ? true : restaurant.isVerified,
+          },
+        }),
+      ]);
 
-    return { verified: updated.isVerified, votes: updated.verifyVotes };
+      return { verified: updated.isVerified, votes: updated.verifyVotes };
+    } catch (err: unknown) {
+      // P2002: duplicate vote from concurrent request — idempotent
+      if (err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === 'P2002') {
+        throw new ConflictException('Already verified this restaurant');
+      }
+      throw err;
+    }
   }
 
   private haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {

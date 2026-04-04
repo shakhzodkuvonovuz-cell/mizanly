@@ -26,6 +26,11 @@ describe('HalalService', () => {
       create: jest.fn(),
       aggregate: jest.fn().mockResolvedValue({ _avg: { rating: 4.5 }, _count: 1 }),
     },
+    halalRestaurantVerifyVote: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      create: jest.fn(),
+    },
+    $transaction: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -136,17 +141,26 @@ describe('HalalService', () => {
   });
 
   describe('verifyHalal', () => {
-    it('should increment verify votes', async () => {
+    it('should increment verify votes via transaction', async () => {
       mockPrisma.halalRestaurant.findUnique.mockResolvedValue({ id: 'r1', verifyVotes: 3, isVerified: false });
-      mockPrisma.halalRestaurant.update.mockResolvedValue({ isVerified: false, verifyVotes: 4 });
+      mockPrisma.halalRestaurantVerifyVote.findUnique.mockResolvedValue(null);
+      mockPrisma.$transaction.mockResolvedValue([
+        { id: 'vote-1', userId: 'user-1', restaurantId: 'r1' },
+        { isVerified: false, verifyVotes: 4 },
+      ]);
 
       const result = await service.verifyHalal('user-1', 'r1');
       expect(result.votes).toBe(4);
+      expect(mockPrisma.$transaction).toHaveBeenCalled();
     });
 
     it('should auto-verify at 5 votes', async () => {
       mockPrisma.halalRestaurant.findUnique.mockResolvedValue({ id: 'r1', verifyVotes: 4, isVerified: false });
-      mockPrisma.halalRestaurant.update.mockResolvedValue({ isVerified: true, verifyVotes: 5 });
+      mockPrisma.halalRestaurantVerifyVote.findUnique.mockResolvedValue(null);
+      mockPrisma.$transaction.mockResolvedValue([
+        { id: 'vote-1', userId: 'user-1', restaurantId: 'r1' },
+        { isVerified: true, verifyVotes: 5 },
+      ]);
 
       const result = await service.verifyHalal('user-1', 'r1');
       expect(result.verified).toBe(true);
@@ -155,6 +169,21 @@ describe('HalalService', () => {
     it('should throw NotFoundException when restaurant not found', async () => {
       mockPrisma.halalRestaurant.findUnique.mockResolvedValue(null);
       await expect(service.verifyHalal('user-1', 'nonexistent')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ConflictException for duplicate verify vote', async () => {
+      mockPrisma.halalRestaurant.findUnique.mockResolvedValue({ id: 'r1', verifyVotes: 3, isVerified: false });
+      mockPrisma.halalRestaurantVerifyVote.findUnique.mockResolvedValue({ id: 'vote-existing', userId: 'u1' });
+      await expect(service.verifyHalal('u1', 'r1')).rejects.toThrow(ConflictException);
+    });
+
+    it('should handle P2002 race condition on concurrent verify', async () => {
+      mockPrisma.halalRestaurant.findUnique.mockResolvedValue({ id: 'r1', verifyVotes: 3, isVerified: false });
+      mockPrisma.halalRestaurantVerifyVote.findUnique.mockResolvedValue(null);
+      const p2002Error = { code: 'P2002', message: 'Unique constraint' };
+      Object.setPrototypeOf(p2002Error, new Error());
+      mockPrisma.$transaction.mockRejectedValue(p2002Error);
+      await expect(service.verifyHalal('u1', 'r1')).rejects.toThrow(ConflictException);
     });
   });
 
@@ -191,10 +220,10 @@ describe('HalalService', () => {
     });
   });
 
-  describe('verifyHalal — ConflictException for already verified', () => {
-    it('should throw ConflictException when user already voted', async () => {
+  describe('verifyHalal — ConflictException for already verified (via verify vote table)', () => {
+    it('should throw ConflictException when user already voted via verify vote record', async () => {
       mockPrisma.halalRestaurant.findUnique.mockResolvedValueOnce({ id: 'r1', verifyVotes: 3, isVerified: false });
-      mockPrisma.halalRestaurantReview.findUnique.mockResolvedValueOnce({ id: 'rev-existing', userId: 'u1' });
+      mockPrisma.halalRestaurantVerifyVote.findUnique.mockResolvedValueOnce({ id: 'vote-existing', userId: 'u1' });
       await expect(service.verifyHalal('u1', 'r1')).rejects.toThrow(ConflictException);
     });
   });

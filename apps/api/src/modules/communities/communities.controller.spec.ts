@@ -28,6 +28,10 @@ describe('CommunitiesController', () => {
             join: jest.fn(),
             leave: jest.fn(),
             listMembers: jest.fn(),
+            createRole: jest.fn(),
+            updateRole: jest.fn(),
+            deleteRole: jest.fn(),
+            listRoles: jest.fn(),
           },
         },
         { provide: ClerkAuthGuard, useValue: { canActivate: jest.fn(() => true) } },
@@ -132,6 +136,54 @@ describe('CommunitiesController', () => {
       await controller.listMembers('comm-1', userId, 'cursor-1', 25);
 
       expect(service.listMembers).toHaveBeenCalledWith('comm-1', userId, 'cursor-1', 25);
+    });
+  });
+
+  // ── Role Management ────────────────────────────────
+
+  describe('listRoles', () => {
+    it('should call communitiesService.listRoles with communityId', async () => {
+      service.listRoles.mockResolvedValue([{ id: 'role-1', name: 'Moderator' }] as any);
+
+      const result = await controller.listRoles('comm-1');
+
+      expect(service.listRoles).toHaveBeenCalledWith('comm-1');
+      expect(result).toHaveLength(1);
+    });
+  });
+
+  describe('createRole', () => {
+    it('should call communitiesService.createRole with id, userId, and dto', async () => {
+      const dto = { name: 'Moderator', color: '#FF5733', canKick: true };
+      service.createRole.mockResolvedValue({ id: 'role-1', ...dto } as any);
+
+      const result = await controller.createRole('comm-1', userId, dto as any);
+
+      expect(service.createRole).toHaveBeenCalledWith('comm-1', userId, dto);
+      expect(result).toEqual(expect.objectContaining({ name: 'Moderator' }));
+    });
+  });
+
+  describe('updateRole', () => {
+    it('should call communitiesService.updateRole with roleId, userId, and dto', async () => {
+      const dto = { name: 'Senior Mod', canBan: true };
+      service.updateRole.mockResolvedValue({ id: 'role-1', ...dto } as any);
+
+      const result = await controller.updateRole('comm-1', 'role-1', userId, dto as any);
+
+      expect(service.updateRole).toHaveBeenCalledWith('role-1', userId, dto);
+      expect(result).toEqual(expect.objectContaining({ name: 'Senior Mod' }));
+    });
+  });
+
+  describe('deleteRole', () => {
+    it('should call communitiesService.deleteRole with roleId and userId', async () => {
+      service.deleteRole.mockResolvedValue({ id: 'role-1' } as any);
+
+      const result = await controller.deleteRole('comm-1', 'role-1', userId);
+
+      expect(service.deleteRole).toHaveBeenCalledWith('role-1', userId);
+      expect(result).toEqual({ id: 'role-1' });
     });
   });
 });

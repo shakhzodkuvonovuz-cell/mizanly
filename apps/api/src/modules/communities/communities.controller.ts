@@ -16,6 +16,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { CommunitiesService } from './communities.service';
 import { CreateCommunityDto } from './dto/create-community.dto';
 import { UpdateCommunityDto } from './dto/update-community.dto';
+import { CreateRoleDto, UpdateRoleDto } from './dto/manage-role.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -118,5 +119,55 @@ export class CommunitiesController {
   ) {
     const safeLim = Math.min(Math.max(Number(limit) || 50, 1), 100);
     return this.communitiesService.listMembers(id, viewerId, cursor, safeLim);
+  }
+
+  // ── Role Management ────────────────────────────────
+
+  @Get(':id/roles')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'List community roles' })
+  listRoles(@Param('id') id: string) {
+    return this.communitiesService.listRoles(id);
+  }
+
+  @Post(':id/roles')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create community role (admin only)' })
+  createRole(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body() dto: CreateRoleDto,
+  ) {
+    return this.communitiesService.createRole(id, userId, dto);
+  }
+
+  @Patch(':id/roles/:roleId')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update community role (admin only)' })
+  updateRole(
+    @Param('id') _id: string,
+    @Param('roleId') roleId: string,
+    @CurrentUser('id') userId: string,
+    @Body() dto: UpdateRoleDto,
+  ) {
+    return this.communitiesService.updateRole(roleId, userId, dto);
+  }
+
+  @Delete(':id/roles/:roleId')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete community role (admin only)' })
+  deleteRole(
+    @Param('id') _id: string,
+    @Param('roleId') roleId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.communitiesService.deleteRole(roleId, userId);
   }
 }

@@ -1135,6 +1135,7 @@ model User {
   fastingLogs              FastingLog[]                @relation("fastingLogs")
   halalRestaurantsAdded    HalalRestaurant[]           @relation("halalRestaurantsAdded")
   halalRestaurantReviews   HalalRestaurantReview[]     @relation("halalRestaurantReviews")
+  halalRestaurantVerifyVotes HalalRestaurantVerifyVote[] @relation("halalRestaurantVerifyVotes")
   hifzProgressRecords      HifzProgress[]              @relation("hifzProgressRecords")
   mosqueCommunitiesCreated MosqueCommunity[]           @relation("mosqueCommunitiesCreated")
   mosqueMemberships        MosqueMembership[]          @relation("mosqueMemberships")
@@ -5117,7 +5118,8 @@ model HalalRestaurant {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt // S02-#37: rating/verify tracking
 
-  reviews HalalRestaurantReview[]
+  reviews          HalalRestaurantReview[]
+  verifyVoteRecords HalalRestaurantVerifyVote[]
 
   @@index([latitude, longitude])
   @@index([city])
@@ -5136,6 +5138,23 @@ model HalalRestaurantReview {
 
   @@unique([restaurantId, userId])
   @@map("halal_restaurant_reviews")
+}
+
+// ============================================================
+// HALAL RESTAURANT VERIFY VOTES — Dedup for community verify
+// ============================================================
+
+model HalalRestaurantVerifyVote {
+  id           String          @id @default(cuid())
+  userId       String
+  user         User            @relation("halalRestaurantVerifyVotes", fields: [userId], references: [id], onDelete: Cascade)
+  restaurantId String
+  restaurant   HalalRestaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  createdAt    DateTime        @default(now())
+
+  @@unique([userId, restaurantId])
+  @@index([restaurantId])
+  @@map("halal_restaurant_verify_votes")
 }
 
 // ============================================================
