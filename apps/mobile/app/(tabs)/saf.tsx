@@ -751,8 +751,7 @@ export default function SafScreen() {
 }
 
 const styles = StyleSheet.create({
-  // TODO: colors.dark.bg overridden by inline style with tc.bg from useThemeColors()
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -814,19 +813,15 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontFamily: fonts.bodyBold,
   },
-  // TODO: colors.dark.border overridden by inline style with tc.border from useThemeColors()
   storySeparator: {
     height: 0.5,
-    backgroundColor: colors.dark.border,
     marginHorizontal: spacing.base,
   },
 });
 
 // ── Suggested User Card Styles ──
 const suggestedStyles = StyleSheet.create({
-  // TODO: colors.dark.bgCard overridden by inline style with tc.bgCard from useThemeColors()
   container: {
-    backgroundColor: colors.dark.bgCard,
     marginHorizontal: spacing.base,
     marginVertical: spacing.md,
     borderRadius: radius.lg,

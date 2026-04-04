@@ -536,8 +536,7 @@ export default function RisalahScreen() {
 }
 
 const styles = StyleSheet.create({
-  // TODO: colors.dark.bg overridden by inline style with tc.bg from useThemeColors()
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -580,14 +579,11 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     gap: spacing.sm,
   },
-  // TODO: colors.dark.surface/border overridden by inline style with tc.surface/tc.border from useThemeColors()
   filterChip: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.surface,
     borderWidth: 1,
-    borderColor: colors.dark.border,
   },
   filterChipSelected: {
     backgroundColor: colors.emerald,
@@ -602,7 +598,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '600',
   },
-  // TODO: colors.dark.border overridden by inline style with tc.border from useThemeColors()
   archivedRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -610,7 +605,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     gap: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
   },
   archivedText: {
     color: colors.text.secondary,

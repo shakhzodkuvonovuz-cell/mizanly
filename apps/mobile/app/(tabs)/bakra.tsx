@@ -296,7 +296,7 @@ const ReelItem = memo(function ReelItem({
                 onNavigate(`/(screens)/sound/${item.audioTrackId}`);
               }
             }}
-            style={styles.audioDisc}
+            style={[styles.audioDisc, { backgroundColor: tc.surface }]}
           >
             <Animated.View style={[styles.audioDiscInner, spinStyle]}>
               {item.audioCoverUrl ? (
@@ -972,8 +972,7 @@ export default function BakraScreen() {
 }
 
 const styles = StyleSheet.create({
-  // TODO: colors.dark.bg overridden by inline style with tc.bg from useThemeColors()
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
   feedTypeTabs: {
     position: 'absolute',
     top: 50,
@@ -1196,7 +1195,6 @@ const styles = StyleSheet.create({
     borderColor: '#fff',
     overflow: 'hidden',
     marginStart: spacing.sm,
-    backgroundColor: colors.dark.surface,
     shadowColor: colors.emerald,
     shadowOpacity: 0.3,
     shadowRadius: 6,
@@ -1244,7 +1242,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     overflow: 'hidden',
     borderWidth: 1.5,
-    borderColor: colors.dark.bg, // TODO: overridden by inline style with tc.bg from useThemeColors()
   },
   followIconContainer: {
     width: 34,

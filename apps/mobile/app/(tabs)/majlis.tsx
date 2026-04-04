@@ -451,8 +451,7 @@ export default function MajlisScreen() {
 }
 
 const styles = StyleSheet.create({
-  // TODO: colors.dark.bg overridden by inline style with tc.bg from useThemeColors()
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -498,14 +497,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm,
   },
-  // TODO: colors.dark.surface/border overridden by inline style with tc.surface/tc.border from useThemeColors()
   hashtagChip: {
-    backgroundColor: colors.dark.surface,
     borderRadius: radius.full,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderWidth: 1,
-    borderColor: colors.dark.border,
   },
   hashtagText: {
     color: colors.emerald,

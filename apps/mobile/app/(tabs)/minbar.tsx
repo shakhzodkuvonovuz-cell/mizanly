@@ -528,8 +528,7 @@ export default function MinbarScreen() {
 }
 
 const styles = StyleSheet.create({
-  // TODO: colors.dark.bg overridden by inline style with tc.bg from useThemeColors()
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -553,14 +552,11 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     gap: spacing.sm,
   },
-  // TODO: colors.dark.surface/border overridden by inline style with tc.surface/tc.border from useThemeColors()
   categoryChip: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.surface,
     borderWidth: 1,
-    borderColor: colors.dark.border,
   },
   categoryChipActive: {
     backgroundColor: colors.emerald,
@@ -578,12 +574,10 @@ const styles = StyleSheet.create({
   videoCard: {
     marginBottom: spacing.lg,
   },
-  // TODO: colors.dark.surface overridden by inline style with tc.surface from useThemeColors()
   thumbnailContainer: {
     position: 'relative',
     width: '100%',
     aspectRatio: 16 / 9,
-    backgroundColor: colors.dark.surface,
   },
   thumbnail: {
     width: '100%',
@@ -692,23 +686,19 @@ const styles = StyleSheet.create({
   continueCard: {
     width: 200,
   },
-  // TODO: colors.dark.bgCard overridden by inline style with tc.bgCard from useThemeColors()
   continueThumbWrap: {
     width: 200,
     height: 112,
     borderRadius: radius.sm,
     overflow: 'hidden',
-    backgroundColor: colors.dark.bgCard,
   },
   continueThumb: {
     width: '100%',
     height: '100%',
   },
-  // TODO: colors.dark.surface overridden by inline style with tc.surface from useThemeColors()
   continueThumbPlaceholder: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.dark.surface,
   },
   progressBarBg: {
     position: 'absolute',
