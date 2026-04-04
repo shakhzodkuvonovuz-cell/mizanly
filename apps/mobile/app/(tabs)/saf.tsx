@@ -104,7 +104,7 @@ const SuggestedUserRow = memo(function SuggestedUserRow({
   isRTL: boolean;
   onFollow: () => void;
   onDismiss: () => void;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, unknown>) => string;
 }) {
   const [followed, setFollowed] = useState(false);
   const tc = useThemeColors();
