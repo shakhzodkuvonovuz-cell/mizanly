@@ -22,7 +22,7 @@ describe('WebhooksService', () => {
             webhook: {
               create: jest.fn().mockResolvedValue({
                 id: 'wh-1', name: 'Test Hook', url: 'https://example.com/hook',
-                events: ['message.sent'], secret: 'abc123', createdById: 'u1',
+                events: ['message.sent'], isActive: true, createdAt: new Date(),
               }),
               findMany: jest.fn().mockResolvedValue([]),
               findUnique: jest.fn().mockResolvedValue({ id: 'wh-1', createdById: 'u1' }),
@@ -46,13 +46,30 @@ describe('WebhooksService', () => {
   });
 
   describe('create', () => {
-    it('should create a webhook', async () => {
+    it('should create a webhook and return plaintext secret', async () => {
       const result = await service.create('u1', {
         circleId: 'c1', name: 'Test Hook',
         url: 'https://example.com/hook', events: ['message.sent'],
       });
       expect(result.name).toBe('Test Hook');
+      // Secret should be a hex string returned to user (not the encrypted value stored in DB)
       expect(result.secret).toBeDefined();
+      expect(result.secret).toMatch(/^[0-9a-f]{64}$/); // 32 bytes = 64 hex chars
+    });
+
+    it('should store encrypted secret in DB', async () => {
+      await service.create('u1', {
+        circleId: 'c1', name: 'Test Hook',
+        url: 'https://example.com/hook', events: ['message.sent'],
+      });
+      // The Prisma create call should contain an encrypted secret (plain: prefix when no key)
+      expect(prisma.webhook.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            secret: expect.stringContaining('plain:'),
+          }),
+        }),
+      );
     });
 
     it('should require admin/owner role', async () => {
@@ -117,9 +134,18 @@ describe('WebhooksService', () => {
       await expect(service.test('wh-1', 'u1')).rejects.toThrow(NotFoundException);
     });
 
-    it('should deliver test payload', async () => {
+    it('should deliver test payload (decrypts secret)', async () => {
       global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200 }) as any;
-      prisma.webhook.findUnique.mockResolvedValue({ id: 'wh-1', url: 'https://example.com/hook', secret: 'sec', createdById: 'u1' });
+      // Stored secret is plain: prefixed (no encryption key in test env)
+      prisma.webhook.findUnique.mockResolvedValue({ id: 'wh-1', url: 'https://example.com/hook', secret: 'plain:sec', createdById: 'u1' });
+      const result = await service.test('wh-1', 'u1');
+      expect(result.success).toBe(true);
+    });
+
+    it('should deliver test payload with legacy unencrypted secret', async () => {
+      global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200 }) as any;
+      // Legacy: raw secret (no prefix) — decryptField returns as-is
+      prisma.webhook.findUnique.mockResolvedValue({ id: 'wh-1', url: 'https://example.com/hook', secret: 'raw-legacy-secret', createdById: 'u1' });
       const result = await service.test('wh-1', 'u1');
       expect(result.success).toBe(true);
     });
@@ -186,8 +212,8 @@ describe('WebhooksService', () => {
     it('should dispatch to matching webhooks', async () => {
       global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200 }) as any;
       prisma.webhook.findMany.mockResolvedValue([
-        { id: 'wh-1', url: 'https://example.com/hook1', secret: 'sec1', events: ['post.created'], isActive: true },
-        { id: 'wh-2', url: 'https://example.com/hook2', secret: 'sec2', events: ['member.joined'], isActive: true },
+        { id: 'wh-1', url: 'https://example.com/hook1', secret: 'plain:sec1', events: ['post.created'], isActive: true },
+        { id: 'wh-2', url: 'https://example.com/hook2', secret: 'plain:sec2', events: ['member.joined'], isActive: true },
       ]);
       const result = await service.dispatch('c1', 'post.created', { postId: 'p1' });
       expect(result.dispatched).toBe(1);
@@ -211,7 +237,7 @@ describe('WebhooksService', () => {
       global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200 }) as any;
       prisma.webhook.findMany.mockResolvedValue([
         { id: 'wh-1', url: 'https://example.com/hook1', secret: null, events: ['post.created'], isActive: true },
-        { id: 'wh-2', url: 'https://example.com/hook2', secret: 'sec2', events: ['post.created'], isActive: true },
+        { id: 'wh-2', url: 'https://example.com/hook2', secret: 'plain:sec2', events: ['post.created'], isActive: true },
       ]);
       const result = await service.dispatch('c1', 'post.created', { postId: 'p1' });
       expect(result.dispatched).toBe(1); // Only wh-2 (has secret)
@@ -220,7 +246,7 @@ describe('WebhooksService', () => {
     it('should only update lastUsedAt on successful delivery', async () => {
       global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200 }) as any;
       prisma.webhook.findMany.mockResolvedValue([
-        { id: 'wh-1', url: 'https://example.com/hook1', secret: 'sec1', events: ['post.created'], isActive: true },
+        { id: 'wh-1', url: 'https://example.com/hook1', secret: 'plain:sec1', events: ['post.created'], isActive: true },
       ]);
       await service.dispatch('c1', 'post.created', { data: {} });
       expect(prisma.webhook.update).toHaveBeenCalledWith(
@@ -234,7 +260,7 @@ describe('WebhooksService', () => {
     it('should not update lastUsedAt on failed delivery', async () => {
       global.fetch = jest.fn().mockRejectedValue(new Error('fail')) as any;
       prisma.webhook.findMany.mockResolvedValue([
-        { id: 'wh-1', url: 'https://example.com/hook1', secret: 'sec1', events: ['post.created'], isActive: true },
+        { id: 'wh-1', url: 'https://example.com/hook1', secret: 'plain:sec1', events: ['post.created'], isActive: true },
       ]);
       await service.dispatch('c1', 'post.created', { data: {} });
       expect(prisma.webhook.update).not.toHaveBeenCalled();

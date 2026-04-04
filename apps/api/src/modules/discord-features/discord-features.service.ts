@@ -1,13 +1,21 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 import { StageSessionStatus } from '@prisma/client';
+import { randomBytes } from 'crypto';
+import { hashToken } from '../../common/utils/field-encryption';
 
 const USER_SELECT = { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true };
 const MAX_STAGE_SPEAKERS = 20;
 
 @Injectable()
 export class DiscordFeaturesService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(DiscordFeaturesService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private config: ConfigService,
+  ) {}
 
   // ── Forum Threads ───────────────────────────────────────
 
@@ -193,9 +201,28 @@ export class DiscordFeaturesService {
     const count = await this.prisma.webhook.count({ where: { circleId } });
     if (count >= 15) throw new BadRequestException('Maximum 15 webhooks per community');
 
-    return this.prisma.webhook.create({
-      data: { circleId, createdById: userId, name: dto.name, avatarUrl: dto.avatarUrl, targetChannelId: dto.targetChannelId },
+    // Generate a random token and store its SHA-256 hash.
+    // The plaintext token is returned once on creation — the user needs it
+    // to call the execute endpoint. We store only the hash for lookup.
+    const plaintextToken = randomBytes(32).toString('hex');
+    const tokenHash = hashToken(plaintextToken);
+
+    const webhook = await this.prisma.webhook.create({
+      data: {
+        circleId,
+        createdById: userId,
+        name: dto.name,
+        avatarUrl: dto.avatarUrl,
+        targetChannelId: dto.targetChannelId,
+        token: tokenHash,
+      },
+      select: {
+        id: true, circleId: true, name: true, avatarUrl: true,
+        targetChannelId: true, isActive: true, createdAt: true,
+      },
     });
+    // Return plaintext token once — this is the only time it's available
+    return { ...webhook, token: plaintextToken };
   }
 
   async getWebhooks(circleId: string, userId?: string) {
@@ -208,6 +235,12 @@ export class DiscordFeaturesService {
     }
     return this.prisma.webhook.findMany({
       where: { circleId, isActive: true },
+      select: {
+        id: true, circleId: true, name: true, avatarUrl: true,
+        targetChannelId: true, events: true, isActive: true,
+        lastUsedAt: true, createdAt: true,
+        // Exclude token hash and secret — never expose stored hashes/ciphertexts
+      },
       orderBy: { createdAt: 'desc' },
       take: 50,
     });
@@ -236,10 +269,21 @@ export class DiscordFeaturesService {
     if (!dto.content || dto.content.length > 4000) {
       throw new BadRequestException('Content is required and must be under 4000 characters');
     }
-    const webhook = await this.prisma.webhook.findUnique({
-      where: { token },
+    // Hash the incoming token to match against the stored SHA-256 hash.
+    // Legacy webhooks with unhashed tokens are also supported: if hashed lookup
+    // fails, fall back to raw token lookup for backward compatibility.
+    const tokenHash = hashToken(token);
+    let webhook = await this.prisma.webhook.findUnique({
+      where: { token: tokenHash },
       select: { id: true, isActive: true, targetChannelId: true, circleId: true },
     });
+    if (!webhook) {
+      // Fallback: try raw token for legacy webhooks created before hashing
+      webhook = await this.prisma.webhook.findUnique({
+        where: { token },
+        select: { id: true, isActive: true, targetChannelId: true, circleId: true },
+      });
+    }
     if (!webhook || !webhook.isActive) throw new NotFoundException('Webhook not found');
 
     // Update last used

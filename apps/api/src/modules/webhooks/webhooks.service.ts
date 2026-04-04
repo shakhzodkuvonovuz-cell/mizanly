@@ -1,14 +1,28 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 import { createHmac, randomBytes } from 'crypto';
+import { encryptField, decryptField } from '../../common/utils/field-encryption';
 
 export type WebhookEvent = 'post.created' | 'member.joined' | 'member.left' | 'message.sent' | 'live.started' | 'live.ended';
 
 @Injectable()
 export class WebhooksService {
   private readonly logger = new Logger(WebhooksService.name);
+  private readonly encryptionKey: string | undefined;
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private config: ConfigService,
+  ) {
+    this.encryptionKey = this.config.get<string>('FIELD_ENCRYPTION_KEY');
+    if (!this.encryptionKey) {
+      this.logger.warn(
+        'FIELD_ENCRYPTION_KEY not set — webhook secrets will be stored unencrypted. ' +
+        'Generate: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"',
+      );
+    }
+  }
 
   /**
    * Validate webhook URL: HTTPS only, no private/internal IPs
@@ -138,20 +152,23 @@ export class WebhooksService {
     if (validatedEvents.length === 0) {
       throw new BadRequestException('At least one valid event type is required');
     }
-    const secret = randomBytes(32).toString('hex');
-    return this.prisma.webhook.create({
+    const plaintextSecret = randomBytes(32).toString('hex');
+    const encryptedSecret = encryptField(plaintextSecret, this.encryptionKey);
+    const webhook = await this.prisma.webhook.create({
       data: {
         circleId: data.circleId,
         name: data.name,
         url: data.url,
-        secret,
+        secret: encryptedSecret,
         events: validatedEvents,
         createdById: userId,
       },
-      // Return secret once on creation (user needs it to verify deliveries)
-      // But exclude internal fields like token
-      select: { id: true, name: true, url: true, events: true, secret: true, isActive: true, createdAt: true },
+      // Exclude internal fields like token
+      select: { id: true, name: true, url: true, events: true, isActive: true, createdAt: true },
     });
+    // Return plaintext secret once on creation (user needs it to verify deliveries).
+    // The stored value is encrypted — this is the only time the plaintext is available.
+    return { ...webhook, secret: plaintextSecret };
   }
 
   async list(circleId: string, userId: string) {
@@ -189,8 +206,14 @@ export class WebhooksService {
       throw new BadRequestException('Webhook secret is missing — cannot sign delivery');
     }
 
+    // Decrypt the stored secret for HMAC signing
+    const plaintextSecret = decryptField(webhook.secret, this.encryptionKey);
+    if (!plaintextSecret) {
+      throw new BadRequestException('Webhook secret could not be decrypted — check FIELD_ENCRYPTION_KEY');
+    }
+
     const payload = { event: 'test', data: { message: 'Webhook test from Mizanly' }, timestamp: new Date().toISOString() };
-    return this.deliver(webhook.url, webhook.secret, payload);
+    return this.deliver(webhook.url, plaintextSecret, payload);
   }
 
   /**
@@ -256,7 +279,13 @@ export class WebhooksService {
 
     const results = await Promise.allSettled(
       deliverable.map(async (webhook) => {
-        const result = await this.deliver(webhook.url!, webhook.secret!, payload);
+        // Decrypt the stored secret for HMAC signing
+        const plaintextSecret = decryptField(webhook.secret!, this.encryptionKey);
+        if (!plaintextSecret) {
+          this.logger.error(`Webhook ${webhook.id}: secret decryption failed — skipping delivery`);
+          return { success: false };
+        }
+        const result = await this.deliver(webhook.url!, plaintextSecret, payload);
         // Only update lastUsedAt on successful delivery
         if (result.success) {
           await this.prisma.webhook.update({

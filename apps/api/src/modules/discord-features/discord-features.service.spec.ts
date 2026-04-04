@@ -16,8 +16,8 @@ describe('DiscordFeaturesService', () => {
 
   const mockWebhook = {
     id: 'wh-1', circleId: 'circle-1', createdById: 'user-1',
-    name: 'Test Webhook', token: 'test-token', isActive: true,
-    targetChannelId: null,
+    name: 'Test Webhook', isActive: true,
+    targetChannelId: null, createdAt: new Date(),
   };
 
   const mockStage = {
@@ -378,16 +378,34 @@ describe('DiscordFeaturesService', () => {
   // ── Webhook Creation ──────────────────────────────────
 
   describe('createWebhook', () => {
-    it('should create a webhook for admin/owner', async () => {
+    it('should create a webhook for admin/owner and return plaintext token', async () => {
       prisma.circleMember.findUnique.mockResolvedValue({ role: 'OWNER' });
       const result = await service.createWebhook('user-1', 'circle-1', { name: 'Test' });
-      expect(result).toEqual(mockWebhook);
+      expect(result.id).toBe('wh-1');
+      expect(result.name).toBe('Test Webhook');
+      // Token should be a hex string (plaintext returned once on creation)
+      expect(result.token).toBeDefined();
+      expect(result.token).toMatch(/^[0-9a-f]{64}$/);
+    });
+
+    it('should store SHA-256 hashed token in DB', async () => {
+      prisma.circleMember.findUnique.mockResolvedValue({ role: 'OWNER' });
+      await service.createWebhook('user-1', 'circle-1', { name: 'Test' });
+      // The token stored in DB should be a SHA-256 hash (64 hex chars), not the plaintext
+      expect(prisma.webhook.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            token: expect.stringMatching(/^[0-9a-f]{64}$/),
+          }),
+        }),
+      );
     });
 
     it('should allow ADMIN role to create webhooks', async () => {
       prisma.circleMember.findUnique.mockResolvedValue({ role: 'ADMIN' });
       const result = await service.createWebhook('user-1', 'circle-1', { name: 'Test' });
-      expect(result).toEqual(mockWebhook);
+      expect(result.id).toBe('wh-1');
+      expect(result.token).toBeDefined();
     });
 
     it('should reject non-admin members from creating webhooks', async () => {
@@ -413,13 +431,14 @@ describe('DiscordFeaturesService', () => {
   // ── Webhook Listing ───────────────────────────────────
 
   describe('getWebhooks', () => {
-    it('should return only active webhooks', async () => {
+    it('should return only active webhooks without exposing token/secret', async () => {
       await service.getWebhooks('circle-1');
-      expect(prisma.webhook.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { circleId: 'circle-1', isActive: true },
-        }),
-      );
+      const call = prisma.webhook.findMany.mock.calls[0][0];
+      expect(call.where).toEqual({ circleId: 'circle-1', isActive: true });
+      // Should use select to exclude sensitive fields
+      expect(call.select).toBeDefined();
+      expect(call.select.token).toBeUndefined(); // token hash not exposed
+      expect(call.select.secret).toBeUndefined(); // encrypted secret not exposed
     });
 
     it('should verify membership when userId is provided', async () => {
@@ -439,16 +458,35 @@ describe('DiscordFeaturesService', () => {
   // ── Webhook Execution ─────────────────────────────────
 
   describe('executeWebhook', () => {
-    it('should execute webhook with valid token', async () => {
-      prisma.webhook.findUnique.mockResolvedValue({
+    it('should execute webhook with valid token (hashed lookup)', async () => {
+      // First call (hashed token) returns the webhook
+      prisma.webhook.findUnique.mockResolvedValueOnce({
         id: 'wh-1', isActive: true, targetChannelId: null, circleId: 'c1',
       });
       const result = await service.executeWebhook('test-token', { content: 'Hello' });
       expect(result.success).toBe(true);
+      // Should have looked up by hashed token
+      expect(prisma.webhook.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { token: expect.stringMatching(/^[0-9a-f]{64}$/) },
+        }),
+      );
+    });
+
+    it('should fall back to raw token lookup for legacy webhooks', async () => {
+      // First call (hashed token) returns null, second call (raw token) returns webhook
+      prisma.webhook.findUnique
+        .mockResolvedValueOnce(null) // hashed lookup fails
+        .mockResolvedValueOnce({
+          id: 'wh-1', isActive: true, targetChannelId: null, circleId: 'c1',
+        }); // raw token fallback succeeds
+      const result = await service.executeWebhook('legacy-raw-token', { content: 'Hello' });
+      expect(result.success).toBe(true);
+      expect(prisma.webhook.findUnique).toHaveBeenCalledTimes(2);
     });
 
     it('should create message when targetChannelId exists', async () => {
-      prisma.webhook.findUnique.mockResolvedValue({
+      prisma.webhook.findUnique.mockResolvedValueOnce({
         id: 'wh-1', isActive: true, targetChannelId: 'conv-1', circleId: 'c1',
       });
       await service.executeWebhook('test-token', { content: 'Bot message' });
@@ -470,7 +508,7 @@ describe('DiscordFeaturesService', () => {
     });
 
     it('should reject inactive webhook', async () => {
-      prisma.webhook.findUnique.mockResolvedValue({
+      prisma.webhook.findUnique.mockResolvedValueOnce({
         id: 'wh-1', isActive: false, targetChannelId: null,
       });
       await expect(service.executeWebhook('test-token', { content: 'Hello' }))
@@ -488,7 +526,7 @@ describe('DiscordFeaturesService', () => {
     });
 
     it('should update lastUsedAt on execution', async () => {
-      prisma.webhook.findUnique.mockResolvedValue({
+      prisma.webhook.findUnique.mockResolvedValueOnce({
         id: 'wh-1', isActive: true, targetChannelId: null, circleId: 'c1',
       });
       await service.executeWebhook('test-token', { content: 'Hello' });
