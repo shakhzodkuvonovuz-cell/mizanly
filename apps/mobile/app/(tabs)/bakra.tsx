@@ -758,12 +758,29 @@ export default function BakraScreen() {
   }, [haptic, t]);
 
   const handleFollow = useCallback((userId: string) => {
+    // Optimistic update: immediately show as following in feed
+    const previousData = queryClient.getQueryData(['reels-feed', bakraFeedType]);
+    queryClient.setQueryData(['reels-feed', bakraFeedType], (old: typeof feedQuery.data) => {
+      if (!old) return old;
+      return {
+        ...old,
+        pages: old.pages.map((page) => ({
+          ...page,
+          data: page.data.map((r: Reel) =>
+            r.user.id === userId ? { ...r, user: { ...r.user, isFollowing: true } } : r
+          ),
+        })),
+      };
+    });
+
     followsApi.follow(userId).then(() => {
       queryClient.invalidateQueries({ queryKey: ['reels-feed', bakraFeedType] });
     }).catch(() => {
+      // Rollback on error
+      queryClient.setQueryData(['reels-feed', bakraFeedType], previousData);
       showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
     });
-  }, [queryClient, bakraFeedType, t]);
+  }, [queryClient, bakraFeedType, feedQuery.data, t]);
 
   const handleNavigate = useCallback((path: string) => {
     navigate(path);

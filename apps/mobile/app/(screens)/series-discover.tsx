@@ -91,20 +91,66 @@ function SeriesDiscoverContent() {
 
   const followMutation = useMutation({
     mutationFn: (id: string) => gamificationApi.followSeries(id),
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: ['series-discover', selectedCategory] });
+      const previous = queryClient.getQueryData(['series-discover', selectedCategory]);
+      queryClient.setQueryData(['series-discover', selectedCategory], (old: typeof seriesQuery.data) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            data: page.data.map((s: SeriesItem) =>
+              s.id === id ? { ...s, isFollowing: true, followersCount: s.followersCount + 1 } : s
+            ),
+          })),
+        };
+      });
+      return { previous };
+    },
     onSuccess: () => {
       haptic.success();
-      queryClient.invalidateQueries({ queryKey: ['series-discover'] });
       showToast({ message: t('series.followedToast', 'Followed!'), variant: 'success' });
     },
-    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
+    onError: (err: Error, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['series-discover', selectedCategory], context.previous);
+      }
+      showToast({ message: err.message, variant: 'error' });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['series-discover'] });
+    },
   });
 
   const unfollowMutation = useMutation({
     mutationFn: (id: string) => gamificationApi.unfollowSeries(id),
-    onSuccess: () => {
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: ['series-discover', selectedCategory] });
+      const previous = queryClient.getQueryData(['series-discover', selectedCategory]);
+      queryClient.setQueryData(['series-discover', selectedCategory], (old: typeof seriesQuery.data) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            data: page.data.map((s: SeriesItem) =>
+              s.id === id ? { ...s, isFollowing: false, followersCount: Math.max(0, s.followersCount - 1) } : s
+            ),
+          })),
+        };
+      });
+      return { previous };
+    },
+    onError: (err: Error, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['series-discover', selectedCategory], context.previous);
+      }
+      showToast({ message: err.message, variant: 'error' });
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['series-discover'] });
     },
-    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const allSeries = seriesQuery.data?.pages.flatMap((p) => p.data) ?? [];

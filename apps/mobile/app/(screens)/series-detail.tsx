@@ -85,20 +85,48 @@ function SeriesDetailContent() {
 
   const followMutation = useMutation({
     mutationFn: () => gamificationApi.followSeries(params.id!),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['series', params.id] });
+      const previous = queryClient.getQueryData<SeriesDetail>(['series', params.id]);
+      queryClient.setQueryData<SeriesDetail>(['series', params.id], (old) =>
+        old ? { ...old, isFollowing: true, followersCount: old.followersCount + 1 } : old
+      );
+      return { previous };
+    },
     onSuccess: () => {
       haptic.success();
-      queryClient.invalidateQueries({ queryKey: ['series', params.id] });
       showToast({ message: t('series.followedToast', 'Followed!'), variant: 'success' });
     },
-    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
+    onError: (err: Error, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['series', params.id], context.previous);
+      }
+      showToast({ message: err.message, variant: 'error' });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['series', params.id] });
+    },
   });
 
   const unfollowMutation = useMutation({
     mutationFn: () => gamificationApi.unfollowSeries(params.id!),
-    onSuccess: () => {
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['series', params.id] });
+      const previous = queryClient.getQueryData<SeriesDetail>(['series', params.id]);
+      queryClient.setQueryData<SeriesDetail>(['series', params.id], (old) =>
+        old ? { ...old, isFollowing: false, followersCount: Math.max(0, old.followersCount - 1) } : old
+      );
+      return { previous };
+    },
+    onError: (err: Error, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['series', params.id], context.previous);
+      }
+      showToast({ message: err.message, variant: 'error' });
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['series', params.id] });
     },
-    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const handleRefresh = useCallback(() => {

@@ -6,7 +6,7 @@ import {
 import { showToast } from '@/components/ui/Toast';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Icon } from '@/components/ui/Icon';
@@ -68,6 +68,7 @@ export default function BookmarkFoldersScreen() {
   const { t } = useTranslation();
   const tc = useThemeColors();
   const haptic = useContextualHaptic();
+  const queryClient = useQueryClient();
   // Collections are now fetched from API via collectionsQuery
   const [refreshing, setRefreshing] = useState(false);
   const [createSheetVisible, setCreateSheetVisible] = useState(false);
@@ -120,6 +121,11 @@ export default function BookmarkFoldersScreen() {
           text: t('screens.bookmarkFolders.deleteButton'),
           style: 'destructive',
           onPress: async () => {
+            // Optimistic removal: snapshot + filter out
+            const previous = queryClient.getQueryData<BookmarkCollection[]>(['bookmark-collections']);
+            queryClient.setQueryData<BookmarkCollection[]>(['bookmark-collections'], (old) =>
+              old ? old.filter((c) => c.name !== folderName) : old
+            );
             try {
               // Fetch all saved posts in this collection and move them to 'default'
               const postsRes = await bookmarksApi.getSavedPosts(folderName);
@@ -129,16 +135,20 @@ export default function BookmarkFoldersScreen() {
                   bookmarksApi.moveToCollection(post.id, 'default').catch(() => {})
                 )
               );
-              collectionsQuery.refetch();
+              queryClient.invalidateQueries({ queryKey: ['bookmark-collections'] });
             } catch {
+              // Rollback on error
+              if (previous) {
+                queryClient.setQueryData(['bookmark-collections'], previous);
+              }
               showToast({ message: t('screens.bookmarkFolders.deleteFailed'), variant: 'error' });
-              collectionsQuery.refetch();
+              queryClient.invalidateQueries({ queryKey: ['bookmark-collections'] });
             }
           },
         },
       ]
     );
-  }, [collectionsQuery, t, haptic]);
+  }, [queryClient, t, haptic]);
 
   const handleFolderPress = useCallback((collectionName: string) => {
     haptic.navigate();

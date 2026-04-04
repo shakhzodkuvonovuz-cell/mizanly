@@ -176,6 +176,9 @@ export default function CloseFriendsScreen() {
 
   const haptic = useContextualHaptic();
 
+  // Per-user in-flight tracking for concurrent toggles
+  const [pendingUserIds, setPendingUserIds] = useState<Set<string>>(new Set());
+
   // Toggle close friend status
   const toggleMemberMutation = useMutation({
     mutationFn: ({ userId, add }: { userId: string; add: boolean }) => {
@@ -184,24 +187,54 @@ export default function CloseFriendsScreen() {
         ? circlesApi.addMembers(closeFriendsCircle.id, [userId])
         : circlesApi.removeMembers(closeFriendsCircle.id, [userId]);
     },
+    onMutate: async ({ userId, add }) => {
+      await queryClient.cancelQueries({ queryKey: ['circle-members', closeFriendsCircle?.id] });
+      const previous = queryClient.getQueryData<CircleMember[]>(['circle-members', closeFriendsCircle?.id]);
+      // Optimistic update: add or remove from members list
+      queryClient.setQueryData<CircleMember[]>(['circle-members', closeFriendsCircle?.id], (old) => {
+        if (!old) return old;
+        if (add) {
+          // Check if already present to avoid duplicates
+          if (old.some((m) => m.user.id === userId)) return old;
+          // Create a placeholder member entry from followers data
+          const follower = followers.find((f) => f.id === userId);
+          if (!follower) return old;
+          return [...old, { user: follower } as CircleMember];
+        }
+        return old.filter((m) => m.user.id !== userId);
+      });
+      setPendingUserIds((prev) => new Set(prev).add(userId));
+      return { previous };
+    },
     onSuccess: (_data, variables) => {
       haptic.success();
-      queryClient.invalidateQueries({ queryKey: ['circle-members', closeFriendsCircle?.id] });
       showToast({
         message: variables.add ? t('screens.closeFriends.addedToast') : t('screens.closeFriends.removedToast'),
         variant: 'success',
       });
     },
-    onError: (err: Error) => {
+    onError: (err: Error, variables, context) => {
+      // Rollback on error
+      if (context?.previous) {
+        queryClient.setQueryData(['circle-members', closeFriendsCircle?.id], context.previous);
+      }
       showToast({ message: err.message, variant: 'error' });
+    },
+    onSettled: (_data, _err, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['circle-members', closeFriendsCircle?.id] });
+      setPendingUserIds((prev) => {
+        const next = new Set(prev);
+        next.delete(variables.userId);
+        return next;
+      });
     },
   });
 
   const toggleCloseFriend = useCallback((userId: string, add: boolean) => {
-    if (!closeFriendsCircle || toggleMemberMutation.isPending) return;
+    if (!closeFriendsCircle || pendingUserIds.has(userId)) return;
     haptic.tick();
     toggleMemberMutation.mutate({ userId, add });
-  }, [closeFriendsCircle, toggleMemberMutation, haptic]);
+  }, [closeFriendsCircle, pendingUserIds, toggleMemberMutation, haptic]);
 
   // Filter followers based on search query
   const filteredFollowers = useMemo(() => {
@@ -280,11 +313,11 @@ export default function CloseFriendsScreen() {
         isCloseFriend={memberIds.includes(item.id)}
         onToggle={toggleCloseFriend}
         onPress={() => router.push(`/(screens)/profile/${item.username}`)}
-        disabled={!isReady || toggleMemberMutation.isPending}
+        disabled={!isReady || pendingUserIds.has(item.id)}
         index={index}
       />
     ),
-    [currentUserId, memberIds, toggleCloseFriend, router, isReady, toggleMemberMutation.isPending],
+    [currentUserId, memberIds, toggleCloseFriend, router, isReady, pendingUserIds],
   );
 
   if (followersQuery.isError) {

@@ -250,12 +250,26 @@ export default function RisalahScreen() {
 
   const archiveMutation = useMutation({
     mutationFn: (conversationId: string) => messagesApi.archiveConversation(conversationId),
+    onMutate: async (conversationId: string) => {
+      await queryClient.cancelQueries({ queryKey: ['conversations'] });
+      const previous = queryClient.getQueryData<Conversation[]>(['conversations']);
+      // Optimistically remove from list
+      queryClient.setQueryData<Conversation[]>(['conversations'], (old) =>
+        old ? old.filter((c) => c.id !== conversationId) : old
+      );
+      return { previous };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
       showToast({ message: t('risalah.archived'), variant: 'success' });
     },
-    onError: () => {
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['conversations'], context.previous);
+      }
       showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
     },
   });
 
