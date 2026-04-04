@@ -591,6 +591,23 @@ export default function PostDetailScreen() {
     }
   }, [id, t]);
 
+  const renderCommentItem = useCallback(
+    ({ item }: { item: Comment }) => (
+      <CommentRow
+        comment={item}
+        postId={id}
+        viewerId={user?.id}
+        postAuthorId={postQuery.data?.user?.id}
+        onReply={handleReply}
+        onDeleted={() => {
+          queryClient.invalidateQueries({ queryKey: ['post-comments', id] });
+          queryClient.invalidateQueries({ queryKey: ['post', id] });
+        }}
+      />
+    ),
+    [id, user?.id, postQuery.data?.user?.id, handleReply, queryClient],
+  );
+
   const canSend = commentText.trim().length > 0 && !sendMutation.isPending;
 
   if (postQuery.isError) {
@@ -728,19 +745,7 @@ export default function PostDetailScreen() {
             />
           }
           ListHeaderComponent={listHeader}
-          renderItem={({ item }) => (
-            <CommentRow
-              comment={item}
-              postId={id}
-              viewerId={user?.id}
-              postAuthorId={postQuery.data?.user?.id}
-              onReply={handleReply}
-              onDeleted={() => {
-                queryClient.invalidateQueries({ queryKey: ['post-comments', id] });
-                queryClient.invalidateQueries({ queryKey: ['post', id] });
-              }}
-            />
-          )}
+          renderItem={renderCommentItem}
           ListEmptyComponent={listEmpty}
           ListFooterComponent={listFooter}
           contentContainerStyle={{ paddingBottom: 140 }}

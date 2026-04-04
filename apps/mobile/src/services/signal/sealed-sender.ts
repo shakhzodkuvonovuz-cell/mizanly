@@ -104,6 +104,11 @@ export interface UnsealedContent {
 /**
  * Seal a message — hide sender identity from server.
  *
+ * #504 FIX: The entire function body is serialized via withSessionLock to prevent
+ * counter race conditions. Without the lock, two concurrent sealMessage calls could
+ * both read the same counter value before either persists, producing duplicate counters.
+ * The recipient would reject the second message as a replay.
+ *
  * @param recipientId - Recipient's user ID
  * @param recipientIdentityKey - Recipient's Ed25519 public identity key
  * @param senderId - Our user ID
@@ -117,6 +122,8 @@ export async function sealMessage(
   senderDeviceId: number,
   innerContent: string,
 ): Promise<SealedEnvelope> {
+  // #504 FIX: Serialize counter read-increment-persist via withSessionLock.
+  return withSessionLock('sealed-sender-counter', async () => {
   // Generate ephemeral key pair for this envelope
   const ephPair = generateX25519KeyPair();
 
@@ -197,6 +204,7 @@ export async function sealMessage(
     ephemeralKey: toBase64(ephPair.publicKey),
     sealedCiphertext: toBase64(ciphertext),
   };
+  }); // end withSessionLock
 }
 
 /**

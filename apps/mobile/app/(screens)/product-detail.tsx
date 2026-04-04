@@ -146,6 +146,40 @@ function ProductDetailContent() {
     navigate('/(screens)/product-detail', { id: productId });
   };
 
+  const renderProductImage = useCallback(
+    ({ item }: { item: string | null }) =>
+      item ? (
+        <ProgressiveImage uri={item} width={screenWidth} height={screenWidth * 0.8} />
+      ) : (
+        <View style={[styles.carouselImage, styles.imagePlaceholder]}>
+          <Icon name="image" size="xl" color={tc.text.tertiary} />
+        </View>
+      ),
+    [screenWidth, tc.text.tertiary],
+  );
+
+  const renderRelatedProduct = useCallback(
+    ({ item }: { item: ProductDetail }) => (
+      <Pressable
+        style={({ pressed }) => [styles.relatedCard, pressed && { opacity: 0.7 }]}
+        onPress={() => handleRelatedPress(item.id)}
+        accessibilityRole="button"
+        accessibilityLabel={`${item.title}, $${(item.price / 100).toFixed(2)}`}
+      >
+        {item.imageUrls?.[0] ? (
+          <ProgressiveImage uri={item.imageUrls[0]} width={140} height={100} />
+        ) : (
+          <View style={[styles.relatedImage, styles.imagePlaceholder]}>
+            <Icon name="image" size="md" color={tc.text.tertiary} />
+          </View>
+        )}
+        <Text style={styles.relatedTitle} numberOfLines={1}>{item.title}</Text>
+        <Text style={styles.relatedPrice}>${(item.price / 100).toFixed(2)}</Text>
+      </Pressable>
+    ),
+    [handleRelatedPress, tc.text.tertiary],
+  );
+
   const handleImageScroll = (event: { nativeEvent: { contentOffset: { x: number } } }) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(offsetX / screenWidth);
@@ -244,19 +278,7 @@ function ProductDetailContent() {
             showsHorizontalScrollIndicator={false}
             onMomentumScrollEnd={handleImageScroll}
             keyExtractor={(_, idx) => `img-${idx}`}
-            renderItem={({ item }) =>
-              item ? (
-                <ProgressiveImage
-                  uri={item}
-                  width={screenWidth}
-                  height={screenWidth * 0.8}
-                />
-              ) : (
-                <View style={[styles.carouselImage, styles.imagePlaceholder]}>
-                  <Icon name="image" size="xl" color={tc.text.tertiary} />
-                </View>
-              )
-            }
+            renderItem={renderProductImage}
           />
           {product.imageUrls.length > 1 && (
             <View style={styles.dotRow}>
@@ -428,32 +450,7 @@ function ProductDetailContent() {
               showsHorizontalScrollIndicator={false}
               keyExtractor={(item) => item.id}
               contentContainerStyle={styles.relatedRow}
-              renderItem={({ item }) => (
-                <Pressable
-                  style={({ pressed }) => [styles.relatedCard, pressed && { opacity: 0.7 }]}
-                  onPress={() => handleRelatedPress(item.id)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${item.title}, $${(item.price / 100).toFixed(2)}`}
-                >
-                  {item.imageUrls?.[0] ? (
-                    <ProgressiveImage
-                      uri={item.imageUrls[0]}
-                      width={140}
-                      height={100}
-                    />
-                  ) : (
-                    <View style={[styles.relatedImage, styles.imagePlaceholder]}>
-                      <Icon name="image" size="md" color={tc.text.tertiary} />
-                    </View>
-                  )}
-                  <Text style={styles.relatedTitle} numberOfLines={1}>
-                    {item.title}
-                  </Text>
-                  <Text style={styles.relatedPrice}>
-                    ${(item.price / 100).toFixed(2)}
-                  </Text>
-                </Pressable>
-              )}
+              renderItem={renderRelatedProduct}
             />
           </Animated.View>
         )}

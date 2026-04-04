@@ -432,7 +432,11 @@ export function toBase64(bytes: Uint8Array): string {
     // Previously used Buffer.from(bytes.buffer, ...) which shares the underlying ArrayBuffer.
     // If caller zeros `bytes` while toString hasn't completed, the Buffer view would read zeroed data.
     // Consistent with fromBase64 V7-F12 fix which also copies to isolated memory.
-    return Buffer.from(new Uint8Array(bytes)).toString('base64');
+    // #491 FIX: Zero the Buffer copy after encoding — it contains key material.
+    const buf = Buffer.from(new Uint8Array(bytes));
+    const result = buf.toString('base64');
+    buf.fill(0);
+    return result;
   }
   // Fallback for environments without Buffer
   let binary = '';
@@ -455,9 +459,11 @@ export function fromBase64(base64: string): Uint8Array {
     // reuses the same slab for another allocation BEFORE zeroOut, the new Buffer
     // shares the same ArrayBuffer and can observe key material at adjacent offsets.
     // Copying to a standalone Uint8Array ensures zeroOut operates on isolated memory.
+    // #491 FIX: Zero the intermediate Buffer after copying — it contains key material.
     const buf = Buffer.from(base64, 'base64');
     const result = new Uint8Array(buf.byteLength);
     result.set(new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength));
+    buf.fill(0);
     return result;
   }
   // Fallback
@@ -484,8 +490,11 @@ export function utf8Decode(bytes: Uint8Array): string {
 
 /**
  * Constant-time byte comparison.
- * Uses native CRYPTO_memcmp when react-native-quick-crypto is available (C13),
- * falls back to XOR accumulator otherwise.
+ * #489 FIX: Uses native CRYPTO_memcmp via timingSafeEqual when react-native-quick-crypto
+ * is available (C13). Fallback uses pre-padded XOR accumulator that iterates ALL bytes
+ * regardless of mismatch (no early return). Both arrays are copied to equal-length buffers
+ * so all accesses are in-bounds, eliminating the nullish coalescing timing branch.
+ * Padded copies are zeroed after use via zeroOut.
  */
 export function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
   if (nativeCryptoAdapter?.isNativeCryptoAvailable() && nativeCryptoAdapter.constantTimeCompare) {
@@ -515,8 +524,12 @@ export function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
 
 /**
  * Secure memory wipe.
- * Uses native OPENSSL_cleanse when react-native-quick-crypto is available (C13),
- * falls back to random overwrite + zero fill otherwise.
+ * #488 FIX: Uses native randomFillSync + fill(0) when react-native-quick-crypto
+ * is available (C13). This is NOT OPENSSL_cleanse — it is best-effort: the random
+ * overwrite has observable side effects (defeating dead-store elimination), but the
+ * final fill(0) could theoretically be optimized away by an aggressive JIT. True
+ * OPENSSL_cleanse would require a dedicated JSI binding.
+ * Falls back to expo-crypto random overwrite + zero fill otherwise.
  */
 export function zeroOut(arr: Uint8Array): void {
   if (nativeCryptoAdapter?.isNativeCryptoAvailable() && nativeCryptoAdapter.secureZero) {

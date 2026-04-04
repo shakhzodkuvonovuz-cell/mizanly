@@ -33,7 +33,8 @@ type E2EEvent =
   | 'identity_key_changed'
   | 'safety_number_computed'
   | 'bundle_fetch_failed'
-  | 'bundle_fetch_rate_limited';
+  | 'bundle_fetch_rate_limited'
+  | 'pqxdh_fallback_classical'; // #496: PQXDH encapsulation failed, fell back to classical X3DH
 
 interface E2ETelemetryData {
   event: E2EEvent;

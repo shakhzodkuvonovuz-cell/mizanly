@@ -85,6 +85,13 @@ function ImageCarousel({ images }: { images: string[] }) {
 
   const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
+  const renderImageItem = useCallback(
+    ({ item }: { item: string }) => (
+      <ProgressiveImage uri={item} width={screenWidth} height={IMAGE_HEIGHT} />
+    ),
+    [],
+  );
+
   if (images.length === 0) {
     return (
       <View style={styles.imagePlaceholder}>
@@ -104,13 +111,7 @@ function ImageCarousel({ images }: { images: string[] }) {
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
         keyExtractor={(_, i) => String(i)}
-        renderItem={({ item }) => (
-          <ProgressiveImage
-            uri={item}
-            width={screenWidth}
-            height={IMAGE_HEIGHT}
-          />
-        )}
+        renderItem={renderImageItem}
       />
       {images.length > 1 && (
         <View style={styles.dotRow}>

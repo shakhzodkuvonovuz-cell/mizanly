@@ -87,7 +87,14 @@ try {
       },
       decapsulate: (ct: Uint8Array, sk: Uint8Array) => {
         const result = ml_kem768.decapsulate(ct, sk);
-        return new Uint8Array(result);
+        // #497 FIX: Copy the shared secret and zero Noble's original buffer.
+        // Previously, Noble's internal buffer lingered on the GC heap with the
+        // 32-byte shared secret exposed. The copy is returned; caller zeros it.
+        const copy = new Uint8Array(result);
+        if (result instanceof Uint8Array) {
+          result.fill(0);
+        }
+        return copy;
       },
     };
     // F04-#6: Freeze provider to prevent runtime replacement via supply-chain attack

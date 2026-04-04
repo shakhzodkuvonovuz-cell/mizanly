@@ -333,12 +333,21 @@ export async function decryptGroupMessage(
       zeroOut(nonce);
       throw new Error('Group message decryption with skipped key failed.');
     }
-    const plaintext = unpadMessage(paddedPlaintext);
+    // #505 FIX: Zero paddedPlaintext and plaintext after use. Previously these
+    // Uint8Arrays containing decrypted group message content lingered on the GC heap.
+    let plaintext: Uint8Array;
+    try {
+      plaintext = unpadMessage(paddedPlaintext);
+    } finally {
+      zeroOut(paddedPlaintext);
+    }
+    const decoded = utf8Decode(plaintext);
+    zeroOut(plaintext);
     zeroOut(skipped.messageKey);
     zeroOut(encKey);
     zeroOut(nonce);
     await storeSenderKeyState(groupId, senderId, state);
-    return utf8Decode(plaintext);
+    return decoded;
   }
 
   // Case 2: Message counter is AHEAD — advance chain, storing intermediate keys
@@ -414,7 +423,15 @@ export async function decryptGroupMessage(
     );
   }
 
-  const plaintext = unpadMessage(paddedPlaintext);
+  // #505 FIX: Zero paddedPlaintext and plaintext after use.
+  let plaintext: Uint8Array;
+  try {
+    plaintext = unpadMessage(paddedPlaintext);
+  } finally {
+    zeroOut(paddedPlaintext);
+  }
+  const decoded = utf8Decode(plaintext);
+  zeroOut(plaintext);
 
   // Decryption succeeded — commit the advanced chain state + skipped keys
   state.chainKey = currentChainKey;
@@ -427,7 +444,7 @@ export async function decryptGroupMessage(
   zeroOut(encKey);
   zeroOut(nonce);
 
-  return utf8Decode(plaintext);
+  return decoded;
   }); // end withSessionLock
 }
 

@@ -277,6 +277,21 @@ export async function initiateX3DH(
           ).catch(() => {});
           throw new Error('PQXDH encapsulation failed — both parties advertise v2 but PQ key is invalid. Aborting to prevent downgrade.');
         }
+        // #496 FIX: Log a visible warning when falling back to classical X3DH.
+        // When the recipient does NOT advertise v2 support, PQ failure is expected
+        // (they may have a malformed PQ prekey from an old client). We fall back to
+        // classical X3DH which is still secure against non-quantum adversaries.
+        // SECURITY NOTE: If the server advertises PQ support on behalf of the recipient
+        // but the PQ key is invalid, this could indicate a downgrade attack. However,
+        // since the recipient's own supportedVersions does NOT include 2, we cannot
+        // distinguish "old client" from "server stripping PQ". This is a known limitation
+        // of optional PQ negotiation — full protection requires both parties to mandate v2.
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn('PQXDH encapsulation failed — falling back to classical X3DH (recipient does not require v2)');
+        }
+        import('./telemetry').then(({ recordE2EEvent }) =>
+          recordE2EEvent({ event: 'pqxdh_fallback_classical', metadata: { reason: 'encapsulation_failed_v1_only' } }),
+        ).catch(() => {});
       }
     } else if (isPQXDHAvailable() && bundle.supportedVersions?.includes(2) && !bundlePqPreKey) {
       identityTrust = 'changed';
