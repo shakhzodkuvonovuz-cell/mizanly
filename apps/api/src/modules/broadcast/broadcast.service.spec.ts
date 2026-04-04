@@ -147,11 +147,12 @@ describe('BroadcastService', () => {
   describe('getSubscribers', () => {
     it('should return subscribers list with pagination', async () => {
       prisma.channelMember.findMany.mockResolvedValue([
-        { user: { id: 'u1', username: 'ali' }, role: 'SUBSCRIBER' },
+        { user: { id: 'u1', username: 'ali' }, role: 'SUBSCRIBER', userId: 'u1', joinedAt: new Date('2026-01-01T00:00:00Z') },
       ]);
       const result = await service.getSubscribers('ch1');
       expect(result.data).toHaveLength(1);
       expect(result.meta.hasMore).toBe(false);
+      expect(result.meta.cursor).toContain('u1');
     });
   });
 

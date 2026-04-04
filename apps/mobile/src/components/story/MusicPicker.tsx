@@ -92,33 +92,23 @@ export const MusicPicker = memo(function MusicPicker({ visible, onClose, onSelec
     queryKey: ['audioTracks', 'search', debouncedQuery],
     queryFn: async () => {
       const res = await audioTracksApi.search(debouncedQuery);
-      return res as AudioTrack[];
+      return res.data;
     },
     enabled: debouncedQuery.length > 0,
   });
 
-  // Trending tracks
+  // Trending tracks (also used for genre filtering since backend has no genre field)
   const trendingQuery = useQuery({
     queryKey: ['audioTracks', 'trending'],
     queryFn: async () => {
       const res = await audioTracksApi.getTrending();
-      return res as AudioTrack[];
+      return res.data;
     },
-    enabled: visible && debouncedQuery.length === 0 && genre === 'all',
-  });
-
-  // Genre-filtered tracks
-  const genreQuery = useQuery({
-    queryKey: ['audioTracks', 'genre', genre],
-    queryFn: async () => {
-      const res = await audioTracksApi.getByGenre(genre);
-      return res as AudioTrack[];
-    },
-    enabled: visible && debouncedQuery.length === 0 && genre !== 'all',
+    enabled: visible && debouncedQuery.length === 0,
   });
 
   const isSearching = debouncedQuery.length > 0;
-  const activeQuery = isSearching ? searchResults : genre === 'all' ? trendingQuery : genreQuery;
+  const activeQuery = isSearching ? searchResults : trendingQuery;
   const tracks = activeQuery.data ?? [];
   const isLoading = activeQuery.isLoading;
   const isRefreshing = activeQuery.isRefetching && !activeQuery.isLoading;

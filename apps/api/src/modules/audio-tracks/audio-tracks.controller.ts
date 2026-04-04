@@ -23,11 +23,18 @@ export class AudioTracksController {
   // Static routes MUST be above :id wildcard
   @Get('trending') @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Trending tracks' })
-  async trending() { return this.audioTracks.trending(); }
+  async trending(
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
+  ) { return this.audioTracks.trending(cursor, limit ? parseInt(limit, 10) : undefined); }
 
   @Get('search') @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Search tracks' })
-  async search(@Query('q') q: string) { return this.audioTracks.search(q); }
+  async search(
+    @Query('q') q: string,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
+  ) { return this.audioTracks.search(q, cursor, limit ? parseInt(limit, 10) : undefined); }
 
   // Wildcard routes below static ones
   @Get(':id') @UseGuards(OptionalClerkAuthGuard)

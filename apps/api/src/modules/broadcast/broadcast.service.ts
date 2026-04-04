@@ -125,18 +125,32 @@ export class BroadcastService {
       await this.requireRole(channelId, userId, [ChannelRole.OWNER, ChannelRole.ADMIN]);
     }
     const where: Prisma.ChannelMemberWhereInput = { channelId };
+    // Fix #159: Composite cursor (joinedAt:userId) prevents duplicates when
+    // multiple members share the same joinedAt timestamp.
     if (cursor) {
-      where.joinedAt = { lt: new Date(cursor) };
+      const sepIdx = cursor.lastIndexOf(':');
+      if (sepIdx > 0) {
+        const cursorDate = new Date(cursor.substring(0, sepIdx));
+        const cursorUserId = cursor.substring(sepIdx + 1);
+        if (!isNaN(cursorDate.getTime())) {
+          where.OR = [
+            { joinedAt: { lt: cursorDate } },
+            { joinedAt: cursorDate, userId: { lt: cursorUserId } },
+          ];
+        }
+      }
     }
     const members = await this.prisma.channelMember.findMany({
       where,
       include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } } },
-      orderBy: { joinedAt: 'desc' },
+      orderBy: [{ joinedAt: 'desc' }, { userId: 'desc' }],
       take: limit + 1,
     });
     const hasMore = members.length > limit;
     if (hasMore) members.pop();
-    return { data: members, meta: { cursor: members[members.length - 1]?.joinedAt?.toISOString() ?? null, hasMore } };
+    const last = members[members.length - 1];
+    const nextCursor = last ? `${last.joinedAt.toISOString()}:${last.userId}` : null;
+    return { data: members, meta: { cursor: nextCursor, hasMore } };
   }
 
   async sendMessage(channelId: string, userId: string, data: { content?: string; messageType?: string; mediaUrl?: string; mediaType?: string }) {

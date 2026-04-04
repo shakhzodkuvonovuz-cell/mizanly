@@ -427,24 +427,21 @@ export class NotificationsService {
   }
 
   // Finding #363: Group notification summary — aggregate notifications by type+content
+  // Fix #159: Use ID-based cursor instead of date-string cursor to avoid duplicates
+  // when multiple notifications share the same createdAt timestamp.
   async getGroupedNotifications(userId: string, cursor?: string, limit = 20) {
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-
-    // Validate cursor is a valid date string
-    if (cursor && isNaN(new Date(cursor).getTime())) {
-      throw new NotFoundException('Invalid cursor');
-    }
 
     const notifications = await this.prisma.notification.findMany({
       where: {
         userId,
         createdAt: { gte: oneDayAgo },
-        ...(cursor ? { createdAt: { lt: new Date(cursor), gte: oneDayAgo } } : {}),
+        ...(cursor ? { id: { lt: cursor } } : {}),
       },
       include: {
         actor: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: Math.min(limit * 3, 100), // Adaptive: fetch 3x groups needed, cap at 100
     });
 
@@ -476,9 +473,12 @@ export class NotificationsService {
       .sort((a, b) => b.latestAt.getTime() - a.latestAt.getTime())
       .slice(0, limit);
 
+    // ID-based cursor: use the last raw notification ID for stable pagination
+    const lastNotificationId = notifications.length > 0 ? notifications[notifications.length - 1].id : null;
+
     return {
       data: grouped,
-      meta: { hasMore: groups.size > limit },
+      meta: { cursor: groups.size > limit ? lastNotificationId : null, hasMore: groups.size > limit },
     };
   }
 

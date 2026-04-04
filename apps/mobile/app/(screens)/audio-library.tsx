@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Audio } from 'expo-av';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
@@ -179,17 +179,26 @@ export default function AudioLibraryScreen() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [selectedTrack, setSelectedTrack] = useState<AudioTrackDisplay | null>(null);
 
-  const { data: apiTracks, isLoading, refetch, isRefetching } = useQuery({
+  const {
+    data: apiPages,
+    isLoading,
+    refetch,
+    isRefetching,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: ['audio-tracks', activeCategory],
-    queryFn: () =>
-      activeCategory === 'Trending'
-        ? audioTracksApi.getTrending().then((data) => ({ data: Array.isArray(data) ? data : [] }))
-        : audioTracksApi.getByGenre(activeCategory).then((data) => ({ data: Array.isArray(data) ? data : [] })),
+    queryFn: ({ pageParam }: { pageParam: string | undefined }) =>
+      audioTracksApi.getTrending(pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last) =>
+      last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
   });
 
   const allTracks: AudioTrackDisplay[] = useMemo(
-    () => (apiTracks?.data ?? []).map(mapApiTrack),
-    [apiTracks],
+    () => (apiPages?.pages.flatMap((p) => p.data) ?? []).map(mapApiTrack),
+    [apiPages],
   );
 
   const filteredAudio = useMemo(() => allTracks.filter(track => {
@@ -272,6 +281,12 @@ export default function AudioLibraryScreen() {
     haptic.like();
     showToast({ message: t('audioLibrary.favoriteToggled'), variant: 'success' });
   }, [haptic, t]);
+
+  const handleLoadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const renderAudioItem = useCallback(
     ({ item, index }: { item: AudioTrackDisplay; index: number }) => (
@@ -374,6 +389,8 @@ export default function AudioLibraryScreen() {
               />
             )
           }
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
           showsVerticalScrollIndicator={false}
         />
 

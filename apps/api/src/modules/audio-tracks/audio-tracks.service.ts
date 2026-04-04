@@ -22,16 +22,32 @@ export class AudioTracksService {
     return track;
   }
 
-  async search(query: string, limit = 20) {
-    return this.prisma.audioTrack.findMany({
-      where: { OR: [{ title: { contains: query, mode: 'insensitive' } }, { artist: { contains: query, mode: 'insensitive' } }] },
+  async search(query: string, cursor?: string, limit = 20) {
+    const where: Prisma.AudioTrackWhereInput = {
+      OR: [{ title: { contains: query, mode: 'insensitive' } }, { artist: { contains: query, mode: 'insensitive' } }],
+    };
+    if (cursor) where.id = { lt: cursor };
+    const tracks = await this.prisma.audioTrack.findMany({
+      where,
       orderBy: { reelsCount: 'desc' },
-      take: limit,
+      take: limit + 1,
     });
+    const hasMore = tracks.length > limit;
+    if (hasMore) tracks.pop();
+    return { data: tracks, meta: { cursor: tracks[tracks.length - 1]?.id ?? null, hasMore } };
   }
 
-  async trending(limit = 20) {
-    return this.prisma.audioTrack.findMany({ orderBy: { reelsCount: 'desc' }, take: limit });
+  async trending(cursor?: string, limit = 20) {
+    const where: Prisma.AudioTrackWhereInput = {};
+    if (cursor) where.id = { lt: cursor };
+    const tracks = await this.prisma.audioTrack.findMany({
+      where,
+      orderBy: { reelsCount: 'desc' },
+      take: limit + 1,
+    });
+    const hasMore = tracks.length > limit;
+    if (hasMore) tracks.pop();
+    return { data: tracks, meta: { cursor: tracks[tracks.length - 1]?.id ?? null, hasMore } };
   }
 
   async getReelsUsingTrack(trackId: string, cursor?: string, limit = 20) {

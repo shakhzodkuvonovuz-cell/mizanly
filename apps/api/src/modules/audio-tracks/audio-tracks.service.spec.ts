@@ -67,18 +67,29 @@ describe('AudioTracksService', () => {
     it('should search tracks by title or artist', async () => {
       prisma.audioTrack.findMany.mockResolvedValue([{ id: 'at1', title: 'Nasheed' }]);
       const result = await service.search('nasheed');
-      expect(result).toHaveLength(1);
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.hasMore).toBe(false);
     });
 
-    it('should return empty array when no results', async () => {
+    it('should return empty data when no results', async () => {
       prisma.audioTrack.findMany.mockResolvedValue([]);
       const result = await service.search('nonexistent');
-      expect(result).toEqual([]);
+      expect(result.data).toEqual([]);
+      expect(result.meta.hasMore).toBe(false);
     });
 
     it('should respect limit parameter', async () => {
-      await service.search('test', 5);
-      expect(prisma.audioTrack.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 5 }));
+      await service.search('test', undefined, 5);
+      expect(prisma.audioTrack.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 6 }));
+    });
+
+    it('should use cursor for pagination', async () => {
+      prisma.audioTrack.findMany.mockResolvedValue([{ id: 'at3', title: 'Track3' }]);
+      const result = await service.search('track', 'at2');
+      expect(prisma.audioTrack.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: expect.objectContaining({ id: { lt: 'at2' } }) }),
+      );
+      expect(result.data).toHaveLength(1);
     });
   });
 
@@ -89,7 +100,26 @@ describe('AudioTracksService', () => {
         { id: 'at2', reelsCount: 50 },
       ]);
       const result = await service.trending();
-      expect(result).toHaveLength(2);
+      expect(result.data).toHaveLength(2);
+      expect(result.meta.hasMore).toBe(false);
+      expect(result.meta.cursor).toBe('at2');
+    });
+
+    it('should support cursor pagination', async () => {
+      prisma.audioTrack.findMany.mockResolvedValue([{ id: 'at3', reelsCount: 25 }]);
+      const result = await service.trending('at2');
+      expect(prisma.audioTrack.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: expect.objectContaining({ id: { lt: 'at2' } }) }),
+      );
+      expect(result.data).toHaveLength(1);
+    });
+
+    it('should detect hasMore when results exceed limit', async () => {
+      const tracks = Array.from({ length: 21 }, (_, i) => ({ id: `at${i}`, reelsCount: 100 - i }));
+      prisma.audioTrack.findMany.mockResolvedValue(tracks);
+      const result = await service.trending();
+      expect(result.data).toHaveLength(20);
+      expect(result.meta.hasMore).toBe(true);
     });
   });
 

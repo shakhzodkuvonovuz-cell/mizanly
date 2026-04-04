@@ -46,6 +46,12 @@ export function useConversationEncryption({
   // session readiness for UI indicators and decrypted content cache.
   const [isEncrypted] = useState(true); // Always encrypted via Signal Protocol
   const [decryptedContents, setDecryptedContents] = useState<Map<string, string>>(new Map());
+  // Fix #166: Ref-based cache prevents O(n) re-decryption on every new message.
+  // The ref is the canonical source of truth (survives stale closures in the
+  // batched decrypt effect). State is synced from ref for re-rendering only.
+  const decryptedCacheRef = useRef<Map<string, string>>(new Map());
+  // Track message IDs currently being decrypted to avoid duplicate work
+  const inFlightRef = useRef<Set<string>>(new Set());
 
   // Decrypt incoming E2E encrypted messages via Signal Protocol.
   // Handles 3 message types:
@@ -53,6 +59,10 @@ export function useConversationEncryption({
   //   2. Regular SignalMessage (established session — has e2eSenderRatchetKey, no e2eIdentityKey)
   //   3. SenderKeyMessage (group — has e2eSenderKeyId)
   const getDecryptedContent = useCallback(async (message: EncryptedMessage) => {
+    // Check ref cache first to avoid re-decryption
+    const cached = decryptedCacheRef.current.get(message.id);
+    if (cached !== undefined) return cached;
+
     if (!message.encryptedContent || !message.e2eVersion) {
       // V5-F1: SYSTEM messages (join/leave, security code changed) are legitimately
       // plaintext from the server. All other message types MUST have E2E encryption
@@ -165,6 +175,8 @@ export function useConversationEncryption({
       if (!expiresAt) {
         indexMessage(message.id, conversationId, realContent, createdAtMs).catch(() => {});
       }
+      // Store in ref cache so subsequent calls skip re-decryption
+      decryptedCacheRef.current.set(message.id, realContent);
       return realContent;
     } catch {
       // V5-F3: Do NOT auto-reset sessions on decrypt failure.
@@ -187,12 +199,21 @@ export function useConversationEncryption({
   }, [conversationData?.disappearingDuration]);
 
   // Pre-decrypt E2E encrypted messages with concurrency limit to avoid ANR (#2)
+  // Fix #166: Use ref-based cache to only decrypt truly new messages (O(1) per new message
+  // instead of O(n) re-checking the entire history via stale state closure).
   useEffect(() => {
     const DECRYPT_BATCH_SIZE = 5;
+    const cache = decryptedCacheRef.current;
+    const inFlight = inFlightRef.current;
     const toDecrypt = messages.filter(
-      msg => msg.encryptedContent && msg.e2eVersion && !decryptedContents.has(msg.id),
+      msg => msg.encryptedContent && msg.e2eVersion && !cache.has(msg.id) && !inFlight.has(msg.id),
     );
     if (toDecrypt.length === 0) return;
+
+    // Mark as in-flight to prevent duplicate decrypt attempts from re-renders
+    for (const msg of toDecrypt) {
+      inFlight.add(msg.id);
+    }
 
     let cancelled = false;
     (async () => {
@@ -203,13 +224,23 @@ export function useConversationEncryption({
           batch.map(msg => getDecryptedContent(msg).then(d => ({ id: msg.id, content: d }))),
         );
         if (cancelled) break;
+        // Sync ref cache to state for rendering
         setDecryptedContents(prev => {
           const next = new Map(prev);
           let changed = false;
           for (const r of results) {
-            if (r.status === 'fulfilled' && r.value.content && !next.has(r.value.id)) {
-              next.set(r.value.id, r.value.content);
-              changed = true;
+            if (r.status === 'fulfilled' && r.value.content) {
+              cache.set(r.value.id, r.value.content);
+              if (!next.has(r.value.id)) {
+                next.set(r.value.id, r.value.content);
+                changed = true;
+              }
+            }
+            // Remove from in-flight regardless of success/failure
+            if (r.status === 'fulfilled') inFlight.delete(r.value.id);
+            else {
+              const failedMsg = batch[results.indexOf(r)];
+              if (failedMsg) inFlight.delete(failedMsg.id);
             }
           }
           return changed ? next : prev;

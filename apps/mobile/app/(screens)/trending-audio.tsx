@@ -83,10 +83,11 @@ export default function TrendingAudioScreen() {
     return () => { soundRef.current?.unloadAsync().catch(() => {}); };
   }, []);
 
-  const { data: tracks, isLoading, isError, refetch } = useQuery({
+  const { data: tracksResponse, isLoading, isError, refetch } = useQuery({
     queryKey: ['trending-audio'],
     queryFn: () => audioTracksApi.getTrending(),
   });
+  const tracks = tracksResponse?.data;
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

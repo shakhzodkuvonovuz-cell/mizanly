@@ -1266,17 +1266,15 @@ export const channelPostsApi = {
 // ── Audio Tracks ──
 export const audioTracksApi = {
   browse: (cursor?: string) =>
-    api.get<PaginatedResponse<AudioTrack>>(`/audio-tracks${cursor ? `?cursor=${cursor}` : ''}`),
-  search: (query: string) =>
-    api.get<AudioTrack[]>(`/audio-tracks/search?q=${encodeURIComponent(query)}`),
+    api.get<PaginatedResponse<AudioTrack>>(`/audio-tracks${qs({ cursor })}`),
+  search: (query: string, cursor?: string) =>
+    api.get<PaginatedResponse<AudioTrack>>(`/audio-tracks/search${qs({ q: query, cursor })}`),
   getById: (id: string) =>
     api.get<AudioTrack>(`/audio-tracks/${id}`),
-  getTrending: () =>
-    api.get<AudioTrack[]>('/audio-tracks/trending'),
-  getByGenre: (genre: string) =>
-    api.get<AudioTrack[]>(`/audio-tracks/genre/${genre}`),
+  getTrending: (cursor?: string) =>
+    api.get<PaginatedResponse<AudioTrack>>(`/audio-tracks/trending${qs({ cursor })}`),
   getReelsUsing: (trackId: string, cursor?: string) =>
-    api.get<PaginatedResponse<Reel>>(`/audio-tracks/${trackId}/reels${cursor ? `?cursor=${cursor}` : ''}`),
+    api.get<PaginatedResponse<Reel>>(`/audio-tracks/${trackId}/reels${qs({ cursor })}`),
   upload: (data: { title: string; artist: string; audioUrl: string; coverUrl?: string; duration: number; genre?: string }) =>
     api.post<AudioTrack>('/audio-tracks', data),
   delete: (id: string) =>

@@ -42,21 +42,37 @@ describe('AudioTracksController', () => {
   });
 
   describe('trending', () => {
-    it('should call service.trending', async () => {
-      const expected = [{ id: 'track-1' }];
+    it('should call service.trending with cursor and limit', async () => {
+      const expected = { data: [{ id: 'track-1' }], meta: { cursor: null, hasMore: false } };
+      mockService.trending.mockResolvedValue(expected);
+      const result = await controller.trending('cursor-1', '10');
+      expect(service.trending).toHaveBeenCalledWith('cursor-1', 10);
+      expect(result).toEqual(expected);
+    });
+
+    it('should call service.trending without optional params', async () => {
+      const expected = { data: [{ id: 'track-1' }], meta: { cursor: null, hasMore: false } };
       mockService.trending.mockResolvedValue(expected);
       const result = await controller.trending();
-      expect(service.trending).toHaveBeenCalled();
+      expect(service.trending).toHaveBeenCalledWith(undefined, undefined);
       expect(result).toEqual(expected);
     });
   });
 
   describe('search', () => {
-    it('should call service.search', async () => {
-      const expected = [{ id: 'track-1' }];
+    it('should call service.search with cursor and limit', async () => {
+      const expected = { data: [{ id: 'track-1' }], meta: { cursor: null, hasMore: false } };
+      mockService.search.mockResolvedValue(expected);
+      const result = await controller.search('query', 'cursor-1', '15');
+      expect(service.search).toHaveBeenCalledWith('query', 'cursor-1', 15);
+      expect(result).toEqual(expected);
+    });
+
+    it('should call service.search without optional params', async () => {
+      const expected = { data: [{ id: 'track-1' }], meta: { cursor: null, hasMore: false } };
       mockService.search.mockResolvedValue(expected);
       const result = await controller.search('query');
-      expect(service.search).toHaveBeenCalledWith('query');
+      expect(service.search).toHaveBeenCalledWith('query', undefined, undefined);
       expect(result).toEqual(expected);
     });
   });

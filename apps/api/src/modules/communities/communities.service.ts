@@ -362,24 +362,38 @@ export class CommunitiesService {
     }
 
     const where: Prisma.CircleMemberWhereInput = { circleId: id };
+    // Fix #159: Composite cursor (joinedAt:userId) prevents duplicates when
+    // multiple members share the same joinedAt timestamp.
     if (cursor) {
-      where.joinedAt = { gt: new Date(cursor) };
+      const sepIdx = cursor.lastIndexOf(':');
+      if (sepIdx > 0) {
+        const cursorDate = new Date(cursor.substring(0, sepIdx));
+        const cursorUserId = cursor.substring(sepIdx + 1);
+        if (!isNaN(cursorDate.getTime())) {
+          where.OR = [
+            { joinedAt: { gt: cursorDate } },
+            { joinedAt: cursorDate, userId: { gt: cursorUserId } },
+          ];
+        }
+      }
     }
 
     const members = await this.prisma.circleMember.findMany({
       where,
       select: CIRCLE_MEMBER_SELECT,
       take: limit + 1,
-      orderBy: { joinedAt: 'asc' },
+      orderBy: [{ joinedAt: 'asc' }, { userId: 'asc' }],
     });
 
     const hasMore = members.length > limit;
     const data = members.slice(0, limit);
+    const last = data[data.length - 1];
+    const nextCursor = last ? `${last.joinedAt.toISOString()}:${last.userId}` : null;
 
     return {
       data,
       meta: {
-        cursor: data.length > 0 ? data[data.length - 1].joinedAt.toISOString() : null,
+        cursor: nextCursor,
         hasMore,
       },
     };

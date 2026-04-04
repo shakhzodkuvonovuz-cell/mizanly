@@ -182,20 +182,30 @@ export default function CommunitiesScreen() {
   const [communities, setCommunities] = useState<Community[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const nextCursorRef = useRef<string | null>(null);
+  const hasMoreRef = useRef(true);
   const { t } = useTranslation();
 
   const fetchCommunities = useCallback(async (cursor?: string) => {
-    setLoading(true);
+    if (cursor) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
     setError(null);
     try {
       const response = await communitiesApi.list(cursor);
       setCommunities(prev => cursor ? [...prev, ...response.data] : response.data);
+      nextCursorRef.current = response.meta.cursor;
+      hasMoreRef.current = response.meta.hasMore;
     } catch (err) {
       setError(err instanceof Error ? err.message : t('screens.communities.errorLoadFailed'));
     } finally {
       setLoading(false);
+      setLoadingMore(false);
       setRefreshing(false);
     }
   }, [t]);
@@ -206,8 +216,15 @@ export default function CommunitiesScreen() {
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
+    nextCursorRef.current = null;
+    hasMoreRef.current = true;
     fetchCommunities();
   }, [fetchCommunities]);
+
+  const onEndReached = useCallback(() => {
+    if (loadingMore || loading || !hasMoreRef.current || !nextCursorRef.current) return;
+    fetchCommunities(nextCursorRef.current);
+  }, [loadingMore, loading, fetchCommunities]);
 
   const filteredCommunities = communities.filter(community => {
     const matchesTab = activeTab === 'discover' || community.isJoined;
@@ -400,6 +417,8 @@ export default function CommunitiesScreen() {
             />
           )}
           refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          onEndReached={onEndReached}
+          onEndReachedThreshold={0.5}
           showsVerticalScrollIndicator={false}
         />
 
