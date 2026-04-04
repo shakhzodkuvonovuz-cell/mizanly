@@ -838,6 +838,10 @@ export class PostsService {
       select: POST_SELECT,
     });
 
+    // Invalidate cached translations — stale after content edit
+    this.ai.clearTranslationCache(postId)
+      .catch(err => this.logger.warn(`Failed to clear translation cache for post ${postId}`, err instanceof Error ? err.message : err));
+
     // Re-index updated post in search
     this.publishWorkflow.onPublish({
       contentType: 'post',
@@ -879,6 +883,10 @@ export class PostsService {
       this.scoredFeedCache.invalidate(`sfeed:saf:foryou:${userId}`),
       this.scoredFeedCache.invalidate(`sfeed:saf:trending:${userId}`),
     ]);
+
+    // Invalidate cached translations for deleted post
+    this.ai.clearTranslationCache(postId)
+      .catch(err => this.logger.warn(`Failed to clear translation cache for post ${postId}`, err instanceof Error ? err.message : err));
 
     // Unpublish workflow: search index removal, cache invalidation, real-time event
     this.publishWorkflow.onUnpublish({

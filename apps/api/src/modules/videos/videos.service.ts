@@ -457,6 +457,10 @@ export class VideosService {
       select: VIDEO_SELECT,
     });
 
+    // Invalidate cached translations — stale after content edit
+    this.ai.clearTranslationCache(videoId)
+      .catch(err => this.logger.warn(`Failed to clear translation cache for video ${videoId}`, err instanceof Error ? err.message : err));
+
     // Re-index updated video in search
     this.publishWorkflow.onPublish({
       contentType: 'video',
@@ -515,6 +519,10 @@ export class VideosService {
         this.logger.warn(`Failed to delete Stream video ${video.streamId}`, err);
       });
     }
+
+    // Invalidate cached translations for deleted video
+    this.ai.clearTranslationCache(videoId)
+      .catch(err => this.logger.warn(`Failed to clear translation cache for video ${videoId}`, err instanceof Error ? err.message : err));
 
     // Unpublish workflow: search index removal, cache invalidation, real-time event
     this.publishWorkflow.onUnpublish({

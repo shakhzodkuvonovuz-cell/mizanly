@@ -62,6 +62,7 @@ export const mockAiService = {
     suggestHashtags: jest.fn().mockResolvedValue([]),
     translateText: jest.fn().mockResolvedValue({ translatedText: '' }),
     generateAltText: jest.fn().mockResolvedValue('Image'),
+    clearTranslationCache: jest.fn().mockResolvedValue(0),
   },
 };
 

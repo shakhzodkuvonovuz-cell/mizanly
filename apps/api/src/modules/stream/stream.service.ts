@@ -98,7 +98,14 @@ export class StreamService {
       throw new InternalServerErrorException('Video upload service unavailable');
     }
 
-    const data: CfStreamResponse = await response.json();
+    let data: CfStreamResponse;
+    try {
+      data = await response.json();
+    } catch {
+      this.logger.error(`Cloudflare Stream upload returned invalid JSON: HTTP ${response.status}`);
+      throw new InternalServerErrorException('Video upload service returned invalid response');
+    }
+
     if (!response.ok || !data.success) {
       this.logger.error('Cloudflare Stream upload failed', data.errors);
       throw new InternalServerErrorException(
@@ -278,23 +285,38 @@ export class StreamService {
   async createLiveInput(title: string): Promise<{ rtmpsUrl: string; rtmpsKey: string; playbackUrl: string; liveInputId: string }> {
     this.ensureConfigured();
 
-    const response = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/stream/live_inputs`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.apiToken}`,
-          'Content-Type': 'application/json',
+    let response: Response;
+    try {
+      response = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/stream/live_inputs`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.apiToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            meta: { name: title },
+            recording: { mode: 'automatic', timeoutSeconds: 300 },
+          }),
+          signal: AbortSignal.timeout(30000),
         },
-        body: JSON.stringify({
-          meta: { name: title },
-          recording: { mode: 'automatic', timeoutSeconds: 300 },
-        }),
-      },
-    );
+      );
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Cloudflare Stream live input network error: ${msg}`);
+      throw new InternalServerErrorException('Live streaming service unavailable');
+    }
 
-    const data = await response.json() as { success: boolean; result?: { uid: string; rtmps?: { url: string; streamKey: string }; webRTC?: { url: string }; srt?: { url: string } }; errors?: Array<{ message: string }> };
-    if (!data.success || !data.result?.rtmps) {
+    let data: { success: boolean; result?: { uid: string; rtmps?: { url: string; streamKey: string }; webRTC?: { url: string }; srt?: { url: string } }; errors?: Array<{ message: string }> };
+    try {
+      data = await response.json() as typeof data;
+    } catch {
+      this.logger.error(`Cloudflare Stream live input returned invalid JSON: HTTP ${response.status}`);
+      throw new InternalServerErrorException('Live streaming service returned invalid response');
+    }
+
+    if (!response.ok || !data.success || !data.result?.rtmps) {
       this.logger.error(`Failed to create live input: ${JSON.stringify(data.errors ?? [])}`);
       throw new InternalServerErrorException('Failed to create live stream');
     }
@@ -314,12 +336,22 @@ export class StreamService {
   async deleteLiveInput(liveInputId: string): Promise<void> {
     this.ensureConfigured();
 
-    await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/stream/live_inputs/${liveInputId}`,
-      {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${this.apiToken}` },
-      },
-    );
+    try {
+      const response = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/stream/live_inputs/${liveInputId}`,
+        {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${this.apiToken}` },
+          signal: AbortSignal.timeout(15000),
+        },
+      );
+
+      if (!response.ok) {
+        this.logger.warn(`Failed to delete live input ${liveInputId}: HTTP ${response.status}`);
+      }
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Network error deleting live input ${liveInputId}: ${msg}`);
+    }
   }
 }

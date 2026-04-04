@@ -122,9 +122,12 @@ export class PrivacyService {
           await new Promise((resolve) => setTimeout(resolve, 500));
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
-          this.logger.error(`Hard-delete purge: failed to delete user ${candidate.id}: ${msg}`);
+          // GDPR: hard-delete failures are CRITICAL — user data persists beyond retention period
+          this.logger.error(`CRITICAL: Hard-delete purge failed for user ${candidate.id}: ${msg}`);
           Sentry.captureException(err, {
-            tags: { operation: 'hard-delete-purge', userId: candidate.id },
+            level: 'fatal',
+            tags: { operation: 'hard-delete-purge', userId: candidate.id, gdprCritical: 'true' },
+            extra: { softDeletedAt: candidate.deletedAt?.toISOString() ?? candidate.updatedAt.toISOString(), retryable: true },
           });
           // Continue processing remaining users — one failure should not block others
         }
@@ -171,8 +174,13 @@ export class PrivacyService {
           this.logger.log(`Purged user ${user.id} (scheduled deletion completed)`);
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
-          this.logger.error(`Failed to purge user ${user.id}: ${msg}`);
-          Sentry.captureException(err);
+          // GDPR Art 17: deletion failures are CRITICAL — must not be silently swallowed
+          this.logger.error(`CRITICAL: GDPR deletion failed for user ${user.id}: ${msg}`);
+          Sentry.captureException(err, {
+            level: 'fatal',
+            tags: { operation: 'gdpr-deletion', userId: user.id, gdprCritical: 'true' },
+            extra: { scheduledDeletionAt: 'overdue', retryable: true },
+          });
         }
       }
     } catch (error) {

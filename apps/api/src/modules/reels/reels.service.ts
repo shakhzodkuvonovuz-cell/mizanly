@@ -621,6 +621,10 @@ export class ReelsService {
       });
     }
 
+    // Invalidate cached translations for deleted reel
+    this.ai.clearTranslationCache(reelId)
+      .catch(err => this.logger.warn(`Failed to clear translation cache for reel ${reelId}`, err instanceof Error ? err.message : err));
+
     // Unpublish workflow: search index removal, cache invalidation, real-time event
     this.publishWorkflow.onUnpublish({
       contentType: 'reel',

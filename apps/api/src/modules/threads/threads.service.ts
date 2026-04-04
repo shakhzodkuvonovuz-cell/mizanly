@@ -574,6 +574,10 @@ export class ThreadsService {
       select: THREAD_SELECT,
     });
 
+    // Invalidate cached translations — stale after content edit
+    this.ai.clearTranslationCache(threadId)
+      .catch(err => this.logger.warn(`Failed to clear translation cache for thread ${threadId}`, err instanceof Error ? err.message : err));
+
     // Re-index updated thread in search
     this.publishWorkflow.onPublish({
       contentType: 'thread',
@@ -660,6 +664,10 @@ export class ThreadsService {
         ),
       );
     }
+
+    // Invalidate cached translations for deleted thread
+    this.ai.clearTranslationCache(threadId)
+      .catch(err => this.logger.warn(`Failed to clear translation cache for thread ${threadId}`, err instanceof Error ? err.message : err));
 
     // Unpublish workflow: search index removal, cache invalidation, real-time event
     this.publishWorkflow.onUnpublish({
