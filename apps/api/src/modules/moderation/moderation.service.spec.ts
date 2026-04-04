@@ -21,7 +21,7 @@ describe('ModerationService', () => {
             report: { create: jest.fn(), findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn(), count: jest.fn().mockResolvedValue(0) },
             post: { update: jest.fn() },
             comment: { update: jest.fn() },
-            moderationLog: { create: jest.fn(), findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
+            moderationLog: { create: jest.fn(), findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn(), count: jest.fn().mockResolvedValue(0) },
             user: { findUnique: jest.fn().mockResolvedValue({ role: 'ADMIN' }) },
             $transaction: jest.fn().mockImplementation((fn: (tx: any) => Promise<void>) => fn({
               report: { update: jest.fn() },

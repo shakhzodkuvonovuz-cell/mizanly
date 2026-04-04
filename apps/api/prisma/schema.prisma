@@ -928,6 +928,7 @@ model User {
   notificationsOn Boolean  @default(true)
 
   isBanned        Boolean   @default(false)
+  bannedAt        DateTime? // X04-#11: disambiguate ban vs self-deactivation timing
   banReason       String?
   banExpiresAt    DateTime?
   warningsCount   Int       @default(0)
@@ -1455,6 +1456,7 @@ model Reel {
   seriesEpisodes      SeriesEpisode[]   @relation("seriesEpisodeReels")
   taggedUsers         ReelTaggedUser[]
   feedInteractions    FeedInteraction[] @relation("feedInteractionReel")
+  moderationLogs      ModerationLog[]   @relation("ModReelTarget") // X08-#8
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([createdAt(sort: Desc)])
@@ -1578,6 +1580,7 @@ model Thread {
   bookmarks           ThreadBookmark[]
   notifications       Notification[]
   feedInteractions    FeedInteraction[] @relation("feedInteractionThread")
+  moderationLogs      ModerationLog[]   @relation("ModThreadTarget") // X08-#8
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([createdAt(sort: Desc)])
@@ -1729,6 +1732,7 @@ model Video {
   watchParties        WatchParty[]        @relation("watchParties")
   viewerDemographics  ViewerDemographic[] @relation("viewerDemographics")
   seriesEpisodes      SeriesEpisode[]     @relation("seriesEpisodeVideos")
+  moderationLogs      ModerationLog[]     @relation("ModVideoTarget") // X08-#8
 
   @@index([channelId, publishedAt(sort: Desc)])
   @@index([status, publishedAt(sort: Desc)])
@@ -1754,6 +1758,7 @@ model VideoComment {
   likesCount Int                @default(0)
   timestamp  Float?
   isPinned   Boolean            @default(false)
+  isDeleted  Boolean            @default(false) // B05-#22: soft-delete instead of content replacement
   createdAt  DateTime           @default(now())
   updatedAt  DateTime           @updatedAt // S01-#13: edit tracking
   likes      VideoCommentLike[] @relation("videoCommentLikes")
@@ -2017,6 +2022,10 @@ model Message {
   e2ePreviousCounter  Int? // Last counter in previous sending chain
   e2eSenderKeyId      Int? // For group messages: sender key chain identifier
   clientMessageId     String? @unique // Client-generated UUID for idempotent dedup
+
+  // X02-#3: Sealed sender envelope — persisted for offline recipients to unseal from history
+  e2eSealedEphemeralKey Bytes? // Sender's ephemeral X25519 public key (sealed envelope outer layer)
+  e2eSealedCiphertext   Bytes? // Sealed sender ciphertext (inner envelope before session decrypt)
 
   createdAt       DateTime          @default(now())
   conversation    Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -2351,6 +2360,9 @@ model ModerationLog {
   targetPostId    String?
   targetCommentId String?
   targetMessageId String?
+  targetThreadId  String? // X08-#8: thread moderation target
+  targetReelId    String? // X08-#8: reel moderation target
+  targetVideoId   String? // X08-#8: video moderation target
   action          ModerationAction
   reason          String
   explanation     String
@@ -2367,6 +2379,9 @@ model ModerationLog {
   targetPost      Post?            @relation("ModPostTarget", fields: [targetPostId], references: [id], onDelete: SetNull)
   targetComment   Comment?         @relation("ModCommentTarget", fields: [targetCommentId], references: [id], onDelete: SetNull)
   targetMessage   Message?         @relation("ModMessageTarget", fields: [targetMessageId], references: [id], onDelete: SetNull)
+  targetThread    Thread?          @relation("ModThreadTarget", fields: [targetThreadId], references: [id], onDelete: SetNull)
+  targetReel      Reel?            @relation("ModReelTarget", fields: [targetReelId], references: [id], onDelete: SetNull)
+  targetVideo     Video?           @relation("ModVideoTarget", fields: [targetVideoId], references: [id], onDelete: SetNull)
   report          Report?          @relation(fields: [reportId], references: [id], onDelete: SetNull)
 
   @@index([targetUserId, createdAt(sort: Desc)])
@@ -2374,6 +2389,9 @@ model ModerationLog {
   @@index([moderatorId])
   @@index([isAppealed, appealResolved]) // B11-#11: appeal queue queries
   @@index([action, createdAt(sort: Desc)]) // B11-#9: action type filtering
+  @@index([targetThreadId]) // X08-#8: thread moderation lookups
+  @@index([targetReelId]) // X08-#8: reel moderation lookups
+  @@index([targetVideoId]) // X08-#8: video moderation lookups
   @@map("moderation_log")
 }
 

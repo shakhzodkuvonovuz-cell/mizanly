@@ -35,6 +35,7 @@ export class ClerkAuthGuard implements CanActivate {
     }
 
     // X04-#2: Also fetch scheduledDeletionAt so users with pending deletion can cancel
+    // X04-#11: Fetch bannedAt for precise ban vs self-deactivation disambiguation
     let user = await this.prisma.user.findUnique({
       where: { clerkId },
       select: {
@@ -45,6 +46,7 @@ export class ClerkAuthGuard implements CanActivate {
         isBanned: true,
         isDeactivated: true,
         isDeleted: true,
+        bannedAt: true,
         banExpiresAt: true,
         deactivatedAt: true,
         scheduledDeletionAt: true,
@@ -60,7 +62,7 @@ export class ClerkAuthGuard implements CanActivate {
         select: {
           id: true, clerkId: true, username: true, displayName: true,
           isBanned: true, isDeactivated: true, isDeleted: true,
-          banExpiresAt: true, deactivatedAt: true, scheduledDeletionAt: true,
+          bannedAt: true, banExpiresAt: true, deactivatedAt: true, scheduledDeletionAt: true,
         },
       });
     }
@@ -72,19 +74,18 @@ export class ClerkAuthGuard implements CanActivate {
     if (user.isBanned) {
       // Auto-unban if temp ban has expired
       if (user.banExpiresAt && user.banExpiresAt < new Date()) {
-        // Preserve self-deactivation: if the user deactivated BEFORE the ban was applied,
-        // do not clear isDeactivated on unban. We detect this by checking if deactivatedAt
-        // is earlier than the ban start (estimated as banExpiresAt minus a reasonable window).
-        // Since the schema lacks a bannedAt field, we keep isDeactivated true if it was set
-        // before the ban expiry window. This is a safe conservative approach.
-        const wasDeactivatedBeforeBan = user.deactivatedAt && user.banExpiresAt
-          ? user.deactivatedAt < user.banExpiresAt
+        // X04-#11 FIX: Use bannedAt for precise deactivation preservation.
+        // If user self-deactivated BEFORE the ban was applied, preserve isDeactivated on unban.
+        // Previously estimated from banExpiresAt (imprecise). Now uses exact bannedAt timestamp.
+        const wasDeactivatedBeforeBan = user.deactivatedAt && user.bannedAt
+          ? user.deactivatedAt < user.bannedAt
           : false;
 
         await this.prisma.user.update({
           where: { id: user.id },
           data: {
             isBanned: false,
+            bannedAt: null,
             banExpiresAt: null,
             // Only clear deactivation if the user wasn't self-deactivated before the ban
             ...(wasDeactivatedBeforeBan ? {} : { isDeactivated: false }),

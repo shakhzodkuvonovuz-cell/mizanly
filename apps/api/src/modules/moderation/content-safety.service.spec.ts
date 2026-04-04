@@ -154,7 +154,7 @@ describe('ContentSafetyService', () => {
     it('should use correct Redis key pattern', async () => {
       redis.get.mockResolvedValue('0');
       await service.checkForwardLimit('msg-42');
-      expect(redis.get).toHaveBeenCalledWith('forward_count:msg-42');
+      expect(redis.get).toHaveBeenCalledWith('forward:count:msg-42');
     });
   });
 
@@ -163,7 +163,7 @@ describe('ContentSafetyService', () => {
   describe('incrementForwardCount', () => {
     it('should increment the forward count in Redis', async () => {
       await service.incrementForwardCount('msg-1');
-      expect(redis.eval).toHaveBeenCalled(); // atomicIncr for forward_count:msg-1
+      expect(redis.eval).toHaveBeenCalled(); // atomicIncr for forward:count:msg-1
     });
 
     it('should set TTL atomically via Lua script (30 days)', async () => {
@@ -171,7 +171,7 @@ describe('ContentSafetyService', () => {
       // atomicIncr uses redis.eval with Lua that includes conditional EXPIRE
       expect(redis.eval).toHaveBeenCalledWith(
         expect.stringContaining('EXPIRE'),
-        1, 'forward_count:msg-1', 86400 * 30,
+        1, 'forward:count:msg-1', 86400 * 30,
       );
     });
   });
@@ -337,7 +337,7 @@ describe('ContentSafetyService', () => {
       // atomicIncr uses redis.eval with Lua that includes conditional EXPIRE
       expect(redis.eval).toHaveBeenCalledWith(
         expect.stringContaining('EXPIRE'),
-        1, 'viral_shares:content-1', 3600,
+        1, 'viral:shares:content-1', 3600,
       );
     });
 
@@ -346,7 +346,7 @@ describe('ContentSafetyService', () => {
       await service.trackShare('content-1');
 
       expect(redis.setex).toHaveBeenCalledWith(
-        'content_age:content-1',
+        'content:age:content-1',
         3600,
         expect.any(String),
       );

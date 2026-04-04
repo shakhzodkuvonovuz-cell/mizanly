@@ -65,7 +65,7 @@ export class AuthService {
 
   async register(clerkId: string, dto: RegisterDto) {
     // Rate-limit registration attempts per Clerk ID (brute-force prevention)
-    const attemptKey = `register_attempts:${clerkId}`;
+    const attemptKey = `register:attempts:${clerkId}`;
     const attempts = await atomicIncr(this.redis, attemptKey, 900);
     if (attempts > 5) {
       throw new ForbiddenException('Too many registration attempts. Try again in 15 minutes.');
@@ -73,7 +73,7 @@ export class AuthService {
 
     // Device fingerprint abuse prevention — limit accounts per physical device
     if (dto.deviceId) {
-      const deviceKey = `device_accounts:${dto.deviceId}`;
+      const deviceKey = `device:accounts:${dto.deviceId}`;
       const count = parseInt(await this.redis.get(deviceKey) || '0');
       if (count >= 5) {
         throw new BadRequestException('Too many accounts created from this device');
@@ -184,7 +184,7 @@ export class AuthService {
     // Increment device account counter after successful registration
     // J07-M5 FIX: TTL reduced from 365d to 90d — device IDs rotate, 365d accumulates stale keys
     if (dto.deviceId) {
-      const deviceKey = `device_accounts:${dto.deviceId}`;
+      const deviceKey = `device:accounts:${dto.deviceId}`;
       await atomicIncr(this.redis, deviceKey, 90 * 24 * 60 * 60);
     }
 
@@ -225,6 +225,9 @@ export class AuthService {
         theme: true,
         createdAt: true,
         settings: true,
+        // X04-#10: Expose tosAcceptedAt so mobile can detect webhook-created users
+        // who haven't completed registration (ToS acceptance, onboarding).
+        tosAcceptedAt: true,
       },
     });
     if (!user) throw new NotFoundException('User not found');
@@ -239,6 +242,8 @@ export class AuthService {
     return {
       ...user,
       twoFactorEnabled: twoFactorRecord?.isEnabled ?? false,
+      // X04-#10: Mobile should check this and redirect to onboarding if false
+      registrationCompleted: user.tosAcceptedAt !== null,
     };
   }
 

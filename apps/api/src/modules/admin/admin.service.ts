@@ -280,6 +280,7 @@ export class AdminService {
       data: {
         isBanned: true,
         isDeactivated: true,
+        bannedAt: new Date(), // X04-#11: timestamp for ban vs self-deactivation disambiguation
         banReason: reason,
         banExpiresAt,
       },
@@ -349,6 +350,7 @@ export class AdminService {
       data: {
         isBanned: false,
         isDeactivated: false,
+        bannedAt: null, // X04-#11: clear ban timestamp
         banReason: null,
         banExpiresAt: null,
       },

@@ -122,7 +122,7 @@ describe('ChatGateway', () => {
           provide: 'REDIS',
           useValue: {
             incr: jest.fn().mockResolvedValue(1),
-            eval: jest.fn().mockResolvedValue(1),
+            eval: jest.fn().mockResolvedValue([]), // X07-#8: Lua script returns evicted socket IDs (empty = no eviction)
             expire: jest.fn().mockResolvedValue(1),
             get: jest.fn().mockResolvedValue(null),
             set: jest.fn().mockResolvedValue('OK'),
@@ -342,8 +342,8 @@ describe('ChatGateway', () => {
       await gateway.handleConnection(client as any);
 
       expect((client.data as any).userId).toBe('user-123');
-      // J07-H3: sadd + expire now pipelined — verify pipeline was used
-      expect(redis.pipeline).toHaveBeenCalled();
+      // X07-#8: Presence now managed via atomic Lua script (eval) instead of pipeline
+      expect(redis.eval).toHaveBeenCalled();
       // Presence is now broadcast via user's own room (O(1) emit, not O(N) per-conversation)
       expect(gateway.server.to).toHaveBeenCalledWith('user:user-123');
     });
@@ -1069,15 +1069,15 @@ describe('ChatGateway', () => {
       };
       (verifyToken as jest.Mock).mockResolvedValue({ sub: 'clerk-1' });
       prisma.user.findUnique.mockResolvedValue({ id: 'user-1', username: 'test', isBanned: false, isDeactivated: false, isDeleted: false });
-      // User already has 3 sockets
-      redis.smembers.mockResolvedValue(['socket-old-1', 'socket-old-2', 'socket-old-3']);
+      // X07-#8: Lua script returns evicted socket IDs atomically
+      redis.eval.mockResolvedValue(['socket-old-1']);
       redis.publish = jest.fn().mockResolvedValue(1);
 
       await gateway.handleConnection(client as any);
 
-      // J07-H3: Eviction now uses pipeline for batch srem — verify pipeline was created and executed
-      expect(redis.pipeline).toHaveBeenCalled();
-      // Should publish eviction event via Redis pub/sub
+      // X07-#8: Eviction now uses atomic Lua script via redis.eval
+      expect(redis.eval).toHaveBeenCalled();
+      // Should publish eviction event via Redis pub/sub for evicted sockets
       expect(redis.publish).toHaveBeenCalledWith('socket:evict', expect.stringContaining('socket-old-1'));
     });
   });

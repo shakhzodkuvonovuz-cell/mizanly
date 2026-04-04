@@ -243,6 +243,7 @@ describe('AuthService', () => {
         theme: 'dark',
         createdAt: new Date(),
         settings: {},
+        tosAcceptedAt: new Date('2026-01-01'),
       };
       prisma.user.findUnique.mockResolvedValue(mockUser);
       prisma.twoFactorSecret.findUnique.mockResolvedValue(null);
@@ -253,7 +254,7 @@ describe('AuthService', () => {
         where: { id: userId },
         select: expect.any(Object),
       });
-      expect(result).toEqual({ ...mockUser, twoFactorEnabled: false });
+      expect(result).toEqual({ ...mockUser, twoFactorEnabled: false, registrationCompleted: true });
     });
 
     it('should return twoFactorEnabled true when 2FA is enabled', async () => {
@@ -277,6 +278,7 @@ describe('AuthService', () => {
         theme: 'dark',
         createdAt: new Date(),
         settings: {},
+        tosAcceptedAt: null,
       };
       prisma.user.findUnique.mockResolvedValue(mockUser);
       prisma.twoFactorSecret.findUnique.mockResolvedValue({ isEnabled: true });
@@ -284,6 +286,7 @@ describe('AuthService', () => {
       const result = await service.getMe(userId);
 
       expect(result.twoFactorEnabled).toBe(true);
+      expect(result.registrationCompleted).toBe(false); // webhook-created user without ToS
       expect(prisma.twoFactorSecret.findUnique).toHaveBeenCalledWith({
         where: { userId },
         select: { isEnabled: true },
@@ -311,6 +314,7 @@ describe('AuthService', () => {
         theme: 'dark',
         createdAt: new Date(),
         settings: {},
+        tosAcceptedAt: new Date('2026-01-01'),
       };
       prisma.user.findUnique.mockResolvedValue(mockUser);
       prisma.twoFactorSecret.findUnique.mockResolvedValue({ isEnabled: false });
@@ -490,7 +494,7 @@ describe('AuthService', () => {
           deviceId: 'device-123',
         } as any),
       ).rejects.toThrow(BadRequestException);
-      expect(redis.get).toHaveBeenCalledWith('device_accounts:device-123');
+      expect(redis.get).toHaveBeenCalledWith('device:accounts:device-123');
     });
 
     it('should allow registration when device has fewer than 5 accounts', async () => {
@@ -516,7 +520,7 @@ describe('AuthService', () => {
       // Should increment device counter atomically after successful registration
       expect(redis.eval).toHaveBeenCalledWith(
         expect.stringContaining('INCR'),
-        1, 'device_accounts:device-456', 90 * 24 * 60 * 60,
+        1, 'device:accounts:device-456', 90 * 24 * 60 * 60,
       );
     });
 
@@ -539,7 +543,7 @@ describe('AuthService', () => {
       } as any);
 
       // redis.get should not be called for device_accounts when no deviceId
-      expect(redis.get).not.toHaveBeenCalledWith(expect.stringContaining('device_accounts:'));
+      expect(redis.get).not.toHaveBeenCalledWith(expect.stringContaining('device:accounts:'));
     });
   });
 

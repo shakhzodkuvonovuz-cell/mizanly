@@ -866,7 +866,7 @@ export class MessagesService {
     // Store in Redis (cache) with 7-day expiry + DB (durable) for recovery on flush
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     await Promise.all([
-      this.redis.setex(`group_invite:${inviteCode}`, 7 * 24 * 60 * 60, conversationId),
+      this.redis.setex(`group:invite:${inviteCode}`, 7 * 24 * 60 * 60, conversationId),
       this.prisma.conversation.update({
         where: { id: conversationId },
         data: { inviteCode, inviteExpiresAt: expiresAt },
@@ -882,7 +882,7 @@ export class MessagesService {
    * Finding #169: Join a group via invite link.
    */
   async joinViaInviteLink(inviteCode: string, userId: string) {
-    let conversationId = await this.redis.get(`group_invite:${inviteCode}`);
+    let conversationId = await this.redis.get(`group:invite:${inviteCode}`);
     // Fallback to DB if Redis lost the invite link
     if (!conversationId) {
       const convo = await this.prisma.conversation.findFirst({
@@ -893,7 +893,7 @@ export class MessagesService {
         conversationId = convo.id;
         // Re-seed Redis cache with remaining TTL
         const ttl = Math.max(1, Math.floor((convo.inviteExpiresAt!.getTime() - Date.now()) / 1000));
-        await this.redis.setex(`group_invite:${inviteCode}`, ttl, conversationId).catch((err) => this.logger.warn('Group invite DB persistence failed', err?.message));
+        await this.redis.setex(`group:invite:${inviteCode}`, ttl, conversationId).catch((err) => this.logger.warn('Group invite DB persistence failed', err?.message));
       }
     }
     if (!conversationId) throw new NotFoundException('Invite link expired or invalid');

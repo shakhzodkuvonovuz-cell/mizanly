@@ -283,27 +283,34 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       const userId = client.data.userId;
       const presenceKey = `presence:${userId}`;
 
-      // J07-H3 FIX: Pipeline sequential Redis commands to reduce round-trips (was 5-7 sequential)
+      // X07-#8 FIX: Atomic Lua script replaces TOCTOU-vulnerable SMEMBERS→SREM→SADD sequence.
+      // Previously, between checking set size and removing stale IDs, another connection could sneak in.
+      // The Lua script atomically: (1) adds new socket, (2) trims oldest if over limit, (3) sets TTL.
       const MAX_SOCKETS_PER_USER = 3;
-      const existingBefore = await this.redis.smembers(presenceKey);
-      if (existingBefore.length >= MAX_SOCKETS_PER_USER) {
-        const staleIds = existingBefore.slice(0, existingBefore.length - MAX_SOCKETS_PER_USER + 1);
-        if (staleIds.length > 0) {
-          const pipeline = this.redis.pipeline();
-          for (const staleId of staleIds) {
-            pipeline.srem(presenceKey, staleId);
-          }
-          await pipeline.exec();
-          this.redis.publish('socket:evict', JSON.stringify({ socketIds: staleIds, reason: 'connection_limit' }))
-            .catch((e) => this.logger.debug('Redis eviction publish failed', e?.message));
-        }
+      const evictedIds = await this.redis.eval(
+        `local key = KEYS[1]
+local newId = ARGV[1]
+local maxSockets = tonumber(ARGV[2])
+local ttl = tonumber(ARGV[3])
+redis.call('SADD', key, newId)
+redis.call('EXPIRE', key, ttl)
+local members = redis.call('SMEMBERS', key)
+local evicted = {}
+if #members > maxSockets then
+  for i = 1, #members - maxSockets do
+    if members[i] ~= newId then
+      redis.call('SREM', key, members[i])
+      evicted[#evicted + 1] = members[i]
+    end
+  end
+end
+return evicted`,
+        1, presenceKey, client.id, String(MAX_SOCKETS_PER_USER), String(this.PRESENCE_TTL),
+      ) as string[];
+      if (evictedIds && evictedIds.length > 0) {
+        this.redis.publish('socket:evict', JSON.stringify({ socketIds: evictedIds, reason: 'connection_limit' }))
+          .catch((e: Error) => this.logger.debug('Redis eviction publish failed', e?.message));
       }
-
-      // Pipeline: add socket + set TTL + fetch settings in one round-trip
-      const pipeline = this.redis.pipeline();
-      pipeline.sadd(presenceKey, client.id);
-      pipeline.expire(presenceKey, this.PRESENCE_TTL);
-      await pipeline.exec();
 
       // Start heartbeat to keep presence alive while connected
       const timer = setInterval(async () => {
@@ -673,6 +680,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
           ...(data.e2eCounter !== undefined ? { e2eCounter: data.e2eCounter } : {}),
           ...(data.e2ePreviousCounter !== undefined ? { e2ePreviousCounter: data.e2ePreviousCounter } : {}),
           ...(data.clientMessageId ? { clientMessageId: data.clientMessageId } : {}),
+          // X02-#3: Persist sealed envelope for offline recipient retrieval from message history
+          ...(data.ephemeralKey ? { e2eSealedEphemeralKey: Uint8Array.from(Buffer.from(data.ephemeralKey, 'base64')) } : {}),
+          ...(data.sealedCiphertext ? { e2eSealedCiphertext: Uint8Array.from(Buffer.from(data.sealedCiphertext, 'base64')) } : {}),
           _skipRedisPublish: true,
         },
       );

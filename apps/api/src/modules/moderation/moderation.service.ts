@@ -383,10 +383,11 @@ export class ModerationService {
       this.prisma.report.count({
         where: { status: 'PENDING' },
       }),
-      this.prisma.report.count({
-        where: {
-          description: { contains: '"autoFlagged":true' },
-        },
+      // X08-#32 FIX: Use ModerationLog.isAutoFlagged boolean instead of fragile string contains on Report.description.
+      // The description field stores JSON with autoFlagged:true, but string matching is unreliable
+      // (whitespace variations, JSON serialization differences). ModerationLog.isAutoFlagged is canonical.
+      this.prisma.moderationLog.count({
+        where: { isAutoFlagged: true },
       }),
       this.prisma.report.count({
         where: {

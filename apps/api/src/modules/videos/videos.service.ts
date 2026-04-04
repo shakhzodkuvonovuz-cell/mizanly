@@ -739,6 +739,7 @@ export class VideosService {
       where: {
         videoId,
         parentId: null, // top-level comments only
+        isDeleted: false, // B05-#22: exclude soft-deleted comments
         user: { isBanned: false, isDeactivated: false, isDeleted: false },
       },
       select: {
@@ -791,8 +792,10 @@ export class VideosService {
       if (!video || video.userId !== userId) throw new ForbiddenException();
     }
 
+    // B05-#22: Use isDeleted flag for proper soft-delete instead of content replacement.
+    // Preserves original content for moderation audit trail while hiding from users.
     await this.prisma.$transaction([
-      this.prisma.videoComment.update({ where: { id: commentId }, data: { content: '[deleted]' } }),
+      this.prisma.videoComment.update({ where: { id: commentId }, data: { isDeleted: true, content: '[deleted]' } }),
       this.prisma.$executeRaw`UPDATE "videos" SET "commentsCount" = GREATEST("commentsCount" - 1, 0) WHERE id = ${videoId}`,
     ]);
     return { deleted: true };
@@ -1012,6 +1015,7 @@ export class VideosService {
     const replies = await this.prisma.videoComment.findMany({
       where: {
         parentId: commentId,
+        isDeleted: false, // B05-#22: exclude soft-deleted replies
         user: { isBanned: false, isDeactivated: false, isDeleted: false },
       },
       select: {

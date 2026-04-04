@@ -150,7 +150,7 @@ Respond as JSON: {"safe": boolean, "flags": ["hate"|"islamophobia"|"sectarian"|"
     maxForwards: number;
   }> {
     const MAX_FORWARDS = 5;
-    const key = `forward_count:${messageId}`;
+    const key = `forward:count:${messageId}`;
     const count = parseInt(await this.redis.get(key) || '0', 10);
 
     return {
@@ -161,7 +161,7 @@ Respond as JSON: {"safe": boolean, "flags": ["hate"|"islamophobia"|"sectarian"|"
   }
 
   async incrementForwardCount(messageId: string): Promise<void> {
-    const key = `forward_count:${messageId}`;
+    const key = `forward:count:${messageId}`;
     await atomicIncr(this.redis, key, 86400 * 30);
   }
 
@@ -211,7 +211,7 @@ Respond as JSON: {"safe": boolean, "flags": ["hate"|"islamophobia"|"sectarian"|"
    */
   async autoRemoveContent(
     contentId: string,
-    contentType: 'post' | 'reel' | 'thread' | 'comment',
+    contentType: 'post' | 'reel' | 'thread' | 'comment' | 'video', // X08-#24: expanded content type support
     reason: string,
     flags: string[],
   ): Promise<void> {
@@ -242,6 +242,14 @@ Respond as JSON: {"safe": boolean, "flags": ["hate"|"islamophobia"|"sectarian"|"
         contentOwnerId = item.userId;
       } else if (contentType === 'comment') {
         const item = await tx.comment.update({
+          where: { id: contentId },
+          data: { isRemoved: true },
+          select: { userId: true },
+        });
+        contentOwnerId = item.userId;
+      } else if (contentType === 'video') {
+        // X08-#24: Video moderation support
+        const item = await tx.video.update({
           where: { id: contentId },
           data: { isRemoved: true },
           select: { userId: true },
@@ -299,9 +307,9 @@ Respond as JSON: {"safe": boolean, "flags": ["hate"|"islamophobia"|"sectarian"|"
     throttled: boolean;
     reason?: string;
   }> {
-    const key = `viral_shares:${contentId}`;
+    const key = `viral:shares:${contentId}`;
     const shareCount = parseInt(await this.redis.get(key) || '0', 10);
-    const ageKey = `content_age:${contentId}`;
+    const ageKey = `content:age:${contentId}`;
     const ageStr = await this.redis.get(ageKey);
     const ageMinutes = ageStr ? (Date.now() - parseInt(ageStr, 10)) / 60000 : 9999;
 
@@ -317,10 +325,10 @@ Respond as JSON: {"safe": boolean, "flags": ["hate"|"islamophobia"|"sectarian"|"
   }
 
   async trackShare(contentId: string): Promise<void> {
-    const key = `viral_shares:${contentId}`;
+    const key = `viral:shares:${contentId}`;
     await atomicIncr(this.redis, key, 3600);
 
-    const ageKey = `content_age:${contentId}`;
+    const ageKey = `content:age:${contentId}`;
     const exists = await this.redis.exists(ageKey);
     if (!exists) {
       await this.redis.setex(ageKey, 3600, Date.now().toString());
