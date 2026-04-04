@@ -1019,13 +1019,17 @@ export async function checkGroupMessageDedup(
   const dedupId = `${chainId}:${counter}`;
   // AEAD-authenticated + HMAC key (F4): attacker cannot clear dedup set or see group IDs
   const existing = await secureLoad(HMAC_TYPE.GROUP_DEDUP, originalKey);
-  const set: string[] = existing ? JSON.parse(existing) : [];
-  if (set.includes(dedupId)) return true; // Already seen — replay
-  set.push(dedupId);
+  const arr: string[] = existing ? JSON.parse(existing) : [];
+  // #506 FIX: Use Set for O(1) dedup lookup instead of Array.includes() O(n).
+  // With up to 500 entries per sender, the linear scan was unnecessary overhead.
+  // The Set is ephemeral (built per call); the array is still used for JSON persistence.
+  const dedupSet = new Set(arr);
+  if (dedupSet.has(dedupId)) return true; // Already seen — replay
+  arr.push(dedupId);
   // V7-F10: 500 per sender (vs. 10,000 shared). Enough for out-of-order delivery,
   // small enough that a malicious sender's own dedup doesn't consume excessive storage.
-  if (set.length > 500) set.splice(0, set.length - 500);
-  await secureStore(HMAC_TYPE.GROUP_DEDUP, originalKey, JSON.stringify(set));
+  if (arr.length > 500) arr.splice(0, arr.length - 500);
+  await secureStore(HMAC_TYPE.GROUP_DEDUP, originalKey, JSON.stringify(arr));
   return false;
 }
 

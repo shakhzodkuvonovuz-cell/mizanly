@@ -142,6 +142,12 @@ function serializeHeader(header: MessageHeader): Uint8Array {
 
 /**
  * Deserialize header bytes back to a MessageHeader.
+ *
+ * #503: The `>>> 0` at the end of each expression forces unsigned interpretation.
+ * Without it, `byte << 24` for byte >= 128 produces a negative signed int32
+ * (e.g., 0x80 << 24 = -2147483648). The `>>> 0` converts the final OR result
+ * to an unsigned uint32. This pattern is applied consistently across all
+ * big-endian deserialization in the signal service (sender-keys, multi-device).
  */
 function deserializeHeader(bytes: Uint8Array): MessageHeader {
   if (bytes.length !== 40) {
@@ -517,6 +523,12 @@ function trySkippedKeys(
   try {
     paddedPlaintext = aeadDecrypt(encKey, nonce, message.ciphertext, headerBytes);
   } catch {
+    // #503 FIX: Zero key material on decryption failure. Previously, if AEAD
+    // decryption failed the messageKey/encKey/nonce were never zeroed — they'd
+    // linger on the GC heap until collected.
+    zeroOut(skipped.messageKey);
+    zeroOut(encKey);
+    zeroOut(nonce);
     throw new Error('Decryption with skipped key failed. Message may be corrupted.');
   }
 

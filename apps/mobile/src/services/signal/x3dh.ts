@@ -13,6 +13,24 @@
  * The key derivation (this file) is IDENTICAL to Signal's spec.
  * Only the final encryption step (in double-ratchet.ts) differs.
  *
+ * #493 Spec deviation — Associated Data (AD) construction:
+ * Signal spec section 3.3 says: "AD = Encode(IK_A) || Encode(IK_B)"
+ * and this AD should be passed to the initial Double Ratchet encrypt/decrypt.
+ * Our implementation does NOT construct an explicit AD byte sequence from the
+ * identity keys. Instead, we rely on:
+ *   1. Identity keys are cryptographically bound via DH1 (uses IK_A) and DH2
+ *      (uses IK_B). A MITM substituting either identity key produces a different
+ *      shared secret, so decryption fails.
+ *   2. The Double Ratchet uses the serialized message header (ratchetKey + counter
+ *      + previousCounter) as AAD for AEAD, which authenticates the sender's
+ *      current ratchet public key.
+ *   3. Identity keys are independently verified via TOFU + safety numbers.
+ * The spec's AD provides a belt-and-suspenders binding of identity keys into the
+ * AEAD tag. Our approach achieves the same goal through DH binding — if either
+ * identity key is wrong, the shared secret diverges and AEAD fails. This is
+ * equivalent security but not byte-compatible with Signal's wire format.
+ * If interoperability with Signal/libsignal is ever needed, add explicit AD.
+ *
  * CRITICAL: Ed25519 identity keys are converted to X25519 for DH operations
  * via the birational map (toMontgomery/toMontgomerySecret). This is the
  * same approach used by Signal's libsignal.
