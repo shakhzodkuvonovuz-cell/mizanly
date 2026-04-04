@@ -41,6 +41,7 @@ describe('Final Push Part 3 — breaking 3800', () => {
             subscription: { findMany: jest.fn().mockResolvedValue([]) },
             user: { update: jest.fn(), findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             block: { findMany: jest.fn().mockResolvedValue([]) }, mute: { findMany: jest.fn().mockResolvedValue([]) },
+            restrict: { findMany: jest.fn().mockResolvedValue([]) },
             report: { create: jest.fn() },
             premiere: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
             premiereReminder: { create: jest.fn(), delete: jest.fn(), count: jest.fn().mockResolvedValue(0) },
