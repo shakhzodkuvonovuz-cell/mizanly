@@ -2797,7 +2797,13 @@
     "preview": "Your content here",
     "shareAsStory": "Share as Story",
     "shareAsPost": "Share as Post",
-    "pickOccasion": "Choose Occasion"
+    "pickOccasion": "Choose Occasion",
+    "occasion.eidFitr": "Idul Fitri",
+    "occasion.eidAdha": "Idul Adha",
+    "occasion.ramadan": "Ramadhan",
+    "occasion.mawlid": "Maulid Nabi",
+    "occasion.israMiraj": "Isra' Mi'raj",
+    "occasion.hijriNewYear": "Tahun Baru Islam"
   },
   "quranRoom": {
     "title": "Quran Reading Room",
@@ -3316,7 +3322,13 @@
     "delete": "Remove",
     "deleteAll": "Remove All",
     "empty": "No end screens",
-    "emptySubtitle": "Add cards that appear at the end of your video to boost engagement"
+    "emptySubtitle": "Add cards that appear at the end of your video to boost engagement",
+    "position.topLeft": "KA",
+    "position.topRight": "KAn",
+    "position.centerLeft": "TK",
+    "position.centerRight": "TKn",
+    "position.bottomLeft": "BK",
+    "position.bottomRight": "BKn"
   },
   "ai": {
     "title": "AI Assistant",
@@ -3812,7 +3824,8 @@
     "tapToRetry": "Ketuk untuk coba lagi",
     "backOnline": "Kembali online",
     "queuedAction": "Akan disinkronkan saat terhubung",
-    "syncing": "Menyinkronkan..."
+    "syncing": "Menyinkronkan...",
+    "reconnecting": "Menghubungkan ulang..."
   },
   "analyticsAI": {
     "askAI": "Tanya AI",
@@ -4111,7 +4124,11 @@
     "crescent": "Bulan Sabit",
     "mosque": "Masjid",
     "universe": "Alam Semesta",
-    "received": "Hadiah Diterima"
+    "received": "Hadiah Diterima",
+    "heart": "Hati",
+    "star": "Bintang",
+    "diamond": "Berlian",
+    "galaxy": "Galaksi"
   },
   "diamonds": {
     "balance": "Saldo Diamond",
@@ -4308,7 +4325,9 @@
     "categoryAcoustic": "Akustik",
     "categoryHipHop": "Hip Hop",
     "categoryPop": "Pop",
-    "categoryQiraat": "Qiraat"
+    "categoryQiraat": "Qiraat",
+    "noSearchResults": "Tidak ada hasil",
+    "tryDifferentSearch": "Coba istilah pencarian yang berbeda"
   },
   "conversationMedia": {
     "title": "Media Bersama",
@@ -4964,7 +4983,37 @@
     "setForAll": "Set for all chats",
     "setForThis": "Set for this chat only",
     "wallpaperApplied": "Wallpaper applied",
-    "wallpaperRemoved": "Wallpaper removed"
+    "wallpaperRemoved": "Wallpaper removed",
+    "tab.solid": "Solid",
+    "tab.gradient": "Gradien",
+    "tab.pattern": "Pola",
+    "tab.custom": "Kustom",
+    "color.emerald": "Zamrud",
+    "color.gold": "Emas",
+    "color.dark": "Gelap",
+    "color.surface": "Permukaan",
+    "color.red": "Merah",
+    "color.blue": "Biru",
+    "color.purple": "Ungu",
+    "color.orange": "Oranye",
+    "color.green": "Hijau",
+    "color.teal": "Teal",
+    "color.pink": "Merah Muda",
+    "color.gray": "Abu-abu",
+    "gradient.emeraldNight": "Malam Zamrud",
+    "gradient.goldenDusk": "Senja Emas",
+    "gradient.purpleNight": "Malam Ungu",
+    "gradient.oceanDeep": "Laut Dalam",
+    "gradient.emeraldGold": "Zamrud Emas",
+    "gradient.sunset": "Matahari Terbenam",
+    "gradient.tealDepth": "Kedalaman Teal",
+    "gradient.roseNight": "Malam Mawar",
+    "pattern.arabesque": "Arabesque",
+    "pattern.zellige": "Zellige",
+    "pattern.stars": "Bintang",
+    "pattern.hexagon": "Heksagon",
+    "pattern.lattice": "Kisi",
+    "pattern.muqarnas": "Muqarnas"
   },
   "time": {
     "justNow": "baru saja",
@@ -4975,5 +5024,50 @@
   "distance": {
     "km": "{{value}} km",
     "m": "{{value}} m"
+  },
+  "whatsNew": {
+    "changelog.videoEditor.title": "Editor Video",
+    "changelog.videoEditor.description": "Editor level CapCut dengan 10 tab alat, pemrosesan FFmpeg, perekaman multi-klip",
+    "changelog.photoCarousel.title": "Korsel Foto",
+    "changelog.photoCarousel.description": "Postingan multi-foto hingga 35 slide, musik, teks per-slide",
+    "changelog.storyDrawing.title": "Gambar Cerita",
+    "changelog.storyDrawing.description": "Pena, stabilo, neon, penghapus dengan palet 24 warna",
+    "changelog.interactiveStickers.title": "Stiker Interaktif",
+    "changelog.interactiveStickers.description": "10 jenis stiker cerita — polling, kuis, hitung mundur, GIF, musik, lokasi",
+    "changelog.islamicFeatures.title": "Fitur Islami",
+    "changelog.islamicFeatures.description": "Waktu shalat, ruang Al-Quran, penghitung dzikir, mode Ramadhan, pencari masjid",
+    "changelog.safety.title": "Keamanan",
+    "changelog.safety.description": "Moderasi konten AI, filter kata, pengingat kebaikan, sistem pelaporan",
+    "changelog.smartNotifications.title": "Notifikasi Cerdas",
+    "changelog.smartNotifications.description": "Notifikasi terkumpul, kontrol per-jenis, push untuk suka dan ikuti",
+    "changelog.forYouFeed.title": "Feed Untuk Anda",
+    "changelog.forYouFeed.description": "Peringkat AI 3-tahap dengan dorongan Islami, slot eksplorasi, keberagaman hashtag"
+  },
+  "imageEditor": {
+    "filter.normal": "Normal",
+    "filter.warm": "Hangat",
+    "filter.cool": "Sejuk",
+    "filter.vivid": "Cerah",
+    "filter.noir": "Noir",
+    "filter.emerald": "Zamrud",
+    "filter.gold": "Emas",
+    "filter.fade": "Pudar",
+    "filter.sharp": "Tajam",
+    "filter.dreamy": "Bermimpi",
+    "crop.free": "Bebas"
+  },
+  "report": {
+    "reason.hateSpeech": "Ujaran kebencian",
+    "reason.harassment": "Pelecehan",
+    "reason.violence": "Kekerasan",
+    "reason.spam": "Spam",
+    "reason.misinformation": "Misinformasi",
+    "reason.nudity": "Ketelanjangan",
+    "reason.selfHarm": "Menyakiti diri sendiri",
+    "reason.terrorism": "Terorisme",
+    "reason.doxxing": "Doxxing",
+    "reason.copyright": "Hak cipta",
+    "reason.impersonation": "Peniruan identitas",
+    "reason.other": "Lainnya"
   }
 }

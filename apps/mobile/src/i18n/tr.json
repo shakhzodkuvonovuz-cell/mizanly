@@ -2790,7 +2790,13 @@
     "preview": "İçeriğiniz burada",
     "shareAsStory": "Hikâye Olarak Paylaş",
     "shareAsPost": "Gönderi Olarak Paylaş",
-    "pickOccasion": "Vesile Seçin"
+    "pickOccasion": "Vesile Seçin",
+    "occasion.eidFitr": "Ramazan Bayrami",
+    "occasion.eidAdha": "Kurban Bayrami",
+    "occasion.ramadan": "Ramazan",
+    "occasion.mawlid": "Mevlid Kandili",
+    "occasion.israMiraj": "Mirac Kandili",
+    "occasion.hijriNewYear": "Hicri Yilbasi"
   },
   "quranRoom": {
     "title": "Kur'an Okuma Odası",
@@ -3309,7 +3315,13 @@
     "delete": "Kaldır",
     "deleteAll": "Tümünü Kaldır",
     "empty": "Bitiş ekranı yok",
-    "emptySubtitle": "Etkileşimi artırmak için videonuzun sonunda kartlar ekleyin"
+    "emptySubtitle": "Etkileşimi artırmak için videonuzun sonunda kartlar ekleyin",
+    "position.topLeft": "SU",
+    "position.topRight": "SA",
+    "position.centerLeft": "OS",
+    "position.centerRight": "OA",
+    "position.bottomLeft": "AS",
+    "position.bottomRight": "AA"
   },
   "ai": {
     "title": "Yapay Zekâ Asistanı",
@@ -3805,7 +3817,8 @@
     "tapToRetry": "Yeniden denemek için dokunun",
     "backOnline": "Tekrar çevrimiçi",
     "queuedAction": "Bağlandığında senkronize edilecek",
-    "syncing": "Senkronize ediliyor..."
+    "syncing": "Senkronize ediliyor...",
+    "reconnecting": "Yeniden bağlanıyor..."
   },
   "analyticsAI": {
     "askAI": "Yapay Zekaya Sor",
@@ -4104,7 +4117,11 @@
     "crescent": "Hilal",
     "mosque": "Cami",
     "universe": "Evren",
-    "received": "Alınan Hediyeler"
+    "received": "Alınan Hediyeler",
+    "heart": "Kalp",
+    "star": "Yildiz",
+    "diamond": "Elmas",
+    "galaxy": "Galaksi"
   },
   "diamonds": {
     "balance": "Elmas Bakiyesi",
@@ -4301,7 +4318,9 @@
     "categoryAcoustic": "Akustik",
     "categoryHipHop": "Hip Hop",
     "categoryPop": "Pop",
-    "categoryQiraat": "Kıraat"
+    "categoryQiraat": "Kıraat",
+    "noSearchResults": "Sonuc bulunamadi",
+    "tryDifferentSearch": "Farkli bir arama terimi deneyin"
   },
   "conversationMedia": {
     "title": "Paylaşılan Medya",
@@ -4957,7 +4976,37 @@
     "setForAll": "Set for all chats",
     "setForThis": "Set for this chat only",
     "wallpaperApplied": "Wallpaper applied",
-    "wallpaperRemoved": "Wallpaper removed"
+    "wallpaperRemoved": "Wallpaper removed",
+    "tab.solid": "Duz",
+    "tab.gradient": "Gradyan",
+    "tab.pattern": "Desen",
+    "tab.custom": "Ozel",
+    "color.emerald": "Zumrut",
+    "color.gold": "Altin",
+    "color.dark": "Koyu",
+    "color.surface": "Yuzey",
+    "color.red": "Kirmizi",
+    "color.blue": "Mavi",
+    "color.purple": "Mor",
+    "color.orange": "Turuncu",
+    "color.green": "Yesil",
+    "color.teal": "Camgobegi",
+    "color.pink": "Pembe",
+    "color.gray": "Gri",
+    "gradient.emeraldNight": "Zumrut Gecesi",
+    "gradient.goldenDusk": "Altin Alacakaranlik",
+    "gradient.purpleNight": "Mor Gece",
+    "gradient.oceanDeep": "Derin Okyanus",
+    "gradient.emeraldGold": "Zumrut Altin",
+    "gradient.sunset": "Gunbatimi",
+    "gradient.tealDepth": "Derin Camgobegi",
+    "gradient.roseNight": "Gul Gecesi",
+    "pattern.arabesque": "Arabesk",
+    "pattern.zellige": "Zellige",
+    "pattern.stars": "Yildizlar",
+    "pattern.hexagon": "Altigen",
+    "pattern.lattice": "Kafes",
+    "pattern.muqarnas": "Mukarnas"
   },
   "time": {
     "justNow": "az önce",
@@ -4968,5 +5017,50 @@
   "distance": {
     "km": "{{value}} km",
     "m": "{{value}} m"
+  },
+  "whatsNew": {
+    "changelog.videoEditor.title": "Video Editoru",
+    "changelog.videoEditor.description": "CapCut seviyesinde editor, 10 arac sekmesi, FFmpeg isleme, coklu klip kaydi",
+    "changelog.photoCarousel.title": "Foto Karuseli",
+    "changelog.photoCarousel.description": "35 slayta kadar coklu foto gonderiler, muzik, slayt basina metin",
+    "changelog.storyDrawing.title": "Hikaye Cizimi",
+    "changelog.storyDrawing.description": "Kalem, isaretleyici, neon parlama, silgi araclari ile 24 renk paleti",
+    "changelog.interactiveStickers.title": "Interaktif Cikartmalar",
+    "changelog.interactiveStickers.description": "10 hikaye cikartma turu — anket, quiz, geri sayim, GIF, muzik, konum",
+    "changelog.islamicFeatures.title": "Islami Ozellikler",
+    "changelog.islamicFeatures.description": "Namaz vakitleri, Kuran odalari, zikir sayaci, Ramazan modu, cami bulucu",
+    "changelog.safety.title": "Guvenlik",
+    "changelog.safety.description": "Yapay zeka icerik denetimi, kelime filtreleri, nezaket hatirlatmalari, raporlama sistemi",
+    "changelog.smartNotifications.title": "Akilli Bildirimler",
+    "changelog.smartNotifications.description": "Toplu bildirimler, tur bazli kontroller, begeni ve takip bildirimleri",
+    "changelog.forYouFeed.title": "Senin Icin Akisi",
+    "changelog.forYouFeed.description": "3 asamali yapay zeka siralamasi, Islami destek, kesif alanlari, hashtag cesitliligi"
+  },
+  "imageEditor": {
+    "filter.normal": "Normal",
+    "filter.warm": "Sicak",
+    "filter.cool": "Soguk",
+    "filter.vivid": "Canli",
+    "filter.noir": "Noir",
+    "filter.emerald": "Zumrut",
+    "filter.gold": "Altin",
+    "filter.fade": "Soluk",
+    "filter.sharp": "Keskin",
+    "filter.dreamy": "Ruya gibi",
+    "crop.free": "Serbest"
+  },
+  "report": {
+    "reason.hateSpeech": "Nefret soylemi",
+    "reason.harassment": "Taciz",
+    "reason.violence": "Siddet",
+    "reason.spam": "Spam",
+    "reason.misinformation": "Yanlis bilgi",
+    "reason.nudity": "Ciplaklık",
+    "reason.selfHarm": "Kendine zarar",
+    "reason.terrorism": "Terorizm",
+    "reason.doxxing": "Doxxing",
+    "reason.copyright": "Telif hakki",
+    "reason.impersonation": "Kimlik taklidi",
+    "reason.other": "Diger"
   }
 }

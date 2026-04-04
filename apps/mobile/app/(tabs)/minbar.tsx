@@ -30,9 +30,12 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { useIsOffline } from '@/hooks/useIsOffline';
+import { feedCache, CACHE_KEYS } from '@/utils/feedCache';
 import { rtlFlexRow, rtlTextAlign, rtlAbsoluteEnd } from '@/utils/rtl';
 import { showToast } from '@/components/ui/Toast';
 import { useFocusEffect } from '@react-navigation/native';
+import type { PaginatedResponse } from '@/types';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const THUMBNAIL_HEIGHT = Math.round(SCREEN_WIDTH * 9 / 16);
@@ -186,6 +189,7 @@ export default function MinbarScreen() {
   const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
   const tc = useThemeColors();
+  const isOffline = useIsOffline();
   const [selectedCategory, setSelectedCategory] = useState<VideoCategory | 'all'>('all');
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -237,6 +241,16 @@ export default function MinbarScreen() {
   const bellPress = useAnimatedPress();
   const watchLaterPress = useAnimatedPress();
 
+  // Load cached feed data for stale-while-revalidate
+  const minbarCacheKey = CACHE_KEYS.MINBAR_FEED + ':' + feedType + ':' + selectedCategory;
+  const [cachedMinbarData, setCachedMinbarData] = useState<Record<string, unknown> | null>(null);
+  useEffect(() => {
+    feedCache.get(minbarCacheKey).then((cached) => {
+      if (cached) setCachedMinbarData(cached as Record<string, unknown>);
+      else setCachedMinbarData(null);
+    });
+  }, [minbarCacheKey]);
+
   const feedQuery = useInfiniteQuery({
     queryKey: ['videos-feed', selectedCategory, feedType],
     queryFn: async ({ pageParam }) => {
@@ -245,10 +259,19 @@ export default function MinbarScreen() {
       const category = feedType === 'subscriptions'
         ? 'subscriptions'
         : selectedCategory === 'all' ? undefined : selectedCategory;
-      return videosApi.getFeed(category, pageParam as string | undefined);
+      const res = await videosApi.getFeed(category, pageParam as string | undefined);
+      // Cache first page for offline / stale-while-revalidate
+      if (!pageParam) {
+        feedCache.set(minbarCacheKey, res);
+      }
+      return res;
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
+    placeholderData: cachedMinbarData ? {
+      pages: [cachedMinbarData as unknown as PaginatedResponse<Video>],
+      pageParams: [undefined],
+    } : undefined,
   });
 
   const videos: Video[] = feedQuery.data?.pages.flatMap((p) => p.data) ?? [];

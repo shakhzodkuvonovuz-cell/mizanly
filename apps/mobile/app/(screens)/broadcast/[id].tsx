@@ -29,6 +29,7 @@ import type { BroadcastChannel as BroadcastChannelType, BroadcastMessage } from 
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { useIsOffline } from '@/hooks/useIsOffline';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 
@@ -48,6 +49,7 @@ export default function BroadcastChannelScreen() {
   const [selectedMessage, setSelectedMessage] = useState<BroadcastMessage | null>(null);
 
   const haptic = useContextualHaptic();
+  const isOffline = useIsOffline();
   const flatListRef = useRef<FlatList>(null);
 
   // Channel data via useQuery
@@ -380,9 +382,9 @@ export default function BroadcastChannelScreen() {
                 <Pressable
                   accessibilityLabel={t('accessibility.sendMessage')}
                   accessibilityRole="button"
-                  style={[styles.sendButton, (!newMessage.trim() || sending) && styles.sendButtonDisabled]}
+                  style={[styles.sendButton, (!newMessage.trim() || sending || isOffline) && styles.sendButtonDisabled]}
                   onPress={handleSendMessage}
-                  disabled={!newMessage.trim() || sending}
+                  disabled={!newMessage.trim() || sending || isOffline}
                 >
                   <Icon name="send" size="md" color={tc.text.primary} />
                 </Pressable>

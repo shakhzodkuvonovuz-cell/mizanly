@@ -22,6 +22,7 @@ import { broadcastApi, uploadApi } from '@/services/api';
 import { resizeForUpload } from '@/utils/imageResize';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useIsOffline } from '@/hooks/useIsOffline';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 // Slugify helper
@@ -37,6 +38,7 @@ export default function CreateBroadcastScreen() {
   const tc = useThemeColors();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const isOffline = useIsOffline();
 
   // Form state
   const [name, setName] = useState('');
@@ -110,7 +112,7 @@ export default function CreateBroadcastScreen() {
   });
 
   // Validation
-  const isValid = name.trim().length >= 1 && slug.trim().length >= 1 && !createMutation.isPending && !uploading;
+  const isValid = name.trim().length >= 1 && slug.trim().length >= 1 && !createMutation.isPending && !uploading && !isOffline;
   const nameCount = name.length;
   const slugCount = slug.length;
   const descCount = description.length;

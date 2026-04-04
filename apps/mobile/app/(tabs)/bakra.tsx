@@ -47,8 +47,10 @@ import * as Clipboard from 'expo-clipboard';
 import { useVideoPreloader } from '@/hooks/useVideoPreloader';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { useIsOffline } from '@/hooks/useIsOffline';
+import { feedCache, CACHE_KEYS } from '@/utils/feedCache';
 import { formatCount } from '@/utils/formatCount';
-import type { Reel } from '@/types';
+import type { Reel, PaginatedResponse } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
 
@@ -538,6 +540,7 @@ export default function BakraScreen() {
   const router = useRouter();
   const haptic = useContextualHaptic();
   const tc = useThemeColors();
+  const isOffline = useIsOffline();
   const insets = useSafeAreaInsets();
   const { width: SCREEN_W, height: SCREEN_H } = useWindowDimensions();
   const [refreshing, setRefreshing] = useState(false);
@@ -582,18 +585,37 @@ export default function BakraScreen() {
     }, [])
   );
 
+  // Load cached feed data for stale-while-revalidate
+  const [cachedBakraData, setCachedBakraData] = useState<Record<string, unknown> | null>(null);
+  useEffect(() => {
+    feedCache.get(CACHE_KEYS.BAKRA_FEED + ':' + bakraFeedType).then((cached) => {
+      if (cached) setCachedBakraData(cached as Record<string, unknown>);
+      else setCachedBakraData(null);
+    });
+  }, [bakraFeedType]);
+
   const feedQuery = useInfiniteQuery({
     queryKey: ['reels-feed', bakraFeedType],
     queryFn: async ({ pageParam }) => {
       const res = await reelsApi.getFeed(pageParam as string | undefined);
       // If regular feed returns empty on first page, fallback to trending
       if (!pageParam && (!res?.data || res.data.length === 0)) {
-        return reelsApi.getTrending(undefined, 20);
+        const trendingRes = await reelsApi.getTrending(undefined, 20);
+        feedCache.set(CACHE_KEYS.BAKRA_FEED + ':' + bakraFeedType, trendingRes);
+        return trendingRes;
+      }
+      // Cache first page for offline / stale-while-revalidate
+      if (!pageParam) {
+        feedCache.set(CACHE_KEYS.BAKRA_FEED + ':' + bakraFeedType, res);
       }
       return res;
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last?.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
+    placeholderData: cachedBakraData ? {
+      pages: [cachedBakraData as unknown as PaginatedResponse<Reel>],
+      pageParams: [undefined],
+    } : undefined,
   });
 
   const reels: Reel[] = feedQuery.data?.pages.flatMap((p) => p?.data ?? []) ?? [];

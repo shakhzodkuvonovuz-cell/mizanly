@@ -21,6 +21,7 @@ import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { useIsOffline } from '@/hooks/useIsOffline';
 import { promotionsApi } from '@/services/promotionsApi';
 
 const BUDGET_OPTIONS = [5, 10, 25, 50];
@@ -38,6 +39,7 @@ function BoostPostContent() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const haptic = useContextualHaptic();
+  const isOffline = useIsOffline();
   const { postId } = useLocalSearchParams<{ postId: string }>();
 
   const [selectedBudget, setSelectedBudget] = useState<number>(10);
@@ -62,7 +64,12 @@ function BoostPostContent() {
   }, []);
 
   const handleBoost = useCallback(async () => {
-    if (!postId || activeBudget <= 0 || boosting) return;
+    if (!postId || activeBudget <= 0 || boosting || isOffline) {
+      if (isOffline) {
+        showToast({ message: t('network.offline'), variant: 'error' });
+      }
+      return;
+    }
     haptic.tick();
     setBoosting(true);
     try {
@@ -231,10 +238,10 @@ function BoostPostContent() {
         {/* Boost Button */}
         <Animated.View entering={FadeInUp.delay(600).duration(400)} style={styles.buttonWrapper}>
           <GradientButton
-            label={t('boost.boostNow')}
+            label={isOffline ? t('network.offline') : t('boost.boostNow')}
             onPress={handleBoost}
             loading={boosting}
-            disabled={activeBudget <= 0 || boosting}
+            disabled={activeBudget <= 0 || boosting || isOffline}
             fullWidth
             size="lg"
             icon="trending-up"

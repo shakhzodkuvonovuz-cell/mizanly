@@ -2797,7 +2797,13 @@
     "preview": "Your content here",
     "shareAsStory": "Share as Story",
     "shareAsPost": "Share as Post",
-    "pickOccasion": "Choose Occasion"
+    "pickOccasion": "Choose Occasion",
+    "occasion.eidFitr": "Eid al-Fitr",
+    "occasion.eidAdha": "Eid al-Adha",
+    "occasion.ramadan": "Ramadan",
+    "occasion.mawlid": "Mawlid an-Nabi",
+    "occasion.israMiraj": "Isra et Mi'raj",
+    "occasion.hijriNewYear": "Nouvel An islamique"
   },
   "quranRoom": {
     "title": "Quran Reading Room",
@@ -3316,7 +3322,13 @@
     "delete": "Remove",
     "deleteAll": "Remove All",
     "empty": "No end screens",
-    "emptySubtitle": "Add cards that appear at the end of your video to boost engagement"
+    "emptySubtitle": "Add cards that appear at the end of your video to boost engagement",
+    "position.topLeft": "HG",
+    "position.topRight": "HD",
+    "position.centerLeft": "CG",
+    "position.centerRight": "CD",
+    "position.bottomLeft": "BG",
+    "position.bottomRight": "BD"
   },
   "ai": {
     "title": "AI Assistant",
@@ -3812,7 +3824,8 @@
     "tapToRetry": "Appuyez pour réessayer",
     "backOnline": "De retour en ligne",
     "queuedAction": "Sera synchronisé une fois connecté",
-    "syncing": "Synchronisation..."
+    "syncing": "Synchronisation...",
+    "reconnecting": "Reconnexion..."
   },
   "analyticsAI": {
     "askAI": "Demander à l'IA",
@@ -4111,7 +4124,11 @@
     "crescent": "Croissant",
     "mosque": "Mosquée",
     "universe": "Univers",
-    "received": "Cadeaux reçus"
+    "received": "Cadeaux reçus",
+    "heart": "Coeur",
+    "star": "Etoile",
+    "diamond": "Diamant",
+    "galaxy": "Galaxie"
   },
   "diamonds": {
     "balance": "Solde de diamants",
@@ -4308,7 +4325,9 @@
     "categoryAcoustic": "Acoustique",
     "categoryHipHop": "Hip Hop",
     "categoryPop": "Pop",
-    "categoryQiraat": "Qiraat"
+    "categoryQiraat": "Qiraat",
+    "noSearchResults": "Aucun resultat",
+    "tryDifferentSearch": "Essayez un autre terme de recherche"
   },
   "conversationMedia": {
     "title": "Médias partagés",
@@ -4964,7 +4983,37 @@
     "setForAll": "Set for all chats",
     "setForThis": "Set for this chat only",
     "wallpaperApplied": "Wallpaper applied",
-    "wallpaperRemoved": "Wallpaper removed"
+    "wallpaperRemoved": "Wallpaper removed",
+    "tab.solid": "Uni",
+    "tab.gradient": "Degrade",
+    "tab.pattern": "Motif",
+    "tab.custom": "Personnalise",
+    "color.emerald": "Emeraude",
+    "color.gold": "Or",
+    "color.dark": "Sombre",
+    "color.surface": "Surface",
+    "color.red": "Rouge",
+    "color.blue": "Bleu",
+    "color.purple": "Violet",
+    "color.orange": "Orange",
+    "color.green": "Vert",
+    "color.teal": "Sarcelle",
+    "color.pink": "Rose",
+    "color.gray": "Gris",
+    "gradient.emeraldNight": "Nuit emeraude",
+    "gradient.goldenDusk": "Crepuscule dore",
+    "gradient.purpleNight": "Nuit violette",
+    "gradient.oceanDeep": "Ocean profond",
+    "gradient.emeraldGold": "Emeraude or",
+    "gradient.sunset": "Coucher de soleil",
+    "gradient.tealDepth": "Profondeur sarcelle",
+    "gradient.roseNight": "Nuit rose",
+    "pattern.arabesque": "Arabesque",
+    "pattern.zellige": "Zellige",
+    "pattern.stars": "Etoiles",
+    "pattern.hexagon": "Hexagone",
+    "pattern.lattice": "Treillis",
+    "pattern.muqarnas": "Muqarnas"
   },
   "time": {
     "justNow": "à l’instant",
@@ -4975,5 +5024,50 @@
   "distance": {
     "km": "{{value}} km",
     "m": "{{value}} m"
+  },
+  "whatsNew": {
+    "changelog.videoEditor.title": "Editeur video",
+    "changelog.videoEditor.description": "Editeur niveau CapCut avec 10 onglets d'outils, traitement FFmpeg, enregistrement multi-clip",
+    "changelog.photoCarousel.title": "Carrousel photo",
+    "changelog.photoCarousel.description": "Publications multi-photos avec 35 diapositives, musique, texte par diapositive",
+    "changelog.storyDrawing.title": "Dessin de story",
+    "changelog.storyDrawing.description": "Stylo, surligneur, neon, gomme avec palette de 24 couleurs",
+    "changelog.interactiveStickers.title": "Stickers interactifs",
+    "changelog.interactiveStickers.description": "10 types de stickers — sondage, quiz, compte a rebours, GIF, musique, localisation",
+    "changelog.islamicFeatures.title": "Fonctionnalites islamiques",
+    "changelog.islamicFeatures.description": "Horaires de priere, salles Coran, compteur dhikr, mode Ramadan, chercheur de mosquees",
+    "changelog.safety.title": "Securite",
+    "changelog.safety.description": "Moderation IA, filtres de mots, rappels de bienveillance, systeme de signalement",
+    "changelog.smartNotifications.title": "Notifications intelligentes",
+    "changelog.smartNotifications.description": "Notifications groupees, controles par type, push pour likes et abonnements",
+    "changelog.forYouFeed.title": "Fil Pour Vous",
+    "changelog.forYouFeed.description": "Classement IA en 3 etapes avec boost islamique, creneaux d'exploration, diversite hashtag"
+  },
+  "imageEditor": {
+    "filter.normal": "Normal",
+    "filter.warm": "Chaud",
+    "filter.cool": "Froid",
+    "filter.vivid": "Vif",
+    "filter.noir": "Noir",
+    "filter.emerald": "Emeraude",
+    "filter.gold": "Or",
+    "filter.fade": "Fondu",
+    "filter.sharp": "Net",
+    "filter.dreamy": "Reveur",
+    "crop.free": "Libre"
+  },
+  "report": {
+    "reason.hateSpeech": "Discours de haine",
+    "reason.harassment": "Harcelement",
+    "reason.violence": "Violence",
+    "reason.spam": "Spam",
+    "reason.misinformation": "Desinformation",
+    "reason.nudity": "Nudite",
+    "reason.selfHarm": "Automutilation",
+    "reason.terrorism": "Terrorisme",
+    "reason.doxxing": "Doxxing",
+    "reason.copyright": "Droit d'auteur",
+    "reason.impersonation": "Usurpation d'identite",
+    "reason.other": "Autre"
   }
 }

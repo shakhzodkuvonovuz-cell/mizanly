@@ -2796,7 +2796,13 @@
     "preview": "Your content here",
     "shareAsStory": "Share as Story",
     "shareAsPost": "Share as Post",
-    "pickOccasion": "Choose Occasion"
+    "pickOccasion": "Choose Occasion",
+    "occasion.eidFitr": "ঈদুল ফিতর",
+    "occasion.eidAdha": "ঈদুল আযহা",
+    "occasion.ramadan": "রমজান",
+    "occasion.mawlid": "মিলাদুন্নবী",
+    "occasion.israMiraj": "ইসরা ও মিরাজ",
+    "occasion.hijriNewYear": "ইসলামি নববর্ষ"
   },
   "quranRoom": {
     "title": "Quran Reading Room",
@@ -3315,7 +3321,13 @@
     "delete": "Remove",
     "deleteAll": "Remove All",
     "empty": "No end screens",
-    "emptySubtitle": "Add cards that appear at the end of your video to boost engagement"
+    "emptySubtitle": "Add cards that appear at the end of your video to boost engagement",
+    "position.topLeft": "উপর-বাম",
+    "position.topRight": "উপর-ডান",
+    "position.centerLeft": "মধ্য-বাম",
+    "position.centerRight": "মধ্য-ডান",
+    "position.bottomLeft": "নিচ-বাম",
+    "position.bottomRight": "নিচ-ডান"
   },
   "ai": {
     "title": "AI Assistant",
@@ -3811,7 +3823,8 @@
     "tapToRetry": "পুনরায় চেষ্টা করতে ট্যাপ করুন",
     "backOnline": "পুনরায় অনলাইন",
     "queuedAction": "সংযোগ হলে সিঙ্ক হবে",
-    "syncing": "সিঙ্ক হচ্ছে..."
+    "syncing": "সিঙ্ক হচ্ছে...",
+    "reconnecting": "পুনরায় সংযুক্ত হচ্ছে..."
   },
   "analyticsAI": {
     "askAI": "AI কে জিজ্ঞাসা করুন",
@@ -4110,7 +4123,11 @@
     "crescent": "চাঁদ",
     "mosque": "মসজিদ",
     "universe": "মহাবিশ্ব",
-    "received": "প্রাপ্ত উপহার"
+    "received": "প্রাপ্ত উপহার",
+    "heart": "হৃদয়",
+    "star": "তারা",
+    "diamond": "হীরা",
+    "galaxy": "ছায়াপথ"
   },
   "diamonds": {
     "balance": "ডায়মন্ড ব্যালেন্স",
@@ -4307,7 +4324,9 @@
     "categoryAcoustic": "অ্যাকুস্টিক",
     "categoryHipHop": "হিপ হপ",
     "categoryPop": "পপ",
-    "categoryQiraat": "কিরাআত"
+    "categoryQiraat": "কিরাআত",
+    "noSearchResults": "কোনো ফলাফল পাওয়া যায়নি",
+    "tryDifferentSearch": "ভিন্ন সার্চ টার্ম চেষ্টা করুন"
   },
   "conversationMedia": {
     "title": "শেয়ার করা মিডিয়া",
@@ -4963,7 +4982,37 @@
     "setForAll": "Set for all chats",
     "setForThis": "Set for this chat only",
     "wallpaperApplied": "Wallpaper applied",
-    "wallpaperRemoved": "Wallpaper removed"
+    "wallpaperRemoved": "Wallpaper removed",
+    "tab.solid": "সলিড",
+    "tab.gradient": "গ্রেডিয়েন্ট",
+    "tab.pattern": "প্যাটার্ন",
+    "tab.custom": "কাস্টম",
+    "color.emerald": "পান্না",
+    "color.gold": "সোনা",
+    "color.dark": "গাঢ়",
+    "color.surface": "সারফেস",
+    "color.red": "লাল",
+    "color.blue": "নীল",
+    "color.purple": "বেগুনি",
+    "color.orange": "কমলা",
+    "color.green": "সবুজ",
+    "color.teal": "টিল",
+    "color.pink": "গোলাপি",
+    "color.gray": "ধূসর",
+    "gradient.emeraldNight": "পান্না রাত",
+    "gradient.goldenDusk": "সোনালি সন্ধ্যা",
+    "gradient.purpleNight": "বেগুনি রাত",
+    "gradient.oceanDeep": "সমুদ্রের গভীরতা",
+    "gradient.emeraldGold": "পান্না সোনা",
+    "gradient.sunset": "সূর্যাস্ত",
+    "gradient.tealDepth": "টিল গভীরতা",
+    "gradient.roseNight": "গোলাপ রাত",
+    "pattern.arabesque": "আরাবেস্ক",
+    "pattern.zellige": "জেলিজ",
+    "pattern.stars": "তারা",
+    "pattern.hexagon": "ষড়ভুজ",
+    "pattern.lattice": "জালি",
+    "pattern.muqarnas": "মুকারনাস"
   },
   "time": {
     "justNow": "এইমাত্র",
@@ -4974,5 +5023,50 @@
   "distance": {
     "km": "{{value}} কিমি",
     "m": "{{value}} মি"
+  },
+  "whatsNew": {
+    "changelog.videoEditor.title": "ভিডিও এডিটর",
+    "changelog.videoEditor.description": "CapCut-লেভেল এডিটর, 10 টুল ট্যাব, FFmpeg প্রসেসিং, মাল্টি-ক্লিপ রেকর্ডিং",
+    "changelog.photoCarousel.title": "ফটো ক্যারোসেল",
+    "changelog.photoCarousel.description": "35 স্লাইড পর্যন্ত মাল্টি-ফটো পোস্ট, মিউজিক, প্রতি-স্লাইড টেক্সট",
+    "changelog.storyDrawing.title": "স্টোরি ড্রইং",
+    "changelog.storyDrawing.description": "পেন, হাইলাইটার, নিয়ন গ্লো, ইরেজার টুলস 24-রঙের প্যালেট সহ",
+    "changelog.interactiveStickers.title": "ইন্টারেক্টিভ স্টিকার",
+    "changelog.interactiveStickers.description": "10 স্টোরি স্টিকার প্রকার — পোল, কুইজ, কাউন্টডাউন, GIF, মিউজিক, লোকেশন",
+    "changelog.islamicFeatures.title": "ইসলামিক ফিচার",
+    "changelog.islamicFeatures.description": "নামাজের সময়, কুরআন রুম, যিকির কাউন্টার, রমজান মোড, মসজিদ খোঁজক",
+    "changelog.safety.title": "নিরাপত্তা",
+    "changelog.safety.description": "AI কন্টেন্ট মডারেশন, শব্দ ফিল্টার, দয়ালুতার রিমাইন্ডার, রিপোর্ট সিস্টেম",
+    "changelog.smartNotifications.title": "স্মার্ট নোটিফিকেশন",
+    "changelog.smartNotifications.description": "ব্যাচড নোটিফিকেশন, প্রকার অনুযায়ী নিয়ন্ত্রণ, লাইক এবং ফলো পুশ",
+    "changelog.forYouFeed.title": "আপনার জন্য ফিড",
+    "changelog.forYouFeed.description": "3-পর্যায় AI র্যাঙ্কিং ইসলামিক বুস্ট, এক্সপ্লোরেশন স্লট, হ্যাশট্যাগ বৈচিত্র্য সহ"
+  },
+  "imageEditor": {
+    "filter.normal": "নরমাল",
+    "filter.warm": "উষ্ণ",
+    "filter.cool": "শীতল",
+    "filter.vivid": "প্রাণবন্ত",
+    "filter.noir": "নোয়ার",
+    "filter.emerald": "পান্না",
+    "filter.gold": "সোনা",
+    "filter.fade": "ফেড",
+    "filter.sharp": "তীক্ষ্ণ",
+    "filter.dreamy": "স্বপ্নীল",
+    "crop.free": "ফ্রি"
+  },
+  "report": {
+    "reason.hateSpeech": "ঘৃণামূলক বক্তব্য",
+    "reason.harassment": "হয়রানি",
+    "reason.violence": "সহিংসতা",
+    "reason.spam": "স্প্যাম",
+    "reason.misinformation": "ভুল তথ্য",
+    "reason.nudity": "নগ্নতা",
+    "reason.selfHarm": "আত্মক্ষতি",
+    "reason.terrorism": "সন্ত্রাসবাদ",
+    "reason.doxxing": "ডক্সিং",
+    "reason.copyright": "কপিরাইট",
+    "reason.impersonation": "ছদ্মবেশ",
+    "reason.other": "অন্যান্য"
   }
 }

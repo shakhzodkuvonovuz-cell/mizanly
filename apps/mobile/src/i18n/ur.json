@@ -2797,7 +2797,13 @@
     "preview": "Your content here",
     "shareAsStory": "Share as Story",
     "shareAsPost": "Share as Post",
-    "pickOccasion": "Choose Occasion"
+    "pickOccasion": "Choose Occasion",
+    "occasion.eidFitr": "عید الفطر",
+    "occasion.eidAdha": "عید الاضحی",
+    "occasion.ramadan": "رمضان",
+    "occasion.mawlid": "میلاد النبی",
+    "occasion.israMiraj": "اسراء و معراج",
+    "occasion.hijriNewYear": "اسلامی نیا سال"
   },
   "quranRoom": {
     "title": "Quran Reading Room",
@@ -3316,7 +3322,13 @@
     "delete": "Remove",
     "deleteAll": "Remove All",
     "empty": "No end screens",
-    "emptySubtitle": "Add cards that appear at the end of your video to boost engagement"
+    "emptySubtitle": "Add cards that appear at the end of your video to boost engagement",
+    "position.topLeft": "اوپر بائیں",
+    "position.topRight": "اوپر دائیں",
+    "position.centerLeft": "درمیان بائیں",
+    "position.centerRight": "درمیان دائیں",
+    "position.bottomLeft": "نیچے بائیں",
+    "position.bottomRight": "نیچے دائیں"
   },
   "ai": {
     "title": "AI Assistant",
@@ -3812,7 +3824,8 @@
     "tapToRetry": "دوبارہ کوشش کے لیے ٹیپ کریں",
     "backOnline": "واپس آن لائن",
     "queuedAction": "کنکشن ہونے پر مطابقت ہوگی",
-    "syncing": "مطابقت ہو رہی ہے..."
+    "syncing": "مطابقت ہو رہی ہے...",
+    "reconnecting": "دوبارہ جوڑ رہے ہیں..."
   },
   "analyticsAI": {
     "askAI": "AI سے پوچھیں",
@@ -4111,7 +4124,11 @@
     "crescent": "ہلال",
     "mosque": "مسجد",
     "universe": "کائنات",
-    "received": "موصول تحائف"
+    "received": "موصول تحائف",
+    "heart": "دل",
+    "star": "ستارہ",
+    "diamond": "ہیرا",
+    "galaxy": "کہکشاں"
   },
   "diamonds": {
     "balance": "ہیرے بیلنس",
@@ -4314,7 +4331,9 @@
     "categoryAcoustic": "اکوسٹک",
     "categoryHipHop": "ہپ ہاپ",
     "categoryPop": "پاپ",
-    "categoryQiraat": "قراءت"
+    "categoryQiraat": "قراءت",
+    "noSearchResults": "کوئی نتائج نہیں ملے",
+    "tryDifferentSearch": "کوئی مختلف تلاش کریں"
   },
   "conversationMedia": {
     "title": "مشترکہ میڈیا",
@@ -4970,7 +4989,37 @@
     "setForAll": "Set for all chats",
     "setForThis": "Set for this chat only",
     "wallpaperApplied": "Wallpaper applied",
-    "wallpaperRemoved": "Wallpaper removed"
+    "wallpaperRemoved": "Wallpaper removed",
+    "tab.solid": "ٹھوس",
+    "tab.gradient": "گریڈیئنٹ",
+    "tab.pattern": "پیٹرن",
+    "tab.custom": "کسٹم",
+    "color.emerald": "زمرد",
+    "color.gold": "سونا",
+    "color.dark": "ڈارک",
+    "color.surface": "سرفیس",
+    "color.red": "سرخ",
+    "color.blue": "نیلا",
+    "color.purple": "جامنی",
+    "color.orange": "نارنجی",
+    "color.green": "سبز",
+    "color.teal": "ٹیل",
+    "color.pink": "گلابی",
+    "color.gray": "سرمئی",
+    "gradient.emeraldNight": "زمرد رات",
+    "gradient.goldenDusk": "سنہری شام",
+    "gradient.purpleNight": "جامنی رات",
+    "gradient.oceanDeep": "سمندر کی گہرائی",
+    "gradient.emeraldGold": "زمرد سونا",
+    "gradient.sunset": "غروب آفتاب",
+    "gradient.tealDepth": "ٹیل گہرائی",
+    "gradient.roseNight": "گلابی رات",
+    "pattern.arabesque": "اریبیسک",
+    "pattern.zellige": "زلیج",
+    "pattern.stars": "ستارے",
+    "pattern.hexagon": "ہیکساگون",
+    "pattern.lattice": "جالی",
+    "pattern.muqarnas": "مقرنص"
   },
   "time": {
     "justNow": "ابھی",
@@ -4981,5 +5030,50 @@
   "distance": {
     "km": "{{value}} کلومیٹر",
     "m": "{{value}} میٹر"
+  },
+  "whatsNew": {
+    "changelog.videoEditor.title": "ویڈیو ایڈیٹر",
+    "changelog.videoEditor.description": "CapCut سطح کا ایڈیٹر، 10 ٹول ٹیبز، FFmpeg پروسیسنگ، ملٹی کلپ ریکارڈنگ",
+    "changelog.photoCarousel.title": "فوٹو کیروسل",
+    "changelog.photoCarousel.description": "35 سلائیڈز تک ملٹی فوٹو پوسٹس، موسیقی، فی سلائیڈ ٹیکسٹ",
+    "changelog.storyDrawing.title": "اسٹوری ڈرائنگ",
+    "changelog.storyDrawing.description": "قلم، ہائی لائٹر، نیون گلو، ایریزر ٹولز 24 رنگ کے پیلیٹ کے ساتھ",
+    "changelog.interactiveStickers.title": "انٹرایکٹو اسٹیکرز",
+    "changelog.interactiveStickers.description": "10 اسٹوری اسٹیکر اقسام — پول، کوئز، کاؤنٹ ڈاؤن، GIF، میوزک، لوکیشن",
+    "changelog.islamicFeatures.title": "اسلامی خصوصیات",
+    "changelog.islamicFeatures.description": "نماز کے اوقات، قرآن رومز، ذکر کاؤنٹر، رمضان موڈ، مسجد فائنڈر",
+    "changelog.safety.title": "سیفٹی",
+    "changelog.safety.description": "AI مواد کی نگرانی، الفاظ کے فلٹرز، مہربانی کی یاد دہانیاں، رپورٹ سسٹم",
+    "changelog.smartNotifications.title": "سمارٹ نوٹیفکیشنز",
+    "changelog.smartNotifications.description": "بیچڈ نوٹیفکیشنز، فی قسم کنٹرولز، لائیکس اور فالوز کے لیے پش",
+    "changelog.forYouFeed.title": "آپ کے لیے فیڈ",
+    "changelog.forYouFeed.description": "3 مرحلہ AI رینکنگ اسلامی بوسٹ، ایکسپلوریشن سلاٹس، ہیش ٹیگ ڈائیورسٹی کے ساتھ"
+  },
+  "imageEditor": {
+    "filter.normal": "نارمل",
+    "filter.warm": "گرم",
+    "filter.cool": "ٹھنڈا",
+    "filter.vivid": "واضح",
+    "filter.noir": "نوار",
+    "filter.emerald": "زمرد",
+    "filter.gold": "سونا",
+    "filter.fade": "فیڈ",
+    "filter.sharp": "تیز",
+    "filter.dreamy": "خوابیدہ",
+    "crop.free": "فری"
+  },
+  "report": {
+    "reason.hateSpeech": "نفرت انگیز تقریر",
+    "reason.harassment": "ہراساں کرنا",
+    "reason.violence": "تشدد",
+    "reason.spam": "اسپام",
+    "reason.misinformation": "غلط معلومات",
+    "reason.nudity": "عریانی",
+    "reason.selfHarm": "خود کو نقصان",
+    "reason.terrorism": "دہشت گردی",
+    "reason.doxxing": "ڈاکسنگ",
+    "reason.copyright": "کاپی رائٹ",
+    "reason.impersonation": "نقالی",
+    "reason.other": "دیگر"
   }
 }

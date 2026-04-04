@@ -90,6 +90,7 @@ export const CACHE_KEYS = {
   SAF_FEED: 'saf_feed',
   BAKRA_FEED: 'bakra_feed',
   MAJLIS_FEED: 'majlis_feed',
+  MINBAR_FEED: 'minbar_feed',
   CONVERSATIONS: 'conversations',
   USER_PROFILE: 'user_profile',
   PRAYER_TIMES: 'prayer_times',

@@ -2502,7 +2502,13 @@
     "preview": "محتواك هنا",
     "shareAsStory": "مشاركة كقصة",
     "shareAsPost": "مشاركة كمنشور",
-    "pickOccasion": "اختر المناسبة"
+    "pickOccasion": "اختر المناسبة",
+    "occasion.eidFitr": "عيد الفطر",
+    "occasion.eidAdha": "عيد الأضحى",
+    "occasion.ramadan": "رمضان",
+    "occasion.mawlid": "المولد النبوي",
+    "occasion.israMiraj": "الإسراء والمعراج",
+    "occasion.hijriNewYear": "رأس السنة الهجرية"
   },
   "hijri": {
     "title": "التقويم الإسلامي",
@@ -3026,7 +3032,13 @@
     "delete": "إزالة",
     "deleteAll": "إزالة الكل",
     "empty": "لا توجد شاشات نهاية",
-    "emptySubtitle": "أضف بطاقات تظهر في نهاية الفيديو لزيادة التفاعل"
+    "emptySubtitle": "أضف بطاقات تظهر في نهاية الفيديو لزيادة التفاعل",
+    "position.topLeft": "أعلى يسار",
+    "position.topRight": "أعلى يمين",
+    "position.centerLeft": "وسط يسار",
+    "position.centerRight": "وسط يمين",
+    "position.bottomLeft": "أسفل يسار",
+    "position.bottomRight": "أسفل يمين"
   },
   "ai": {
     "title": "مساعد الذكاء الاصطناعي",
@@ -3805,7 +3817,8 @@
     "tapToRetry": "انقر لإعادة المحاولة",
     "backOnline": "عدت للاتصال",
     "queuedAction": "ستتم المزامنة عند الاتصال",
-    "syncing": "جاري المزامنة..."
+    "syncing": "جاري المزامنة...",
+    "reconnecting": "جاري إعادة الاتصال..."
   },
   "analyticsAI": {
     "askAI": "اسأل الذكاء الاصطناعي",
@@ -4104,7 +4117,11 @@
     "crescent": "هلال",
     "mosque": "مسجد",
     "universe": "كون",
-    "received": "الهدايا المستلمة"
+    "received": "الهدايا المستلمة",
+    "heart": "قلب",
+    "star": "نجمة",
+    "diamond": "ألماس",
+    "galaxy": "مجرة"
   },
   "diamonds": {
     "balance": "رصيد الألماس",
@@ -4301,7 +4318,9 @@
     "categoryAcoustic": "أكوستيك",
     "categoryHipHop": "هيب هوب",
     "categoryPop": "بوب",
-    "categoryQiraat": "قراءات"
+    "categoryQiraat": "قراءات",
+    "noSearchResults": "لم يتم العثور على نتائج",
+    "tryDifferentSearch": "جرب مصطلح بحث مختلف"
   },
   "conversationMedia": {
     "title": "الوسائط المشتركة",
@@ -4957,7 +4976,37 @@
     "setForAll": "تعيين لجميع المحادثات",
     "setForThis": "تعيين لهذه المحادثة فقط",
     "wallpaperApplied": "تم تطبيق الخلفية",
-    "wallpaperRemoved": "تم إزالة الخلفية"
+    "wallpaperRemoved": "تم إزالة الخلفية",
+    "tab.solid": "لون موحد",
+    "tab.gradient": "تدرج",
+    "tab.pattern": "نمط",
+    "tab.custom": "مخصص",
+    "color.emerald": "زمردي",
+    "color.gold": "ذهبي",
+    "color.dark": "داكن",
+    "color.surface": "سطح",
+    "color.red": "أحمر",
+    "color.blue": "أزرق",
+    "color.purple": "بنفسجي",
+    "color.orange": "برتقالي",
+    "color.green": "أخضر",
+    "color.teal": "أزرق مخضر",
+    "color.pink": "وردي",
+    "color.gray": "رمادي",
+    "gradient.emeraldNight": "ليل زمردي",
+    "gradient.goldenDusk": "غسق ذهبي",
+    "gradient.purpleNight": "ليل بنفسجي",
+    "gradient.oceanDeep": "أعماق المحيط",
+    "gradient.emeraldGold": "زمرد ذهبي",
+    "gradient.sunset": "غروب",
+    "gradient.tealDepth": "عمق أزرق مخضر",
+    "gradient.roseNight": "ليل وردي",
+    "pattern.arabesque": "أرابيسك",
+    "pattern.zellige": "زليج",
+    "pattern.stars": "نجوم",
+    "pattern.hexagon": "سداسي",
+    "pattern.lattice": "شبكة",
+    "pattern.muqarnas": "مقرنصات"
   },
   "time": {
     "justNow": "الآن",
@@ -4968,5 +5017,50 @@
   "distance": {
     "km": "{{value}} كم",
     "m": "{{value}} م"
+  },
+  "whatsNew": {
+    "changelog.videoEditor.title": "محرر الفيديو",
+    "changelog.videoEditor.description": "محرر بمستوى CapCut مع 10 أدوات ومعالجة FFmpeg وتسجيل متعدد المقاطع",
+    "changelog.photoCarousel.title": "عرض الصور",
+    "changelog.photoCarousel.description": "منشورات متعددة الصور تصل إلى 35 شريحة مع موسيقى ونص لكل شريحة",
+    "changelog.storyDrawing.title": "رسم القصص",
+    "changelog.storyDrawing.description": "قلم وإبراز وتوهج نيون وأدوات ممحاة مع لوحة 24 لون",
+    "changelog.interactiveStickers.title": "ملصقات تفاعلية",
+    "changelog.interactiveStickers.description": "10 أنواع ملصقات قصص — استطلاع، اختبار، عد تنازلي، GIF، موسيقى، موقع",
+    "changelog.islamicFeatures.title": "الميزات الإسلامية",
+    "changelog.islamicFeatures.description": "أوقات الصلاة، غرف القرآن، عداد الذكر، وضع رمضان، محدد المساجد",
+    "changelog.safety.title": "الأمان",
+    "changelog.safety.description": "إشراف محتوى بالذكاء الاصطناعي، فلاتر كلمات، تذكيرات لطف، نظام إبلاغ",
+    "changelog.smartNotifications.title": "إشعارات ذكية",
+    "changelog.smartNotifications.description": "إشعارات مجمعة، تحكم حسب النوع، إشعارات للإعجابات والمتابعات",
+    "changelog.forYouFeed.title": "خلاصة لك",
+    "changelog.forYouFeed.description": "تصنيف ذكاء اصطناعي من 3 مراحل مع تعزيز إسلامي وفتحات استكشاف وتنوع الهاشتاق"
+  },
+  "imageEditor": {
+    "filter.normal": "عادي",
+    "filter.warm": "دافئ",
+    "filter.cool": "بارد",
+    "filter.vivid": "حيوي",
+    "filter.noir": "نوار",
+    "filter.emerald": "زمردي",
+    "filter.gold": "ذهبي",
+    "filter.fade": "باهت",
+    "filter.sharp": "حاد",
+    "filter.dreamy": "حالم",
+    "crop.free": "حر"
+  },
+  "report": {
+    "reason.hateSpeech": "خطاب كراهية",
+    "reason.harassment": "تحرش",
+    "reason.violence": "عنف",
+    "reason.spam": "رسائل مزعجة",
+    "reason.misinformation": "معلومات مضللة",
+    "reason.nudity": "عُري",
+    "reason.selfHarm": "إيذاء النفس",
+    "reason.terrorism": "إرهاب",
+    "reason.doxxing": "نشر معلومات شخصية",
+    "reason.copyright": "حقوق النشر",
+    "reason.impersonation": "انتحال شخصية",
+    "reason.other": "أخرى"
   }
 }

@@ -501,6 +501,14 @@ export default function RisalahScreen() {
         />
       </BottomSheet>
 
+      {/* Socket disconnect indicator */}
+      {!isOffline && !socketConnected && (
+        <View style={styles.socketDisconnect}>
+          <Icon name="globe" size="xs" color={colors.gold} />
+          <Text style={styles.socketDisconnectText}>{t('network.reconnecting', 'Reconnecting...')}</Text>
+        </View>
+      )}
+
       {/* Tabs */}
       <TabSelector
         tabs={TABS}
@@ -569,6 +577,19 @@ const styles = StyleSheet.create({
   },
   logo: { color: colors.emerald, fontSize: fontSize.xl, fontWeight: '700', fontFamily: fonts.headingBold },
   headerRight: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: spacing.lg },
+  socketDisconnect: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    paddingVertical: spacing.xs,
+    gap: spacing.xs,
+    backgroundColor: colors.active.gold10,
+  },
+  socketDisconnectText: {
+    color: colors.gold,
+    fontSize: fontSize.xs,
+    fontFamily: fonts.bodyMedium,
+  },
   chatItem: {
     flexDirection: 'row',
     alignItems: 'center',

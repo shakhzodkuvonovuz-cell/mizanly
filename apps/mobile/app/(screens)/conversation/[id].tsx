@@ -53,6 +53,7 @@ import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { RichText } from '@/components/ui/RichText';
 import { navigate } from '@/utils/navigation';
 import { TypingIndicator } from '@/components/risalah/TypingIndicator';
+import { useIsOffline } from '@/hooks/useIsOffline';
 import { Audio } from 'expo-av';
 import { aiApi } from '@/services/api';
 
@@ -636,6 +637,7 @@ export default function ConversationScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const tc = useThemeColors();
+  const isOffline = useIsOffline();
 
   // Ref-based bridge to break circular dependency between useMessageSend and useConversationMessages.
   // useMessageSend creates emitEncryptedMessage; useConversationMessages needs it for socket reconnect.
@@ -1262,8 +1264,8 @@ export default function ConversationScreen() {
               <Animated.View style={sendButtonStyle}>
                 <AnimatedPressable
                   onPress={handleSend}
-                  disabled={isSending}
-                  style={styles.sendCircle}
+                  disabled={isSending || isOffline}
+                  style={[styles.sendCircle, isOffline && { opacity: 0.5 }]}
                   accessibilityLabel={t('accessibility.sendMessage')}
                   accessibilityRole="button"
                 >
