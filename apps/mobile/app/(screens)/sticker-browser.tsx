@@ -263,7 +263,7 @@ function StickerBrowserScreenInner() {
         <FlatList
           data={packs}
           ListHeaderComponent={renderFeatured}
-          renderItem={useCallback(({ item, index }) => (
+          renderItem={({ item, index }) => (
             <PackCard
               pack={item}
               onPress={() => setSelectedPack(item)}
@@ -271,7 +271,7 @@ function StickerBrowserScreenInner() {
               onRemove={() => handleRemove(item.id)}
               index={index}
             />
-          ), [])}
+          )}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           removeClippedSubviews={true}

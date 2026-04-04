@@ -244,7 +244,7 @@ function ProductDetailContent() {
             showsHorizontalScrollIndicator={false}
             onMomentumScrollEnd={handleImageScroll}
             keyExtractor={(_, idx) => `img-${idx}`}
-            renderItem={useCallback(({ item }) =>
+            renderItem={({ item }) =>
               item ? (
                 <ProgressiveImage
                   uri={item}
@@ -256,7 +256,7 @@ function ProductDetailContent() {
                   <Icon name="image" size="xl" color={tc.text.tertiary} />
                 </View>
               )
-            , [])}
+            }
           />
           {product.imageUrls.length > 1 && (
             <View style={styles.dotRow}>
@@ -428,7 +428,7 @@ function ProductDetailContent() {
               showsHorizontalScrollIndicator={false}
               keyExtractor={(item) => item.id}
               contentContainerStyle={styles.relatedRow}
-              renderItem={useCallback(({ item }) => (
+              renderItem={({ item }) => (
                 <Pressable
                   style={({ pressed }) => [styles.relatedCard, pressed && { opacity: 0.7 }]}
                   onPress={() => handleRelatedPress(item.id)}
@@ -453,7 +453,7 @@ function ProductDetailContent() {
                     ${(item.price / 100).toFixed(2)}
                   </Text>
                 </Pressable>
-              ), [])}
+              )}
             />
           </Animated.View>
         )}

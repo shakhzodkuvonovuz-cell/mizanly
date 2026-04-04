@@ -503,7 +503,7 @@ export default function NotificationsScreen() {
         <SectionList
           sections={sections}
           keyExtractor={(item) => item.id}
-          renderItem={useCallback(({ item, index }) => <NotificationRow notification={item} index={index} />, [])}
+          renderItem={({ item, index }) => <NotificationRow notification={item} index={index} />}
           renderSectionHeader={({ section }) => (
             <Text style={[styles.sectionHeader, { textAlign: rtlTextAlign(isRTL) }]}>{section.title}</Text>
           )}

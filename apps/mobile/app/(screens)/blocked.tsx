@@ -157,7 +157,7 @@ export default function BlockedScreen() {
           refreshControl={
             <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
-          renderItem={useCallback(({ item, index }) => {
+          renderItem={({ item, index }) => {
             const u = item.blocked;
             return (
                 <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 30).duration(300)}>
@@ -187,7 +187,7 @@ export default function BlockedScreen() {
                 </Animated.View>
             
             );
-          }, [])}
+          }}
           ListFooterComponent={listFooter}
           ListEmptyComponent={listEmpty}
         />

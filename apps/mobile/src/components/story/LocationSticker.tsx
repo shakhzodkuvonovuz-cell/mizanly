@@ -191,7 +191,7 @@ export const LocationSearch = memo(function LocationSearch({ onSelect, onClose, 
         data={filteredResults}
         keyExtractor={item => item.id}
         showsVerticalScrollIndicator={false}
-        renderItem={useCallback(({ item, index }) => (
+        renderItem={({ item, index }) => (
           <Animated.View entering={FadeInDown.delay(index * 40).duration(200)}>
             <Pressable
               onPress={() => handleSelect(item)}
@@ -217,7 +217,7 @@ export const LocationSearch = memo(function LocationSearch({ onSelect, onClose, 
               )}
             </Pressable>
           </Animated.View>
-        ), [])}
+        )}
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Icon name="map-pin" size="lg" color={tc.text.tertiary} />

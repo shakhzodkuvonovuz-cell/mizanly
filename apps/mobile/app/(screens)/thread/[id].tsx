@@ -465,7 +465,7 @@ export default function ThreadDetailScreen() {
               onRefresh={handleRefresh}
             />
           }
-          renderItem={useCallback(({ item }) => (
+          renderItem={({ item }) => (
             <ReplyRow
               reply={item}
               threadId={id}
@@ -477,7 +477,7 @@ export default function ThreadDetailScreen() {
               }}
               depth={depthMap.get(item.id) ?? 0}
             />
-          ), [])}
+          )}
           ListEmptyComponent={listEmpty}
           ListFooterComponent={listFooter}
           contentContainerStyle={{ paddingBottom: 140 }}

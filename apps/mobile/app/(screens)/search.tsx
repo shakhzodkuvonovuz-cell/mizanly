@@ -402,9 +402,9 @@ export default function SearchScreen() {
           maxToRenderPerBatch={8}
                       data={posts}
                       keyExtractor={(item) => item.id}
-                      renderItem={useCallback(({ item }) => (
+                      renderItem={({ item }) => (
                         <PostCard post={item} />
-                      ), [])}
+                      )}
                       ListEmptyComponent={postsSearchEmpty}
                       onEndReached={() => {
                         if (postsQuery.hasNextPage && !postsQuery.isFetchingNextPage) {
@@ -437,9 +437,9 @@ export default function SearchScreen() {
           maxToRenderPerBatch={8}
                       data={threads}
                       keyExtractor={(item) => item.id}
-                      renderItem={useCallback(({ item }) => (
+                      renderItem={({ item }) => (
                         <ThreadCard thread={item} />
-                      ), [])}
+                      )}
                       ListEmptyComponent={threadsSearchEmpty}
                       onEndReached={() => {
                         if (threadsQuery.hasNextPage && !threadsQuery.isFetchingNextPage) {
@@ -472,7 +472,7 @@ export default function SearchScreen() {
           maxToRenderPerBatch={8}
                       data={reels}
                       keyExtractor={(item) => item.id}
-                      renderItem={useCallback(({ item }) => (
+                      renderItem={({ item }) => (
                         <Pressable
                           style={styles.reelRow}
                           onPress={() => {
@@ -510,7 +510,7 @@ export default function SearchScreen() {
                             </View>
                           </View>
                         </Pressable>
-                      ), [])}
+                      )}
                       ListEmptyComponent={reelsSearchEmpty}
                       onEndReached={() => {
                         if (reelsQuery.hasNextPage && !reelsQuery.isFetchingNextPage) {
@@ -543,12 +543,12 @@ export default function SearchScreen() {
           maxToRenderPerBatch={8}
                       data={videos}
                       keyExtractor={(item) => item.id}
-                      renderItem={useCallback(({ item }) => (
+                      renderItem={({ item }) => (
                         <VideoRow
                           video={item}
                           onPress={() => router.push(`/(screens)/video/${item.id}`)}
                         />
-                      ), [])}
+                      )}
                       ListEmptyComponent={videosSearchEmpty}
                       onEndReached={() => {
                         if (videosQuery.hasNextPage && !videosQuery.isFetchingNextPage) {
@@ -581,12 +581,12 @@ export default function SearchScreen() {
           maxToRenderPerBatch={8}
                       data={channels}
                       keyExtractor={(item) => item.id}
-                      renderItem={useCallback(({ item }) => (
+                      renderItem={({ item }) => (
                         <ChannelRow
                           channel={item}
                           onPress={() => router.push(`/(screens)/channel/${item.handle}`)}
                         />
-                      ), [])}
+                      )}
                       ListEmptyComponent={channelsSearchEmpty}
                       onEndReached={() => {
                         if (channelsQuery.hasNextPage && !channelsQuery.isFetchingNextPage) {
@@ -618,7 +618,7 @@ export default function SearchScreen() {
                   : hashtags.map((h): SearchListItem => ({ type: 'hashtag', data: h }))
               }
               keyExtractor={(item, i) => item.type === 'user' ? item.data.id : `ht-${i}`}
-              renderItem={useCallback(({ item }) => {
+              renderItem={({ item }) => {
                 if (item.type === 'user') {
                   return (
                     <UserRow
@@ -650,7 +650,7 @@ export default function SearchScreen() {
                     </Pressable>
                 
                 );
-              }, [])}
+              }}
               ListEmptyComponent={generalSearchEmpty}
               contentContainerStyle={{ paddingBottom: 40 }}
             />
@@ -667,7 +667,7 @@ export default function SearchScreen() {
           maxToRenderPerBatch={8}
                 data={searchHistory}
                 keyExtractor={(item, i) => `history-${i}`}
-                renderItem={useCallback(({ item }) => (
+                renderItem={({ item }) => (
                   <View style={[styles.historyItem, { flexDirection: rtlFlexRow(isRTL) }]}>
                     <Pressable
                       style={[styles.historyText, { flexDirection: rtlFlexRow(isRTL) }]}
@@ -693,7 +693,7 @@ export default function SearchScreen() {
                       <Icon name="x" size={16} color={tc.text.tertiary} />
                     </Pressable>
                   </View>
-                ), [])}
+                )}
                 contentContainerStyle={{ paddingBottom: spacing.lg }}
               />
               <Pressable
@@ -723,7 +723,7 @@ export default function SearchScreen() {
               data={explorePosts}
               numColumns={3}
               keyExtractor={(item) => item.id}
-              renderItem={useCallback(({ item }) => (
+              renderItem={({ item }) => (
                 <Pressable
                   style={styles.exploreItem}
                   onPress={() => navigate(`/(screens)/post/${item.id}`)}
@@ -749,7 +749,7 @@ export default function SearchScreen() {
                     </View>
                   )}
                 </Pressable>
-              ), [])}
+              )}
               onEndReached={() => {
                 if (exploreQuery.hasNextPage && !exploreQuery.isFetchingNextPage) {
                   exploreQuery.fetchNextPage();

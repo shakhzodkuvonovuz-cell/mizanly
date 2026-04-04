@@ -244,7 +244,7 @@ export default function NamesOfAllahScreen() {
         <FlatList
           data={names}
           keyExtractor={(item) => String(item.number)}
-          renderItem={useCallback(({ item, index }) => (
+          renderItem={({ item, index }) => (
             <Animated.View entering={FadeInUp.delay(Math.min(index, 25) * 30).duration(350).springify()}>
             <NameCard
               name={item}
@@ -256,7 +256,7 @@ export default function NamesOfAllahScreen() {
               onToggleExpand={() => setExpandedId(expandedId === item.number ? null : item.number)}
             />
             </Animated.View>
-          ), [])}
+          )}
           ListHeaderComponent={listHeader}
           ListEmptyComponent={
             namesQuery.isLoading ? null : (

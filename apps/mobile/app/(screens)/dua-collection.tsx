@@ -250,7 +250,7 @@ export default function DuaCollectionScreen() {
           data={[null, ...categories]}
           keyExtractor={(item) => item ?? 'all'}
           contentContainerStyle={styles.chipsRow}
-          renderItem={useCallback(({ item }) => (
+          renderItem={({ item }) => (
             <Pressable
               onPress={() => { setSelectedCategory(item); haptic.tick(); }}
               style={[styles.chip, { backgroundColor: tc.bgElevated, borderColor: tc.border }, selectedCategory === item && styles.chipActive]}
@@ -267,7 +267,7 @@ export default function DuaCollectionScreen() {
                 {item ? getCategoryLabel(item) : t('common.viewAll')}
               </Text>
             </Pressable>
-          ), [])}
+          )}
         />
       )}
     </View>
@@ -307,7 +307,7 @@ export default function DuaCollectionScreen() {
         <FlatList
           data={duas}
           keyExtractor={(item) => item.id}
-          renderItem={useCallback(({ item, index }) => (
+          renderItem={({ item, index }) => (
             <DuaCard
               dua={item}
               index={index}
@@ -316,7 +316,7 @@ export default function DuaCollectionScreen() {
               onShare={() => handleShare(item)}
               onPlayAudio={handlePlayAudio}
             />
-          ), [])}
+          )}
           ListHeaderComponent={listHeader}
           ListEmptyComponent={listEmpty}
           refreshControl={

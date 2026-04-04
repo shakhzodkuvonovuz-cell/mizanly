@@ -213,14 +213,14 @@ export default function HashtagScreen() {
               onRefresh={() => postsQuery.refetch()}
             />
           }
-          renderItem={useCallback(({ item, index }) => (
+          renderItem={({ item, index }) => (
             <Animated.View entering={FadeInUp.delay(Math.min(index, 10) * 50).duration(400)}>
               <GridItem
                 post={item}
                 onPress={() => router.push(`/(screens)/post/${item.id}`)}
               />
             </Animated.View>
-          ), [])}
+          )}
           ListEmptyComponent={listEmpty}
           ListFooterComponent={listFooter}
           contentContainerStyle={{ paddingBottom: 40 }}

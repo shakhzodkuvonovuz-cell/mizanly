@@ -42,13 +42,13 @@ export const StoryRow = memo(function StoryRow({ groups, onPressGroup, onPressOw
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.content}
-      renderItem={useCallback(({ item, index }) => (
+      renderItem={({ item, index }) => (
         <StoryBubble
           group={item}
           isOwn={index === 0}
           onPress={() => index === 0 ? onPressOwn() : onPressGroup(item, index - 1)}
         />
-      ), [])}
+      )}
       style={[styles.row, { borderBottomColor: tc.border }]}
     />
   );

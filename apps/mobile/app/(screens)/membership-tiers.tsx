@@ -307,13 +307,13 @@ export default function MembershipTiersScreen() {
                 </Animated.View>
               </>
             }
-            renderItem={useCallback(({ item, index }) => (
+            renderItem={({ item, index }) => (
               <TierCard
                 tier={item}
                 index={index}
                 onToggle={() => toggleTier(item.id)}
               />
-            ), [])}
+            )}
             ListFooterComponent={
               <>
                 {/* Create New Tier Button / Form */}

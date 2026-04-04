@@ -279,7 +279,7 @@ export default function LinkChildAccountScreen() {
                 onRefresh={() => searchResults.refetch()}
               />
             }
-            renderItem={useCallback(({ item }) => (
+            renderItem={({ item }) => (
               <Pressable
                 accessibilityRole="button"
                 style={[styles.userRow, { borderBottomColor: tc.border }, { flexDirection: rtlFlexRow(isRTL) }]}
@@ -301,7 +301,7 @@ export default function LinkChildAccountScreen() {
                 </View>
                 <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
               </Pressable>
-            ), [])}
+            )}
             ListEmptyComponent={
               searchResults.isLoading ? (
                 <View style={{ gap: spacing.md, paddingTop: spacing.md }}>

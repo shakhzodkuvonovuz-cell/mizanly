@@ -95,7 +95,7 @@ function TrendingHashtags({ hashtags }: { hashtags: TrendingHashtag[] }) {
         keyExtractor={(item) => item.id}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.trendingList}
-        renderItem={useCallback(({ item }) => (
+        renderItem={({ item }) => (
           <Pressable
             style={[styles.hashtagChipGold, { backgroundColor: tc.bgCard }]}
             onPress={() => navigate(`/(screens)/search-results?query=${encodeURIComponent('#' + item.name)}`)}
@@ -108,7 +108,7 @@ function TrendingHashtags({ hashtags }: { hashtags: TrendingHashtag[] }) {
               {formatCount(item.postsCount + item.threadsCount)}
             </Text>
           </Pressable>
-        ), [])}
+        )}
       />
     </View>
   );
@@ -457,11 +457,11 @@ export default function DiscoverScreen() {
           columnWrapperStyle={styles.gridRow}
           onScroll={onScrollElastic}
           scrollEventThrottle={16}
-          renderItem={useCallback(({ item, index }) => (
+          renderItem={({ item, index }) => (
             <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
               <ExploreGridItem item={item} isFeature={isFeatureIndex(index)} />
             </Animated.View>
-          ), [])}
+          )}
           ListHeaderComponent={
             <>
               <CategoryPills active={activeCategory} onSelect={(c) => { haptic.tick(); setActiveCategory(c); }} categories={CATEGORIES} />

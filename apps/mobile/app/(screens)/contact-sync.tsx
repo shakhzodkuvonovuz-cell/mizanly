@@ -297,14 +297,14 @@ export default function ContactSyncScreen() {
                 </Text>
               ) : null
             }
-            renderItem={useCallback(({ item, index }) => (
+            renderItem={({ item, index }) => (
               <ContactRow
                 user={item}
                 index={index}
                 followLoading={followMutation.isPending && pendingFollowId === item.id}
                 onToggleFollow={() => handleToggleFollow(item)}
               />
-            ), [])}
+            )}
             ListEmptyComponent={
               hasLoaded ? (
                 <EmptyState

@@ -756,7 +756,7 @@ export default function ConversationInfoScreen() {
                 keyExtractor={(item) => item.id}
                 removeClippedSubviews={true}
                 refreshControl={<BrandedRefreshControl refreshing={memberSearchQuery.isFetching} onRefresh={() => memberSearchQuery.refetch()} />}
-                renderItem={useCallback(({ item }) => (
+                renderItem={({ item }) => (
                   <Pressable
                     accessibilityRole="button"
                     style={[styles.userRow, { borderBottomColor: tc.border }]}
@@ -774,7 +774,7 @@ export default function ConversationInfoScreen() {
                     </View>
                     <Icon name="plus" size="sm" color={colors.emerald} />
                   </Pressable>
-                ), [])}
+                )}
                 ListEmptyComponent={memberSearchEmpty}
               />
             )}

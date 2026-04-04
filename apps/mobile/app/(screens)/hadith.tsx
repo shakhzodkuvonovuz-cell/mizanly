@@ -382,13 +382,13 @@ export default function HadithScreen() {
               </View>
             </>
           }
-          renderItem={useCallback(({ item, index }) => (
+          renderItem={({ item, index }) => (
             <PreviousHadithCard
               hadith={item}
               index={index}
               onPress={() => selectHadith(item)}
             />
-          ), [])}
+          )}
           ListEmptyComponent={
             <EmptyState
               icon="book-open"

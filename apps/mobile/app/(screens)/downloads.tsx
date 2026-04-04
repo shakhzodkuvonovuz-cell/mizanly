@@ -389,14 +389,14 @@ export default function DownloadsScreen() {
               <FilterChips active={filter} onChange={setFilter} />
             </View>
           }
-          renderItem={useCallback(({ item, index }) => (
+          renderItem={({ item, index }) => (
             <DownloadItem
               item={item}
               index={index}
               onLongPress={handleLongPress}
               onAction={handleAction}
             />
-          ), [])}
+          )}
           ListEmptyComponent={listEmpty}
           ListFooterComponent={listFooter}
           contentContainerStyle={styles.listContent}

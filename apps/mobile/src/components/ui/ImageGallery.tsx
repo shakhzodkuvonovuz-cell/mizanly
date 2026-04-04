@@ -297,7 +297,7 @@ export const ImageGallery = memo(function ImageGallery({
             ref={flatListRef}
             data={images}
             keyExtractor={(item, index) => `${item}-${index}`}
-            renderItem={useCallback(({ item }) => (
+            renderItem={({ item }) => (
               <View style={[styles.imageContainer, { width: SCREEN_WIDTH, height: SCREEN_HEIGHT }]}>
                 <GestureDetector gesture={composedGesture}>
                   <Animated.View style={[styles.imageWrapper, imageAnimatedStyle]}>
@@ -310,7 +310,7 @@ export const ImageGallery = memo(function ImageGallery({
                   </Animated.View>
                 </GestureDetector>
               </View>
-            ), [])}
+            )}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}

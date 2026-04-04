@@ -320,7 +320,7 @@ export default function NewConversationScreen() {
                 onRefresh={() => searchQuery.refetch()}
               />
             }
-            renderItem={useCallback(({ item, index }) => renderUserRow(item, index), [])}
+            renderItem={({ item, index }) => renderUserRow(item, index)}
             ListEmptyComponent={searchListEmpty}
           />
         ) : (
@@ -340,7 +340,7 @@ export default function NewConversationScreen() {
             renderSectionHeader={({ section }) => (
               <Text style={styles.sectionLabel}>{section.title}</Text>
             )}
-            renderItem={useCallback(({ item, index }) => renderUserRow(item, index), [])}
+            renderItem={({ item, index }) => renderUserRow(item, index)}
             stickySectionHeadersEnabled={false}
             ListEmptyComponent={sectionListEmpty}
           />

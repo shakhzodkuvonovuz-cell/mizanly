@@ -104,13 +104,13 @@ function ImageCarousel({ images }: { images: string[] }) {
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
         keyExtractor={(_, i) => String(i)}
-        renderItem={useCallback(({ item }) => (
+        renderItem={({ item }) => (
           <ProgressiveImage
             uri={item}
             width={screenWidth}
             height={IMAGE_HEIGHT}
           />
-        ), [])}
+        )}
       />
       {images.length > 1 && (
         <View style={styles.dotRow}>

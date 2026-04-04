@@ -178,7 +178,7 @@ export default function RestrictedScreen() {
                 onRefresh={onRefresh}
               />
             }
-            renderItem={useCallback(({ item, index }) => (
+            renderItem={({ item, index }) => (
               <Animated.View entering={FadeInUp.delay(Math.min(index, 10) * 30).duration(300)}>
                 <View style={styles.row}>
                   <Avatar
@@ -211,7 +211,7 @@ export default function RestrictedScreen() {
                   />
                 </View>
               </Animated.View>
-            ), [])}
+            )}
             ListFooterComponent={listFooter}
             ListEmptyComponent={listEmpty}
           />

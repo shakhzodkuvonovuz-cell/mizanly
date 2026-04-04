@@ -372,11 +372,11 @@ function QuranReadingPlanContent() {
               <Text style={styles.sectionTitle}>{t('quranPlan.choosePlan')}</Text>
             </Animated.View>
           }
-          renderItem={useCallback(({ item, index }) => (
+          renderItem={({ item, index }) => (
             <Animated.View entering={FadeInUp.delay(index * 100).duration(400)}>
               <PlanCard option={item} onSelect={handleCreatePlan} t={t} />
             </Animated.View>
-          ), [])}
+          )}
           ListFooterComponent={
             <>
               <View style={{ height: spacing.xl }} />
@@ -509,7 +509,7 @@ function QuranReadingPlanContent() {
             <Text style={styles.sectionTitle}>{t('quranPlan.history')}</Text>
           </>
         }
-        renderItem={useCallback(({ item }) => <HistoryItem plan={item} t={t} />, [])}
+        renderItem={({ item }) => <HistoryItem plan={item} t={t} />}
         ListEmptyComponent={
           loadingHistory ? (
             <Skeleton.Rect width={width - spacing.base * 2} height={60} borderRadius={radius.lg} />

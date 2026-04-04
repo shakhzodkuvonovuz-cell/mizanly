@@ -305,7 +305,7 @@ export default function WatchPartyScreen() {
                 style={styles.videoList}
                 keyExtractor={(item) => item.id}
                 refreshControl={<BrandedRefreshControl refreshing={false} onRefresh={() => {}} />}
-                renderItem={useCallback(({ item }) => (
+                renderItem={({ item }) => (
                   <Pressable
                     accessibilityRole="button"
                     style={styles.videoPickerRow}
@@ -333,7 +333,7 @@ export default function WatchPartyScreen() {
                       </View>
                     </View>
                   </Pressable>
-                ), [])}
+                )}
                 ListEmptyComponent={
                   <EmptyState
                     icon="video"

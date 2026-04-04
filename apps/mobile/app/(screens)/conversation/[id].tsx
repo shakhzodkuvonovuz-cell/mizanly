@@ -364,7 +364,7 @@ function GifPicker({ visible, onClose, onSelect }: {
             keyExtractor={(item) => item.id}
             numColumns={2}
             contentContainerStyle={styles.gifGrid}
-            renderItem={useCallback(({ item }) => (
+            renderItem={({ item }) => (
               <Pressable
                 style={[styles.gifItem, { backgroundColor: tc.bgElevated }]}
                 onPress={() => onSelect(item.media_formats.gif.url)}
@@ -378,7 +378,7 @@ function GifPicker({ visible, onClose, onSelect }: {
                   blurhash={null}
                 />
               </Pressable>
-            ), [])}
+            )}
           />
         )}
       </View>

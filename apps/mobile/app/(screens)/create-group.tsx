@@ -268,7 +268,7 @@ export default function CreateGroupScreen() {
                 removeClippedSubviews={true}
                 keyboardShouldPersistTaps="handled"
                 refreshControl={<BrandedRefreshControl refreshing={searchQuery.isFetching} onRefresh={() => searchQuery.refetch()} />}
-                renderItem={useCallback(({ item }) => (
+                renderItem={({ item }) => (
                   <Pressable
                     style={[styles.userRow, { borderBottomColor: tc.border }]}
                     onPress={() => handleAddMember(item)}
@@ -287,7 +287,7 @@ export default function CreateGroupScreen() {
                     </View>
                     <Icon name="plus" size="sm" color={colors.emerald} />
                   </Pressable>
-                ), [])}
+                )}
                 ListEmptyComponent={memberSearchEmpty}
               />
             )}
