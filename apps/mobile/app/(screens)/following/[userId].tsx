@@ -141,6 +141,19 @@ export default function FollowingScreen() {
     ) : null
   , [followingQuery.isFetchingNextPage, tc.bgCard, tc.border]);
 
+  const renderFollowingItem = useCallback(
+    ({ item, index }: { item: User; index: number }) => (
+      <UserRow
+        user={item}
+        isMe={clerkUser?.id === item.id}
+        onPress={() => router.push(`/(screens)/profile/${item.username}`)}
+        onFollow={() => !followMutation.isPending && followMutation.mutate(item)}
+        index={index}
+      />
+    ),
+    [clerkUser?.id, router, followMutation],
+  );
+
   return (
     <ScreenErrorBoundary>
       {followingQuery.isError ? (
@@ -168,15 +181,7 @@ export default function FollowingScreen() {
           removeClippedSubviews={true}
           data={following}
           keyExtractor={(item) => item.id}
-          renderItem={({ item, index }) => (
-            <UserRow
-              user={item}
-              isMe={clerkUser?.id === item.id}
-              onPress={() => router.push(`/(screens)/profile/${item.username}`)}
-              onFollow={() => !followMutation.isPending && followMutation.mutate(item)}
-              index={index}
-            />
-          )}
+          renderItem={renderFollowingItem}
           onEndReached={onEndReached}
           onEndReachedThreshold={0.4}
           refreshControl={

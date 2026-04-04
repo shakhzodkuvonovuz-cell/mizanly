@@ -343,6 +343,18 @@ export default function DownloadsScreen() {
     ) : null
   , [downloadsQuery.isFetchingNextPage]);
 
+  const renderDownloadItem = useCallback(
+    ({ item, index }: { item: OfflineDownload; index: number }) => (
+      <DownloadItem
+        item={item}
+        index={index}
+        onLongPress={handleLongPress}
+        onAction={handleAction}
+      />
+    ),
+    [handleLongPress, handleAction],
+  );
+
   // Error state
   if (downloadsQuery.isError) {
     return (
@@ -389,14 +401,7 @@ export default function DownloadsScreen() {
               <FilterChips active={filter} onChange={setFilter} />
             </View>
           }
-          renderItem={({ item, index }) => (
-            <DownloadItem
-              item={item}
-              index={index}
-              onLongPress={handleLongPress}
-              onAction={handleAction}
-            />
-          )}
+          renderItem={renderDownloadItem}
           ListEmptyComponent={listEmpty}
           ListFooterComponent={listFooter}
           contentContainerStyle={styles.listContent}

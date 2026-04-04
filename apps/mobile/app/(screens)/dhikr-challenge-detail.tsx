@@ -164,6 +164,15 @@ export default function DhikrChallengeDetailScreen() {
     setContributeCount(prev => prev + 1);
   }, [haptic]);
 
+  const renderContributorItem = useCallback(
+    ({ item, index }: { item: DhikrChallengeDetail['topContributors'][0]; index: number }) => (
+      <Animated.View entering={FadeInUp.delay(350 + Math.min(index, 15) * 50).duration(300)}>
+        <ContributorRow contributor={item} rank={index + 1} />
+      </Animated.View>
+    ),
+    [],
+  );
+
   const handleSubmitContribution = useCallback(() => {
     if (contributeCount <= 0) return;
     haptic.send();
@@ -311,11 +320,7 @@ export default function DhikrChallengeDetailScreen() {
           <FlatList
             data={detail?.topContributors ?? []}
             keyExtractor={(item, index) => `${item.userId}-${index}`}
-            renderItem={({ item, index }) => (
-              <Animated.View entering={FadeInUp.delay(350 + Math.min(index, 15) * 50).duration(300)}>
-                <ContributorRow contributor={item} rank={index + 1} />
-              </Animated.View>
-            )}
+            renderItem={renderContributorItem}
             ListHeaderComponent={renderHeader}
             ListEmptyComponent={
               <EmptyState

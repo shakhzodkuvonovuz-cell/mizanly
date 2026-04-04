@@ -205,6 +205,42 @@ export default function DuaCollectionScreen() {
     return t(key) || cat.charAt(0).toUpperCase() + cat.slice(1);
   }, [t]);
 
+  const renderCategoryChip = useCallback(
+    ({ item }: { item: string | null }) => (
+      <Pressable
+        onPress={() => { setSelectedCategory(item); haptic.tick(); }}
+        style={[styles.chip, { backgroundColor: tc.bgElevated, borderColor: tc.border }, selectedCategory === item && styles.chipActive]}
+        accessibilityRole="button"
+      >
+        {item && CATEGORY_ICONS[item] && (
+          <Icon
+            name={CATEGORY_ICONS[item]}
+            size={14}
+            color={selectedCategory === item ? '#fff' : tc.text.secondary}
+          />
+        )}
+        <Text style={[styles.chipText, selectedCategory === item && styles.chipTextActive, { color: tc.text.secondary }]}>
+          {item ? getCategoryLabel(item) : t('common.viewAll')}
+        </Text>
+      </Pressable>
+    ),
+    [haptic, selectedCategory, tc.bgElevated, tc.border, tc.text.secondary, getCategoryLabel, t],
+  );
+
+  const renderDuaItem = useCallback(
+    ({ item, index }: { item: Dua; index: number }) => (
+      <DuaCard
+        dua={item}
+        index={index}
+        language={locale}
+        onBookmark={() => handleBookmark(item.id)}
+        onShare={() => handleShare(item)}
+        onPlayAudio={handlePlayAudio}
+      />
+    ),
+    [locale, handleBookmark, handleShare, handlePlayAudio],
+  );
+
   const listHeader = useMemo(() => (
     <View>
       {/* Daily Dua Card */}
@@ -250,23 +286,7 @@ export default function DuaCollectionScreen() {
           data={[null, ...categories]}
           keyExtractor={(item) => item ?? 'all'}
           contentContainerStyle={styles.chipsRow}
-          renderItem={({ item }) => (
-            <Pressable
-              onPress={() => { setSelectedCategory(item); haptic.tick(); }}
-              style={[styles.chip, { backgroundColor: tc.bgElevated, borderColor: tc.border }, selectedCategory === item && styles.chipActive]}
-              accessibilityRole="button"
-            >
-              {item && CATEGORY_ICONS[item] && (
-                <Icon
-                  name={CATEGORY_ICONS[item]}
-                  size={14}
-                  color={selectedCategory === item ? '#fff' : tc.text.secondary}
-                />
-              )}
-              <Text style={[styles.chipText, selectedCategory === item && styles.chipTextActive, { color: tc.text.secondary }]}>
-                {item ? getCategoryLabel(item) : t('common.viewAll')}
-              </Text>
-            </Pressable>
+          renderItem={renderCategoryChip}
           )}
         />
       )}
@@ -307,16 +327,7 @@ export default function DuaCollectionScreen() {
         <FlatList
           data={duas}
           keyExtractor={(item) => item.id}
-          renderItem={({ item, index }) => (
-            <DuaCard
-              dua={item}
-              index={index}
-              language={locale}
-              onBookmark={() => handleBookmark(item.id)}
-              onShare={() => handleShare(item)}
-              onPlayAudio={handlePlayAudio}
-            />
-          )}
+          renderItem={renderDuaItem}
           ListHeaderComponent={listHeader}
           ListEmptyComponent={listEmpty}
           refreshControl={

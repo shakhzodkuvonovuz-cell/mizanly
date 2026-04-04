@@ -144,6 +144,29 @@ export default function CreateGroupScreen() {
     )
   , [debouncedQuery, t]);
 
+  const renderPersonItem = useCallback(
+    ({ item }: { item: User }) => (
+      <Pressable
+        style={[styles.userRow, { borderBottomColor: tc.border }]}
+        onPress={() => handleAddMember(item)}
+        disabled={createMutation.isPending}
+        accessibilityLabel={t('groups.addMember', { name: item.displayName })}
+        accessibilityRole="button"
+      >
+        <Avatar uri={item.avatarUrl} name={item.displayName} size="md" />
+        <View style={styles.userInfo}>
+          <View style={styles.userNameRow}>
+            <Text style={[styles.name, { color: tc.text.primary }]}>{item.displayName}</Text>
+            {item.isVerified && <VerifiedBadge size={13} />}
+          </View>
+          <Text style={[styles.handle, { color: tc.text.secondary }]}>@{item.username}</Text>
+        </View>
+        <Icon name="plus" size="sm" color={colors.emerald} />
+      </Pressable>
+    ),
+    [handleAddMember, createMutation.isPending, tc.border, tc.text.primary, tc.text.secondary, t],
+  );
+
   return (
     <ScreenErrorBoundary>
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top', 'bottom']}>
@@ -268,26 +291,7 @@ export default function CreateGroupScreen() {
                 removeClippedSubviews={true}
                 keyboardShouldPersistTaps="handled"
                 refreshControl={<BrandedRefreshControl refreshing={searchQuery.isFetching} onRefresh={() => searchQuery.refetch()} />}
-                renderItem={({ item }) => (
-                  <Pressable
-                    style={[styles.userRow, { borderBottomColor: tc.border }]}
-                    onPress={() => handleAddMember(item)}
-                    disabled={createMutation.isPending}
-
-                    accessibilityLabel={t('groups.addMember', { name: item.displayName })}
-                    accessibilityRole="button"
-                  >
-                    <Avatar uri={item.avatarUrl} name={item.displayName} size="md" />
-                    <View style={styles.userInfo}>
-                      <View style={styles.userNameRow}>
-                        <Text style={[styles.name, { color: tc.text.primary }]}>{item.displayName}</Text>
-                        {item.isVerified && <VerifiedBadge size={13} />}
-                      </View>
-                      <Text style={[styles.handle, { color: tc.text.secondary }]}>@{item.username}</Text>
-                    </View>
-                    <Icon name="plus" size="sm" color={colors.emerald} />
-                  </Pressable>
-                )}
+                renderItem={renderPersonItem}
                 ListEmptyComponent={memberSearchEmpty}
               />
             )}

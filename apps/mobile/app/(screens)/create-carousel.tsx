@@ -312,6 +312,24 @@ function CreateCarouselScreen() {
   // ── Main: editor with slides ──
   const previewSize = screenWidth - spacing.base * 2;
 
+  const renderSlideThumb = useCallback(
+    ({ item, index }: { item: Slide; index: number }) => (
+      <SlideThumb
+        slide={item}
+        index={index}
+        isSelected={index === selectedIndex}
+        onSelect={() => {
+          setSelectedIndex(index);
+          thumbListRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.5 });
+        }}
+        onRemove={() => removeSlide(index)}
+        total={slides.length}
+        t={t}
+      />
+    ),
+    [selectedIndex, removeSlide, slides.length, t],
+  );
+
   return (
     <ScreenErrorBoundary>
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top', 'bottom']}>
@@ -395,20 +413,7 @@ function CreateCarouselScreen() {
               }
             }}
             getItemLayout={(_, index) => ({ length: 72 + spacing.sm, offset: (72 + spacing.sm) * index, index })}
-            renderItem={({ item, index }) => (
-              <SlideThumb
-                slide={item}
-                index={index}
-                isSelected={index === selectedIndex}
-                onSelect={() => {
-                  setSelectedIndex(index);
-                  thumbListRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.5 });
-                }}
-                onRemove={() => removeSlide(index)}
-                total={slides.length}
-                t={t}
-              />
-            )}
+            renderItem={renderSlideThumb}
             ListFooterComponent={
               slides.length < MAX_SLIDES ? (
                 <Pressable

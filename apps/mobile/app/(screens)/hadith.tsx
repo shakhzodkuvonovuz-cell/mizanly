@@ -260,6 +260,17 @@ export default function HadithScreen() {
     transform: [{ scale: scaleAnim.value }],
   }));
 
+  const renderHadithItem = useCallback(
+    ({ item, index }: { item: Hadith; index: number }) => (
+      <PreviousHadithCard
+        hadith={item}
+        index={index}
+        onPress={() => selectHadith(item)}
+      />
+    ),
+    [selectHadith],
+  );
+
   if (loading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
@@ -382,13 +393,7 @@ export default function HadithScreen() {
               </View>
             </>
           }
-          renderItem={({ item, index }) => (
-            <PreviousHadithCard
-              hadith={item}
-              index={index}
-              onPress={() => selectHadith(item)}
-            />
-          )}
+          renderItem={renderHadithItem}
           ListEmptyComponent={
             <EmptyState
               icon="book-open"

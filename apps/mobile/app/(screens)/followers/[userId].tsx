@@ -141,6 +141,19 @@ export default function FollowersScreen() {
     ) : null
   , [followersQuery.isFetchingNextPage, tc.bgCard, tc.border]);
 
+  const renderFollowerItem = useCallback(
+    ({ item, index }: { item: User; index: number }) => (
+      <UserRow
+        user={item}
+        isMe={clerkUser?.id === item.id}
+        onPress={() => router.push(`/(screens)/profile/${item.username}`)}
+        onFollow={() => !followMutation.isPending && followMutation.mutate(item)}
+        index={index}
+      />
+    ),
+    [clerkUser?.id, router, followMutation],
+  );
+
   return (
     <ScreenErrorBoundary>
       {followersQuery.isError ? (
@@ -168,15 +181,7 @@ export default function FollowersScreen() {
           removeClippedSubviews={true}
           data={followers}
           keyExtractor={(item) => item.id}
-          renderItem={({ item, index }) => (
-            <UserRow
-              user={item}
-              isMe={clerkUser?.id === item.id}
-              onPress={() => router.push(`/(screens)/profile/${item.username}`)}
-              onFollow={() => !followMutation.isPending && followMutation.mutate(item)}
-              index={index}
-            />
-          )}
+          renderItem={renderFollowerItem}
           onEndReached={onEndReached}
           onEndReachedThreshold={0.4}
           refreshControl={

@@ -148,6 +148,22 @@ export default function FollowRequestsScreen() {
     />
   ), [t]);
 
+  const renderRequestItem = useCallback(
+    ({ item, index }: { item: FollowRequest; index: number }) => (
+      <RequestRow
+        request={item}
+        index={index}
+        isRTL={isRTL}
+        loading={
+          (acceptMutation.isPending || declineMutation.isPending) && pendingId === item.id
+        }
+        onAccept={() => acceptMutation.mutate(item.id)}
+        onDecline={() => declineMutation.mutate(item.id)}
+      />
+    ),
+    [isRTL, acceptMutation, declineMutation, pendingId],
+  );
+
   if (requestsQuery.isError) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
@@ -189,18 +205,7 @@ export default function FollowRequestsScreen() {
             refreshControl={
               <BrandedRefreshControl refreshing={requestsQuery.isRefetching} onRefresh={() => requestsQuery.refetch()} />
             }
-            renderItem={({ item, index }) => (
-              <RequestRow
-                request={item}
-                index={index}
-                isRTL={isRTL}
-                loading={
-                  (acceptMutation.isPending || declineMutation.isPending) && pendingId === item.id
-                }
-                onAccept={() => acceptMutation.mutate(item.id)}
-                onDecline={() => declineMutation.mutate(item.id)}
-              />
-            )}
+            renderItem={renderRequestItem}
             ListEmptyComponent={listEmpty}
           />
         )}

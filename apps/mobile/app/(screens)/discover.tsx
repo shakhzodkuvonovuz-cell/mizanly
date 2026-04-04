@@ -81,6 +81,24 @@ function TrendingHashtags({ hashtags }: { hashtags: TrendingHashtag[] }) {
   const { t } = useTranslation();
   const tc = useThemeColors();
 
+  const renderHashtagItem = useCallback(
+    ({ item }: { item: TrendingHashtag }) => (
+      <Pressable
+        style={[styles.hashtagChipGold, { backgroundColor: tc.bgCard }]}
+        onPress={() => navigate(`/(screens)/search-results?query=${encodeURIComponent('#' + item.name)}`)}
+        accessibilityRole="button"
+        accessibilityLabel={t('accessibility.searchHashtag', { name: item.name })}
+      >
+        <Icon name="hash" size={12} color={colors.gold} />
+        <Text style={styles.hashtagTextGold}>#{item.name}</Text>
+        <Text style={styles.hashtagCountGold}>
+          {formatCount(item.postsCount + item.threadsCount)}
+        </Text>
+      </Pressable>
+    ),
+    [tc.bgCard, t],
+  );
+
   if (!hashtags.length) return null;
 
   return (
@@ -95,20 +113,7 @@ function TrendingHashtags({ hashtags }: { hashtags: TrendingHashtag[] }) {
         keyExtractor={(item) => item.id}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.trendingList}
-        renderItem={({ item }) => (
-          <Pressable
-            style={[styles.hashtagChipGold, { backgroundColor: tc.bgCard }]}
-            onPress={() => navigate(`/(screens)/search-results?query=${encodeURIComponent('#' + item.name)}`)}
-            accessibilityRole="button"
-            accessibilityLabel={t('accessibility.searchHashtag', { name: item.name })}
-          >
-            <Icon name="hash" size={12} color={colors.gold} />
-            <Text style={styles.hashtagTextGold}>#{item.name}</Text>
-            <Text style={styles.hashtagCountGold}>
-              {formatCount(item.postsCount + item.threadsCount)}
-            </Text>
-          </Pressable>
-        )}
+        renderItem={renderHashtagItem}
       />
     </View>
   );
@@ -437,6 +442,15 @@ export default function DiscoverScreen() {
     );
   }
 
+  const renderExploreItem = useCallback(
+    ({ item, index }: { item: ExploreItem; index: number }) => (
+      <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
+        <ExploreGridItem item={item} isFeature={isFeatureIndex(index)} />
+      </Animated.View>
+    ),
+    [],
+  );
+
   return (
     <ScreenErrorBoundary>
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
@@ -457,11 +471,7 @@ export default function DiscoverScreen() {
           columnWrapperStyle={styles.gridRow}
           onScroll={onScrollElastic}
           scrollEventThrottle={16}
-          renderItem={({ item, index }) => (
-            <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
-              <ExploreGridItem item={item} isFeature={isFeatureIndex(index)} />
-            </Animated.View>
-          )}
+          renderItem={renderExploreItem}
           ListHeaderComponent={
             <>
               <CategoryPills active={activeCategory} onSelect={(c) => { haptic.tick(); setActiveCategory(c); }} categories={CATEGORIES} />
