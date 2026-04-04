@@ -555,6 +555,21 @@ enum ForwardedFromType {
   FWD_MESSAGE
 }
 
+enum InterestCategory {
+  quran
+  fiqh
+  history
+  family
+  health
+  business
+  tech
+  arts
+  travel
+  education
+  social
+  sports
+}
+
 enum AchievementCategory {
   CONTENT
   SOCIAL_ACH
@@ -2340,10 +2355,10 @@ model ModerationLog {
   reason          String
   explanation     String
   reportId        String?
-  isAppealed      Boolean          @default(false)  // User submitted an appeal
-  appealText      String?                            // JSON: {reason: enum, details: string}
-  appealResolved  Boolean?                           // Admin resolved the appeal
-  appealResult    String?                            // Admin's resolution explanation
+  isAppealed      Boolean          @default(false) // User submitted an appeal
+  appealText      String? // JSON: {reason: enum, details: string}
+  appealResolved  Boolean? // Admin resolved the appeal
+  appealResult    String? // Admin's resolution explanation
   isAutoFlagged   Boolean          @default(false) // B11-#15: auto-moderation tracking
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt // B11-#22: mutation tracking
@@ -2622,11 +2637,11 @@ model StoryStickerResponse {
 }
 
 model UserInterest {
-  id        String   @id @default(cuid())
+  id        String           @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category  String
-  createdAt DateTime @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category  InterestCategory // W13-#576: was String; fixed set validated by SetInterestsDto
+  createdAt DateTime         @default(now())
 
   @@unique([userId, category])
   // @@index([userId]) — redundant: @@unique leading column
@@ -4558,7 +4573,7 @@ model SavedMessage {
   mediaUrl          String?
   mediaType         MediaType? // S02-#28: was String?
   forwardedFromType ForwardedFromType?
-  forwardedFromId   String?
+  forwardedFromId   String? // W13-#578: Soft-reference FK — polymorphic ID discriminated by forwardedFromType (postId, threadId, reelId, videoId, or messageId). No Prisma relation — validated at service level.
   isPinned          Boolean            @default(false)
   createdAt         DateTime           @default(now())
   user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -4593,7 +4608,7 @@ model AdminLog {
   adminId   String
   admin     User           @relation("adminLogs", fields: [adminId], references: [id], onDelete: Cascade)
   action    AdminLogAction
-  targetId  String? // userId or messageId affected
+  targetId  String? // W13-#580: FK to User — the affected user (member added/removed/banned, permissions changed). For non-user targets (e.g. PIN_MESSAGE), store the entity ID in `details` instead.
   target    User?          @relation("adminLogTargets", fields: [targetId], references: [id], onDelete: SetNull)
   details   String?        @db.VarChar(500)
   createdAt DateTime       @default(now())

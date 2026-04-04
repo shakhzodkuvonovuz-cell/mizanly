@@ -560,6 +560,40 @@ export class CounterReconciliationService {
   }
 
   /**
+   * Reconcile ScholarQuestion.votes counter (W13-#581).
+   * Counts ScholarQuestionVote rows with voteType=UP minus DOWN vs stored `votes`.
+   */
+  @Cron('0 6 15 * *') // 15th of each month at 6 AM
+  async reconcileScholarQuestionVotes() {
+    try {
+      if (!await acquireCronLock(this.redis, 'cron:reconcileScholarQuestionVotes', 3500, this.logger)) return 0;
+      const drifted = await this.prisma.$queryRaw<Array<{ id: string; actual: bigint }>>`
+        SELECT q.id,
+          COALESCE(SUM(CASE WHEN v."voteType" = 'UPVOTE' THEN 1 WHEN v."voteType" = 'DOWNVOTE' THEN -1 ELSE 0 END), 0)::bigint as actual
+        FROM "scholar_questions" q
+        LEFT JOIN "scholar_question_votes" v ON v."questionId" = q.id
+        GROUP BY q.id
+        HAVING COALESCE(SUM(CASE WHEN v."voteType" = 'UPVOTE' THEN 1 WHEN v."voteType" = 'DOWNVOTE' THEN -1 ELSE 0 END), 0) != q."votes"
+        LIMIT 500
+      `;
+
+      if (drifted.length > 0) {
+        await this.prisma.$executeRaw`
+          UPDATE "scholar_questions" SET "votes" = v.actual::int
+          FROM (VALUES ${Prisma.join(drifted.map(r => Prisma.sql`(${r.id}, ${Number(r.actual)})`))} ) AS v(id, actual)
+          WHERE "scholar_questions".id = v.id
+        `;
+        this.logger.warn(`Reconciled votes for ${drifted.length} scholar question(s)`);
+      }
+      return drifted.length;
+    } catch (error) {
+      this.logger.error('reconcileScholarQuestionVotes cron failed', error instanceof Error ? error.message : error);
+      Sentry.captureException(error);
+      return 0;
+    }
+  }
+
+  /**
    * Reconcile hashtag postsCount.
    */
   @Cron('45 5 15 * *') // 15th of each month at 5:45 AM
@@ -607,6 +641,7 @@ export class CounterReconciliationService {
     const hashtags = await this.reconcileHashtagCounts();
     const unread = await this.reconcileUnreadCounts();
     const coinBalances = await this.reconcileCoinBalances();
+    const scholarVotes = await this.reconcileScholarQuestionVotes();
     return {
       reconciled: {
         followCounts: follows,
@@ -621,6 +656,7 @@ export class CounterReconciliationService {
         hashtagCounts: hashtags,
         unreadCounts: unread,
         coinBalances,
+        scholarQuestionVotes: scholarVotes,
       },
     };
   }

@@ -1,17 +1,12 @@
-import { IsArray, IsString, ArrayMinSize, ArrayMaxSize, IsIn } from 'class-validator';
+import { IsArray, IsEnum, ArrayMinSize, ArrayMaxSize } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-
-const VALID_CATEGORIES = [
-  'quran', 'fiqh', 'history', 'family', 'health', 'business',
-  'tech', 'arts', 'travel', 'education', 'social', 'sports',
-] as const;
+import { InterestCategory } from '@prisma/client';
 
 export class SetInterestsDto {
-  @ApiProperty({ type: [String], minItems: 1, maxItems: 20, enum: VALID_CATEGORIES })
+  @ApiProperty({ type: [String], minItems: 1, maxItems: 20, enum: InterestCategory })
   @IsArray()
-  @IsString({ each: true })
-  @IsIn(VALID_CATEGORIES, { each: true, message: 'Each category must be one of: ' + VALID_CATEGORIES.join(', ') })
+  @IsEnum(InterestCategory, { each: true, message: 'Each category must be one of: ' + Object.values(InterestCategory).join(', ') })
   @ArrayMinSize(1)
   @ArrayMaxSize(20)
-  categories: string[];
+  categories: InterestCategory[];
 }

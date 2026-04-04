@@ -298,6 +298,29 @@ describe('CounterReconciliationService', () => {
     });
   });
 
+  // ── W13-#581: ScholarQuestionVote counter reconciliation ──
+
+  describe('reconcileScholarQuestionVotes', () => {
+    it('should return 0 when no drift', async () => {
+      prisma.$queryRaw.mockResolvedValue([]);
+      expect(await service.reconcileScholarQuestionVotes()).toBe(0);
+    });
+
+    it('should fix drifted scholar question votes', async () => {
+      prisma.$queryRaw.mockResolvedValue([{ id: 'q1', actual: BigInt(7) }]);
+      prisma.$executeRaw.mockResolvedValue(1);
+      expect(await service.reconcileScholarQuestionVotes()).toBe(1);
+      expect(prisma.$executeRaw).toHaveBeenCalled();
+    });
+
+    it('should capture exception on error', async () => {
+      const Sentry = require('@sentry/node');
+      prisma.$queryRaw.mockRejectedValue(new Error('DB timeout'));
+      expect(await service.reconcileScholarQuestionVotes()).toBe(0);
+      expect(Sentry.captureException).toHaveBeenCalled();
+    });
+  });
+
   describe('reconcileAll', () => {
     it('should invoke all reconciliation methods and return aggregated result', async () => {
       prisma.$queryRaw.mockResolvedValue([]);
@@ -316,6 +339,7 @@ describe('CounterReconciliationService', () => {
       expect(result.reconciled.hashtagCounts).toBe(0);
       expect(result.reconciled.unreadCounts).toBe(0);
       expect(result.reconciled.coinBalances).toBe(0);
+      expect(result.reconciled.scholarQuestionVotes).toBe(0);
     });
   });
 });

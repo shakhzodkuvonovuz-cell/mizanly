@@ -109,7 +109,7 @@ describe('AuthController', () => {
 
   describe('setInterests', () => {
     it('should call authService.setInterests with userId and dto', async () => {
-      const dto = { interests: ['ISLAMIC', 'TECHNOLOGY', 'SPORTS'] };
+      const dto = { categories: ['quran', 'tech', 'sports'] };
       service.setInterests.mockResolvedValue({ updated: true } as any);
 
       const result = await controller.setInterests(userId, dto as any);
