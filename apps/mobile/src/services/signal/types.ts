@@ -60,6 +60,10 @@ export interface PreKeyBundle {
     publicKey: Uint8Array; // 32 bytes X25519
   };
   supportedVersions: number[]; // [1] initially, [1, 2] when PQ added
+  /** F03-#8: Optional PQXDH fields — present when server supports ML-KEM-768. */
+  pqPreKey?: Uint8Array | string;
+  pqPreKeySignature?: Uint8Array | string;
+  pqPreKeyId?: number;
 }
 
 // ============================================================

@@ -420,6 +420,11 @@ function zeroSessionKeys(state: SessionState): void {
 /**
  * Deep-clone a SessionState so ratchetDecrypt can mutate the clone
  * without corrupting the original on AEAD failure.
+ *
+ * F05-#15: All SessionState fields are either primitives (number, boolean, string)
+ * or Uint8Array (which we copy via `new Uint8Array(...)`). If a new object-typed
+ * field is added to SessionState, this function MUST be updated to deep-clone it.
+ * Otherwise, mutations to the clone would affect the original via shared reference.
  */
 function cloneSessionState(state: SessionState): SessionState {
   return {

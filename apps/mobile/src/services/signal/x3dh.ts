@@ -234,9 +234,9 @@ export async function initiateX3DH(
     // V8-F11 FIX: Single-pass HKDF per Signal PQXDH spec.
     // Signal spec requires: HKDF(F || DH1 || DH2 || DH3 || [DH4] || [PQ_shared_secret])
 
-    // V7-F5: Access pqPreKey with proper type narrowing instead of 4 separate `as any` casts.
-    const bundlePqFields = bundle as unknown as Record<string, unknown>;
-    const bundlePqPreKey = bundlePqFields.pqPreKey;
+    // F03-#8: Access pqPreKey via properly typed PreKeyBundle field (no unsafe cast).
+    // Previously used `as unknown as Record<string, unknown>` which bypassed TypeScript.
+    const bundlePqPreKey = bundle.pqPreKey;
     if (isPQXDHAvailable() && bundlePqPreKey !== undefined && bundlePqPreKey !== null) {
       let pqPubKey: Uint8Array;
       if (typeof bundlePqPreKey === 'string') {
@@ -254,7 +254,7 @@ export async function initiateX3DH(
       // Without this, a compromised server can substitute any ML-KEM-768 public key
       // (the classical signed prekey IS verified above, but the PQ prekey was not).
       // The identity key signs the PQ prekey just like it signs the classical SPK.
-      const bundlePqSig = bundlePqFields.pqPreKeySignature;
+      const bundlePqSig = bundle.pqPreKeySignature;
       if (bundlePqSig === undefined || bundlePqSig === null) {
         throw new Error(
           'PQ prekey present but pqPreKeySignature missing — server may have ' +
