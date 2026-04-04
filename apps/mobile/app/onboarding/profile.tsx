@@ -198,13 +198,12 @@ export default function OnboardingProfileScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1, backgroundColor: colors.dark.bg,
+    flex: 1,
     alignItems: 'center', paddingHorizontal: spacing.xl,
   },
   progressTrack: {
     height: 4,
     borderRadius: 2,
-    backgroundColor: colors.dark.border,
     marginBottom: spacing.xl,
     overflow: 'hidden',
     width: '100%',
@@ -229,7 +228,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   avatarPlaceholder: {
-    backgroundColor: colors.dark.bgElevated,
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 2,
     borderColor: colors.emerald,
@@ -252,12 +250,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.dark.bgElevated,
     borderRadius: radius.lg,
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
     borderWidth: 1,
-    borderColor: colors.dark.border,
   },
   inputRowFocused: {
     borderColor: colors.emerald,
@@ -273,10 +269,8 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
   },
   bioRow: {
-    backgroundColor: colors.dark.bgElevated,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
   },

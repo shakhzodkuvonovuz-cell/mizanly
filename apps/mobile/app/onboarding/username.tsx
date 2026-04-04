@@ -210,12 +210,11 @@ export default function UsernameScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
   inner: { flex: 1, paddingHorizontal: spacing.xl, paddingTop: spacing['2xl'] },
   progressTrack: {
     height: 4,
     borderRadius: 2,
-    backgroundColor: colors.dark.border,
     marginBottom: spacing['3xl'],
     overflow: 'hidden',
   },
@@ -229,9 +228,7 @@ const styles = StyleSheet.create({
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dark.bgElevated,
     borderWidth: 1,
-    borderColor: colors.dark.border,
     borderRadius: radius.md,
     paddingHorizontal: spacing.base,
     minHeight: 52,
@@ -242,13 +239,11 @@ const styles = StyleSheet.create({
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.sm },
   status: { fontSize: fontSize.sm },
   previewCard: {
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.md,
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
     marginTop: spacing.md,
     borderWidth: 0.5,
-    borderColor: colors.dark.border,
   },
   previewText: { color: colors.text.secondary, fontSize: fontSize.sm },
   btnWrap: {

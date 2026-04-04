@@ -156,9 +156,9 @@ export default function SuggestedScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
   progress: { flexDirection: 'row', gap: spacing.sm, marginHorizontal: spacing.xl, marginTop: spacing['2xl'], marginBottom: spacing.xl },
-  dot: { flex: 1, height: 3, borderRadius: 2, backgroundColor: colors.dark.border },
+  dot: { flex: 1, height: 3, borderRadius: 2 },
   dotActive: { backgroundColor: colors.emerald },
   header: { paddingHorizontal: spacing.xl, marginBottom: spacing.lg },
   title: { color: colors.text.primary, fontSize: fontSize.xl, fontWeight: '700', marginBottom: spacing.sm },
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     backgroundColor: colors.emerald,
   },
-  followingBtn: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.dark.border },
+  followingBtn: { backgroundColor: 'transparent', borderWidth: 1 },
   followBtnText: { color: '#fff', fontSize: fontSize.sm, fontWeight: '600' },
   followingBtnText: { color: colors.text.secondary },
   footer: { paddingHorizontal: spacing.xl, paddingBottom: spacing.xl, gap: spacing.md },

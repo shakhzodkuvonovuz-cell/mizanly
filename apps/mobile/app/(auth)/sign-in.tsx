@@ -288,7 +288,7 @@ export default function SignInScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
   inner: { flex: 1, paddingHorizontal: spacing.xl, justifyContent: 'center' },
   bgGlow: {
     position: 'absolute',
@@ -305,9 +305,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.dark.bgElevated,
     borderWidth: 1,
-    borderColor: colors.dark.border,
     borderRadius: radius.md,
     paddingHorizontal: spacing.base,
     minHeight: 52,
@@ -333,7 +331,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     marginTop: spacing.lg,
   },
-  dividerLine: { flex: 1, height: 0.5, backgroundColor: colors.dark.border },
+  dividerLine: { flex: 1, height: 0.5 },
   dividerText: { color: colors.text.tertiary, fontSize: fontSize.xs },
   socialRow: {
     flexDirection: 'row',
@@ -346,11 +344,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.dark.bgElevated,
     borderRadius: radius.md,
     paddingVertical: spacing.md,
     borderWidth: 1,
-    borderColor: colors.dark.border,
   },
   socialBtnPressed: {
     opacity: 0.7,

@@ -178,11 +178,10 @@ export default function InterestsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg, paddingTop: spacing['2xl'] },
+  container: { flex: 1, paddingTop: spacing['2xl'] },
   progressTrack: {
     height: 4,
     borderRadius: 2,
-    backgroundColor: colors.dark.border,
     marginHorizontal: spacing.xl,
     marginBottom: spacing.xl,
     overflow: 'hidden',
@@ -211,8 +210,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderRadius: radius.full,
     borderWidth: 1.5,
-    borderColor: colors.dark.border,
-    backgroundColor: colors.dark.bgElevated,
   },
   chipOn: { borderColor: colors.emerald, backgroundColor: `${colors.emerald}20` },
   chipLabel: { color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '500' },
@@ -222,7 +219,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
     paddingTop: spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: colors.dark.border,
   },
   madhabTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600', marginBottom: spacing.xs },
   madhabSubtitle: { color: colors.text.secondary, fontSize: fontSize.sm, marginBottom: spacing.md },
