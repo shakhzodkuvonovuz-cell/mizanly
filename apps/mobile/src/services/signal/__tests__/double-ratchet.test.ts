@@ -355,15 +355,36 @@ describe('Double Ratchet message exchange', () => {
     expect(() => ratchetDecrypt(bobState, msg)).toThrow();
   });
 
-  it('exceeding max skipped keys (2000) throws', () => {
-    // Encrypt 2002 messages — decrypting the last first requires skipping 2001 keys (> 2000)
+  it('exceeding per-ratchet skip limit (500) throws', () => {
+    // #500: Per-ratchet limit is 500, enforced before total MAX_SKIPPED_KEYS (2000).
+    // Encrypt 502 messages — decrypting the last first requires skipping 501 keys (> 500)
     const messages: SignalMessage[] = [];
-    for (let i = 0; i < 2002; i++) {
+    for (let i = 0; i < 502; i++) {
       messages.push(ratchetEncrypt(aliceState, utf8Encode(`msg ${i}`)));
     }
 
-    // Try to decrypt the last one first (requires skipping 2001 > MAX_SKIPPED_KEYS=2000)
-    expect(() => ratchetDecrypt(bobState, messages[2001])).toThrow('Too many skipped');
+    // Try to decrypt the last one first (requires skipping 501 > MAX_SKIP_PER_RATCHET=500)
+    expect(() => ratchetDecrypt(bobState, messages[501])).toThrow('Counter gap too large');
+  });
+
+  it('hard cap (200) evicts oldest skipped keys when exceeded', () => {
+    // V7-F9 + #500: The hard cap (200) limits total skipped keys regardless of
+    // MAX_SKIPPED_KEYS (2000). Verify that keys beyond 200 are evicted.
+    // Send 250 messages, decrypt the last one (skips 249, within per-ratchet limit of 500).
+    const messages: SignalMessage[] = [];
+    for (let i = 0; i < 250; i++) {
+      messages.push(ratchetEncrypt(aliceState, utf8Encode(`m${i}`)));
+    }
+    // Decrypt last — stores 249 skipped keys, then trySkippedKeys evicts down to 200
+    ratchetDecrypt(bobState, messages[249]);
+
+    // The oldest 49 skipped keys (counters 0-48) should have been evicted.
+    // Trying to decrypt them should fail (keys gone, and chain has advanced past them).
+    expect(() => ratchetDecrypt(bobState, messages[0])).toThrow();
+
+    // But keys within the cap window should still be usable
+    // (counter 200 should be within the 200 most recent skipped keys)
+    expect(utf8Decode(ratchetDecrypt(bobState, messages[200]))).toBe('m200');
   });
 
   it('encrypts empty message', () => {
@@ -441,14 +462,14 @@ describe('Double Ratchet message exchange', () => {
     expect(utf8Decode(ratchetDecrypt(bobState, msg))).toBe(arabic);
   });
 
-  it('skipped keys at exact boundary (2000) succeeds', () => {
-    // 2001 messages — skipping first 2000, decrypt last = exactly at limit
+  it('skipped keys at exact per-ratchet boundary (500) succeeds', () => {
+    // #500: Per-ratchet limit is 500. 501 messages — skip first 500, decrypt last = exactly at limit.
     const messages: SignalMessage[] = [];
-    for (let i = 0; i < 2001; i++) {
+    for (let i = 0; i < 501; i++) {
       messages.push(ratchetEncrypt(aliceState, utf8Encode(`m${i}`)));
     }
-    // Decrypt last (counter=2000, skips 0-1999 = 2000 keys = exactly MAX)
-    expect(utf8Decode(ratchetDecrypt(bobState, messages[2000]))).toBe('m2000');
+    // Decrypt last (counter=500, skips 0-499 = 500 keys = exactly MAX_SKIP_PER_RATCHET)
+    expect(utf8Decode(ratchetDecrypt(bobState, messages[500]))).toBe('m500');
   });
 
   it('5+ direction changes (deep DH ratchet)', () => {

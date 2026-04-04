@@ -109,7 +109,10 @@ export interface SkippedKey {
   ratchetKey: Uint8Array; // 32 bytes: the DH ratchet public key for this chain
   counter: number;
   messageKey: Uint8Array; // 32 bytes: derived from chain key at this counter
-  createdAt: number; // Unix ms — keys older than 7 days are expired
+  createdAt: number; // Unix ms — keys older than 24 hours are expired
+  /** #499: Monotonic message counter at creation time. Used for clock-independent aging.
+   * Undefined for keys created before this fix — they fall back to createdAt-only expiry. */
+  messageCounter?: number;
 }
 
 /** Complete Double Ratchet session state — persisted in encrypted MMKV */

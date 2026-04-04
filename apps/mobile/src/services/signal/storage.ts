@@ -607,6 +607,7 @@ function serializeSessionState(state: SessionState): Record<string, unknown> {
     rrk: state.receiverRatchetKey ? toBase64(state.receiverRatchetKey) : null,
     sk: state.skippedKeys.map((s) => ({
       r: toBase64(s.ratchetKey), c: s.counter, m: toBase64(s.messageKey), t: s.createdAt ?? Date.now(),
+      mc: s.messageCounter, // #499: monotonic counter for clock-independent aging
     })),
     psc: state.previousSendingCounter,
     rid: toBase64(state.remoteIdentityKey),
@@ -669,6 +670,7 @@ function deserializeSessionState(raw: Record<string, unknown>): SessionState {
       counter: isCompact ? sk.c : sk.counter,
       messageKey: fromBase64(isCompact ? sk.m : sk.messageKey),
       createdAt: (isCompact ? sk.t : sk.createdAt) ?? Date.now(),
+      messageCounter: isCompact ? sk.mc : sk.messageCounter, // #499: monotonic counter (undefined for legacy)
     })),
     remoteIdentityKey: fromBase64(isCompact ? r.rid : r.remoteIdentityKey),
     previousSendingCounter: (isCompact ? r.psc : r.previousSendingCounter) ?? 0,
@@ -1296,8 +1298,15 @@ export async function importAllState(data: Uint8Array, password: string): Promis
   hmacKeyForNames = null;
   // V4-F9: cachedEncKeyB64 removed — no longer cached
   const mmkv = await getMMKV();
+
+  // #509 FIX: Restore MMKV entries through AEAD-authenticated write path.
+  // Previously used raw mmkv.set() which bypassed AEAD integrity protection.
+  // An attacker who tampered with the backup could inject unauthenticated
+  // session state that would pass integrity checks on read (since it was
+  // never AEAD-wrapped). Now all restored entries go through aeadSet()
+  // with the key name as AAD, matching the normal write path.
   for (const [key, val] of Object.entries(state.mmkvEntries ?? {})) {
-    mmkv.set(key, val as string);
+    await aeadSet(mmkv, key, val as string, key);
   }
 
   // Restore pre-key private keys

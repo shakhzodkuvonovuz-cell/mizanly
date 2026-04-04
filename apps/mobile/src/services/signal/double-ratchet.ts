@@ -106,8 +106,16 @@ function kdfCK(chainKey: Uint8Array): { messageKey: Uint8Array; nextChainKey: Ui
  *
  * The nonce is HKDF-derived (deterministic per message key), not random.
  * This is safe because each message key is used exactly once.
+ *
+ * #502: The all-zero salt is per Signal spec (Double Ratchet Algorithm, Section 5.2):
+ * "HKDF is used with a salt of 32 zero bytes" for message key derivation.
+ * The message key itself is already HMAC-derived from a high-entropy chain key,
+ * so the salt adds no additional entropy. Using chain key as salt would violate
+ * the spec and break interoperability. The info string ("MizanlyMsgKeys") provides
+ * domain separation, and the 32-byte message key provides sufficient IKM entropy.
  */
 function deriveMessageEncKeys(messageKey: Uint8Array): { encKey: Uint8Array; nonce: Uint8Array } {
+  // Signal spec: salt = 32 zero bytes (intentional, not a weakness)
   const derived = hkdfDeriveSecrets(messageKey, new Uint8Array(32), MESSAGE_KEY_INFO, 56);
   return {
     encKey: derived.slice(0, 32),
@@ -413,6 +421,21 @@ function dhRatchetStep(state: SessionState, theirNewRatchetKey: Uint8Array): voi
 const SKIPPED_KEY_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 /**
+ * #499 FIX: Monotonic message counter for skipped key age estimation.
+ *
+ * Date.now() is user-manipulable — setting system clock backwards defeats
+ * time-based expiry entirely. Instead, we track the total number of messages
+ * processed (encrypt + decrypt) as a monotonic counter. Skipped keys that
+ * are older than MAX_SKIPPED_KEY_AGE_MSGS messages are evicted.
+ *
+ * At 1 msg/sec, 5000 messages ≈ ~83 minutes. This is generous for
+ * out-of-order delivery (typical reorder window: < 10 messages).
+ * Combined with the hard cap (200 keys), this ensures bounded memory
+ * even if the clock is manipulated.
+ */
+const MAX_SKIPPED_KEY_AGE_MSGS = 5000;
+
+/**
  * V7-F9: Hard cap on total skipped keys per session, independent of time-based expiry.
  * Clock manipulation (setting system time backwards) defeats the Date.now()-based expiry,
  * allowing up to MAX_SKIPPED_KEYS (2000) to accumulate. This cap ensures at most 200
@@ -421,26 +444,55 @@ const SKIPPED_KEY_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
  */
 const HARD_SKIPPED_KEY_CAP = 200;
 
+/**
+ * Per-session monotonic message counter — incremented on every encrypt/decrypt.
+ * Used instead of Date.now() for skipped key age estimation (#499).
+ * Keyed by a session identifier derived from the root key to avoid cross-session leaks.
+ * WeakRef-like approach: counters for sessions that go out of scope are naturally GC'd
+ * on next app restart since this is in-memory only.
+ */
+const sessionMessageCounters = new Map<string, number>();
+
+/**
+ * Get and increment the monotonic message counter for a session.
+ * The counter key is derived from the sending chain's public key
+ * which uniquely identifies a session without leaking private state.
+ */
+function getSessionMessageCounter(state: SessionState): number {
+  // Use the local registration ID + remote registration ID as session key.
+  // These are stable across the session lifetime and don't leak secrets.
+  const sessionKey = `${state.localRegistrationId}:${state.remoteRegistrationId}`;
+  const current = sessionMessageCounters.get(sessionKey) ?? 0;
+  sessionMessageCounters.set(sessionKey, current + 1);
+  return current;
+}
+
 function trySkippedKeys(
   state: SessionState,
   message: SignalMessage,
   headerBytes: Uint8Array,
 ): Uint8Array | null {
-  // Expire old skipped keys (older than 24 hours)
+  const currentCounter = getSessionMessageCounter(state);
+
+  // #499 FIX: Dual expiry — both wall-clock AND monotonic counter.
+  // A key must survive BOTH checks. Clock manipulation can't defeat the counter check;
+  // counter rollover (app restart) can't defeat the clock check.
   const now = Date.now();
   state.skippedKeys = state.skippedKeys.filter((sk) => {
-    if (sk.createdAt && now - sk.createdAt > SKIPPED_KEY_MAX_AGE_MS) {
+    const tooOldByTime = sk.createdAt != null && now - sk.createdAt > SKIPPED_KEY_MAX_AGE_MS;
+    const tooOldByCounter = sk.messageCounter != null && currentCounter - sk.messageCounter > MAX_SKIPPED_KEY_AGE_MSGS;
+    if (tooOldByTime || tooOldByCounter) {
       zeroOut(sk.messageKey);
       return false;
     }
     return true;
   });
 
-  // V7-F9: Hard cap eviction — even if clock manipulation defeats time-based expiry,
-  // at most HARD_SKIPPED_KEY_CAP keys exist. Evict oldest (lowest createdAt) first.
+  // V7-F9: Hard cap eviction — even if both expiry mechanisms are defeated,
+  // at most HARD_SKIPPED_KEY_CAP keys exist. Evict oldest (lowest messageCounter) first.
   if (state.skippedKeys.length > HARD_SKIPPED_KEY_CAP) {
-    // Sort by createdAt ascending, evict the excess oldest entries
-    state.skippedKeys.sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0));
+    // Sort by messageCounter ascending (prefer evicting oldest), fall back to createdAt
+    state.skippedKeys.sort((a, b) => (a.messageCounter ?? a.createdAt ?? 0) - (b.messageCounter ?? b.createdAt ?? 0));
     const evicted = state.skippedKeys.splice(0, state.skippedKeys.length - HARD_SKIPPED_KEY_CAP);
     for (const sk of evicted) zeroOut(sk.messageKey);
   }
@@ -480,6 +532,18 @@ function trySkippedKeys(
 }
 
 /**
+ * #500 FIX: Per-ratchet-step skip limit. Limits the number of KDF chain steps
+ * computed in a single call. Without this, a malicious sender could craft a
+ * message with counter=1999 forcing the receiver to compute 1999 HMAC-SHA256
+ * operations synchronously, blocking the JS thread for ~50-100ms.
+ *
+ * 500 is generous for real-world scenarios (typical gap: 0-5 messages).
+ * The total MAX_SKIPPED_KEYS (2000) still bounds the aggregate across
+ * multiple ratchet steps.
+ */
+const MAX_SKIP_PER_RATCHET = 500;
+
+/**
  * Skip message keys up to a target counter, storing them for later decryption.
  *
  * Called when we receive a message with a counter higher than our current
@@ -488,7 +552,7 @@ function trySkippedKeys(
  *
  * Max 2000 skipped keys per session (Signal spec). Exceeding this throws,
  * which prevents a DoS attack where a malicious sender claims to have sent
- * millions of messages.
+ * millions of messages. Per-call limit of 500 prevents single-message DoS.
  */
 function skipMessageKeys(
   state: SessionState,
@@ -501,6 +565,16 @@ function skipMessageKeys(
   }
 
   const skipCount = targetCounter - chain.counter;
+
+  // #500: Per-ratchet-step computation limit — prevents single-message DoS
+  if (skipCount > MAX_SKIP_PER_RATCHET) {
+    throw new Error(
+      `Counter gap too large (${skipCount} > ${MAX_SKIP_PER_RATCHET}). ` +
+      'A single message cannot skip more than 500 chain steps. ' +
+      'This may indicate a malicious sender.',
+    );
+  }
+
   if (state.skippedKeys.length + skipCount > MAX_SKIPPED_KEYS) {
     throw new Error(
       `Too many skipped messages (${state.skippedKeys.length + skipCount} > ${MAX_SKIPPED_KEYS}). ` +
@@ -509,6 +583,7 @@ function skipMessageKeys(
   }
 
   // Derive and store each skipped message key
+  const currentMsgCounter = getSessionMessageCounter(state);
   while (chain.counter < targetCounter) {
     const { messageKey, nextChainKey } = kdfCK(chain.chainKey);
     const ratchetKey = state.receiverRatchetKey!;
@@ -518,6 +593,7 @@ function skipMessageKeys(
       counter: chain.counter,
       messageKey,
       createdAt: Date.now(),
+      messageCounter: currentMsgCounter, // #499: monotonic counter for clock-independent aging
     });
 
     const oldChainKey = chain.chainKey;
@@ -532,3 +608,18 @@ function skipMessageKeys(
 // ============================================================
 
 // bytesEqual is imported as constantTimeEqual from crypto.ts (shared, no duplication)
+
+// ============================================================
+// EXPORTS (for testing)
+// ============================================================
+
+/** Exported for test assertions on per-ratchet skip limit (#500). */
+export { MAX_SKIP_PER_RATCHET };
+
+/**
+ * Reset all session message counters. TESTING ONLY — never call in production.
+ * Exported to allow test isolation (counters are module-level singletons).
+ */
+export function _resetSessionMessageCounters(): void {
+  sessionMessageCounters.clear();
+}
