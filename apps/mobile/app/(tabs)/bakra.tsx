@@ -53,7 +53,7 @@ import { formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
 
 // Animated action button wrapper
-function ActionButton({
+const ActionButton = memo(function ActionButton({
   children,
   onPress,
   accessibilityLabel,
@@ -92,7 +92,7 @@ function ActionButton({
       </Animated.View>
     </Pressable>
   );
-}
+});
 
 interface ReelItemProps {
   item: Reel;
@@ -871,11 +871,18 @@ export default function BakraScreen() {
     return null;
   }, [feedQuery.isFetchingNextPage, feedQuery.hasNextPage, reels.length, SCREEN_W, SCREEN_H, t]);
 
+  // Stable style refs — avoid creating new arrays/objects every render
+  const containerStyle = useMemo(() => [styles.container, { backgroundColor: tc.bg }] , [tc.bg]);
+  const feedTypeTabsStyle = useMemo(() => [styles.feedTypeTabs, { top: insets.top + spacing.sm }], [insets.top]);
+  const headerStyle = useMemo(() => [styles.header, { top: insets.top + spacing.sm, flexDirection: rtlFlexRow(isRTL) }], [insets.top, isRTL]);
+  const headerRightStyle = useMemo(() => [styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }], [isRTL]);
+  const shortcutRowStyle = useMemo(() => [styles.shortcutRow, { top: insets.top + spacing.sm + 36 }], [insets.top]);
+
   return (
     <ScreenErrorBoundary>
-    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
+    <SafeAreaView style={containerStyle} edges={['top']}>
       {/* Feed type tabs — Following | For You — absolute overlay on video */}
-      <View style={[styles.feedTypeTabs, { top: insets.top + spacing.sm }]}>
+      <View style={feedTypeTabsStyle}>
         <Pressable
           onPress={() => { setBakraFeedType('following'); haptic.tick(); }}
           style={styles.feedTypeTab}
@@ -909,8 +916,8 @@ export default function BakraScreen() {
       </View>
 
       {/* Header icons — absolute overlay on video */}
-      <View style={[styles.header, { top: insets.top + spacing.sm, flexDirection: rtlFlexRow(isRTL) }]}>
-        <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
+      <View style={headerStyle}>
+        <View style={headerRightStyle}>
           <Pressable
             hitSlop={8}
             onPress={() => { haptic.navigate(); router.push('/(screens)/search'); }}
@@ -939,7 +946,7 @@ export default function BakraScreen() {
       </View>
 
       {/* Side panel shortcuts — TikTok 2026 */}
-      <View style={[styles.shortcutRow, { top: insets.top + spacing.sm + 36 }]}>
+      <View style={shortcutRowStyle}>
         <Pressable
           style={styles.shortcutPill}
           onPress={() => { haptic.navigate(); navigate('/(screens)/go-live'); }}

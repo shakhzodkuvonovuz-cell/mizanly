@@ -409,12 +409,18 @@ export default function RisalahScreen() {
     index,
   }), []);
 
+  // Stable style refs — avoid creating new arrays/objects every render
+  const containerStyle = useMemo(() => [styles.container, { backgroundColor: tc.bg }] , [tc.bg]);
+  const headerRowStyle = useMemo(() => [styles.header, { flexDirection: rtlFlexRow(isRTL) }], [isRTL]);
+  const headerRightStyle = useMemo(() => [styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }], [isRTL]);
+  const filterChipRowStyle = useMemo(() => [styles.filterChipRow, { flexDirection: rtlFlexRow(isRTL) }], [isRTL]);
+
   return (
     <ScreenErrorBoundary>
-    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
-      <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
+    <SafeAreaView style={containerStyle} edges={['top']}>
+      <View style={headerRowStyle}>
         <Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }]}>{t('tabs.risalah')}</Text>
-        <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
+        <View style={headerRightStyle}>
           <Pressable
             hitSlop={8}
             onPress={() => { haptic.navigate(); router.push('/(screens)/search'); }}
@@ -503,7 +509,7 @@ export default function RisalahScreen() {
       />
 
       {/* Filter chips */}
-      <View style={[styles.filterChipRow, { flexDirection: rtlFlexRow(isRTL) }]}>
+      <View style={filterChipRowStyle}>
         {(['all', 'unread', 'groups'] as const).map((chip) => (
           <Pressable
             key={chip}

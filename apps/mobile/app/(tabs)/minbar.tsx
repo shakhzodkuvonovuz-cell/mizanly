@@ -431,13 +431,18 @@ export default function MinbarScreen() {
     ) : null
   ), [feedQuery.isFetchingNextPage]);
 
+  // Stable style refs — avoid creating new arrays/objects every render
+  const containerStyle = useMemo(() => [styles.container, { backgroundColor: tc.bg }] , [tc.bg]);
+  const headerRowStyle = useMemo(() => [styles.header, { flexDirection: rtlFlexRow(isRTL) }], [isRTL]);
+  const headerRightStyle = useMemo(() => [styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }], [isRTL]);
+
   return (
     <ScreenErrorBoundary>
-    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
+    <SafeAreaView style={containerStyle} edges={['top']}>
       {/* Header — collapses proportionally on scroll */}
-      <Animated.View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }, headerAnimatedStyle]}>
+      <Animated.View style={[headerRowStyle, headerAnimatedStyle]}>
         <Animated.Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }, titleAnimatedStyle]}>{t('tabs.minbar')}</Animated.Text>
-        <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
+        <View style={headerRightStyle}>
           <AnimatedPressable
             hitSlop={8}
             onPress={() => { haptic.navigate(); router.push('/(screens)/search'); }}

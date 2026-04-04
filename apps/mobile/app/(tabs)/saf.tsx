@@ -56,7 +56,7 @@ const EXPLORE_BANNER_KEY = 'mizanly:explore_banner_dismissed';
 const SUGGESTED_USERS_INTERVAL = 8; // Insert suggestion card every N posts
 
 // ── Suggested User Card Component ──
-function SuggestedUserCard({
+const SuggestedUserCard = memo(function SuggestedUserCard({
   users,
   onFollow,
   onDismiss,
@@ -91,7 +91,7 @@ function SuggestedUserCard({
       ))}
     </View>
   );
-}
+});
 
 const SuggestedUserRow = memo(function SuggestedUserRow({
   user,
@@ -169,7 +169,7 @@ const SuggestedUserRow = memo(function SuggestedUserRow({
 });
 
 // ── Explore First Banner ──
-function ExploreFirstBanner({ onDismiss }: { onDismiss: () => void }) {
+const ExploreFirstBanner = memo(function ExploreFirstBanner({ onDismiss }: { onDismiss: () => void }) {
   const { t, isRTL } = useTranslation();
   const tc = useThemeColors();
 
@@ -200,7 +200,7 @@ function ExploreFirstBanner({ onDismiss }: { onDismiss: () => void }) {
       </View>
     </Animated.View>
   );
-}
+});
 
 
 export default function SafScreen() {
@@ -624,9 +624,14 @@ export default function SafScreen() {
     return null;
   }, [feedQuery.isFetchingNextPage, feedQuery.hasNextPage, rawPosts.length]);
 
+  // Stable style refs — avoid creating new arrays/objects every render
+  const containerStyle = useMemo(() => [styles.container, { backgroundColor: tc.bg }] , [tc.bg]);
+  const headerRowStyle = useMemo(() => [styles.header, { flexDirection: rtlFlexRow(isRTL) }], [isRTL]);
+  const headerRightStyle = useMemo(() => [styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }], [isRTL]);
+
   return (
     <ScreenErrorBoundary>
-    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
+    <SafeAreaView style={containerStyle} edges={['top']}>
       {/* First-visit coach mark */}
       {showCoachMark && (
         <Animated.View entering={FadeInDown.duration(400)} style={{ backgroundColor: colors.emerald, padding: spacing.base, borderRadius: radius.md, margin: spacing.sm, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
@@ -645,14 +650,14 @@ export default function SafScreen() {
         </Animated.View>
       )}
       {/* Header — hides on scroll down, reveals on scroll up */}
-      <Animated.View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }, headerAnimatedStyle]}>
+      <Animated.View style={[headerRowStyle, headerAnimatedStyle]}>
         <Animated.View style={titleAnimatedStyle}>
           <Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }]}>Mizanly</Text>
           <Text style={[styles.hijriDate, { color: tc.text.tertiary }]}>
             {hijriGreeting}
           </Text>
         </Animated.View>
-        <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
+        <View style={headerRightStyle}>
           <CreateHeaderButton />
           <AnimatedPressable
             hitSlop={8}

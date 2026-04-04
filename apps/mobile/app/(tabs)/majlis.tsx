@@ -313,13 +313,19 @@ export default function MajlisScreen() {
     if (feedQuery.hasNextPage && !feedQuery.isFetchingNextPage) feedQuery.fetchNextPage();
   }, [feedQuery.hasNextPage, feedQuery.isFetchingNextPage, feedQuery.fetchNextPage]);
 
+  // Stable style refs — avoid creating new arrays/objects every render
+  const containerStyle = useMemo(() => [styles.container, { backgroundColor: tc.bg }] , [tc.bg]);
+  const headerRowStyle = useMemo(() => [styles.header, { flexDirection: rtlFlexRow(isRTL) }], [isRTL]);
+  const headerRightStyle = useMemo(() => [styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }], [isRTL]);
+  const trendingHeaderStyle = useMemo(() => [styles.trendingHeader, { flexDirection: rtlFlexRow(isRTL) }], [isRTL]);
+
   return (
     <ScreenErrorBoundary>
-    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
+    <SafeAreaView style={containerStyle} edges={['top']}>
       {/* Header — collapses proportionally on scroll */}
-      <Animated.View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }, headerAnimatedStyle]}>
+      <Animated.View style={[headerRowStyle, headerAnimatedStyle]}>
         <Animated.Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }, titleAnimatedStyle]}>{t('tabs.majlis')}</Animated.Text>
-        <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
+        <View style={headerRightStyle}>
           <Pressable
             hitSlop={8}
             onPress={() => { haptic.navigate(); router.push('/(screens)/audio-room'); }}
@@ -357,7 +363,7 @@ export default function MajlisScreen() {
 
       {/* Trending hashtags */}
       {trendingHashtagsQuery.isLoading || (trendingHashtagsQuery.data && trendingHashtagsQuery.data.length > 0) ? (
-        <View style={[styles.trendingHeader, { flexDirection: rtlFlexRow(isRTL) }]}>
+        <View style={trendingHeaderStyle}>
           <Icon name="trending-up" size="sm" color={colors.gold} />
           <Text style={[styles.trendingHeaderText, { color: tc.text.primary }]}>{t('tabs.trending')}</Text>
         </View>
