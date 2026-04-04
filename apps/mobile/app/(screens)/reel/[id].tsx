@@ -267,6 +267,46 @@ export default function ReelDetailScreen() {
     commentsQuery.refetch();
   }, [reelQuery, commentsQuery]);
 
+  const renderReelCommentItem = useCallback(
+    ({ item }: { item: Comment }) => (
+      <CommentRow
+        comment={item}
+        reelId={id}
+        viewerId={user?.id}
+        onReply={handleReply}
+        onDeleted={() => {
+          queryClient.invalidateQueries({ queryKey: ['reel-comments', id] });
+          queryClient.invalidateQueries({ queryKey: ['reel', id] });
+        }}
+      />
+    ),
+    [id, user?.id, handleReply, queryClient],
+  );
+
+  const renderShareConversationItem = useCallback(
+    ({ item }: { item: Conversation }) => {
+      const displayName = item.isGroup
+        ? item.groupName ?? t('risalah.group')
+        : item.members.find((m) => m.user.id !== user?.id)?.user.displayName ?? t('risalah.chat');
+      const avatarUri = item.isGroup
+        ? item.groupAvatarUrl ?? null
+        : item.members.find((m) => m.user.id !== user?.id)?.user.avatarUrl ?? null;
+      return (
+        <Pressable
+          style={styles.shareSheetRow}
+          onPress={() => handleShareToDM(item.id)}
+          accessibilityRole="button"
+          accessibilityLabel={t('bakra.shareToChat')}
+        >
+          <Avatar uri={avatarUri} name={displayName} size="md" />
+          <Text style={styles.shareSheetName} numberOfLines={1}>{displayName}</Text>
+          <Icon name="send" size="sm" color={tc.text.secondary} />
+        </Pressable>
+      );
+    },
+    [user?.id, t, tc.text.secondary],
+  );
+
   const handlePlayPause = useCallback(() => {
     if (isPlaying) {
       videoRef.current?.pauseAsync();
@@ -572,18 +612,7 @@ export default function ReelDetailScreen() {
               />
             }
             ListHeaderComponent={listHeader}
-            renderItem={({ item }) => (
-              <CommentRow
-                comment={item}
-                reelId={id}
-                viewerId={user?.id}
-                onReply={handleReply}
-                onDeleted={() => {
-                  queryClient.invalidateQueries({ queryKey: ['reel-comments', id] });
-                  queryClient.invalidateQueries({ queryKey: ['reel', id] });
-                }}
-              />
-            )}
+            renderItem={renderReelCommentItem}
             ListEmptyComponent={listEmpty}
             ListFooterComponent={listFooter}
             contentContainerStyle={{ paddingBottom: 100 }}
@@ -665,26 +694,7 @@ export default function ReelDetailScreen() {
             <FlatList
               data={conversationsQuery.data ?? []}
               keyExtractor={(item) => item.id}
-              renderItem={({ item }: { item: Conversation }) => {
-                const displayName = item.isGroup
-                  ? item.groupName ?? t('risalah.group')
-                  : item.members.find((m) => m.user.id !== user?.id)?.user.displayName ?? t('risalah.chat');
-                const avatarUri = item.isGroup
-                  ? item.groupAvatarUrl ?? null
-                  : item.members.find((m) => m.user.id !== user?.id)?.user.avatarUrl ?? null;
-                return (
-                  <Pressable
-                    style={styles.shareSheetRow}
-                    onPress={() => handleShareToDM(item.id)}
-                    accessibilityRole="button"
-                    accessibilityLabel={t('bakra.shareToChat')}
-                  >
-                    <Avatar uri={avatarUri} name={displayName} size="md" />
-                    <Text style={styles.shareSheetName} numberOfLines={1}>{displayName}</Text>
-                    <Icon name="send" size="sm" color={tc.text.secondary} />
-                  </Pressable>
-                );
-              }}
+              renderItem={renderShareConversationItem}
               contentContainerStyle={{ paddingBottom: spacing['2xl'] }}
             />
           )}

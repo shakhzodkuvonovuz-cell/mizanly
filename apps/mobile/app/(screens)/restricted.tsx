@@ -112,6 +112,34 @@ export default function RestrictedScreen() {
     />
   ), [t]);
 
+  const renderRestrictedItem = useCallback(
+    ({ item, index }: { item: RestrictedUser; index: number }) => (
+      <Animated.View entering={FadeInUp.delay(Math.min(index, 10) * 30).duration(300)}>
+        <View style={styles.row}>
+          <Avatar uri={item.avatarUrl} name={item.displayName} size="md" />
+          <View style={styles.info}>
+            <Text style={[styles.name, { color: tc.text.primary }]}>{item.displayName}</Text>
+            <View style={styles.usernameBadge}>
+              <Icon name="eye-off" size={10} color={colors.gold} />
+              <Text style={[styles.username, { color: tc.text.secondary }]}>@{item.username}</Text>
+            </View>
+          </View>
+          <GradientButton
+            label={t('screens.restricted.unrestrict')}
+            variant="ghost"
+            size="sm"
+            onPress={() => confirmUnrestrict(item)}
+            loading={unrestrictMutation.isPending && unrestrictMutation.variables === item.id}
+            disabled={unrestrictMutation.isPending && unrestrictMutation.variables === item.id}
+            accessibilityLabel={t('screens.restricted.unrestrict')}
+            accessibilityRole="button"
+          />
+        </View>
+      </Animated.View>
+    ),
+    [confirmUnrestrict, unrestrictMutation.isPending, unrestrictMutation.variables, tc.text.primary, tc.text.secondary, t],
+  );
+
   if (query.isError) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
@@ -178,40 +206,7 @@ export default function RestrictedScreen() {
                 onRefresh={onRefresh}
               />
             }
-            renderItem={({ item, index }) => (
-              <Animated.View entering={FadeInUp.delay(Math.min(index, 10) * 30).duration(300)}>
-                <View style={styles.row}>
-                  <Avatar
-                    uri={item.avatarUrl}
-                    name={item.displayName}
-                    size="md"
-                  />
-                  <View style={styles.info}>
-                    <Text style={[styles.name, { color: tc.text.primary }]}>{item.displayName}</Text>
-                    <View style={styles.usernameBadge}>
-                      <Icon name="eye-off" size={10} color={colors.gold} />
-                      <Text style={[styles.username, { color: tc.text.secondary }]}>@{item.username}</Text>
-                    </View>
-                  </View>
-                  <GradientButton
-                    label={t('screens.restricted.unrestrict')}
-                    variant="ghost"
-                    size="sm"
-                    onPress={() => confirmUnrestrict(item)}
-                    loading={
-                      unrestrictMutation.isPending &&
-                      unrestrictMutation.variables === item.id
-                    }
-                    disabled={
-                      unrestrictMutation.isPending &&
-                      unrestrictMutation.variables === item.id
-                    }
-                    accessibilityLabel={t('screens.restricted.unrestrict')}
-                    accessibilityRole="button"
-                  />
-                </View>
-              </Animated.View>
-            )}
+            renderItem={renderRestrictedItem}
             ListFooterComponent={listFooter}
             ListEmptyComponent={listEmpty}
           />

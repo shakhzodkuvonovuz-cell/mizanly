@@ -331,6 +331,27 @@ export default function SavedScreen() {
     ) : null
   , [savedVideosQuery.isFetchingNextPage]);
 
+  const renderSavedPostItem = useCallback(({ item, index }: { item: Post; index: number }) => (
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
+      <PostGrid post={item} onPress={() => navigateOnce(`/(screens)/post/${item.id}`)} />
+    </Animated.View>
+  ), [navigateOnce]);
+  const renderSavedThreadItem = useCallback(({ item, index }: { item: Thread; index: number }) => (
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
+      <ThreadCard thread={item} viewerId={user?.id} isOwn={user?.username === item.user.username} />
+    </Animated.View>
+  ), [user?.id, user?.username]);
+  const renderSavedReelItem = useCallback(({ item, index }: { item: Reel; index: number }) => (
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
+      <ReelGrid reel={item} onPress={() => navigateOnce(`/(screens)/reel/${item.id}`)} />
+    </Animated.View>
+  ), [navigateOnce]);
+  const renderSavedVideoItem = useCallback(({ item, index }: { item: Video; index: number }) => (
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
+      <VideoRow video={item} onPress={() => navigateOnce(`/(screens)/video/${item.id}`)} />
+    </Animated.View>
+  ), [navigateOnce]);
+
   return (
     <ScreenErrorBoundary>
       {isError ? (
@@ -401,11 +422,7 @@ export default function SavedScreen() {
             refreshControl={
               <BrandedRefreshControl refreshing={refreshingPosts} onRefresh={onRefreshPosts} />
             }
-            renderItem={({ item, index }) => (
-              <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
-                <PostGrid post={item} onPress={() => navigateOnce(`/(screens)/post/${item.id}`)} />
-              </Animated.View>
-            )}
+            renderItem={renderSavedPostItem}
             ListEmptyComponent={postsListEmpty}
             ListFooterComponent={postsListFooter}
             contentContainerStyle={styles.gridContainer}
@@ -424,11 +441,7 @@ export default function SavedScreen() {
             refreshControl={
               <BrandedRefreshControl refreshing={refreshingThreads} onRefresh={onRefreshThreads} />
             }
-            renderItem={({ item, index }) => (
-              <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
-                <ThreadCard thread={item} viewerId={user?.id} isOwn={user?.username === item.user.username} />
-              </Animated.View>
-            )}
+            renderItem={renderSavedThreadItem}
             ListEmptyComponent={threadsListEmpty}
             ListFooterComponent={threadsListFooter}
             contentContainerStyle={{ paddingBottom: 100 }}
@@ -449,11 +462,7 @@ export default function SavedScreen() {
             refreshControl={
               <BrandedRefreshControl refreshing={refreshingReels} onRefresh={onRefreshReels} />
             }
-            renderItem={({ item, index }) => (
-              <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
-                <ReelGrid reel={item} onPress={() => navigateOnce(`/(screens)/reel/${item.id}`)} />
-              </Animated.View>
-            )}
+            renderItem={renderSavedReelItem}
             ListEmptyComponent={reelsListEmpty}
             ListFooterComponent={reelsListFooter}
             contentContainerStyle={styles.gridContainer}
@@ -472,11 +481,7 @@ export default function SavedScreen() {
             refreshControl={
               <BrandedRefreshControl refreshing={refreshingVideos} onRefresh={onRefreshVideos} />
             }
-            renderItem={({ item, index }) => (
-              <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
-                <VideoRow video={item} onPress={() => navigateOnce(`/(screens)/video/${item.id}`)} />
-              </Animated.View>
-            )}
+            renderItem={renderSavedVideoItem}
             ListEmptyComponent={videosListEmpty}
             ListFooterComponent={videosListFooter}
             contentContainerStyle={{ paddingBottom: 100 }}

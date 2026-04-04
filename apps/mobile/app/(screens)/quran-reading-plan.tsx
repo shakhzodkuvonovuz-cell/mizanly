@@ -316,6 +316,20 @@ function QuranReadingPlanContent() {
     );
   }, [activePlan, deleteMutation, t]);
 
+  const renderPlanOptionItem = useCallback(
+    ({ item, index }: { item: PlanOption; index: number }) => (
+      <Animated.View entering={FadeInUp.delay(index * 100).duration(400)}>
+        <PlanCard option={item} onSelect={handleCreatePlan} t={t} />
+      </Animated.View>
+    ),
+    [handleCreatePlan, t],
+  );
+
+  const renderHistoryPlanItem = useCallback(
+    ({ item }: { item: QuranReadingPlan }) => <HistoryItem plan={item} t={t} />,
+    [t],
+  );
+
   const historyPlans = (historyData as { data?: QuranReadingPlan[] } | undefined)?.data ?? [];
   const plan = activePlan as QuranReadingPlan | null | undefined;
 
@@ -372,11 +386,7 @@ function QuranReadingPlanContent() {
               <Text style={styles.sectionTitle}>{t('quranPlan.choosePlan')}</Text>
             </Animated.View>
           }
-          renderItem={({ item, index }) => (
-            <Animated.View entering={FadeInUp.delay(index * 100).duration(400)}>
-              <PlanCard option={item} onSelect={handleCreatePlan} t={t} />
-            </Animated.View>
-          )}
+          renderItem={renderPlanOptionItem}
           ListFooterComponent={
             <>
               <View style={{ height: spacing.xl }} />
@@ -509,7 +519,7 @@ function QuranReadingPlanContent() {
             <Text style={styles.sectionTitle}>{t('quranPlan.history')}</Text>
           </>
         }
-        renderItem={({ item }) => <HistoryItem plan={item} t={t} />}
+        renderItem={renderHistoryPlanItem}
         ListEmptyComponent={
           loadingHistory ? (
             <Skeleton.Rect width={width - spacing.base * 2} height={60} borderRadius={radius.lg} />
