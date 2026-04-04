@@ -40,13 +40,13 @@ const NUM_COLUMNS = 8;
 const GRID_PADDING = spacing.base;
 
 const CATEGORIES: CategoryDef[] = [
-  { key: 'recent', icon: 'clock', label: 'Recent' },
-  { key: 'smileys', icon: 'smile', label: 'Smileys' },
-  { key: 'gestures', icon: 'user', label: 'Gestures' },
-  { key: 'hearts', icon: 'heart', label: 'Hearts' },
-  { key: 'objects', icon: 'star', label: 'Objects' },
-  { key: 'nature', icon: 'sun', label: 'Nature' },
-  { key: 'food', icon: 'gift', label: 'Food' },
+  { key: 'recent', icon: 'clock', label: 'emoji.category.recent' },
+  { key: 'smileys', icon: 'smile', label: 'emoji.category.smileys' },
+  { key: 'gestures', icon: 'user', label: 'emoji.category.gestures' },
+  { key: 'hearts', icon: 'heart', label: 'emoji.category.hearts' },
+  { key: 'objects', icon: 'star', label: 'emoji.category.objects' },
+  { key: 'nature', icon: 'sun', label: 'emoji.category.nature' },
+  { key: 'food', icon: 'gift', label: 'emoji.category.food' },
 ];
 
 // ── Curated emoji data (~200 emojis) ──
@@ -237,7 +237,7 @@ export const EmojiPicker = memo(function EmojiPicker({ onSelect, visible, onClos
                     isActive && { backgroundColor: colors.active.emerald15 },
                   ]}
                   onPress={() => handleCategoryPress(cat.key)}
-                  accessibilityLabel={cat.label}
+                  accessibilityLabel={t(cat.label)}
                   accessibilityRole="tab"
                   accessibilityState={{ selected: isActive }}
                 >
