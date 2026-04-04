@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { AiTasksProcessor } from './ai-tasks.processor';
 import { AiService } from '../../../modules/ai/ai.service';
 import { PrismaService } from '../../../config/prisma.service';
-import { QueueService } from '../queue.service';
+import { DlqService } from '../dlq.service';
 
 describe('AiTasksProcessor', () => {
   let processor: AiTasksProcessor;
@@ -32,7 +32,7 @@ describe('AiTasksProcessor', () => {
           },
         },
         {
-          provide: QueueService,
+          provide: DlqService,
           useValue: {
             moveToDlq: jest.fn().mockResolvedValue(undefined),
           },
@@ -96,7 +96,7 @@ describe('AiTasksProcessor', () => {
       ai.moderateContent.mockResolvedValue({ safe: false, flags: ['violence'], confidence: 0.95 });
       prisma.report.create.mockRejectedValueOnce(new Error('DB error'));
       const job = { data: { content: 'Bad', contentType: 'post', contentId: 'p1' }, updateProgress: jest.fn() };
-      // Should not throw — logs and continues
+      // Should not throw -- logs and continues
       await expect((processor as any).processModeration(job)).resolves.not.toThrow();
     });
 
@@ -154,7 +154,7 @@ describe('AiTasksProcessor', () => {
   });
 
   // T13 row 19 extended: message and video content types
-  describe('processModeration — video content type', () => {
+  describe('processModeration -- video content type', () => {
     it('should look up reportedUserId from video model', async () => {
       prisma.video = { findUnique: jest.fn().mockResolvedValue({ userId: 'author-1' }) };
       ai.moderateContent.mockResolvedValue({ safe: false, flags: ['violence'], confidence: 0.9 });

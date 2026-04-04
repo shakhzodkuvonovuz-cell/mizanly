@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../../config/prisma.service';
 import { WebhookProcessor } from './webhook.processor';
-import { QueueService } from '../queue.service';
+import { DlqService } from '../dlq.service';
 
 // Mock DNS so SSRF validation resolves hostnames deterministically
 jest.mock('dns', () => {
@@ -33,7 +33,7 @@ describe('WebhookProcessor', () => {
           useValue: { webhook: { update: jest.fn().mockResolvedValue({}) } },
         },
         {
-          provide: QueueService,
+          provide: DlqService,
           useValue: {
             moveToDlq: jest.fn().mockResolvedValue(undefined),
           },
@@ -85,7 +85,7 @@ describe('WebhookProcessor', () => {
         data: { url: '', signature: '', event: '', payload: {}, webhookId: 'wh1' },
         attemptsMade: 0, opts: { attempts: 5 }, id: 'j1', updateProgress: jest.fn(),
       };
-      // Should not throw — just returns silently
+      // Should not throw -- just returns silently
       await expect((processor as any).deliverWebhook(job)).resolves.toBeUndefined();
     });
   });
@@ -112,7 +112,7 @@ describe('WebhookProcessor', () => {
     });
   });
 
-  // T13 row 10: Successful delivery — updates lastUsedAt
+  // T13 row 10: Successful delivery -- updates lastUsedAt
   describe('successful delivery', () => {
     it('should update webhook lastUsedAt on successful delivery', async () => {
       const originalFetch = global.fetch;

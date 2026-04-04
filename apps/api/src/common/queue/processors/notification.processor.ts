@@ -1,16 +1,16 @@
 import * as Sentry from "@sentry/node";
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy, forwardRef, Inject } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { Worker, Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { PushTriggerService } from '../../../modules/notifications/push-trigger.service';
 import { PushService } from '../../../modules/notifications/push.service';
 import { PrismaService } from '../../../config/prisma.service';
 import { NotificationType } from '@prisma/client';
-import { QueueService } from '../queue.service';
+import { DlqService } from '../dlq.service';
 import { attachCorrelationId } from '../with-correlation';
 
 /**
- * Notification processor — handles push notification delivery via BullMQ worker.
+ * Notification processor -- handles push notification delivery via BullMQ worker.
  *
  * Retry strategy: 3 attempts with custom backoff (1s, 10s, 60s).
  * This ensures transient failures (network glitches, Expo API hiccups)
@@ -26,13 +26,13 @@ export class NotificationProcessor implements OnModuleInit, OnModuleDestroy {
     private pushTrigger: PushTriggerService,
     private pushService: PushService,
     private prisma: PrismaService,
-    @Inject(forwardRef(() => QueueService)) private queueService: QueueService,
+    private dlq: DlqService,
   ) {}
 
   onModuleInit() {
     const redisUrl = this.config.get<string>('REDIS_URL');
     if (!redisUrl) {
-      this.logger.warn('REDIS_URL not set — notification worker disabled');
+      this.logger.warn('REDIS_URL not set -- notification worker disabled');
       return;
     }
 
@@ -82,7 +82,7 @@ export class NotificationProcessor implements OnModuleInit, OnModuleDestroy {
           tags: { queue: 'notifications', jobName: job.name },
           extra: { jobId: job.id, attemptsMade: job.attemptsMade, data: job.data },
         });
-        this.queueService.moveToDlq(job, err, 'notifications').catch((e) => this.logger.error('DLQ routing failed for notifications', e?.message));
+        this.dlq.moveToDlq(job, err, 'notifications').catch((e) => this.logger.error('DLQ routing failed for notifications', e?.message));
       }
       this.logger.error(`Notification job ${job?.id} failed (attempt ${job?.attemptsMade ?? '?'}/${maxAttempts}): ${err.message}`);
     });
@@ -93,7 +93,7 @@ export class NotificationProcessor implements OnModuleInit, OnModuleDestroy {
     });
 
     this.worker.on('stalled', (jobId: string) => {
-      this.logger.warn(`Notification job ${jobId} stalled — being re-executed`);
+      this.logger.warn(`Notification job ${jobId} stalled -- being re-executed`);
     });
 
     this.logger.log('Notification worker started');

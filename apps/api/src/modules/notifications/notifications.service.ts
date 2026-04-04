@@ -1,9 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException, Logger, Inject, Optional } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Injectable, NotFoundException, ForbiddenException, Logger, Inject } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import * as Sentry from '@sentry/node';
 import { PrismaService } from '../../config/prisma.service';
 import { PushTriggerService } from './push-trigger.service';
-import { QueueService } from '../../common/queue/queue.service';
 import { NotificationType, Prisma } from '@prisma/client';
 import Redis from 'ioredis';
 import { atomicIncr } from '../../common/utils/redis-atomic';
@@ -15,7 +14,6 @@ export class NotificationsService {
   constructor(
     private prisma: PrismaService,
     private pushTrigger: PushTriggerService,
-    @Optional() private queueService: QueueService | null,
     @Inject('REDIS') private redis: Redis,
   ) {}
 
@@ -93,6 +91,7 @@ export class NotificationsService {
   async markRead(notificationId: string, userId: string) {
     const notification = await this.prisma.notification.findUnique({
       where: { id: notificationId },
+      select: { id: true, userId: true },
     });
     if (!notification) throw new NotFoundException('Notification not found');
     if (notification.userId !== userId) throw new ForbiddenException();
@@ -160,6 +159,7 @@ export class NotificationsService {
   async deleteNotification(notificationId: string, userId: string) {
     const notification = await this.prisma.notification.findUnique({
       where: { id: notificationId },
+      select: { id: true, userId: true, isRead: true },
     });
     if (!notification) throw new NotFoundException('Notification not found');
     if (notification.userId !== userId) throw new ForbiddenException();
@@ -175,7 +175,7 @@ export class NotificationsService {
     return { deleted: true };
   }
 
-  // TODO: [03] F28 — Push notification i18n
+  // TODO: [03] F28 -- Push notification i18n
   // When user locale is available (via User.locale field), use it to select
   // the notification title/body from i18n templates instead of hardcoded English.
   // This requires:
@@ -183,7 +183,7 @@ export class NotificationsService {
   // 2. Server-side i18n template file (e.g., notification-templates.ts)
   // 3. Lookup user locale before constructing title/body
 
-  // Internal helper — used by other services to create notifications
+  // Internal helper -- used by other services to create notifications
   async create(params: {
     userId: string;
     actorId: string | null;
@@ -199,7 +199,7 @@ export class NotificationsService {
     title?: string;
     body?: string;
   }) {
-    // No self-notifications — but allow null actorId for system notifications
+    // No self-notifications -- but allow null actorId for system notifications
     if (params.userId === params.actorId && params.actorId !== null) return null;
 
     // Validate notification type at runtime (internal callers pass string literals)
@@ -237,11 +237,13 @@ export class NotificationsService {
                 { blockedId: params.userId, blockerId: params.actorId },
               ],
             },
+            select: { blockerId: true },
           })
         : Promise.resolve(null),
       params.actorId
         ? this.prisma.mute.findFirst({
             where: { userId: params.userId, mutedId: params.actorId },
+            select: { userId: true },
           })
         : Promise.resolve(null),
     ]);
@@ -286,7 +288,7 @@ export class NotificationsService {
       this.logger.debug('Redis dedup check failed, proceeding with creation', e);
     }
 
-    // Finding #204: Notification batching — group similar notifications
+    // Finding #204: Notification batching -- group similar notifications
     // If same type + same target content within 30 min, update existing instead of creating new
     const batchableTypes = ['LIKE', 'REEL_LIKE', 'VIDEO_LIKE', 'COMMENT', 'REEL_COMMENT'];
     const contentId = params.postId || params.reelId || params.videoId || params.threadId;
@@ -301,6 +303,7 @@ export class NotificationsService {
           ...(params.videoId ? { videoId: params.videoId } : {}),
           createdAt: { gte: thirtyMinAgo },
         },
+        select: { id: true, isRead: true },
         orderBy: { createdAt: 'desc' },
       });
       if (existing) {
@@ -363,16 +366,14 @@ export class NotificationsService {
       this.logger.debug('Redis dedup set failed', e),
     );
 
-    // Fire push notification via queue (durable retry) or direct fallback
-    if (this.queueService) {
-      this.queueService.addPushNotificationJob({ notificationId: notification.id })
-        .catch((e) => {
-          this.logger.warn('Queue push job failed, falling back to direct push', e instanceof Error ? e.message : e);
-          this.pushTrigger.triggerPush(notification.id).catch((e2) => this.logger.error('Direct push fallback failed', e2));
-        });
-    } else {
-      this.pushTrigger.triggerPush(notification.id).catch((e) => this.logger.error('Push trigger failed', e));
-    }
+    // Fire push notification directly via PushTriggerService.
+    // Previously this used QueueService for durable retry, but that created a circular
+    // dependency: QueueModule -> NotificationsModule -> QueueService. Push delivery
+    // errors are handled gracefully by PushTriggerService.sendSafe() and Expo/FCM/APNs
+    // have their own retry logic.
+    this.pushTrigger.triggerPush(notification.id).catch((e) =>
+      this.logger.error('Push trigger failed', e instanceof Error ? e.message : e),
+    );
 
     // Emit real-time socket notification to the user's room (C-03: socket delivery)
     // The ChatGateway joins users to `user:{userId}` rooms on connect.
@@ -410,14 +411,14 @@ export class NotificationsService {
     const videoSelect = { select: { id: true, thumbnailUrl: true } };
 
     if (filter === 'mentions') {
-      // MENTION, REPLY, THREAD_REPLY — only post and thread are relevant
+      // MENTION, REPLY, THREAD_REPLY -- only post and thread are relevant
       return {
         post: postSelect,
         thread: threadSelect,
       };
     }
 
-    // For 'all', 'verified', or undefined — include all content relations
+    // For 'all', 'verified', or undefined -- include all content relations
     return {
       post: postSelect,
       reel: reelSelect,
@@ -426,7 +427,7 @@ export class NotificationsService {
     };
   }
 
-  // Finding #363: Group notification summary — aggregate notifications by type+content
+  // Finding #363: Group notification summary -- aggregate notifications by type+content
   // Fix #159: Use ID-based cursor instead of date-string cursor to avoid duplicates
   // when multiple notifications share the same createdAt timestamp.
   async getGroupedNotifications(userId: string, cursor?: string, limit = 20) {
@@ -520,7 +521,7 @@ export class NotificationsService {
         if (batch.length < BATCH_SIZE) break;
       }
 
-      // Delete old unread notifications (1 year) — prevents unbounded growth
+      // Delete old unread notifications (1 year) -- prevents unbounded growth
       // eslint-disable-next-line no-constant-condition
       while (true) {
         const batch = await this.prisma.notification.findMany({

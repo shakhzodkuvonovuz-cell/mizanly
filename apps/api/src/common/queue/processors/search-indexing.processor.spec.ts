@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { SearchIndexingProcessor } from './search-indexing.processor';
 import { MeilisearchService } from '../../../modules/search/meilisearch.service';
-import { QueueService } from '../queue.service';
+import { DlqService } from '../dlq.service';
 
 describe('SearchIndexingProcessor', () => {
   let processor: SearchIndexingProcessor;
@@ -14,7 +14,7 @@ describe('SearchIndexingProcessor', () => {
         SearchIndexingProcessor,
         {
           provide: ConfigService,
-          useValue: { get: jest.fn().mockReturnValue(null) }, // no Redis — worker disabled
+          useValue: { get: jest.fn().mockReturnValue(null) }, // no Redis -- worker disabled
         },
         {
           provide: MeilisearchService,
@@ -24,7 +24,7 @@ describe('SearchIndexingProcessor', () => {
           },
         },
         {
-          provide: QueueService,
+          provide: DlqService,
           useValue: {
             moveToDlq: jest.fn().mockResolvedValue(undefined),
           },
@@ -38,7 +38,7 @@ describe('SearchIndexingProcessor', () => {
 
   it('should not start worker when REDIS_URL not set', () => {
     processor.onModuleInit();
-    // No worker created — no crash
+    // No worker created -- no crash
     expect(processor).toBeInstanceOf(SearchIndexingProcessor);
     expect(() => processor.onModuleInit()).not.toThrow();
   });

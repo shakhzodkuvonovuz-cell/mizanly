@@ -4,7 +4,7 @@ import { NotificationProcessor } from './notification.processor';
 import { PushTriggerService } from '../../../modules/notifications/push-trigger.service';
 import { PushService } from '../../../modules/notifications/push.service';
 import { PrismaService } from '../../../config/prisma.service';
-import { QueueService } from '../queue.service';
+import { DlqService } from '../dlq.service';
 
 // Mock bullmq Worker so onModuleInit doesn't create a real Redis connection
 jest.mock('bullmq', () => ({
@@ -49,7 +49,7 @@ describe('NotificationProcessor', () => {
           },
         },
         {
-          provide: QueueService,
+          provide: DlqService,
           useValue: {
             moveToDlq: jest.fn().mockResolvedValue(undefined),
           },

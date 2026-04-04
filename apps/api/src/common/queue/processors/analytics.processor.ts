@@ -1,9 +1,9 @@
 import * as Sentry from "@sentry/node";
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy, forwardRef, Inject } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { Worker, Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { GamificationService } from '../../../modules/gamification/gamification.service';
-import { QueueService } from '../queue.service';
+import { DlqService } from '../dlq.service';
 import { attachCorrelationId } from '../with-correlation';
 
 interface GamificationJobData {
@@ -20,7 +20,7 @@ interface EngagementJobData {
 }
 
 /**
- * Analytics processor — handles gamification XP/streak updates and engagement tracking.
+ * Analytics processor -- handles gamification XP/streak updates and engagement tracking.
  *
  * These jobs are fire-and-forget from the caller's perspective but are
  * reliably processed via the queue with retry on failure.
@@ -33,13 +33,13 @@ export class AnalyticsProcessor implements OnModuleInit, OnModuleDestroy {
   constructor(
     private config: ConfigService,
     private gamification: GamificationService,
-    @Inject(forwardRef(() => QueueService)) private queueService: QueueService,
+    private dlq: DlqService,
   ) {}
 
   onModuleInit() {
     const redisUrl = this.config.get<string>('REDIS_URL');
     if (!redisUrl) {
-      this.logger.warn('REDIS_URL not set — analytics worker disabled');
+      this.logger.warn('REDIS_URL not set -- analytics worker disabled');
       return;
     }
 
@@ -86,7 +86,7 @@ export class AnalyticsProcessor implements OnModuleInit, OnModuleDestroy {
           tags: { queue: 'analytics', jobName: job.name },
           extra: { jobId: job.id, attemptsMade: job.attemptsMade, data: job.data },
         });
-        this.queueService.moveToDlq(job, err, 'analytics').catch((e) => this.logger.error('DLQ routing failed for analytics', e?.message));
+        this.dlq.moveToDlq(job, err, 'analytics').catch((e) => this.logger.error('DLQ routing failed for analytics', e?.message));
       }
       this.logger.error(`Analytics job ${job?.id} failed (attempt ${job?.attemptsMade ?? '?'}/${maxAttempts}): ${err.message}`);
     });
@@ -97,7 +97,7 @@ export class AnalyticsProcessor implements OnModuleInit, OnModuleDestroy {
     });
 
     this.worker.on('stalled', (jobId: string) => {
-      this.logger.warn(`Analytics job ${jobId} stalled — being re-executed`);
+      this.logger.warn(`Analytics job ${jobId} stalled -- being re-executed`);
     });
 
     this.logger.log('Analytics worker started');

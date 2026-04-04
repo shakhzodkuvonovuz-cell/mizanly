@@ -1,13 +1,11 @@
 import { Injectable, Logger, OnModuleDestroy, Inject } from '@nestjs/common';
 import { Queue, Job } from 'bullmq';
-import * as Sentry from '@sentry/node';
-import Redis from 'ioredis';
 import { getCorrelationId } from '../middleware/correlation-id.store';
 import { CircuitBreakerService } from '../services/circuit-breaker.service';
-import { PrismaService } from '../../config/prisma.service';
+import { DlqService } from './dlq.service';
 
 /**
- * QueueService — high-level API for enqueuing jobs across all BullMQ queues.
+ * QueueService -- high-level API for enqueuing jobs across all BullMQ queues.
  *
  * Each method maps to a specific queue with typed job data.
  * Workers are started in the corresponding processor classes.
@@ -18,13 +16,12 @@ import { PrismaService } from '../../config/prisma.service';
  *
  * All queue.add() calls go through the 'redis' circuit breaker so that when
  * Redis is down, callers fail-fast instead of waiting for connection timeout.
+ *
+ * DLQ routing is handled by DlqService (extracted to break circular deps).
  */
 @Injectable()
 export class QueueService implements OnModuleDestroy {
   private readonly logger = new Logger(QueueService.name);
-
-  private static readonly DLQ_KEY = 'mizanly:dlq';
-  private static readonly DLQ_MAX_SIZE = 1000;
 
   constructor(
     @Inject('QUEUE_NOTIFICATIONS') private notificationsQueue: Queue,
@@ -33,9 +30,8 @@ export class QueueService implements OnModuleDestroy {
     @Inject('QUEUE_WEBHOOKS') private webhooksQueue: Queue,
     @Inject('QUEUE_SEARCH_INDEXING') private searchQueue: Queue,
     @Inject('QUEUE_AI_TASKS') private aiTasksQueue: Queue,
-    @Inject('REDIS') private redis: Redis,
     private circuitBreaker: CircuitBreakerService,
-    private prisma: PrismaService,
+    private dlq: DlqService,
   ) {}
 
   /** Attach correlationId from the current request context to job data */
@@ -55,7 +51,7 @@ export class QueueService implements OnModuleDestroy {
     ]);
   }
 
-  // ── Notification Jobs ─────────────────────────────────────
+  // -- Notification Jobs ---------------------------------------------------
 
   async addPushNotificationJob(data: { notificationId: string }): Promise<string> {
     // K04-#16 FIX: Use notificationId as jobId for natural deduplication
@@ -70,7 +66,7 @@ export class QueueService implements OnModuleDestroy {
     return job.id!;
   }
 
-  // ── Media Processing Jobs ──────────────────────────────────
+  // -- Media Processing Jobs -----------------------------------------------
 
   /**
    * Enqueue a media processing job (EXIF strip, resize variants, BlurHash generation).
@@ -134,7 +130,7 @@ export class QueueService implements OnModuleDestroy {
     return job.id!;
   }
 
-  // ── Analytics Jobs ────────────────────────────────────────
+  // -- Analytics Jobs ------------------------------------------------------
 
   async addGamificationJob(data: {
     type: 'award-xp' | 'update-streak';
@@ -152,7 +148,7 @@ export class QueueService implements OnModuleDestroy {
 
   /**
    * Enqueue an engagement tracking job for durable batch analytics.
-   * Fire-and-forget from caller's perspective — used when users view/interact with content.
+   * Fire-and-forget from caller's perspective -- used when users view/interact with content.
    * The processor logs the event for future data warehouse / cohort analysis.
    */
   async addEngagementTrackingJob(data: {
@@ -170,7 +166,7 @@ export class QueueService implements OnModuleDestroy {
     return job.id!;
   }
 
-  // ── Webhook Jobs ──────────────────────────────────────────
+  // -- Webhook Jobs --------------------------------------------------------
 
   async addWebhookDeliveryJob(data: {
     url: string;
@@ -212,7 +208,7 @@ export class QueueService implements OnModuleDestroy {
     return job.id!;
   }
 
-  // ── Search Indexing Jobs ──────────────────────────────────
+  // -- Search Indexing Jobs ------------------------------------------------
 
   async addSearchIndexJob(data: {
     action: 'index' | 'update' | 'delete';
@@ -229,7 +225,7 @@ export class QueueService implements OnModuleDestroy {
     return job.id!;
   }
 
-  // ── AI Task Jobs ──────────────────────────────────────────
+  // -- AI Task Jobs --------------------------------------------------------
 
   async addModerationJob(data: {
     content: string;
@@ -245,82 +241,18 @@ export class QueueService implements OnModuleDestroy {
     return job.id!;
   }
 
-  // ── Dead Letter Queue ────────────────────────────────────
+  // -- Dead Letter Queue ---------------------------------------------------
 
   /**
-   * Moves a permanently failed job to the dead letter queue (Redis list).
-   * Called by processor `on('failed')` handlers when a job exhausts all retries.
-   * Keeps the last 1000 entries to prevent unbounded growth.
+   * Delegates to DlqService for backward compatibility.
+   * Processors now inject DlqService directly; this method exists
+   * so callers outside the queue module (if any) don't break.
    */
   async moveToDlq(job: Job | undefined, error: Error, queueName: string): Promise<void> {
-    if (!job) return;
-
-    // Only move to DLQ if this was the final attempt
-    const maxAttempts = job.opts?.attempts ?? 1;
-    if (job.attemptsMade < maxAttempts) return;
-
-    // X07-#17 FIX: Strip sensitive fields from DLQ entries (webhook secrets, tokens)
-    const sanitizedData = { ...job.data };
-    delete sanitizedData.secret;
-    delete sanitizedData.token;
-    delete sanitizedData.signingSecret;
-    delete sanitizedData.apiKey;
-    delete sanitizedData.webhookSecret;
-
-    const entry = {
-      jobId: job.id,
-      queue: queueName,
-      name: job.name,
-      data: sanitizedData,
-      error: error.message,
-      failedAt: new Date().toISOString(),
-      attempts: job.attemptsMade,
-    };
-
-    // Dual storage: Redis (fast retrieval for admin dashboard) + DB (durable, survives flush)
-    // Track failures explicitly — .catch() converts rejections to fulfilled, breaking allSettled checks
-    let redisFailed = false;
-    let dbFailed = false;
-
-    const redisDone = this.redis.lpush(QueueService.DLQ_KEY, JSON.stringify(entry))
-      .then(() => this.redis.ltrim(QueueService.DLQ_KEY, 0, QueueService.DLQ_MAX_SIZE - 1))
-      // J07-H2: Set 7-day TTL on DLQ list to prevent unbounded Redis memory
-      .then(() => this.redis.expire(QueueService.DLQ_KEY, 7 * 86400))
-      .catch((dlqError) => {
-        redisFailed = true;
-        this.logger.error(`Redis DLQ storage failed for job ${job.id}: ${dlqError instanceof Error ? dlqError.message : 'unknown'}`);
-      });
-
-    const dbDone = this.prisma.failedJob.create({
-      data: {
-        queue: queueName,
-        jobName: job.name,
-        jobId: job.id ?? null,
-        data: JSON.parse(JSON.stringify(job.data ?? {})),
-        error: error.message,
-        attempts: job.attemptsMade,
-      },
-    }).catch((dbError) => {
-      dbFailed = true;
-      this.logger.error(`DB DLQ storage failed for job ${job.id}: ${dbError instanceof Error ? dbError.message : 'unknown'}`);
-    });
-
-    // Wait for both to complete — both promises have .catch() so Promise.all won't reject
-    await Promise.all([redisDone, dbDone]);
-
-    // If both failed, capture to Sentry as absolute last resort
-    if (redisFailed && dbFailed) {
-      Sentry.captureException(error, {
-        tags: { queue: queueName, jobName: job.name },
-        extra: { jobId: job.id, jobData: job.data, attempts: job.attemptsMade },
-      });
-      this.logger.error(`CRITICAL: Both Redis AND DB DLQ failed for job ${job.id}. Captured in Sentry.`);
-    }
-
-    this.logger.error(`Job ${job.id} (${queueName}/${job.name}) moved to DLQ after ${job.attemptsMade} attempts: ${error.message}`);
+    return this.dlq.moveToDlq(job, error, queueName);
   }
 
-  // ── Stats ─────────────────────────────────────────────────
+  // -- Stats ---------------------------------------------------------------
 
   async getStats(): Promise<Record<string, { waiting: number; active: number; completed: number; failed: number; delayed: number }>> {
     const queues = [

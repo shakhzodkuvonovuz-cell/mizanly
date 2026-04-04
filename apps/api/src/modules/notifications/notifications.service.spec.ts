@@ -267,6 +267,7 @@ describe('NotificationsService', () => {
 
       expect(prisma.notification.findUnique).toHaveBeenCalledWith({
         where: { id: notificationId },
+        select: { id: true, userId: true },
       });
       expect(prisma.notification.update).toHaveBeenCalledWith({
         where: { id: notificationId },
@@ -341,6 +342,7 @@ describe('NotificationsService', () => {
 
       expect(prisma.notification.findUnique).toHaveBeenCalledWith({
         where: { id: notificationId },
+        select: { id: true, userId: true, isRead: true },
       });
       expect(prisma.notification.delete).toHaveBeenCalledWith({
         where: { id: notificationId },
@@ -482,7 +484,7 @@ describe('NotificationsService', () => {
 
       expect(loggerSpy).toHaveBeenCalledWith(
         'Push trigger failed',
-        expect.any(Error),
+        'Push failed',
       );
       loggerSpy.mockRestore();
     });

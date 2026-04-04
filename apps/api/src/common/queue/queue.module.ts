@@ -2,6 +2,7 @@ import { Global, Module, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bullmq';
 import { QueueService } from './queue.service';
+import { DlqService } from './dlq.service';
 import { NotificationProcessor } from './processors/notification.processor';
 import { MediaProcessor } from './processors/media.processor';
 import { WebhookProcessor } from './processors/webhook.processor';
@@ -14,7 +15,7 @@ import { AiModule } from '../../modules/ai/ai.module';
 import { SearchModule } from '../../modules/search/search.module';
 
 /**
- * QueueModule — global BullMQ queue infrastructure.
+ * QueueModule -- global BullMQ queue infrastructure.
  *
  * Creates 6 named queues backed by Redis:
  * - notifications: push notification delivery
@@ -26,6 +27,10 @@ import { SearchModule } from '../../modules/search/search.module';
  *
  * Each queue has a dedicated Worker that processes jobs with
  * appropriate concurrency limits and retry strategies.
+ *
+ * DlqService is extracted from QueueService to break the circular dependency:
+ * QueueModule -> NotificationsModule -> NotificationsService -> QueueService.
+ * Processors inject DlqService directly (no forwardRef needed).
  */
 
 const QUEUE_DEFINITIONS = [
@@ -52,7 +57,7 @@ const queueProviders = QUEUE_DEFINITIONS.map(({ name, token }) => ({
       }
       // Development only: no-op queue stub (Redis not required locally)
       const logger = new Logger(`Queue:${name}`);
-      logger.warn(`Queue '${name}' running in no-op mode — REDIS_URL not set. Jobs will be silently dropped.`);
+      logger.warn(`Queue '${name}' running in no-op mode -- REDIS_URL not set. Jobs will be silently dropped.`);
       return {
         add: async (_jobName: string, data: unknown): Promise<{ id: string }> => {
           logger.debug(`Job dropped (no-op): ${_jobName}`);
@@ -89,6 +94,7 @@ const queueProviders = QUEUE_DEFINITIONS.map(({ name, token }) => ({
   ],
   providers: [
     ...queueProviders,
+    DlqService,
     QueueService,
     NotificationProcessor,
     MediaProcessor,
@@ -97,6 +103,6 @@ const queueProviders = QUEUE_DEFINITIONS.map(({ name, token }) => ({
     AiTasksProcessor,
     SearchIndexingProcessor,
   ],
-  exports: [QueueService],
+  exports: [QueueService, DlqService],
 })
 export class QueueModule {}

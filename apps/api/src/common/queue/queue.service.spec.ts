@@ -9,16 +9,11 @@ jest.mock('@sentry/node', () => ({
 import { Test, TestingModule } from '@nestjs/testing';
 import { QueueService } from './queue.service';
 import { CircuitBreakerService } from '../services/circuit-breaker.service';
-import { PrismaService } from '../../config/prisma.service';
-
-// Access the mocked Sentry after import
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const Sentry = require('@sentry/node');
+import { DlqService } from './dlq.service';
 
 describe('QueueService', () => {
   let service: QueueService;
-  let redis: any;
-  let prisma: any;
+  let dlq: any;
   let circuitBreaker: any;
 
   const mockQueue = () => ({
@@ -46,14 +41,8 @@ describe('QueueService', () => {
     searchQueue = mockQueue();
     aiTasksQueue = mockQueue();
 
-    redis = {
-      lpush: jest.fn().mockResolvedValue(1),
-      ltrim: jest.fn().mockResolvedValue('OK'),
-      expire: jest.fn().mockResolvedValue(1),
-    };
-
-    prisma = {
-      failedJob: { create: jest.fn().mockResolvedValue({ id: 'fj-1' }) },
+    dlq = {
+      moveToDlq: jest.fn().mockResolvedValue(undefined),
     };
 
     circuitBreaker = {
@@ -69,9 +58,8 @@ describe('QueueService', () => {
         { provide: 'QUEUE_WEBHOOKS', useValue: webhooksQueue },
         { provide: 'QUEUE_SEARCH_INDEXING', useValue: searchQueue },
         { provide: 'QUEUE_AI_TASKS', useValue: aiTasksQueue },
-        { provide: 'REDIS', useValue: redis },
         { provide: CircuitBreakerService, useValue: circuitBreaker },
-        { provide: PrismaService, useValue: prisma },
+        { provide: DlqService, useValue: dlq },
       ],
     }).compile();
 
@@ -203,49 +191,11 @@ describe('QueueService', () => {
   });
 
   describe('moveToDlq', () => {
-    const makeJob = (attempts: number, maxAttempts: number) => ({
-      id: 'job-42', name: 'push-trigger',
-      data: { notificationId: 'n1' },
-      attemptsMade: attempts, opts: { attempts: maxAttempts },
-    } as any);
-
-    it('should skip if job is undefined', async () => {
-      await service.moveToDlq(undefined, new Error('fail'), 'notifications');
-      expect(redis.lpush).not.toHaveBeenCalled();
-    });
-
-    it('should skip if not final attempt', async () => {
-      await service.moveToDlq(makeJob(1, 3), new Error('fail'), 'notifications');
-      expect(redis.lpush).not.toHaveBeenCalled();
-    });
-
-    it('should dual-write to Redis and DB on final attempt', async () => {
-      await service.moveToDlq(makeJob(3, 3), new Error('push failed'), 'notifications');
-      expect(redis.lpush).toHaveBeenCalledWith('mizanly:dlq', expect.stringContaining('push failed'));
-      expect(redis.ltrim).toHaveBeenCalledWith('mizanly:dlq', 0, 999);
-      expect(redis.expire).toHaveBeenCalledWith('mizanly:dlq', 604800);
-      expect(prisma.failedJob.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({ queue: 'notifications', jobName: 'push-trigger', error: 'push failed', attempts: 3 }),
-      });
-    });
-
-    it('should strip sensitive fields from DLQ data', async () => {
-      const job = { id: 'j99', name: 'deliver', data: { url: 'https://ex.com', secret: 'TOP', token: 'tkn' }, attemptsMade: 5, opts: { attempts: 5 } } as any;
-      await service.moveToDlq(job, new Error('fail'), 'webhooks');
-      const stored = JSON.parse(redis.lpush.mock.calls[0][1]);
-      expect(stored.data.secret).toBeUndefined();
-      expect(stored.data.token).toBeUndefined();
-      expect(stored.data.url).toBe('https://ex.com');
-    });
-
-    it('should capture Sentry when both Redis and DB fail', async () => {
-      redis.lpush.mockRejectedValue(new Error('Redis down'));
-      prisma.failedJob.create.mockRejectedValue(new Error('DB down'));
-      const error = new Error('original');
-      await service.moveToDlq(makeJob(3, 3), error, 'notifications');
-      expect(Sentry.captureException).toHaveBeenCalledWith(error, expect.objectContaining({
-        tags: expect.objectContaining({ queue: 'notifications' }),
-      }));
+    it('should delegate to DlqService', async () => {
+      const job = { id: 'j1', name: 'test', data: {}, attemptsMade: 3, opts: { attempts: 3 } } as any;
+      const error = new Error('fail');
+      await service.moveToDlq(job, error, 'notifications');
+      expect(dlq.moveToDlq).toHaveBeenCalledWith(job, error, 'notifications');
     });
   });
 
@@ -434,7 +384,7 @@ describe('QueueService', () => {
         if (callCount === 2) return Promise.reject(new Error('Redis down'));
         return fn();
       });
-      // Should not throw — blurhash failure is caught internally
+      // Should not throw -- blurhash failure is caught internally
       const result = await service.addMediaProcessingJob(mediaData);
       expect(result).toBe('job-1');
     });

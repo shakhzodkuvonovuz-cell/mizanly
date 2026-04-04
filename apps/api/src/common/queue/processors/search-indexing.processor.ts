@@ -1,9 +1,9 @@
 import * as Sentry from "@sentry/node";
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy, forwardRef, Inject } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { Worker, Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { MeilisearchService } from '../../../modules/search/meilisearch.service';
-import { QueueService } from '../queue.service';
+import { DlqService } from '../dlq.service';
 import { attachCorrelationId } from '../with-correlation';
 
 interface SearchIndexJobData {
@@ -14,7 +14,7 @@ interface SearchIndexJobData {
 }
 
 /**
- * Search indexing processor — handles Meilisearch document operations.
+ * Search indexing processor -- handles Meilisearch document operations.
  *
  * Processes index/update/delete jobs enqueued by QueueService.addSearchIndexJob().
  * Falls back gracefully if Meilisearch is unavailable.
@@ -27,13 +27,13 @@ export class SearchIndexingProcessor implements OnModuleInit, OnModuleDestroy {
   constructor(
     private config: ConfigService,
     private meilisearch: MeilisearchService,
-    @Inject(forwardRef(() => QueueService)) private queueService: QueueService,
+    private dlq: DlqService,
   ) {}
 
   onModuleInit() {
     const redisUrl = this.config.get<string>('REDIS_URL');
     if (!redisUrl) {
-      this.logger.warn('REDIS_URL not set — search indexing worker disabled');
+      this.logger.warn('REDIS_URL not set -- search indexing worker disabled');
       return;
     }
 
@@ -68,7 +68,7 @@ export class SearchIndexingProcessor implements OnModuleInit, OnModuleDestroy {
           tags: { queue: 'search-indexing', jobName: job.name },
           extra: { jobId: job.id, attemptsMade: job.attemptsMade, data: job.data },
         });
-        this.queueService.moveToDlq(job, err, 'search-indexing').catch((e) => this.logger.error('DLQ routing failed for search-indexing', e?.message));
+        this.dlq.moveToDlq(job, err, 'search-indexing').catch((e) => this.logger.error('DLQ routing failed for search-indexing', e?.message));
       }
       this.logger.error(`Search index job ${job?.id} failed (attempt ${job?.attemptsMade ?? '?'}/${maxAttempts}): ${err.message}`);
     });
@@ -79,7 +79,7 @@ export class SearchIndexingProcessor implements OnModuleInit, OnModuleDestroy {
     });
 
     this.worker.on('stalled', (jobId: string) => {
-      this.logger.warn(`Search index job ${jobId} stalled — being re-executed`);
+      this.logger.warn(`Search index job ${jobId} stalled -- being re-executed`);
     });
 
     this.logger.log('Search indexing worker started');
@@ -107,7 +107,7 @@ export class SearchIndexingProcessor implements OnModuleInit, OnModuleDestroy {
           this.logger.debug(`Indexed document ${documentId} in ${indexName}`);
         } else {
           // X07-#13 FIX: Warn when document is falsy instead of silently skipping
-          this.logger.warn(`Search index job ${action} skipped — document is empty for ${indexName}/${documentId}`);
+          this.logger.warn(`Search index job ${action} skipped -- document is empty for ${indexName}/${documentId}`);
         }
         break;
       case 'delete':

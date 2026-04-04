@@ -1,9 +1,9 @@
 import * as Sentry from "@sentry/node";
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy, forwardRef, Inject } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { Worker, Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../../config/prisma.service';
-import { QueueService } from '../queue.service';
+import { DlqService } from '../dlq.service';
 import { assertNotPrivateUrl } from '../../utils/ssrf';
 import { attachCorrelationId } from '../with-correlation';
 
@@ -17,12 +17,12 @@ interface MediaJobData {
 }
 
 /**
- * Media processor — handles EXIF stripping, BlurHash generation, and image variants.
+ * Media processor -- handles EXIF stripping, BlurHash generation, and image variants.
  *
  * Uses sharp for image processing (already installed).
  * Video transcription delegates to Cloudflare Stream (webhook-driven).
  *
- * LEGAL NOTE (Finding 22 — GDPR Article 25, Data Protection by Design):
+ * LEGAL NOTE (Finding 22 -- GDPR Article 25, Data Protection by Design):
  * The image-resize job strips EXIF metadata (GPS coordinates, device info, timestamps)
  * from processed images via sharp.rotate(). However, the ORIGINAL file uploaded directly
  * to R2 via presigned URL still contains full EXIF data. The original URL is stored in
@@ -44,7 +44,7 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
   constructor(
     private config: ConfigService,
     private prisma: PrismaService,
-    @Inject(forwardRef(() => QueueService)) private queueService: QueueService,
+    private dlq: DlqService,
   ) {}
 
   private async getS3Client() {
@@ -65,7 +65,7 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
   onModuleInit() {
     const redisUrl = this.config.get<string>('REDIS_URL');
     if (!redisUrl) {
-      this.logger.warn('REDIS_URL not set — media worker disabled');
+      this.logger.warn('REDIS_URL not set -- media worker disabled');
       return;
     }
 
@@ -86,9 +86,9 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
             // 2. Stream automatically transcodes to HLS/DASH adaptive bitrate
             // 3. When transcoding completes, Stream sends a webhook to stream.controller.ts
             // 4. The webhook handler sets video.status = 'PUBLISHED' and video.publishedAt
-            // No server-side transcoding is needed — this job type exists for completeness
+            // No server-side transcoding is needed -- this job type exists for completeness
             // and to provide a hook if a non-Stream video pipeline is ever needed.
-            this.logger.debug(`Video transcode for ${job.data.mediaKey} — delegated to Cloudflare Stream`);
+            this.logger.debug(`Video transcode for ${job.data.mediaKey} -- delegated to Cloudflare Stream`);
             await job.updateProgress(100);
             break;
           default:
@@ -120,7 +120,7 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
           tags: { queue: 'media-processing', jobName: job.name },
           extra: { jobId: job.id, attemptsMade: job.attemptsMade, data: job.data },
         });
-        this.queueService.moveToDlq(job, err, 'media-processing').catch((e) => this.logger.error('DLQ routing failed for media-processing', e?.message));
+        this.dlq.moveToDlq(job, err, 'media-processing').catch((e) => this.logger.error('DLQ routing failed for media-processing', e?.message));
       }
       this.logger.error(`Media job ${job?.id} failed (attempt ${job?.attemptsMade ?? '?'}/${maxAttempts}): ${err.message}`);
     });
@@ -131,7 +131,7 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
     });
 
     this.worker.on('stalled', (jobId: string) => {
-      this.logger.warn(`Media job ${jobId} stalled — being re-executed`);
+      this.logger.warn(`Media job ${jobId} stalled -- being re-executed`);
     });
 
     this.logger.log('Media processing worker started');
@@ -209,7 +209,7 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
             this.logger.warn(`Failed to upload ${size.name} variant for ${mediaKey}: ${uploadErr instanceof Error ? uploadErr.message : uploadErr}`);
           }
         } else {
-          this.logger.debug(`R2 credentials not configured — skipping ${size.name} variant upload for ${mediaKey}`);
+          this.logger.debug(`R2 credentials not configured -- skipping ${size.name} variant upload for ${mediaKey}`);
         }
       }
 

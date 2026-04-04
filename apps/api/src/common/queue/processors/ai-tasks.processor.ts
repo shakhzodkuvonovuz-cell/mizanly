@@ -1,11 +1,11 @@
 import * as Sentry from "@sentry/node";
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy, forwardRef, Inject } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { Worker, Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { AiService } from '../../../modules/ai/ai.service';
 import { PrismaService } from '../../../config/prisma.service';
 import { ReportReason } from '@prisma/client';
-import { QueueService } from '../queue.service';
+import { DlqService } from '../dlq.service';
 import { attachCorrelationId } from '../with-correlation';
 
 interface ModerationJobData {
@@ -15,7 +15,7 @@ interface ModerationJobData {
 }
 
 /**
- * AI tasks processor — handles content moderation.
+ * AI tasks processor -- handles content moderation.
  *
  * Moderation jobs are enqueued on content creation and processed asynchronously.
  * If flagged, content is marked for review without blocking the user.
@@ -29,13 +29,13 @@ export class AiTasksProcessor implements OnModuleInit, OnModuleDestroy {
     private config: ConfigService,
     private ai: AiService,
     private prisma: PrismaService,
-    @Inject(forwardRef(() => QueueService)) private queueService: QueueService,
+    private dlq: DlqService,
   ) {}
 
   onModuleInit() {
     const redisUrl = this.config.get<string>('REDIS_URL');
     if (!redisUrl) {
-      this.logger.warn('REDIS_URL not set — AI tasks worker disabled');
+      this.logger.warn('REDIS_URL not set -- AI tasks worker disabled');
       return;
     }
 
@@ -80,7 +80,7 @@ export class AiTasksProcessor implements OnModuleInit, OnModuleDestroy {
           tags: { queue: 'ai-tasks', jobName: job.name },
           extra: { jobId: job.id, attemptsMade: job.attemptsMade, data: job.data },
         });
-        this.queueService.moveToDlq(job, err, 'ai-tasks').catch((e) => this.logger.error('DLQ routing failed for ai-tasks', e?.message));
+        this.dlq.moveToDlq(job, err, 'ai-tasks').catch((e) => this.logger.error('DLQ routing failed for ai-tasks', e?.message));
       }
       this.logger.error(`AI task ${job?.id} failed (attempt ${job?.attemptsMade ?? '?'}/${maxAttempts}): ${err.message}`);
     });
@@ -91,7 +91,7 @@ export class AiTasksProcessor implements OnModuleInit, OnModuleDestroy {
     });
 
     this.worker.on('stalled', (jobId: string) => {
-      this.logger.warn(`AI task ${jobId} stalled — being re-executed`);
+      this.logger.warn(`AI task ${jobId} stalled -- being re-executed`);
     });
 
     this.logger.log('AI tasks worker started');
@@ -114,7 +114,7 @@ export class AiTasksProcessor implements OnModuleInit, OnModuleDestroy {
 
     if (!result.safe && result.confidence > 0.8) {
       this.logger.warn(
-        `Content flagged by AI moderation: ${contentType}/${contentId} — flags: ${result.flags.join(', ')}`,
+        `Content flagged by AI moderation: ${contentType}/${contentId} -- flags: ${result.flags.join(', ')}`,
       );
 
       // Create a moderation report for manual review using correct schema fields

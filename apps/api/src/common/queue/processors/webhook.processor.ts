@@ -1,9 +1,9 @@
 import * as Sentry from "@sentry/node";
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy, forwardRef, Inject } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { Worker, Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../../config/prisma.service';
-import { QueueService } from '../queue.service';
+import { DlqService } from '../dlq.service';
 import { assertNotPrivateUrl } from '../../utils/ssrf';
 import { attachCorrelationId } from '../with-correlation';
 
@@ -17,7 +17,7 @@ interface WebhookJobData {
 }
 
 /**
- * Webhook processor — delivers webhook payloads with HMAC-SHA256 signing.
+ * Webhook processor -- delivers webhook payloads with HMAC-SHA256 signing.
  *
  * K04-#1 FIX: Secret is no longer stored in Redis. HMAC signature is computed
  * at enqueue time (in QueueService.addWebhookDeliveryJob) and only the signature
@@ -33,13 +33,13 @@ export class WebhookProcessor implements OnModuleInit, OnModuleDestroy {
   constructor(
     private config: ConfigService,
     private prisma: PrismaService,
-    @Inject(forwardRef(() => QueueService)) private queueService: QueueService,
+    private dlq: DlqService,
   ) {}
 
   onModuleInit() {
     const redisUrl = this.config.get<string>('REDIS_URL');
     if (!redisUrl) {
-      this.logger.warn('REDIS_URL not set — webhook worker disabled');
+      this.logger.warn('REDIS_URL not set -- webhook worker disabled');
       return;
     }
 
@@ -79,7 +79,7 @@ export class WebhookProcessor implements OnModuleInit, OnModuleDestroy {
           tags: { queue: 'webhooks', jobName: job.name },
           extra: { jobId: job.id, attemptsMade: job.attemptsMade, data: job.data },
         });
-        this.queueService.moveToDlq(job, err, 'webhooks').catch((e) => this.logger.error('DLQ routing failed for webhooks', e?.message));
+        this.dlq.moveToDlq(job, err, 'webhooks').catch((e) => this.logger.error('DLQ routing failed for webhooks', e?.message));
       }
       this.logger.error(`Webhook job ${job?.id} failed (attempt ${job?.attemptsMade ?? '?'}/${maxAttempts}): ${err.message}`);
     });
@@ -90,7 +90,7 @@ export class WebhookProcessor implements OnModuleInit, OnModuleDestroy {
     });
 
     this.worker.on('stalled', (jobId: string) => {
-      this.logger.warn(`Webhook job ${jobId} stalled — being re-executed`);
+      this.logger.warn(`Webhook job ${jobId} stalled -- being re-executed`);
     });
 
     this.logger.log('Webhook worker started');
