@@ -165,18 +165,18 @@ export default function AccountSettingsScreen() {
   });
 
   const formatExportAsText = useCallback((data: Record<string, unknown>): string => {
-    let text = '=== Your Mizanly Data Export ===\n';
-    text += `Exported: ${new Date().toLocaleString()}\n\n`;
+    let text = `=== ${t('accountSettings.dataExportTitle')} ===\n`;
+    text += `${t('accountSettings.exported', 'Exported')}: ${new Date().toLocaleString()}\n\n`;
 
     if (data.profile && typeof data.profile === 'object') {
       const profile = data.profile as Record<string, unknown>;
-      text += '--- Profile ---\n';
-      if (profile.username) text += `Username: ${profile.username}\n`;
-      if (profile.displayName) text += `Display Name: ${profile.displayName}\n`;
-      if (profile.email) text += `Email: ${profile.email}\n`;
-      if (profile.bio) text += `Bio: ${profile.bio}\n`;
-      if (profile.language) text += `Language: ${profile.language}\n`;
-      if (profile.createdAt) text += `Joined: ${new Date(profile.createdAt as string).toLocaleDateString()}\n`;
+      text += `--- ${t('profile.title', 'Profile')} ---\n`;
+      if (profile.username) text += `${t('profile.username', 'Username')}: ${profile.username}\n`;
+      if (profile.displayName) text += `${t('profile.displayName', 'Display Name')}: ${profile.displayName}\n`;
+      if (profile.email) text += `${t('profile.email', 'Email')}: ${profile.email}\n`;
+      if (profile.bio) text += `${t('profile.bio', 'Bio')}: ${profile.bio}\n`;
+      if (profile.language) text += `${t('settings.language', 'Language')}: ${profile.language}\n`;
+      if (profile.createdAt) text += `${t('profile.joined', 'Joined')}: ${new Date(profile.createdAt as string).toLocaleDateString()}\n`;
       text += '\n';
     }
 
@@ -188,29 +188,29 @@ export default function AccountSettingsScreen() {
         const content = (record.content || record.caption || record.title || '') as string;
         text += `  ${date}: ${content.slice(0, 120)}${content.length > 120 ? '...' : ''}\n`;
       });
-      if (items.length > 50) text += `  ... and ${items.length - 50} more\n`;
+      if (items.length > 50) text += `  ${t('accountSettings.andMore', { count: items.length - 50 })}\n`;
       text += '\n';
     };
 
-    if (Array.isArray(data.posts)) appendItems('Posts', data.posts);
-    if (Array.isArray(data.threads)) appendItems('Threads', data.threads);
-    if (Array.isArray(data.threadReplies)) appendItems('Thread Replies', data.threadReplies);
-    if (Array.isArray(data.comments)) appendItems('Comments', data.comments);
-    if (Array.isArray(data.reels)) appendItems('Reels', data.reels);
-    if (Array.isArray(data.videos)) appendItems('Videos', data.videos);
-    if (Array.isArray(data.stories)) text += `--- Stories (${data.stories.length}) ---\n\n`;
+    if (Array.isArray(data.posts)) appendItems(t('accountSettings.dataLabelPosts'), data.posts);
+    if (Array.isArray(data.threads)) appendItems(t('accountSettings.dataLabelThreads'), data.threads);
+    if (Array.isArray(data.threadReplies)) appendItems(t('accountSettings.dataLabelThreadReplies'), data.threadReplies);
+    if (Array.isArray(data.comments)) appendItems(t('accountSettings.dataLabelComments'), data.comments);
+    if (Array.isArray(data.reels)) appendItems(t('accountSettings.dataLabelReels'), data.reels);
+    if (Array.isArray(data.videos)) appendItems(t('accountSettings.dataLabelVideos'), data.videos);
+    if (Array.isArray(data.stories)) text += `--- ${t('accountSettings.dataLabelStories')} (${data.stories.length}) ---\n\n`;
 
     if (data.messages && typeof data.messages === 'object') {
       const msgs = data.messages as { count?: number };
-      text += `--- Messages (${msgs.count ?? 0}) ---\n`;
-      text += '  [Message content omitted for privacy]\n\n';
+      text += `--- ${t('accountSettings.dataLabelMessages')} (${msgs.count ?? 0}) ---\n`;
+      text += `  ${t('accountSettings.dataLabelMessagesPrivacy')}\n\n`;
     }
 
-    if (Array.isArray(data.following)) text += `--- Following (${data.following.length}) ---\n\n`;
-    if (Array.isArray(data.bookmarks)) text += `--- Bookmarks (${data.bookmarks.length}) ---\n\n`;
+    if (Array.isArray(data.following)) text += `--- ${t('accountSettings.dataLabelFollowing')} (${data.following.length}) ---\n\n`;
+    if (Array.isArray(data.bookmarks)) text += `--- ${t('accountSettings.dataLabelBookmarks')} (${data.bookmarks.length}) ---\n\n`;
 
     return text;
-  }, []);
+  }, [t]);
 
   const exportDataMutation = useMutation({
     mutationFn: () => usersApi.exportData(),
