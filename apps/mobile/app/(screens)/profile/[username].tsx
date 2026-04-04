@@ -67,7 +67,7 @@ const GridItem = memo(function GridItem({ post, onPress }: { post: Post; onPress
         onPressIn={() => { scale.value = withSpring(0.96, animation.spring.snappy); }}
         onPressOut={() => { scale.value = withSpring(1, animation.spring.snappy); }}
         style={styles.gridItem}
-        accessibilityLabel={`View post ${post.id}`}
+        accessibilityLabel={t('accessibility.viewPost')}
         accessibilityRole="button"
       >
         {post.mediaUrls.length > 0 ? (
@@ -118,7 +118,7 @@ const ReelGridItem = memo(function ReelGridItem({ reel, onPress }: { reel: Reel;
         onPressIn={() => { scale.value = withSpring(0.96, animation.spring.snappy); }}
         onPressOut={() => { scale.value = withSpring(1, animation.spring.snappy); }}
         style={styles.gridItem}
-        accessibilityLabel={`View reel ${reel.id}`}
+        accessibilityLabel={t('accessibility.viewReel')}
         accessibilityRole="button"
       >
         {reel.thumbnailUrl ? (
@@ -532,7 +532,7 @@ export default function ProfileScreen() {
       <Animated.View style={[{ overflow: 'hidden' }, coverAnimStyle]}>
         {profile.coverUrl ? (
           <View>
-            <ProgressiveImage uri={profile.coverUrl} width="100%" height={COVER_HEIGHT} contentFit="cover" accessibilityLabel="Cover image" />
+            <ProgressiveImage uri={profile.coverUrl} width="100%" height={COVER_HEIGHT} contentFit="cover" accessibilityLabel={t('accessibility.coverImage')} />
             <LinearGradient
               colors={['transparent', 'rgba(0,0,0,0.6)']}
               locations={[0.4, 1]}
@@ -651,7 +651,7 @@ export default function ProfileScreen() {
               const url = (profile.website ?? '').startsWith('http') ? profile.website ?? '' : `https://${profile.website ?? ''}`;
               Linking.openURL(url).catch(() => showToast({ message: t('common.couldNotOpenLink'), variant: 'error' }));
             }}
-            accessibilityLabel={`Visit website: ${profile.website}`}
+            accessibilityLabel={t('accessibility.visitWebsite', { url: profile.website })}
             accessibilityRole="link"
           >
             <Icon name="link" size={13} color={colors.emerald} />
@@ -719,7 +719,7 @@ export default function ProfileScreen() {
               <View style={styles.highlightRing}>
                 <View style={[styles.highlightCircle, loadingHighlightId === album.id && { opacity: 0.5 }]}>
                   {album.coverUrl ? (
-                    <ProgressiveImage uri={album.coverUrl} width={64} height={64} borderRadius={9999} contentFit="cover" accessibilityLabel="Highlight cover" />
+                    <ProgressiveImage uri={album.coverUrl} width={64} height={64} borderRadius={9999} contentFit="cover" accessibilityLabel={t('accessibility.highlightCover')} />
                   ) : (
                     <Icon name="image" size="md" color={tc.text.tertiary} />
                   )}

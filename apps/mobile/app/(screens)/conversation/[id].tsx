@@ -156,6 +156,7 @@ const SPEED_OPTIONS = [1, 1.5, 2] as const;
 
 function VoicePlayer({ mediaUrl, isOwn }: { mediaUrl: string; isOwn: boolean }) {
   const tc = useThemeColors();
+  const { t } = useTranslation();
   const [playing, setPlaying] = useState(false);
   const [speedIndex, setSpeedIndex] = useState(0);
   const soundRef = useRef<Audio.Sound | null>(null);
@@ -194,7 +195,7 @@ function VoicePlayer({ mediaUrl, isOwn }: { mediaUrl: string; isOwn: boolean }) 
   }, []);
 
   return (
-    <Pressable style={styles.voicePlayer} onPress={toggle} accessibilityRole="button" accessibilityLabel={playing ? 'Pause voice message' : 'Play voice message'}>
+    <Pressable style={styles.voicePlayer} onPress={toggle} accessibilityRole="button" accessibilityLabel={playing ? t('accessibility.pauseVoiceMessage') : t('accessibility.playVoiceMessage')}>
       <Icon name={playing ? 'volume-x' : 'play'} size={18} color={isOwn ? tc.text.onColor : colors.emerald} />
       <View style={styles.voiceWaveform}>
         {waveformHeights.map((height, i) => (
@@ -218,7 +219,7 @@ function VoicePlayer({ mediaUrl, isOwn }: { mediaUrl: string; isOwn: boolean }) 
         }}
         hitSlop={8}
         style={{ paddingHorizontal: 4 }}
-        accessibilityLabel={`Playback speed ${SPEED_OPTIONS[speedIndex]}x`}
+        accessibilityLabel={t('accessibility.playbackSpeed', { speed: SPEED_OPTIONS[speedIndex] })}
       >
         <Text style={{ color: isOwn ? tc.text.onColor : colors.emerald, fontSize: 11, fontFamily: fonts.bodyBold }}>
           {SPEED_OPTIONS[speedIndex]}x
@@ -589,7 +590,11 @@ const MessageBubble = memo(function MessageBubble({
         {translatedText && (
           <View style={{ marginTop: spacing.xs, paddingTop: spacing.xs, borderTopWidth: 0.5, borderTopColor: isOwn ? 'rgba(255,255,255,0.15)' : tc.border }}>
             <Text style={[styles.bubbleText, isOwn && styles.bubbleTextOwn, { fontStyle: 'italic' }]}>{translatedText}</Text>
-            <Pressable onPress={() => setTranslatedText(null)} hitSlop={8}>
+                        <Pressable
+              accessibilityRole="button"
+              onPress={() => setTranslatedText(null)}
+              hitSlop={8}
+            >
               <Text style={{ color: isOwn ? 'rgba(255,255,255,0.5)' : tc.text.tertiary, fontSize: fontSizeExt.tiny }}>{t('ai.showOriginal')}</Text>
             </Pressable>
           </View>
@@ -999,7 +1004,13 @@ export default function ConversationScreen() {
       {searchMode ? (
         <SafeAreaView edges={['top']} style={{ backgroundColor: tc.bg }}>
           <View style={[styles.searchHeader, { borderBottomColor: tc.border }]}>
-            <Pressable onPress={() => { setSearchMode(false); setSearchQuery(''); }} hitSlop={8} style={styles.backBtn}>
+                        <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('accessibility.clearSearchInput')}
+              onPress={() => { setSearchMode(false); setSearchQuery(''); }}
+              hitSlop={8}
+              style={styles.backBtn}
+            >
               <Icon name="arrow-left" size="md" color={tc.text.primary} />
             </Pressable>
             <View style={[styles.searchInputWrap, { backgroundColor: tc.bgCard }]}>
@@ -1016,12 +1027,22 @@ export default function ConversationScreen() {
                 autoCorrect={false}
               />
               {searchQuery.length > 0 && (
-                <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+                                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('accessibility.clearSearchInput')}
+                  onPress={() => setSearchQuery('')}
+                  hitSlop={8}
+                >
                   <Icon name="x" size="xs" color={tc.text.secondary} />
                 </Pressable>
               )}
             </View>
-            <Pressable onPress={() => { setSearchMode(false); setSearchQuery(''); }} style={styles.cancelBtn}>
+                        <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('accessibility.clearSearchInput')}
+              onPress={() => { setSearchMode(false); setSearchQuery(''); }}
+              style={styles.cancelBtn}
+            >
               <Text style={styles.cancelText}>{t('common.cancel')}</Text>
             </Pressable>
           </View>
@@ -1034,7 +1055,12 @@ export default function ConversationScreen() {
             accessibilityLabel: t('common.goBack'),
           }}
           titleComponent={
-            <Pressable style={styles.headerCenter} onPress={() => router.push(`/(screens)/conversation-info?id=${id}`)}>
+                        <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('accessibility.openConversation')}
+              style={styles.headerCenter}
+              onPress={() => router.push(`/(screens)/conversation-info?id=${id}`)}
+            >
               <Avatar uri={avatarUri} name={name} size="sm" showOnline />
               <View>
                 <Text style={[styles.headerName, { color: tc.text.primary }]} numberOfLines={1}>{name}</Text>
@@ -1118,7 +1144,11 @@ export default function ConversationScreen() {
                     {pinnedMessage.content}
                   </Text>
                 </View>
-                <Pressable onPress={() => setPinnedMessage(null)}>
+                                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('accessibility.close')}
+                  onPress={() => setPinnedMessage(null)}
+                >
                   <Icon name="x" size="xs" color={tc.text.tertiary} />
                 </Pressable>
               </Pressable>
@@ -1178,7 +1208,11 @@ export default function ConversationScreen() {
             <Text style={[styles.undoSendText, { color: tc.text.secondary }]}>
               {t('undoSend.sending')}
             </Text>
-            <Pressable onPress={handleUndoSend} hitSlop={8}>
+                        <Pressable
+              accessibilityRole="button"
+              onPress={handleUndoSend}
+              hitSlop={8}
+            >
               <Text style={styles.undoSendAction}>
                 {t('undoSend.undo')}
               </Text>
@@ -1196,7 +1230,12 @@ export default function ConversationScreen() {
                   {replyTo.content ?? t('common.media')}
                 </Text>
               </View>
-              <Pressable onPress={() => setReplyTo(null)} hitSlop={8}>
+                            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.close')}
+                onPress={() => setReplyTo(null)}
+                hitSlop={8}
+              >
                 <Icon name="x" size="xs" color={tc.text.secondary} />
               </Pressable>
             </View>
@@ -1209,7 +1248,12 @@ export default function ConversationScreen() {
                   {editingMsg.content}
                 </Text>
               </View>
-              <Pressable onPress={() => { setEditingMsg(null); setText(''); }} hitSlop={8}>
+                            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.close')}
+                onPress={() => { setEditingMsg(null); setText(''); }}
+                hitSlop={8}
+              >
                 <Icon name="x" size="xs" color={tc.text.tertiary} />
               </Pressable>
             </View>
@@ -1221,7 +1265,12 @@ export default function ConversationScreen() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: tc.surface, borderRadius: radius.full, paddingHorizontal: spacing.sm, paddingVertical: 2, gap: 4 }}>
                   <Icon name="eye-off" size={12} color={colors.emerald} />
                   <Text style={{ color: colors.emerald, fontSize: fontSize.xs, fontWeight: '600' }}>{t('risalah.spoiler')}</Text>
-                  <Pressable onPress={() => setSendAsSpoiler(false)} hitSlop={8}>
+                                    <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t('accessibility.close')}
+                    onPress={() => setSendAsSpoiler(false)}
+                    hitSlop={8}
+                  >
                     <Icon name="x" size={12} color={tc.text.tertiary} />
                   </Pressable>
                 </View>
@@ -1230,7 +1279,12 @@ export default function ConversationScreen() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: tc.surface, borderRadius: radius.full, paddingHorizontal: spacing.sm, paddingVertical: 2, gap: 4 }}>
                   <Icon name="clock" size={12} color={colors.gold} />
                   <Text style={{ color: colors.gold, fontSize: fontSize.xs, fontWeight: '600' }}>{t('risalah.viewOnce')}</Text>
-                  <Pressable onPress={() => setSendAsViewOnce(false)} hitSlop={8}>
+                                    <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t('accessibility.close')}
+                    onPress={() => setSendAsViewOnce(false)}
+                    hitSlop={8}
+                  >
                     <Icon name="x" size={12} color={tc.text.tertiary} />
                   </Pressable>
                 </View>
@@ -1392,7 +1446,7 @@ export default function ConversationScreen() {
                 }
                 setContextMenuMsg(null);
               }}
-              accessibilityLabel={`React with ${emoji}`}
+              accessibilityLabel={t('accessibility.reactWith', { emoji })}
               accessibilityRole="button"
             >
               <Text style={styles.quickReactionEmoji}>{emoji}</Text>
