@@ -217,7 +217,8 @@ export async function initiateX3DH(
     // Signal spec requires: HKDF(F || DH1 || DH2 || DH3 || [DH4] || [PQ_shared_secret])
 
     // V7-F5: Access pqPreKey with proper type narrowing instead of 4 separate `as any` casts.
-    const bundlePqPreKey = (bundle as unknown as Record<string, unknown>).pqPreKey;
+    const bundlePqFields = bundle as unknown as Record<string, unknown>;
+    const bundlePqPreKey = bundlePqFields.pqPreKey;
     if (isPQXDHAvailable() && bundlePqPreKey !== undefined && bundlePqPreKey !== null) {
       let pqPubKey: Uint8Array;
       if (typeof bundlePqPreKey === 'string') {
@@ -230,6 +231,34 @@ export async function initiateX3DH(
       if (pqPubKey.length !== 1184) {
         throw new Error(`Invalid ML-KEM-768 public key length: ${pqPubKey.length} (expected 1184)`);
       }
+
+      // F04-#1 FIX: Verify PQ prekey signature BEFORE using the key.
+      // Without this, a compromised server can substitute any ML-KEM-768 public key
+      // (the classical signed prekey IS verified above, but the PQ prekey was not).
+      // The identity key signs the PQ prekey just like it signs the classical SPK.
+      const bundlePqSig = bundlePqFields.pqPreKeySignature;
+      if (bundlePqSig === undefined || bundlePqSig === null) {
+        throw new Error(
+          'PQ prekey present but pqPreKeySignature missing — server may have ' +
+          'substituted an unsigned ML-KEM key. Aborting PQXDH.',
+        );
+      }
+      let pqSigBytes: Uint8Array;
+      if (typeof bundlePqSig === 'string') {
+        pqSigBytes = new Uint8Array(Buffer.from(bundlePqSig, 'base64'));
+      } else if (bundlePqSig instanceof Uint8Array) {
+        pqSigBytes = bundlePqSig;
+      } else {
+        throw new Error(`Invalid pqPreKeySignature type: ${typeof bundlePqSig}`);
+      }
+      const pqSigValid = ed25519Verify(bundle.identityKey, pqPubKey, pqSigBytes);
+      if (!pqSigValid) {
+        throw new Error(
+          'PQ prekey signature verification failed. The ML-KEM-768 public key ' +
+          'may have been substituted by a compromised server.',
+        );
+      }
+
       try {
         const pqResult = pqEncapsulate(pqPubKey);
         if (pqResult) {

@@ -108,6 +108,13 @@ import type { SignalMessage, PreKeySignalMessage, SenderKeyMessage } from './typ
 let initialized = false;
 
 /**
+ * J04-C1 FIX: Module-level reference to the AppState subscription.
+ * Prevents listener accumulation if initialize() is called multiple times.
+ * The subscription type from AppState.addEventListener is { remove: () => void }.
+ */
+let appStateSubscription: { remove: () => void } | null = null;
+
+/**
  * Initialize the Signal Protocol service.
  * Call once on app startup after Clerk auth is ready.
  *
@@ -191,17 +198,23 @@ export async function initialize(
   // If the app was killed before the 5-second setTimeout in decryptMediaFile fired,
   // decrypted media persists in cacheDirectory. Clean up on every launch + backgrounding.
   cleanupDecryptedMediaFiles();
-  try {
-    const { AppState } = require('react-native');
-    AppState.addEventListener('change', (state: string) => {
-      // V6-F10: Clean up on BOTH 'inactive' and 'background' to reduce the
-      // filesystem exposure window. 'inactive' fires before 'background' on iOS
-      // (e.g., Control Center pull-down, app switcher). On Android, 'inactive'
-      // fires during multi-window transitions. This narrows the window where
-      // decrypted media temp files are accessible on a rooted filesystem.
-      if (state === 'background' || state === 'inactive') cleanupDecryptedMediaFiles();
-    });
-  } catch { /* AppState not available in tests */ }
+  // J04-C1 FIX: Guard AppState listener against double-registration.
+  // Previously, calling initialize() multiple times would accumulate listeners,
+  // causing cleanupDecryptedMediaFiles() to run N times per state change (memory leak).
+  // Now: store subscription in module-level variable, remove before re-registering.
+  if (!appStateSubscription) {
+    try {
+      const { AppState } = require('react-native');
+      appStateSubscription = AppState.addEventListener('change', (state: string) => {
+        // V6-F10: Clean up on BOTH 'inactive' and 'background' to reduce the
+        // filesystem exposure window. 'inactive' fires before 'background' on iOS
+        // (e.g., Control Center pull-down, app switcher). On Android, 'inactive'
+        // fires during multi-window transitions. This narrows the window where
+        // decrypted media temp files are accessible on a rooted filesystem.
+        if (state === 'background' || state === 'inactive') cleanupDecryptedMediaFiles();
+      });
+    } catch { /* AppState not available in tests */ }
+  }
 
   // V4-F19: Check certificate pin expiration proximity.
   // Pins expire 2027-06-01. Alert if within 60 days to prompt app update.
@@ -242,6 +255,18 @@ export async function initialize(
   }).catch(() => {});
 
   initialized = true;
+}
+
+/**
+ * J04-C1: Teardown the Signal service — remove AppState listener, reset state.
+ * Call on logout or for testing. Allows re-initialization without listener leak.
+ */
+export function teardownSignalService(): void {
+  if (appStateSubscription) {
+    appStateSubscription.remove();
+    appStateSubscription = null;
+  }
+  initialized = false;
 }
 
 // ============================================================
