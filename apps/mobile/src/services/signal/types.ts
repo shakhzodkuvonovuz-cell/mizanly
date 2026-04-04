@@ -117,8 +117,23 @@ export interface SkippedKey {
 
 /** Complete Double Ratchet session state — persisted in encrypted MMKV */
 export interface SessionState {
-  version: number; // Serialization version (1 = initial, 2 = PQ, 3 = sealed)
-  protocolVersion: number; // E2E protocol version (1 = X3DH, 2 = PQXDH future)
+  /**
+   * Serialization format version — controls how this state is (de)serialized.
+   * Value 1 = initial format. Future values may add fields or change layout.
+   * Independent of protocolVersion: a PQXDH session (protocolVersion=2) still
+   * uses serialization version 1 unless the wire format changes.
+   */
+  version: number;
+  /**
+   * Key agreement protocol version — identifies how the session was established.
+   * 1 = classical X3DH (X25519 only).
+   * 2 = PQXDH hybrid (X25519 + ML-KEM-768).
+   * Valid combinations: version=1 + protocolVersion=1 (classical, current format),
+   * version=1 + protocolVersion=2 (PQXDH session, same serialization format).
+   * A mismatch like protocolVersion > version indicates the serialization format
+   * hasn't been updated for the new protocol — this is expected and correct.
+   */
+  protocolVersion: number;
 
   // DH ratchet state
   rootKey: Uint8Array; // 32 bytes — current root key

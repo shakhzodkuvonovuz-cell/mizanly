@@ -105,9 +105,18 @@ export function x25519DH(
 /**
  * V5: All 7 distinct small-order X25519 x-coordinates (Montgomery form, LE).
  *
+ * Reference: "Taming the many EdDSAs" (Chalkias, Garillot, Nikolaenko, 2020)
+ * and libsodium documentation: https://doc.libsodium.org/advanced/point_arithmetic
+ *
  * Curve25519 has cofactor h=8, but in x-only Montgomery representation,
- * conjugate points (±y) share the same x-coordinate. This yields exactly
- * 7 distinct x-values, not 8. (V8-F1 audit claimed 8 — mathematically incorrect.)
+ * conjugate points (+-y) share the same x-coordinate. This yields exactly
+ * 7 distinct x-values, not 8. (V8-F1 audit claimed 8 -- mathematically incorrect.)
+ *
+ * The canonical 7 are: {0, 1, p-1, p, p+1} and two non-trivial torsion points
+ * at x = 0xe0eb... and x = 0x5f9c.... Non-canonical representations (2p, 2p+1, etc.)
+ * reduce to these values under mod p (p = 2^255 - 19), and @noble/curves performs
+ * this reduction internally before our check runs. Therefore only 7 canonical
+ * x-coordinates are needed here.
  *
  * @noble/curves rejects ALL of these at the library level (throws before
  * our check runs). This list is defense-in-depth for non-clamping backends.

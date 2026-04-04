@@ -531,18 +531,25 @@ describe('signing key SecureStore integration', () => {
     // Verify SecureStore has the signing key
     const stored = await SecureStore.getItemAsync('e2e_sender_signing_group-secure');
     expect(stored).not.toBeNull();
-    // Verify the stored key matches the returned key (via base64)
+    // F06-#7: returned state has sentinel, not the real key.
+    // Verify the stored key is valid (32 bytes, not sentinel, not zeros).
     const { fromBase64 } = require('../crypto');
     const storedKey = fromBase64(stored);
-    expect(Buffer.from(storedKey).equals(Buffer.from(state.signingKeyPair.privateKey))).toBe(true);
+    expect(storedKey.length).toBe(32);
+    expect(storedKey.every((b: number) => b === 0xde)).toBe(false);
+    expect(storedKey.every((b: number) => b === 0)).toBe(false);
+    // The returned state should have the sentinel
+    expect(state.signingKeyPair.privateKey.every((b: number) => b === 0xde)).toBe(true);
   });
 
   it('loadSenderSigningPrivate returns the stored key', async () => {
     const { loadSenderSigningPrivate } = require('../storage');
-    const state = await generateSenderKey('group-load');
+    await generateSenderKey('group-load');
     const loaded = await loadSenderSigningPrivate('group-load');
     expect(loaded).not.toBeNull();
-    expect(Buffer.from(loaded!).equals(Buffer.from(state.signingKeyPair.privateKey))).toBe(true);
+    // F06-#7: Verify loaded key is 32 bytes and not the sentinel
+    expect(loaded!.length).toBe(32);
+    expect(loaded!.every((b: number) => b === 0xde)).toBe(false);
   });
 
   it('encrypt uses loadSenderSigningPrivate from SecureStore', async () => {
@@ -576,10 +583,19 @@ describe('signing key SecureStore integration', () => {
     const { loadSenderKeyState } = require('../storage');
     const mmkvState = await loadSenderKeyState('group-mmkv-check', 'self');
 
-    // The state in MMKV has a placeholder private key (all zeros), not the real one
-    const realPrivate = state.signingKeyPair.privateKey;
+    // F06-#7: Both returned state AND MMKV state have the 0xDE sentinel private key.
+    // The real private key is only in SecureStore (hardware-backed).
+    const returnedPrivate = state.signingKeyPair.privateKey;
     const mmkvPrivate = mmkvState.signingKeyPair.privateKey;
-    expect(Buffer.from(realPrivate).equals(Buffer.from(mmkvPrivate))).toBe(false);
+    // Both should be the sentinel
+    expect(returnedPrivate.every((b: number) => b === 0xde)).toBe(true);
+    expect(mmkvPrivate.every((b: number) => b === 0xde)).toBe(true);
+    // The real key is in SecureStore and differs from sentinel
+    const SecureStore = require('expo-secure-store');
+    const realKeyB64 = await SecureStore.getItemAsync('e2e_sender_signing_group-mmkv-check');
+    const { fromBase64 } = require('../crypto');
+    const realKey = fromBase64(realKeyB64);
+    expect(realKey.every((b: number) => b === 0xde)).toBe(false);
   });
 });
 
@@ -626,19 +642,23 @@ describe('sender key serialization security', () => {
 
 describe('rotation SecureStore behavior', () => {
   it('rotation stores a NEW signing key in SecureStore', async () => {
-    const original = await generateSenderKey('group-rot');
+    await generateSenderKey('group-rot');
     const originalKeyB64 = await SecureStore.getItemAsync('e2e_sender_signing_group-rot');
 
-    const rotated = await rotateSenderKey('group-rot');
+    await rotateSenderKey('group-rot');
     const rotatedKeyB64 = await SecureStore.getItemAsync('e2e_sender_signing_group-rot');
 
     // The SecureStore entry was overwritten with the new key
     expect(rotatedKeyB64).not.toBe(originalKeyB64);
 
-    // The new key matches the rotated state
+    // F06-#7: generateSenderKey no longer returns the real private key.
+    // The returned state has a 0xDE sentinel. Verify the stored key is valid
+    // (32 bytes, not all zeros, not the sentinel).
     const { fromBase64 } = require('../crypto');
     const storedKey = fromBase64(rotatedKeyB64);
-    expect(Buffer.from(storedKey).equals(Buffer.from(rotated.signingKeyPair.privateKey))).toBe(true);
+    expect(storedKey.length).toBe(32);
+    expect(storedKey.every((b: number) => b === 0)).toBe(false);
+    expect(storedKey.every((b: number) => b === 0xde)).toBe(false);
   });
 
   it('rotation produces a key that can be used for encrypt/decrypt', async () => {

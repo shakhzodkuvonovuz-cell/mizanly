@@ -90,8 +90,13 @@ function kdfRK(
  * Derives a message key from the current chain key, then advances
  * the chain key. The old chain key is overwritten (forward secrecy).
  *
- * chainKey → HMAC(chainKey, 0x01) = messageKey
- * chainKey → HMAC(chainKey, 0x02) = nextChainKey
+ * chainKey -> HMAC(chainKey, 0x01) = messageKey
+ * chainKey -> HMAC(chainKey, 0x02) = nextChainKey
+ *
+ * IMPORTANT: This function does NOT zero the input chainKey. The caller
+ * MUST zero chainKey after use via zeroOut(oldChainKey). All current callers
+ * (ratchetEncrypt, ratchetDecrypt, skipMessageKeys) do this correctly.
+ * If adding a new call site, wrap in try/finally { zeroOut(chainKey); }.
  */
 function kdfCK(chainKey: Uint8Array): { messageKey: Uint8Array; nextChainKey: Uint8Array } {
   const messageKey = hmacSha256(chainKey, CHAIN_KEY_MSG);
@@ -269,7 +274,12 @@ export function ratchetDecrypt(
   if (message.header.senderRatchetKey.length !== 32) {
     throw new Error(`Invalid ratchet key length: ${message.header.senderRatchetKey.length} (expected 32)`);
   }
-  if (message.ciphertext.length > MAX_MESSAGE_SIZE + 16 + 256) {
+  // F05-#13: Tightened from +256 (undocumented slack) to +MIN_PADDED_SIZE+AUTH_TAG.
+  // Max ciphertext = MAX_MESSAGE_SIZE + max_padding(160 for short, 16 for long) + 16 (Poly1305 tag).
+  // MIN_PADDED_SIZE (160) is the worst case: a 1-byte message pads to 160 bytes.
+  // For messages near MAX_MESSAGE_SIZE, padding is at most 16 bytes (next block boundary).
+  // Using 160 as the padding allowance covers both cases with no false rejections.
+  if (message.ciphertext.length > MAX_MESSAGE_SIZE + 160 + 16) {
     throw new Error(`Ciphertext too large: ${message.ciphertext.length} bytes`);
   }
   if (message.header.counter < 0 || !Number.isInteger(message.header.counter) || message.header.counter > 0xFFFFFFFF) {

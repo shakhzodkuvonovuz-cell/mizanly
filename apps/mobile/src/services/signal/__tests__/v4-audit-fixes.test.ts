@@ -194,8 +194,9 @@ describe('V4-F7: Merkle proof with domain separation', () => {
     const LEAF = new Uint8Array([0x00]);
     const INTERNAL = new Uint8Array([0x01]);
 
-    const leaf1 = sha256Hash(concat(LEAF, utf8Encode(userId1), key1));
-    const leaf2 = sha256Hash(concat(LEAF, utf8Encode(userId2), key2));
+    // F07-#9: Leaf hash now includes deviceId (":1" default)
+    const leaf1 = sha256Hash(concat(LEAF, utf8Encode(userId1), utf8Encode(':1'), key1));
+    const leaf2 = sha256Hash(concat(LEAF, utf8Encode(userId2), utf8Encode(':1'), key2));
     const root = sha256Hash(concat(INTERNAL, leaf1, leaf2));
 
     // Valid proof for leaf1 (index 0): sibling is leaf2

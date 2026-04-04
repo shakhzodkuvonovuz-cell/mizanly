@@ -97,6 +97,9 @@ export async function generateSenderKey(
   // If MMKV is compromised, the attacker cannot forge group messages without
   // also extracting the SecureStore key (requires device passcode/biometric).
   await storeSenderSigningPrivate(groupId, signingKeyPair.privateKey);
+  // F06-#7: Zero signing private key after SecureStore persistence.
+  // The key is no longer needed in memory — callers that need it load from SecureStore.
+  zeroOut(signingKeyPair.privateKey);
 
   // Store state in MMKV with ONLY the public signing key.
   // The private key is loaded from SecureStore on each encrypt.
@@ -114,8 +117,11 @@ export async function generateSenderKey(
 
   await storeSenderKeyState(groupId, 'self', state);
 
-  // Return the FULL state (with real private key) for immediate use
-  return { ...state, signingKeyPair };
+  // F06-#7: Return state with sentinel private key (NOT the real key).
+  // Callers that need the private key must load it from SecureStore via
+  // loadSenderSigningPrivate(). This prevents the real key from persisting
+  // on multiple stack frames / caller heap references.
+  return state;
 }
 
 /**
@@ -439,6 +445,13 @@ export async function decryptGroupMessage(
   state.skippedKeys = allSkipped;
   await storeSenderKeyState(groupId, senderId, state);
 
+  // F06-#2: Zero all skipped message keys after persistence to MMKV.
+  // The keys are now AEAD-encrypted in MMKV; the in-memory Uint8Arrays are no
+  // longer needed and would otherwise linger on the GC heap.
+  for (const sk of allSkipped) {
+    zeroOut(sk.messageKey);
+  }
+
   // Clean up
   zeroOut(messageKey);
   zeroOut(encKey);
@@ -567,7 +580,11 @@ export async function distributeSenderKeyToMembers(
       try {
         // Re-load from MMKV (AEAD-protected) — no closure capture of key material
         const freshState = await loadSenderKeyState(retryGroupId, 'self');
-        if (!freshState) return;
+        // F06-#4: Guard against retry after group leave or key rotation.
+        // If the sender key was deleted (user left group) or rotated (member removed),
+        // don't distribute the stale key. The generation check ensures the retry only
+        // fires for the same key generation that initiated the distribution.
+        if (!freshState || freshState.generation !== retryGeneration || freshState.chainId !== retryChainId) return;
         freshSerialized = serializeSenderKeyForDistribution(freshState);
         for (const memberId of retryMemberIds) {
           try {

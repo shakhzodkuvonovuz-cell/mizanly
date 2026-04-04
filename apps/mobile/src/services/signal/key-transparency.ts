@@ -151,14 +151,21 @@ export function verifyMerkleProof(
   proof: string[],
   leafIndex: number,
   expectedRoot: string,
+  deviceId?: number,
 ): boolean {
   // V4-F7: Compute leaf hash with 0x00 domain separation prefix (RFC 6962).
-  // SHA-256(0x00 || userId || identityKey)
+  // F07-#9: Include deviceId in the leaf hash to prevent cross-device key confusion.
+  // Previously: SHA-256(0x00 || userId || identityKey) — a proof for device A's key
+  // would verify for device B since only userId was in the leaf (not device-specific).
+  // Now: SHA-256(0x00 || userId || ":" || deviceId || identityKey) binds each leaf
+  // to a specific (userId, deviceId, identityKey) triple.
   const LEAF_PREFIX = new Uint8Array([0x00]);
   const INTERNAL_PREFIX = new Uint8Array([0x01]);
+  const deviceIdStr = `:${deviceId ?? 1}`;
   const leafData = concat(
     LEAF_PREFIX,
     new Uint8Array(new TextEncoder().encode(userId)),
+    new Uint8Array(new TextEncoder().encode(deviceIdStr)),
     identityKey,
   );
   let currentHash = sha256Hash(leafData);
@@ -373,7 +380,16 @@ export function verifyConsistencyProof(
   if (oldSize === newSize) {
     return constantTimeEqual(fromBase64(oldRoot), fromBase64(newRoot));
   }
-  if (oldSize === 0) return true; // Empty tree is consistent with anything
+  // F07-#14: Empty tree (oldSize=0) is mathematically consistent with any new tree.
+  // This is the bootstrapping path on first app install or first contact. The client
+  // has no prior reference, so any tree the server presents is accepted (TOFU).
+  // This is inherent to TOFU + Merkle transparency — not a bug. Log for audit trail.
+  if (oldSize === 0) {
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      console.warn('[KT] Consistency proof bootstrap: oldSize=0 — first verification for this tree');
+    }
+    return true;
+  }
 
   const oldRootBytes = fromBase64(oldRoot);
   const newRootBytes = fromBase64(newRoot);

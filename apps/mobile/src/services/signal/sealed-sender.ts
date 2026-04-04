@@ -337,10 +337,23 @@ export async function unsealMessage(
     throw new Error('Sealed sender envelope has no certificate — all envelopes require sender authentication');
   }
 
-  // F13: Replay protection — check timestamp and counter (types already validated above)
+  // F13: Replay protection — check timestamp and counter (types already validated above).
+  //
+  // F06-#3: The monotonic counter (ctr) is the PRIMARY replay defense. It is
+  // tamper-resistant: the sender increments it with every seal, and the recipient
+  // rejects any envelope with ctr <= lastSeen. The counter survives clock manipulation.
+  //
+  // The timestamp (ts) is SECONDARY defense-in-depth for clock-skew edge cases only:
+  // it is sender-asserted and uses Date.now() which is NTP-manipulable. It catches
+  // replays where the counter has advanced past (e.g., a compromised sender replays
+  // their own old message). Do NOT rely on the timestamp for security guarantees
+  // against an attacker who controls the network time.
   if (ts !== undefined) {
     const age = Date.now() - ts;
-    if (age > SEALED_REPLAY_MAX_AGE_MS || age < -60_000) {
+    // F06-#3: Removed the 60-second future tolerance. Future-dated envelopes
+    // now rejected immediately. Clock skew > 0 should not occur with NTP;
+    // if it does, the sender retransmits with a corrected timestamp.
+    if (age > SEALED_REPLAY_MAX_AGE_MS || age < 0) {
       throw new Error('Sealed sender envelope expired — possible replay attack');
     }
   }

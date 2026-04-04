@@ -129,8 +129,11 @@ function sanitizeErrorType(errorType?: string): string {
   if (errorType.includes('rate limit')) return 'RATE_LIMITED';
   if (errorType.includes('timeout') || errorType.includes('network')) return 'NETWORK_ERROR';
   if (errorType.includes('too large') || errorType.includes('gap')) return 'MESSAGE_GAP';
-  // Fallback: first 30 chars only, no IDs
-  return errorType.replace(/[a-z0-9_-]{20,}/gi, '[REDACTED]').slice(0, 50);
+  // F08-#15 FIX: Lowered redaction threshold from 20 to 8 chars.
+  // Previously, short identifiers like "user_abc123" (12 chars) or key IDs
+  // would pass through unredacted. 8 chars catches most identifiers while
+  // preserving meaningful error context words (which are typically < 8 chars).
+  return errorType.replace(/[a-z0-9_-]{8,}/gi, '[REDACTED]').slice(0, 50);
 }
 
 /** Reset counters (for testing). */

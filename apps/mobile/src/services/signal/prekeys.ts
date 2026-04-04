@@ -97,10 +97,14 @@ export async function getOrCreateRegistrationId(): Promise<number> {
   const existing = await loadRegistrationId();
   if (existing !== null) return existing;
 
-  // Generate 14-bit random unsigned integer (1-16383, non-zero per Signal spec)
-  const bytes = generateRandomBytes(2);
-  const raw = ((bytes[0] << 8) | bytes[1]) & 0x3fff; // Mask to 14 bits
-  const id = raw === 0 ? 1 : raw; // Ensure non-zero
+  // F07-#12: Rejection sampling to avoid modular bias.
+  // Previously: raw === 0 ? 1 : raw gave ID=1 double the probability (2/16384 vs 1/16384).
+  // Now: generate until non-zero, uniform distribution over [1, 16383].
+  let id = 0;
+  while (id === 0) {
+    const bytes = generateRandomBytes(2);
+    id = ((bytes[0] << 8) | bytes[1]) & 0x3fff; // Mask to 14 bits (0-16383)
+  }
   await storeRegistrationId(id);
   return id;
 }
@@ -273,11 +277,23 @@ export function prepareIdentityKeyUpload(
  * Generate a batch of OTPs with crash-safe startId.
  * The startId is persisted to MMKV BEFORE generation starts,
  * so a crash mid-generation doesn't produce overlapping keyIds.
+ *
+ * F07-#16: Cap on total OTP keys. If startId indicates we've already
+ * generated MAX_OTP_TOTAL keys, refuse to generate more. This prevents
+ * a faulty replenishment loop from filling SecureStore unboundedly.
  */
+const MAX_OTP_TOTAL = 5000; // 50 batches of 100 — more than enough for any realistic use
+
 export async function generateOneTimePreKeysBatch(
   count: number = OTP_BATCH_SIZE,
 ): Promise<OneTimePreKey[]> {
   const startId = await getAndIncrementOTPStartId(count);
+  if (startId > MAX_OTP_TOTAL) {
+    throw new Error(
+      `OTP key generation limit reached (startId=${startId}, max=${MAX_OTP_TOTAL}). ` +
+      'This indicates a possible replenishment loop or corrupted state.',
+    );
+  }
   return generateOneTimePreKeys(startId, count);
 }
 

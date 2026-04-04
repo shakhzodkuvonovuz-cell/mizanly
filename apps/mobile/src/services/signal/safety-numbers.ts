@@ -35,6 +35,8 @@ import {
 // CACHE (avoid 10400 HMAC iterations on every render)
 // ============================================================
 
+/** F08-#16: Max 500 entries — prevents unbounded growth for users with many contacts. */
+const SAFETY_NUMBER_CACHE_MAX = 500;
 const safetyNumberCache = new Map<string, { number: string; ourKeyHash: string; theirKeyHash: string }>();
 
 function cacheKey(id1: string, id2: string): string {
@@ -113,7 +115,11 @@ export async function computeSafetyNumber(
     theirUserId,
   );
 
-  // Cache the result
+  // Cache the result (F08-#16: evict oldest entry if at capacity)
+  if (safetyNumberCache.size >= SAFETY_NUMBER_CACHE_MAX) {
+    const oldestKey = safetyNumberCache.keys().next().value;
+    if (oldestKey !== undefined) safetyNumberCache.delete(oldestKey);
+  }
   safetyNumberCache.set(ck, { number: result, ourKeyHash: ourHash, theirKeyHash: theirHash });
 
   return result;

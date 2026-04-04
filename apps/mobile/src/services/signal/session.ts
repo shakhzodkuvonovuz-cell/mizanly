@@ -261,22 +261,34 @@ export async function encryptMessage(
  * @param knownDeviceIds - List of known device IDs (default [1] for single-device)
  * @returns Array of {deviceId, message} — one per device
  */
+/**
+ * F05-#14: Returns both encrypted messages AND skippedDeviceIds for transparency.
+ * Callers can check skippedDeviceIds.length > 0 to warn the user that some
+ * devices did not receive the message (session not established).
+ */
 export async function encryptForAllDevices(
   recipientId: string,
   plaintext: string,
   knownDeviceIds: number[] = [1],
-): Promise<Array<{ deviceId: number; message: SignalMessage }>> {
-  const results: Array<{ deviceId: number; message: SignalMessage }> = [];
+): Promise<{
+  encrypted: Array<{ deviceId: number; message: SignalMessage }>;
+  skippedDeviceIds: number[];
+}> {
+  const encrypted: Array<{ deviceId: number; message: SignalMessage }> = [];
+  const skippedDeviceIds: number[] = [];
 
   for (const deviceId of knownDeviceIds) {
     const sessionExists = await hasSession(recipientId, deviceId);
-    if (!sessionExists) continue; // Skip devices without sessions
+    if (!sessionExists) {
+      skippedDeviceIds.push(deviceId);
+      continue;
+    }
 
     const message = await encryptMessage(recipientId, deviceId, plaintext);
-    results.push({ deviceId, message });
+    encrypted.push({ deviceId, message });
   }
 
-  return results;
+  return { encrypted, skippedDeviceIds };
 }
 
 // ============================================================

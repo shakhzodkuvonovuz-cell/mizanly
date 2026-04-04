@@ -269,8 +269,12 @@ export async function aeadGet(mmkv: MMKV, storageKey: string, aadKey?: string): 
     return utf8Decode(plaintext);
   } catch {
     zeroOut(aKey);
+    // F07-#15: Error message no longer leaks key type prefix.
+    // Previously included split(':')[0] which revealed whether the corrupted
+    // key was a session, sender key, dedup set, etc. — helping an attacker
+    // target their tampering.
     throw new Error(
-      `MMKV integrity check failed for key "${(aadKey ?? storageKey).split(':')[0]}:...". ` +
+      'MMKV integrity check failed. ' +
       'Session state may have been tampered with. Re-establishing session.',
     );
   }
