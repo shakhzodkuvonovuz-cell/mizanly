@@ -17,6 +17,7 @@
     "test:watch": "jest --watch",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "test:integration": "jest --config ./test/jest-integration.json --forceExit",
+    "test:integration:modules": "jest --config ./test/jest-integration-modules.config.ts --runInBand --forceExit",
     "prisma:generate": "prisma generate",
     "prisma:push:dev": "prisma db push",
     "prisma:migrate": "prisma migrate dev",
