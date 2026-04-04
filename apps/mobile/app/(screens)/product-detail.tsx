@@ -159,7 +159,7 @@ function ProductDetailContent() {
   );
 
   const renderRelatedProduct = useCallback(
-    ({ item }: { item: ProductDetail }) => (
+    ({ item }: { item: { id: string; title: string; price: number; imageUrls: string[]; rating: number } }) => (
       <Pressable
         style={({ pressed }) => [styles.relatedCard, pressed && { opacity: 0.7 }]}
         onPress={() => handleRelatedPress(item.id)}

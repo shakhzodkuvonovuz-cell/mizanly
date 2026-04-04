@@ -176,7 +176,7 @@ const StoryGroupPage = memo(function StoryGroupPage({
   });
 
   const renderViewerItem = useCallback(
-    ({ item }: { item: { id: string; displayName: string; username: string; avatarUrl: string | null } }) => (
+    ({ item }: { item: { id: string; displayName: string; username: string; avatarUrl?: string } }) => (
       <View style={styles.viewerRow}>
         <Avatar uri={item.avatarUrl} name={item.displayName} size="sm" />
         <View style={styles.viewerInfo}>

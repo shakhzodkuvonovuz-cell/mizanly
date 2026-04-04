@@ -287,7 +287,6 @@ export default function DuaCollectionScreen() {
           keyExtractor={(item) => item ?? 'all'}
           contentContainerStyle={styles.chipsRow}
           renderItem={renderCategoryChip}
-          )}
         />
       )}
     </View>
