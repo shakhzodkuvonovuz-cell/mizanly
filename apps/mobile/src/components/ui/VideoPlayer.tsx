@@ -536,8 +536,8 @@ const styles = StyleSheet.create({
   bufferingContainer: {
     position: 'absolute',
     top: '50%',
-    left: '50%',
-    marginLeft: -20,
+    start: '50%',
+    marginStart: -20,
     marginTop: -20,
     padding: spacing.md,
     borderRadius: radius.full,

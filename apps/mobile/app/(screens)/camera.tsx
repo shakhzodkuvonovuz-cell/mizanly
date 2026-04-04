@@ -369,8 +369,8 @@ const styles = StyleSheet.create({
     width: '33.33%',
     top: 0,
     bottom: 0,
-    borderLeftWidth: 0.5,
-    borderRightWidth: 0.5,
+    borderStartWidth: 0.5,
+    borderEndWidth: 0.5,
     borderColor: 'rgba(255,255,255,0.15)',
   },
   gridLineHorizontal: {

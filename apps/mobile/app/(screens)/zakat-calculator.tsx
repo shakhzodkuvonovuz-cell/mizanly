@@ -489,7 +489,7 @@ export default function ZakatCalculatorScreen() {
                 {/* Result Card */}
                 <LinearGradient
                   colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
-                  style={[styles.resultCard, { borderLeftWidth: 3, borderLeftColor: colors.gold }]}
+                  style={[styles.resultCard, { borderStartWidth: 3, borderStartColor: colors.gold }]}
                 >
                   {/* Calculation Summary */}
                   <View style={styles.calculationRow}>

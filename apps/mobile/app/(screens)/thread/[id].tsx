@@ -92,16 +92,14 @@ function ReplyRow({
     <View style={[
       styles.replyRow,
       { flexDirection: rtlFlexRow(isRTL) },
-      indent > 0 && (isRTL ? { marginRight: indent } : { marginLeft: indent }),
+      indent > 0 && { marginStart: indent },
     ]}>
       {/* Indent connecting line */}
       {indent > 0 && (
         <View
           style={[
             styles.indentLine,
-            isRTL
-              ? { right: -indent + 12 }
-              : { left: -indent + 12 },
+            { start: -indent + 12 },
           ]}
         />
       )}
@@ -117,7 +115,7 @@ function ReplyRow({
         <View style={[styles.replyTopRow, { flexDirection: rtlFlexRow(isRTL) }]}>
           <Text style={styles.replyName}>{reply.user.displayName}</Text>
           <Text style={styles.replyHandle}>@{reply.user.username}</Text>
-          <Text style={[styles.replyTime, isRTL ? { marginRight: 'auto', marginLeft: undefined } : undefined]}>{timeAgo}</Text>
+          <Text style={styles.replyTime}>{timeAgo}</Text>
         </View>
         <RichText text={reply.content} />
         {reply.mediaUrls.length > 0 && (
@@ -646,7 +644,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   replyName: { color: tc.text.primary, fontWeight: '700', fontSize: fontSize.sm },
   replyHandle: { color: tc.text.secondary, fontSize: fontSize.xs },
-  replyTime: { color: tc.text.tertiary, fontSize: fontSize.xs, marginLeft: 'auto' },
+  replyTime: { color: tc.text.tertiary, fontSize: fontSize.xs, marginStart: 'auto' },
   replyContent: { color: tc.text.primary, fontSize: fontSize.base, lineHeight: 21 },
   replyMedia: { width: '100%', height: 160, borderRadius: radius.md, marginTop: spacing.sm },
   replyActions: {

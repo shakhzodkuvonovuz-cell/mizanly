@@ -487,16 +487,16 @@ const MessageBubble = memo(function MessageBubble({
 
   // Corner radius system (WhatsApp style)
   const ownRadius = {
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: isGroupStart ? radius.xl : 4,
-    borderBottomLeftRadius: radius.lg,
-    borderBottomRightRadius: isGroupEnd ? 4 : radius.xl,
+    borderTopStartRadius: radius.lg,
+    borderTopEndRadius: isGroupStart ? radius.xl : 4,
+    borderBottomStartRadius: radius.lg,
+    borderBottomEndRadius: isGroupEnd ? 4 : radius.xl,
   };
   const otherRadius = {
-    borderTopLeftRadius: isGroupStart ? radius.xl : 4,
-    borderTopRightRadius: radius.lg,
-    borderBottomLeftRadius: isGroupEnd ? 4 : radius.xl,
-    borderBottomRightRadius: radius.lg,
+    borderTopStartRadius: isGroupStart ? radius.xl : 4,
+    borderTopEndRadius: radius.lg,
+    borderBottomStartRadius: isGroupEnd ? 4 : radius.xl,
+    borderBottomEndRadius: radius.lg,
   };
 
   return (
@@ -2963,7 +2963,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     padding: spacing.xs,
   },
-  replyPreviewEmeraldBorder: { borderLeftColor: colors.emerald },
+  replyPreviewEmeraldBorder: { borderStartColor: colors.emerald },
   forwardedLabel: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -3000,7 +3000,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     paddingHorizontal: spacing.sm, // 8 — use token instead of arithmetic
     paddingVertical: 2,
-    marginRight: spacing.xs,
+    marginEnd: spacing.xs,
     marginTop: spacing.xs,
   },
   reactionChipOwn: {

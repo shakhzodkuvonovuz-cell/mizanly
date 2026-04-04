@@ -1208,7 +1208,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     alignItems: 'center',
     gap: spacing.md,
     paddingVertical: spacing.sm,
-    paddingLeft: spacing.xl,
+    paddingStart: spacing.xl,
   },
   chapterTime: {
     color: tc.text.secondary,
@@ -1333,11 +1333,11 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   chaptersTimeline: {
     marginTop: spacing.md,
     position: 'relative',
-    paddingLeft: spacing.md,
+    paddingStart: spacing.md,
   },
   timelineLine: {
     position: 'absolute',
-    left: 4,
+    start: 4,
     top: 0,
     bottom: 0,
     width: 2,
@@ -1347,14 +1347,14 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: spacing.sm,
-    paddingLeft: spacing.lg,
+    paddingStart: spacing.lg,
     position: 'relative',
   },
   chapterMarkerActive: {
     backgroundColor: colors.active.gold10,
     borderRadius: radius.md,
-    marginLeft: -spacing.md,
-    paddingLeft: spacing.lg + spacing.md,
+    marginStart: -spacing.md,
+    paddingStart: spacing.lg + spacing.md,
     marginVertical: spacing.xs,
   },
   chapterMarkerPast: {
@@ -1362,7 +1362,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   chapterMarkerLine: {
     position: 'absolute',
-    left: -spacing.lg + 2,
+    start: -spacing.lg + 2,
     width: 12,
     height: 12,
     alignItems: 'center',
@@ -1443,7 +1443,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   upNextDuration: {
     position: 'absolute' as const,
     bottom: 4,
-    right: 4,
+    end: 4,
     backgroundColor: 'rgba(0,0,0,0.8)',
     paddingHorizontal: 4,
     paddingVertical: 1,

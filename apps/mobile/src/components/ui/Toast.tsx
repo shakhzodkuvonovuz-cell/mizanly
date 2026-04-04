@@ -319,8 +319,8 @@ const styles = StyleSheet.create({
   accentBar: {
     width: 3,
     alignSelf: 'stretch',
-    borderTopLeftRadius: radius.lg,
-    borderBottomLeftRadius: radius.lg,
+    borderTopStartRadius: radius.lg,
+    borderBottomStartRadius: radius.lg,
   },
   iconContainer: {
     marginStart: spacing.md,

@@ -213,8 +213,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   messageCard: {
     borderRadius: radius.md,
     marginBottom: spacing.md,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.emerald,
+    borderStartWidth: 3,
+    borderStartColor: colors.emerald,
     padding: spacing.md,
     borderWidth: 1,
     borderColor: colors.active.white6,

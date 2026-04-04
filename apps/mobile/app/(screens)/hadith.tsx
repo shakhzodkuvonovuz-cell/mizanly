@@ -336,7 +336,7 @@ export default function HadithScreen() {
               <Animated.View entering={FadeInUp.duration(500)}>
                 <LinearGradient
                   colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
-                  style={[styles.heroCard, { borderLeftWidth: 3, borderLeftColor: colors.gold }]}
+                  style={[styles.heroCard, { borderStartWidth: 3, borderStartColor: colors.gold }]}
                 >
                   {/* Book Icon */}
                   <LinearGradient

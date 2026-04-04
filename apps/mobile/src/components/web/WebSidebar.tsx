@@ -102,7 +102,7 @@ export function WebSidebar({ collapsed = false }: WebSidebarProps) {
   };
 
   return (
-    <View style={[styles.sidebar, { backgroundColor: tc.bgElevated, borderRightColor: tc.border }, collapsed && styles.sidebarCollapsed]}>
+    <View style={[styles.sidebar, { backgroundColor: tc.bgElevated, borderEndColor: tc.border }, collapsed && styles.sidebarCollapsed]}>
       {/* Logo */}
       <Pressable
         style={[styles.logoContainer, collapsed && styles.logoContainerCollapsed]}
@@ -164,8 +164,8 @@ const styles = StyleSheet.create({
   sidebar: {
     width: SIDEBAR_WIDTH,
     backgroundColor: colors.dark.bgElevated,
-    borderRightWidth: 1,
-    borderRightColor: colors.dark.border,
+    borderEndWidth: 1,
+    borderEndColor: colors.dark.border,
     paddingTop: spacing.xl,
     paddingBottom: spacing.base,
     height: Dimensions.get('window').height,

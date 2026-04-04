@@ -315,14 +315,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   opComment: {
-    borderLeftWidth: 2,
-    borderLeftColor: colors.emerald,
+    borderStartWidth: 2,
+    borderStartColor: colors.emerald,
     paddingStart: spacing.sm,
   },
   replyComment: {
     marginStart: spacing.xl,
-    borderLeftWidth: 2,
-    borderLeftColor: colors.active.emerald20,
+    borderStartWidth: 2,
+    borderStartColor: colors.active.emerald20,
     paddingStart: spacing.sm,
   },
   commentContent: {

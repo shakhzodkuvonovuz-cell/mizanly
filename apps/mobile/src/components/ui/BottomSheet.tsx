@@ -263,8 +263,8 @@ const styles = StyleSheet.create({
   },
   sheet: {
     position: 'relative',
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
+    borderTopStartRadius: radius.xl,
+    borderTopEndRadius: radius.xl,
     overflow: 'hidden',
     paddingBottom: spacing.lg, // Overridden by inline style with safe area insets
   },

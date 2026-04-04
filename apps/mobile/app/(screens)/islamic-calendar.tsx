@@ -888,8 +888,8 @@ const styles = StyleSheet.create({
     borderColor: colors.active.white6,
   },
   eventCardEid: {
-    borderLeftWidth: 3,
-    borderLeftColor: colors.gold,
+    borderStartWidth: 3,
+    borderStartColor: colors.gold,
   },
   eventIconBg: {
     width: 44,

@@ -238,8 +238,8 @@ const styles = StyleSheet.create({
     height: 40,
   },
   imageSkeleton: {
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
+    borderBottomStartRadius: 0,
+    borderBottomEndRadius: 0,
   },
   content: {
     padding: spacing.lg,

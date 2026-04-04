@@ -254,8 +254,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.emerald,
+    borderStartWidth: 3,
+    borderStartColor: colors.emerald,
   },
   questionText: {
     color: colors.text.primary,

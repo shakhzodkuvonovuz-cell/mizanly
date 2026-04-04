@@ -43,7 +43,7 @@ export function WebLayout({ children, rightPanel }: WebLayoutProps) {
           {children}
         </View>
         {isDesktop && rightPanel && (
-          <View style={[styles.rightPanel, { borderLeftColor: tc.border }]}>
+          <View style={[styles.rightPanel, { borderStartColor: tc.border }]}>
             {rightPanel}
           </View>
         )}
@@ -72,8 +72,8 @@ const styles = StyleSheet.create({
   },
   rightPanel: {
     width: 320,
-    borderLeftWidth: 1,
-    borderLeftColor: colors.dark.border,
+    borderStartWidth: 1,
+    borderStartColor: colors.dark.border,
     height: Dimensions.get('window').height,
   },
 });

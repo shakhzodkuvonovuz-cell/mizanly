@@ -263,7 +263,7 @@ function NotificationRow({ notification, index }: { notification: AggregatedNoti
           {isAggregated ? (
             <View style={styles.stackedAvatars}>
               {aggregatedActors.slice(0, 3).map((actor, idx) => (
-                <View key={idx} style={[styles.stackedAvatar, idx > 0 ? (isRTL ? { marginRight: -8 } : { marginLeft: -8 }) : undefined, { zIndex: 3 - idx }]}>
+                <View key={idx} style={[styles.stackedAvatar, idx > 0 ? { marginStart: -8 } : undefined, { zIndex: 3 - idx }]}>
                   <Avatar uri={actor.avatarUrl} name={actor.displayName} size="sm" />
                 </View>
               ))}
@@ -275,7 +275,7 @@ function NotificationRow({ notification, index }: { notification: AggregatedNoti
               size="md"
             />
           )}
-          <View style={[styles.iconOverlay, { backgroundColor: iconInfo.color }, isRTL ? { left: -2, right: undefined } : undefined]}>
+          <View style={[styles.iconOverlay, { backgroundColor: iconInfo.color }]}>
             <Icon name={iconInfo.name} size={12} color="#FFF" fill={iconInfo.name === 'heart-filled' ? '#FFF' : undefined} />
           </View>
         </View>
@@ -562,8 +562,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     bottom: 0,
     width: 4,
     backgroundColor: colors.emerald,
-    borderTopRightRadius: 2,
-    borderBottomRightRadius: 2,
+    borderTopEndRadius: 2,
+    borderBottomEndRadius: 2,
     shadowColor: colors.emerald,
     shadowOpacity: 0.4,
     shadowRadius: 4,
@@ -582,7 +582,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   iconOverlay: {
     position: 'absolute',
     bottom: -2,
-    right: -2,
+    end: -2,
     width: 22,
     height: 22,
     borderRadius: radius.full,

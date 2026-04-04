@@ -393,8 +393,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   cardImage: {
     width: '100%',
     height: '100%',
-    borderTopLeftRadius: radius.md,
-    borderTopRightRadius: radius.md,
+    borderTopStartRadius: radius.md,
+    borderTopEndRadius: radius.md,
   },
   cardImagePlaceholder: {
     backgroundColor: tc.surface,

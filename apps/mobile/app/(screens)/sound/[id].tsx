@@ -392,7 +392,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   trendingBadge: {
     position: 'absolute',
     top: -8,
-    right: -8,
+    end: -8,
     borderRadius: radius.full,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
