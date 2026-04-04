@@ -534,7 +534,7 @@ export default function EditProfileScreen() {
                   </View>
                 ) : (
                   links.map((link, index) => (
-                    <Animated.View key={link.id} entering={FadeInUp.delay(index * 50).duration(300)}>
+                    <Animated.View key={link.id} entering={FadeInUp.delay(Math.min(index, 15) * 50).duration(300)}>
                       <LinearGradient
                         colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
                         style={styles.linkRowGlass}

@@ -159,6 +159,7 @@ export default function RisalahScreen() {
   useScrollToTop(listRef);
   // D42-#20: Prevent duplicate navigation on rapid taps
   const isNavigating = useRef(false);
+  const hasAnimatedSkeletons = useRef(false);
 
   // useScrollToTop handles scroll-to-top on tab press — no need for a separate focus listener
   // which would reset scroll position when returning from sub-screens
@@ -292,21 +293,23 @@ export default function RisalahScreen() {
 
   const archivedCount = useStore((s) => s.archivedConversationsCount);
 
-  const listEmpty = useMemo(() => (
-    isError ? (
+  const listEmpty = useMemo(() => {
+    const shouldAnimate = !hasAnimatedSkeletons.current;
+    if (isLoading) hasAnimatedSkeletons.current = true;
+    return isError ? (
       <EmptyState icon="globe" title={t('common.somethingWentWrong')} subtitle={t('common.pullToRetry')} actionLabel={t('common.retry')} onAction={() => refetch()} />
     ) : isLoading ? (
       <View>
-        <Animated.View entering={FadeInUp.delay(0).duration(300)}>
+        <Animated.View entering={shouldAnimate ? FadeInUp.delay(0).duration(300) : undefined}>
           <Skeleton.ConversationItem />
         </Animated.View>
-        <Animated.View entering={FadeInUp.delay(80).duration(300)}>
+        <Animated.View entering={shouldAnimate ? FadeInUp.delay(80).duration(300) : undefined}>
           <Skeleton.ConversationItem />
         </Animated.View>
-        <Animated.View entering={FadeInUp.delay(160).duration(300)}>
+        <Animated.View entering={shouldAnimate ? FadeInUp.delay(160).duration(300) : undefined}>
           <Skeleton.ConversationItem />
         </Animated.View>
-        <Animated.View entering={FadeInUp.delay(240).duration(300)}>
+        <Animated.View entering={shouldAnimate ? FadeInUp.delay(240).duration(300) : undefined}>
           <Skeleton.ConversationItem />
         </Animated.View>
       </View>
@@ -322,8 +325,8 @@ export default function RisalahScreen() {
         actionLabel={t('risalah.newMessage')}
         onAction={() => router.push('/(screens)/new-conversation')}
       />
-    )
-  ), [isLoading, isError, activeTab, router, t, refetch]);
+    );
+  }, [isLoading, isError, activeTab, router, t, refetch]);
 
   const listHeader = useMemo(() => {
     if (archivedCount === 0) return null;

@@ -30,7 +30,7 @@ function SummaryCard({ title, value, change, icon, index }: { title: string; val
   const isPositive = change?.startsWith('+');
   const isNegative = change?.startsWith('-');
   return (
-    <Animated.View entering={FadeInUp.delay(index * 100).duration(500)} style={styles.cardContainer}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 100).duration(500)} style={styles.cardContainer}>
       <LinearGradient
         colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
         style={styles.cardGradient}

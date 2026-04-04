@@ -121,7 +121,7 @@ function AudioCard({
   const { t } = useTranslation();
   const tc = useThemeColors();
   return (
-    <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 50).duration(400)}>
       <LinearGradient
         colors={isCurrentTrack ? ['rgba(10,123,79,0.2)', 'rgba(28,35,51,0.2)'] : ['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
         style={[styles.audioCard, isCurrentTrack && styles.audioCardActive]}

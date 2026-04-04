@@ -97,7 +97,7 @@ export default function CallHistoryScreen() {
     const statusText = statusMap[item.status] || item.status;
 
     return (
-      <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+      <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 50).duration(400)}>
         <LinearGradient
           colors={colors.gradient.cardDark}
           style={styles.row}

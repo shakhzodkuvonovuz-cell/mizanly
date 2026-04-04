@@ -178,7 +178,7 @@ export default function BroadcastChannelsScreen() {
   }, [haptic, t]);
 
   const renderChannelItem = useCallback(({ item, index }: { item: BroadcastChannelWithSubscription; index: number }) => (
-    <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 50).duration(400)}>
       <Pressable accessibilityRole="button" onPress={() => handleChannelPress(item)}>
         <LinearGradient
           colors={colors.gradient.cardDark}

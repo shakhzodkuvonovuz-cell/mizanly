@@ -51,11 +51,14 @@ interface AnimatedThreadCardProps {
 }
 
 const AnimatedThreadCard = memo(function AnimatedThreadCard({ thread, viewerId, isOwn, index, isRTL: isRTLProp, isRead }: AnimatedThreadCardProps) {
-  // Entrance animation
+  // Entrance animation — only on first mount
   const translateY = useSharedValue(4);
   const opacity = useSharedValue(0);
+  const hasAnimated = useRef(false);
 
   useEffect(() => {
+    if (hasAnimated.current) return;
+    hasAnimated.current = true;
     const delay = Math.min(index * 50, 300); // Stagger animation, max 300ms delay
     const timer = setTimeout(() => {
       translateY.value = withSpring(0, animation.spring.gentle);
@@ -89,6 +92,7 @@ export default function MajlisScreen() {
   const setFeedType = useStore((s) => s.setMajlisFeedType);
   const [refreshing, setRefreshing] = useState(false);
   const [lastReadAt, setLastReadAt] = useState<string | null>(null);
+  const hasAnimatedSkeletons = useRef(false);
 
   // Load last read timestamp on mount, update when tab gains focus
   useEffect(() => {
@@ -238,21 +242,23 @@ export default function MajlisScreen() {
     haptic.navigate();
   }, [feedQuery, haptic]);
 
-  const listEmpty = useMemo(() => (
-    feedQuery.isError ? (
+  const listEmpty = useMemo(() => {
+    const shouldAnimate = !hasAnimatedSkeletons.current;
+    if (feedQuery.isLoading) hasAnimatedSkeletons.current = true;
+    return feedQuery.isError ? (
       <EmptyState icon="globe" title={t('common.somethingWentWrong')} subtitle={t('common.pullToRetry')} actionLabel={t('common.retry')} onAction={() => feedQuery.refetch()} />
     ) : feedQuery.isLoading ? (
       <View>
-        <Animated.View entering={FadeInUp.delay(0).duration(300)}>
+        <Animated.View entering={shouldAnimate ? FadeInUp.delay(0).duration(300) : undefined}>
           <Skeleton.ThreadCard />
         </Animated.View>
-        <Animated.View entering={FadeInUp.delay(80).duration(300)}>
+        <Animated.View entering={shouldAnimate ? FadeInUp.delay(80).duration(300) : undefined}>
           <Skeleton.ThreadCard />
         </Animated.View>
-        <Animated.View entering={FadeInUp.delay(160).duration(300)}>
+        <Animated.View entering={shouldAnimate ? FadeInUp.delay(160).duration(300) : undefined}>
           <Skeleton.ThreadCard />
         </Animated.View>
-        <Animated.View entering={FadeInUp.delay(240).duration(300)}>
+        <Animated.View entering={shouldAnimate ? FadeInUp.delay(240).duration(300) : undefined}>
           <Skeleton.ThreadCard />
         </Animated.View>
       </View>
@@ -264,8 +270,8 @@ export default function MajlisScreen() {
         actionLabel={t('majlis.emptyFeed.actionLabel')}
         onAction={() => router.push('/(screens)/create-thread')}
       />
-    )
-  ), [feedQuery.isLoading, feedQuery.isError, router, t]);
+    );
+  }, [feedQuery.isLoading, feedQuery.isError, router, t]);
 
   const listFooter = useMemo(() => {
     if (feedQuery.isFetchingNextPage) {

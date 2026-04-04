@@ -388,7 +388,7 @@ export default function TwoFactorSetupScreen() {
                   {verificationCode.map((digit, idx) => (
                     <Animated.View
                       key={idx}
-                      entering={FadeInUp.delay(idx * 80).duration(300)}
+                      entering={FadeInUp.delay(Math.min(idx, 15) * 80).duration(300)}
                     >
                       <LinearGradient
                         colors={digit ? [colors.emerald, colors.gold] : colors.gradient.cardDark}

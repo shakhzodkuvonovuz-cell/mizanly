@@ -51,7 +51,7 @@ function ContactRow({
   const { t } = useTranslation();
 
   return (
-    <Animated.View entering={index < 10 ? FadeInUp.delay(index * 50).duration(400) : undefined}>
+    <Animated.View entering={index < 10 ? FadeInUp.delay(Math.min(index, 15) * 50).duration(400) : undefined}>
       <LinearGradient
         colors={colors.gradient.cardDark}
         style={[styles.row, { borderColor: tc.border }]}

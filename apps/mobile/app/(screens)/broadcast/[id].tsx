@@ -219,7 +219,7 @@ export default function BroadcastChannelScreen() {
   }, []);
 
   const renderMessageItem = useCallback(({ item, index }: { item: BroadcastMessage; index: number }) => (
-    <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 80).duration(400)}>
       <LinearGradient
         colors={colors.gradient.cardDark}
         style={styles.messageCard}

@@ -45,7 +45,7 @@ export default function BookmarkCollectionsScreen() {
   }, [refetch, haptic]);
 
   const renderItem = useCallback(({ item, index }: { item: BookmarkCollection; index: number }) => (
-    <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 50).duration(400)}>
       <Pressable
         accessibilityRole="button"
         style={({ pressed }) => [styles.card, pressed && { opacity: 0.7 }]}

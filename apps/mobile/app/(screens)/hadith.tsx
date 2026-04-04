@@ -96,7 +96,7 @@ function PreviousHadithCard({
 }) {
   const tc = useThemeColors();
   return (
-    <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 80).duration(400)}>
       <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={hadith.source}>
         <LinearGradient
           colors={colors.gradient.cardDark}

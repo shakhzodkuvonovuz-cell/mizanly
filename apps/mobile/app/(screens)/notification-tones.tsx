@@ -238,7 +238,7 @@ function NotificationTonesScreen() {
       const isSilent = item.id === 'silent' || item.id === 'none';
 
       return (
-        <Animated.View entering={FadeInUp.delay(index * 40).duration(250)}>
+        <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(250)}>
           <Pressable
             onPress={() => handleSelect(item.id)}
             style={[styles.toneRow, { flexDirection: rtlFlexRow(isRTL) }, isSelected && styles.toneRowSelected]}

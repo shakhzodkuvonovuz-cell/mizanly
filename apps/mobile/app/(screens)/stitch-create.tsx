@@ -292,7 +292,7 @@ export default function StitchCreateScreen() {
                   {TRANSITIONS.map((transition, index) => (
                     <Animated.View
                       key={transition.id}
-                      entering={FadeInUp.delay(index * 50).duration(300)}
+                      entering={FadeInUp.delay(Math.min(index, 15) * 50).duration(300)}
                     >
                       <Pressable accessibilityRole="button"
                         accessibilityLabel={t(transition.labelKey)}

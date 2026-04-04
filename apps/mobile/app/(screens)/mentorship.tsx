@@ -100,7 +100,7 @@ export default function MentorshipScreen() {
     const other = (item.mentor as Record<string, unknown>) || (item.mentee as Record<string, unknown>);
     const isMentor = !!(item.mentor as Record<string, unknown>);
     return (
-      <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
+      <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 60).duration(300)}>
         <View style={[styles.mentorCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
           <Avatar uri={other?.avatarUrl as string | null} name={other?.displayName as string || ''} size="lg" />
           <View style={{ flex: 1 }}>

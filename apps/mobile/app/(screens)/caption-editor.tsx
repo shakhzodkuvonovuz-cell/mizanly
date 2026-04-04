@@ -210,7 +210,7 @@ export default function CaptionEditorScreen() {
     const active = isCaptionActive(item);
 
     return (
-      <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
+      <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 80).duration(400)}>
         <LinearGradient
           colors={active
             ? ['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.05)']

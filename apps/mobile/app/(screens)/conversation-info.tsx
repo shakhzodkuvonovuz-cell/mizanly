@@ -458,7 +458,7 @@ export default function ConversationInfoScreen() {
                   <Text style={[styles.sectionTitle, { color: tc.text.secondary }]}>{t('conversation.membersTitle')}</Text>
                 </View>
                 {convo.members.map((m, index) => (
-                  <Animated.View key={m.user.id} entering={FadeInUp.delay(index * 80).duration(400)}>
+                  <Animated.View key={m.user.id} entering={FadeInUp.delay(Math.min(index, 15) * 80).duration(400)}>
                     <Pressable
                       style={[styles.memberRow, { borderBottomColor: tc.border }]}
                       onPress={() => router.push(`/(screens)/profile/${m.user.username}`)}

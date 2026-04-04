@@ -67,7 +67,7 @@ function CommunityCard({
   const category = community.category;
 
   return (
-    <Animated.View entering={FadeInUp.delay(index * 80).duration(500)} style={animatedStyle}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 80).duration(500)} style={animatedStyle}>
       <Pressable onPress={handlePress} accessibilityRole="button" accessibilityLabel={community.name}>
         <LinearGradient
           colors={colors.gradient.cardDark}

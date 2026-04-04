@@ -212,7 +212,7 @@ export default function AiAssistantScreen() {
               {captions.map((suggestion, i) => (
                 <Animated.View
                   key={i}
-                  entering={FadeInUp.delay(i * 80).duration(300)}
+                  entering={FadeInUp.delay(Math.min(i, 15) * 80).duration(300)}
                 >
                   <Pressable
                     accessibilityRole="button"
@@ -251,7 +251,7 @@ export default function AiAssistantScreen() {
               </View>
               <View style={styles.hashtagGrid}>
                 {hashtags.map((tag, i) => (
-                  <Animated.View key={tag} entering={FadeInUp.delay(i * 50).duration(200)}>
+                  <Animated.View key={tag} entering={FadeInUp.delay(Math.min(i, 15) * 50).duration(200)}>
                     <Pressable
                       accessibilityRole="button"
                       accessibilityLabel={`#${tag}`}

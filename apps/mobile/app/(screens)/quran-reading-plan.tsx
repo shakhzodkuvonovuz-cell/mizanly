@@ -318,7 +318,7 @@ function QuranReadingPlanContent() {
 
   const renderPlanOptionItem = useCallback(
     ({ item, index }: { item: PlanOption; index: number }) => (
-      <Animated.View entering={FadeInUp.delay(index * 100).duration(400)}>
+      <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 100).duration(400)}>
         <PlanCard option={item} onSelect={handleCreatePlan} t={t} />
       </Animated.View>
     ),

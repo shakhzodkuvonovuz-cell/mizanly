@@ -71,7 +71,7 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
   }, [onLongPress, post]);
 
   return (
-    <Animated.View entering={index < 10 ? FadeInUp.delay(index * 50).duration(400) : undefined}>
+    <Animated.View entering={index < 10 ? FadeInUp.delay(Math.min(index, 15) * 50).duration(400) : undefined}>
       <Pressable
         accessibilityRole="button"
         style={styles.postCard}

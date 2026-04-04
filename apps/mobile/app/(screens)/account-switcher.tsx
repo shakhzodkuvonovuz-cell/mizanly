@@ -255,7 +255,7 @@ export default function AccountSwitcherScreen() {
               {otherAccounts.map((account, index) => (
                 <Animated.View
                   key={account.id}
-                  entering={FadeInUp.delay(index * 100).duration(400)}
+                  entering={FadeInUp.delay(Math.min(index, 15) * 100).duration(400)}
                   style={styles.accountCard}
                 >
                   <LinearGradient

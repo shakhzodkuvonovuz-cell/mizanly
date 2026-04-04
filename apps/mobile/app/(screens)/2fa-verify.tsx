@@ -121,7 +121,7 @@ export default function TwoFactorVerifyScreen() {
         {verificationCode.map((digit, idx) => (
           <Animated.View
             key={idx}
-            entering={FadeInUp.delay(idx * 80).duration(300)}
+            entering={FadeInUp.delay(Math.min(idx, 15) * 80).duration(300)}
             style={animatedStyle}
           >
             <LinearGradient

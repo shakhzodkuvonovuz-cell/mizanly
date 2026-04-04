@@ -201,6 +201,7 @@ export default function MinbarScreen() {
 
   const feedRef = useRef<FlashListRef<Video>>(null);
   useScrollToTop(feedRef);
+  const hasAnimatedSkeletons = useRef(false);
 
   // D41-#49: Scroll position persistence across tab switches
   const lastSavedOffset = useRef(0);
@@ -394,10 +395,12 @@ export default function MinbarScreen() {
         />
       );
     }
+    const shouldAnimate = !hasAnimatedSkeletons.current;
+    if (feedQuery.isLoading) hasAnimatedSkeletons.current = true;
     return feedQuery.isLoading ? (
       <View>
         {[1, 2, 3].map((i) => (
-          <Animated.View key={i} entering={FadeInUp.delay((i - 1) * 80).duration(300)} style={{ marginBottom: spacing.lg }}>
+          <Animated.View key={i} entering={shouldAnimate ? FadeInUp.delay((i - 1) * 80).duration(300) : undefined} style={{ marginBottom: spacing.lg }}>
             <Skeleton.Rect width="100%" height={210} borderRadius={0} />
             <View style={{ flexDirection: 'row', paddingHorizontal: spacing.base, marginTop: spacing.md, gap: spacing.sm }}>
               <Skeleton.Circle size={36} />

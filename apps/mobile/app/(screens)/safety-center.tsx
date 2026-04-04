@@ -78,7 +78,7 @@ function SafetyCenterContent() {
           {t('safety.intro', 'Your safety matters. Use these tools to protect yourself and others in the Mizanly community.')}
         </Text>
         {items.map((item, i) => (
-          <Animated.View key={item.title} entering={FadeInUp.delay(i * 60).duration(250)}>
+          <Animated.View key={item.title} entering={FadeInUp.delay(Math.min(i, 15) * 60).duration(250)}>
             <Pressable
               style={({ pressed }) => [styles.itemRow, { backgroundColor: tc.bgCard, borderColor: tc.border }, pressed && { opacity: 0.7 }]}
               android_ripple={{ color: 'rgba(255,255,255,0.1)' }}

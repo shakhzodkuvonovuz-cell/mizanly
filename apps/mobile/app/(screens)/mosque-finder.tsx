@@ -144,7 +144,7 @@ function MosqueCard({ mosque, index }: { mosque: Mosque; index: number }) {
   const router = useRouter();
 
   return (
-    <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 80).duration(400)}>
       <Pressable
         accessibilityRole="button"
         onPress={() => {

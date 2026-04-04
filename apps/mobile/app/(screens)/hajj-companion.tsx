@@ -258,7 +258,7 @@ function HajjCompanionContent() {
             return (
               <Animated.View
                 key={step.step}
-                entering={FadeInUp.delay(index * 80).duration(300)}
+                entering={FadeInUp.delay(Math.min(index, 15) * 80).duration(300)}
               >
                 <Pressable
                   accessibilityRole="button"

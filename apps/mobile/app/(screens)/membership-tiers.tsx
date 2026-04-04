@@ -73,7 +73,7 @@ function TierCard({
   const tierColors = TIER_COLORS[tier.level] ?? TIER_COLORS.bronze;
 
   return (
-    <Animated.View entering={FadeInUp.delay(index * 100).duration(400)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 100).duration(400)}>
       <LinearGradient
         colors={colors.gradient.cardDark}
         style={styles.tierCard}

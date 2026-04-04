@@ -216,7 +216,7 @@ function SeriesDiscoverContent() {
   );
 
   const renderSeriesCard = ({ item, index }: { item: SeriesItem; index: number }) => (
-    <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 60).duration(300)}>
       <Pressable
         style={({ pressed }) => [styles.seriesCard, pressed && { opacity: 0.8 }]}
         onPress={() => handleSeriesPress(item)}

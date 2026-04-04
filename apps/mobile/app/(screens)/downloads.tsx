@@ -143,7 +143,7 @@ function DownloadItem({
   const badgeColor = typeBadgeColors[item.contentType] ?? colors.emerald;
 
   return (
-    <Animated.View entering={FadeInUp.delay(index * 40).duration(350)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350)}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={(item as unknown as Record<string, unknown>).title as string || `${item.contentType} ${item.contentId.slice(0, 8)}`}

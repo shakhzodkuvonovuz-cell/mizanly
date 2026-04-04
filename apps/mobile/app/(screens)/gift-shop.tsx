@@ -245,7 +245,7 @@ function GiftShopContent() {
 
   const renderCoinPackage = ({ item, index }: { item: typeof COIN_PACKAGES[number]; index: number }) => (
     <Animated.View
-      entering={FadeInUp.delay(index * 80).duration(300)}
+      entering={FadeInUp.delay(Math.min(index, 15) * 80).duration(300)}
       style={[styles.packageCard, { borderColor: tc.border }]}
     >
       <LinearGradient
@@ -270,7 +270,7 @@ function GiftShopContent() {
 
   const renderGiftItem = ({ item, index }: { item: GiftCatalogItem; index: number }) => (
     <Animated.View
-      entering={FadeInUp.delay(index * 60).duration(300)}
+      entering={FadeInUp.delay(Math.min(index, 15) * 60).duration(300)}
       style={[styles.giftCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
     >
       <Pressable
@@ -293,7 +293,7 @@ function GiftShopContent() {
 
   const renderHistoryItem = ({ item, index }: { item: GiftHistoryItem; index: number }) => (
     <Animated.View
-      entering={FadeInUp.delay(index * 50).duration(250)}
+      entering={FadeInUp.delay(Math.min(index, 15) * 50).duration(250)}
       style={[styles.historyRow, { borderBottomColor: tc.border }]}
     >
       <View style={styles.historyIcon}>

@@ -475,7 +475,7 @@ export default function CreatePostScreen() {
               contentContainerStyle={{ gap: spacing.sm, paddingEnd: spacing.base }}
             >
               {media.map((item, idx) => (
-                <Animated.View key={idx} entering={FadeInUp.delay(idx * 50)} style={styles.mediaCard}>
+                <Animated.View key={idx} entering={FadeInUp.delay(Math.min(idx, 15) * 50)} style={styles.mediaCard}>
                   <LinearGradient
                     colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
                     start={{ x: 0, y: 0 }}

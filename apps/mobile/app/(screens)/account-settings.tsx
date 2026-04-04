@@ -66,7 +66,7 @@ function Row({
 
 function SectionHeader({ title, index }: { title: string; index: number }) {
   return (
-    <Animated.View entering={FadeInUp.delay(index * 100).duration(400)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 100).duration(400)}>
       <LinearGradient
         colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
         style={styles.sectionHeaderGradient}

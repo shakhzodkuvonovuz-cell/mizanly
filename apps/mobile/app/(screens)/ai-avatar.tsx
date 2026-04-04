@@ -78,7 +78,7 @@ export default function AiAvatarScreen() {
   const avatars = (avatarsQuery.data as AiAvatar[] | undefined) || [];
 
   const renderAvatar = ({ item, index }: { item: AiAvatar; index: number }) => (
-    <Animated.View entering={FadeInUp.delay(index * 60).duration(300)} style={[styles.avatarCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 60).duration(300)} style={[styles.avatarCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
       <ProgressiveImage uri={item.avatarUrl} width="100%" height={200} />
       <View style={styles.avatarInfo}>
         <View style={[styles.styleBadge, { backgroundColor: (STYLES.find(s => s.id === item.style)?.color || colors.emerald) + '20' }]}>

@@ -408,7 +408,7 @@ export default function AudioRoomScreen() {
                 {speakerData.map((speaker, index) => (
                   <Animated.View
                     key={speaker.id}
-                    entering={FadeInUp.delay(index * 80).duration(400)}
+                    entering={FadeInUp.delay(Math.min(index, 15) * 80).duration(400)}
                     style={[styles.speakerItem, { width: (width - 80) / 3 }]}
                   >
                     <View style={styles.speakerAvatarContainer}>
@@ -468,7 +468,7 @@ export default function AudioRoomScreen() {
                 {displayedListeners.map((listener, index) => (
                   <Animated.View
                     key={listener.id}
-                    entering={FadeInUp.delay(index * 50).duration(400)}
+                    entering={FadeInUp.delay(Math.min(index, 15) * 50).duration(400)}
                     style={[styles.listenerItem, { width: (width - 96) / 4 }]}
                   >
                     <Avatar uri={listener.avatar} name={listener.name} size="sm" />
@@ -507,7 +507,7 @@ export default function AudioRoomScreen() {
               {raisedHandData.map((hand, index) => (
                 <Animated.View
                   key={hand.id}
-                  entering={FadeInUp.delay(index * 80).duration(400)}
+                  entering={FadeInUp.delay(Math.min(index, 15) * 80).duration(400)}
                   style={[styles.raisedHandRow, index < raisedHandData.length - 1 && styles.raisedHandBorder]}
                 >
                   <Avatar uri={hand.avatar} name={hand.name} size="sm" />

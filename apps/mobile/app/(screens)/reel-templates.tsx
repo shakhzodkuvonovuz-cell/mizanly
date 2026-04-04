@@ -164,7 +164,7 @@ export default function ReelTemplatesScreen() {
     const isSelected = selectedTemplate?.id === item.id;
 
     return (
-      <Animated.View entering={FadeInUp.delay(index * 50).duration(300)}>
+      <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 50).duration(300)}>
         <Pressable
           accessibilityRole="button"
           style={[styles.cardContainer, isSelected && styles.cardContainerSelected]}

@@ -213,6 +213,7 @@ export default function SafScreen() {
   const feedType = useStore((s) => s.safFeedType);
   const setFeedType = useStore((s) => s.setSafFeedType);
   const [refreshing, setRefreshing] = useState(false);
+  const hasAnimatedSkeletons = useRef(false);
   const setUnreadNotifications = useStore((s) => s.setUnreadNotifications);
   const unreadNotifications = useStore((s) => s.unreadNotifications);
   const unreadMessages = useStore((s) => s.unreadMessages);
@@ -477,7 +478,7 @@ export default function SafScreen() {
       );
     }
     return (
-      <Animated.View entering={FadeIn.duration(300)}>
+      <View>
         <PostCard post={item} viewerId={user?.id} isOwn={user?.username === item.user.username} />
         {item.commentsCount > 0 && (
           <Pressable
@@ -491,7 +492,7 @@ export default function SafScreen() {
             </Text>
           </Pressable>
         )}
-      </Animated.View>
+      </View>
     );
   }, [user?.id, user?.username, followMutation, router, tc.text.secondary, t]);
 
@@ -571,8 +572,10 @@ export default function SafScreen() {
     </View>
   ), [storyGroups, feedType, setFeedType, user?.id, router, feedTypeAnimStyle, bannerDismissed, dismissBanner, FEED_TABS, tc.border]);
 
-  const listEmpty = useMemo(() => (
-    feedQuery.isError ? (
+  const listEmpty = useMemo(() => {
+    const shouldAnimate = !hasAnimatedSkeletons.current;
+    if (feedQuery.isLoading) hasAnimatedSkeletons.current = true;
+    return feedQuery.isError ? (
       <EmptyState
         icon="globe"
         title={t('common.somethingWentWrong')}
@@ -582,13 +585,13 @@ export default function SafScreen() {
       />
     ) : feedQuery.isLoading ? (
       <View>
-        <Animated.View entering={FadeInUp.delay(0).duration(300)}>
+        <Animated.View entering={shouldAnimate ? FadeInUp.delay(0).duration(300) : undefined}>
           <Skeleton.PostCard />
         </Animated.View>
-        <Animated.View entering={FadeInUp.delay(80).duration(300)}>
+        <Animated.View entering={shouldAnimate ? FadeInUp.delay(80).duration(300) : undefined}>
           <Skeleton.PostCard />
         </Animated.View>
-        <Animated.View entering={FadeInUp.delay(160).duration(300)}>
+        <Animated.View entering={shouldAnimate ? FadeInUp.delay(160).duration(300) : undefined}>
           <Skeleton.PostCard />
         </Animated.View>
       </View>
@@ -600,8 +603,8 @@ export default function SafScreen() {
         actionLabel={t('common.explore')}
         onAction={() => router.push('/(screens)/discover')}
       />
-    )
-  ), [feedQuery.isLoading, feedQuery.isError, router, t]);
+    );
+  }, [feedQuery.isLoading, feedQuery.isError, router, t]);
 
   const listFooter = useMemo(() => {
     if (feedQuery.isFetchingNextPage) {
@@ -613,9 +616,9 @@ export default function SafScreen() {
     }
     if (!feedQuery.hasNextPage && rawPosts.length > 0) {
       return (
-        <Animated.View entering={FadeInUp.duration(400).springify()}>
+        <View>
           <CaughtUpCard />
-        </Animated.View>
+        </View>
       );
     }
     return null;

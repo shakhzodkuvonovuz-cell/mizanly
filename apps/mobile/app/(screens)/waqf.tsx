@@ -109,7 +109,7 @@ export default function WaqfScreen() {
     const creator = item.creator as Record<string, unknown> | undefined;
 
     return (
-      <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
+      <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 60).duration(300)}>
         <View style={styles.fundCard}>
           <View style={[styles.fundHeader, { flexDirection: rtlFlexRow(isRTL) }]}>
             <View style={styles.fundIconWrap}>

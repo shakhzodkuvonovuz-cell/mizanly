@@ -125,7 +125,7 @@ function ScheduleItem({ prayer, index, t }: { prayer: PrayerTime; index: number;
   const tc = useThemeColors();
   const styles = useMemo(() => createStyles(tc), [tc]);
   return (
-    <Animated.View entering={FadeInUp.delay(index * 50).duration(300)} style={styles.scheduleItem}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 50).duration(300)} style={styles.scheduleItem}>
       <View style={styles.scheduleIconContainer}>
         <Icon name="clock" size="xs" color={prayer.isCurrent ? colors.emerald : tc.text.tertiary} />
       </View>

@@ -205,7 +205,7 @@ function EventCard({
   const tc = useThemeColors();
   const monthNames = isRTL ? HIJRI_MONTHS_AR : HIJRI_MONTHS_EN;
   return (
-    <Animated.View entering={FadeInUp.delay(index * 100).duration(500)} style={styles.eventCard}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 100).duration(500)} style={styles.eventCard}>
       <LinearGradient
         colors={event.type === 'eid' ? ['rgba(200,150,62,0.2)', 'rgba(28,35,51,0.15)'] : ['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
         style={[
@@ -263,7 +263,7 @@ function CommunityEventCard({
   }, [event.startDate]);
 
   return (
-    <Animated.View entering={FadeInUp.delay(index * 100).duration(500)} style={styles.eventCard}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 100).duration(500)} style={styles.eventCard}>
       <LinearGradient
         colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
         style={styles.eventCardGradient}

@@ -371,7 +371,7 @@ export default function ChatThemePickerScreen() {
           {TABS.map((tab, index) => {
             const isActive = activeTab === tab.id;
             return (
-                <Animated.View key={tab.id} entering={FadeInUp.delay(index * 80).duration(400)}>
+                <Animated.View key={tab.id} entering={FadeInUp.delay(Math.min(index, 15) * 80).duration(400)}>
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={t(`chatThemePicker.tab.${tab.id}`)}

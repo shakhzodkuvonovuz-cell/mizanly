@@ -300,7 +300,7 @@ export default function VideoEditorScreen() {
               {FILTERS.map((filter, index) => (
                 <Animated.View
                   key={filter.id}
-                  entering={FadeInUp.delay(index * 50).duration(300)}
+                  entering={FadeInUp.delay(Math.min(index, 15) * 50).duration(300)}
                 >
                   <Pressable accessibilityRole="button"
                     accessibilityLabel={t(filter.labelKey)}

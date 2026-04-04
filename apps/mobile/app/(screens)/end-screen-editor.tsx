@@ -272,7 +272,7 @@ export default function EndScreenEditorScreen() {
                 {items.map((item, index) => (
                   <Animated.View
                     key={item.id}
-                    entering={FadeInUp.delay(index * 80).duration(300)}
+                    entering={FadeInUp.delay(Math.min(index, 15) * 80).duration(300)}
                   >
                     <LinearGradient
                       colors={colors.gradient.cardDark}

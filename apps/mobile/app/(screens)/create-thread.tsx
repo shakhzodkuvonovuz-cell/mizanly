@@ -92,7 +92,7 @@ function ThreadPart({
   const tc = useThemeColors();
   const styles = useMemo(() => createStyles(tc), [tc]);
   return (
-    <Animated.View entering={FadeInUp.delay(index * 100)} style={styles.part}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 100)} style={styles.part}>
       <View style={styles.partLeft}>
         <Avatar uri={avatar} name={name} size="md" />
         {showLine && (

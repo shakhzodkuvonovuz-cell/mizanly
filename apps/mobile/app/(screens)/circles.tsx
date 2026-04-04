@@ -172,7 +172,7 @@ export default function CirclesScreen() {
 
   const renderCircleItem = useCallback(
     ({ item, index }: { item: Circle; index: number }) => (
-      <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+      <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 50).duration(400)}>
                 <Pressable
           accessibilityRole="button"
           style={({ pressed }) => [pressed && { opacity: 0.7 }]}

@@ -203,7 +203,7 @@ export default function GreenScreenEditorScreen() {
             {SOLID_COLORS.map((color, index) => (
               <Animated.View
                 key={color.name}
-                entering={FadeInUp.delay(index * 30).duration(300)}
+                entering={FadeInUp.delay(Math.min(index, 15) * 30).duration(300)}
                 style={styles.colorGridItem}
               >
                 <Pressable
@@ -232,7 +232,7 @@ export default function GreenScreenEditorScreen() {
             {GRADIENT_BACKGROUNDS.map((gradient, index) => (
               <Animated.View
                 key={gradient.name}
-                entering={FadeInUp.delay(index * 30).duration(300)}
+                entering={FadeInUp.delay(Math.min(index, 15) * 30).duration(300)}
                 style={styles.gradientGridItem}
               >
                 <Pressable
@@ -269,7 +269,7 @@ export default function GreenScreenEditorScreen() {
             {IMAGE_BACKGROUNDS.map((image, index) => (
               <Animated.View
                 key={image.name}
-                entering={FadeInUp.delay(index * 30).duration(300)}
+                entering={FadeInUp.delay(Math.min(index, 15) * 30).duration(300)}
                 style={styles.imageGridItem}
               >
                 <Pressable
@@ -297,7 +297,7 @@ export default function GreenScreenEditorScreen() {
             {VIDEO_BACKGROUNDS.map((video, index) => (
               <Animated.View
                 key={video.name}
-                entering={FadeInUp.delay(index * 30).duration(300)}
+                entering={FadeInUp.delay(Math.min(index, 15) * 30).duration(300)}
                 style={styles.videoGridItem}
               >
                 <Pressable

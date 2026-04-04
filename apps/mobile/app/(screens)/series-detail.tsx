@@ -213,7 +213,7 @@ function SeriesDetailContent() {
   }
 
   const renderEpisode = ({ item, index }: { item: Episode; index: number }) => (
-    <Animated.View entering={FadeInUp.delay(index * 50).duration(250)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 50).duration(250)}>
       <Pressable
         style={({ pressed }) => [styles.episodeRow, pressed && { opacity: 0.7 }]}
         onPress={() => handleEpisodePress(item)}

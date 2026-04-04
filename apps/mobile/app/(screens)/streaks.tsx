@@ -63,7 +63,7 @@ function StreakCard({
   const translationKey = `gamification.streaks.${streak.type}` as const;
 
   return (
-    <Animated.View entering={FadeInUp.delay(index * 100).duration(500)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 100).duration(500)}>
       <LinearGradient
         colors={
           streak.isActive

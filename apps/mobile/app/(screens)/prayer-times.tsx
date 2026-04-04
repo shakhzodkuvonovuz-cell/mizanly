@@ -179,7 +179,7 @@ function PrayerCard({
 
   return (
     <Animated.View
-      entering={FadeInUp.delay(index * 80).duration(500)}
+      entering={FadeInUp.delay(Math.min(index, 15) * 80).duration(500)}
       style={[
         styles.prayerCard,
         isCurrent && styles.prayerCardCurrent,
