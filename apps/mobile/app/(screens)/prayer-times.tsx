@@ -29,7 +29,7 @@ import { formatHijriDate } from '@/utils/hijri';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
-import { rtlFlexRow } from '@/utils/rtl';
+import { rtlFlexRow, rtlChevron } from '@/utils/rtl';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -632,7 +632,7 @@ export default function PrayerTimesScreen() {
                   accessibilityRole="button"
                   accessibilityLabel={t('islamic.openCompass')}
                 >
-                  <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
+                  <Icon name={rtlChevron(isRTL, 'forward')} size="sm" color={tc.text.tertiary} />
                 </Pressable>
               </View>
             </LinearGradient>
@@ -678,7 +678,7 @@ export default function PrayerTimesScreen() {
                 <Text style={styles.methodLabel}>{t('islamic.prayerMethod')}</Text>
                 <Text style={styles.methodValue}>{calculationMethod}</Text>
               </View>
-              <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
+              <Icon name={rtlChevron(isRTL, 'forward')} size="sm" color={tc.text.tertiary} />
             </LinearGradient>
           </Pressable>
 
