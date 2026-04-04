@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!--
+    CONCEPT 2: "THE RIPPLE"
+    A gold drop touching water, creating concentric ripples.
+    Balance in its purest natural form — water always finds its level.
+    Also: your voice rippling outward through the community.
+    Meaning: Impact, community, natural balance, spreading good.
+    Unique — no social app uses this metaphor.
+  -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0E9B5F"/>
+      <stop offset="45%" stop-color="#0A7B4F"/>
+      <stop offset="100%" stop-color="#06633C"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0.3" y1="0" x2="0.7" y2="1">
+      <stop offset="0%" stop-color="#E8C46A"/>
+      <stop offset="40%" stop-color="#C8963E"/>
+      <stop offset="100%" stop-color="#A67A2E"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.46" r="0.35">
+      <stop offset="0%" stop-color="rgba(232,196,106,0.18)"/>
+      <stop offset="100%" stop-color="rgba(200,150,62,0)"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
+
+  <!-- Ambient glow -->
+  <circle cx="512" cy="470" r="340" fill="url(#glow)"/>
+
+  <!-- Ripple 3 (outermost) -->
+  <ellipse cx="512" cy="530" rx="280" ry="90"
+    fill="none" stroke="url(#gold)" stroke-width="8" opacity="0.2"/>
+
+  <!-- Ripple 2 -->
+  <ellipse cx="512" cy="530" rx="195" ry="63"
+    fill="none" stroke="url(#gold)" stroke-width="12" opacity="0.4"/>
+
+  <!-- Ripple 1 (innermost) -->
+  <ellipse cx="512" cy="530" rx="110" ry="36"
+    fill="none" stroke="url(#gold)" stroke-width="16" opacity="0.7"/>
+
+  <!-- The drop — inverted teardrop rising from the water -->
+  <path
+    d="M 512,500
+       Q 545,430 545,370
+       Q 545,310 512,270
+       Q 479,310 479,370
+       Q 479,430 512,500
+       Z"
+    fill="url(#gold)"
+  />
+
+  <!-- Drop highlight -->
+  <ellipse cx="502" cy="360" rx="10" ry="22" fill="rgba(255,255,255,0.25)" transform="rotate(-10,502,360)"/>
+</svg>

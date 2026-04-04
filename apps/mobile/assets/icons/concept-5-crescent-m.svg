@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!--
+    CONCEPT 5: "THE CRESCENT M"
+    The letter M formed by a single flowing crescent stroke.
+    A crescent moon on its side, with its two tips rising like the peaks of an M.
+    Not a traditional crescent — it's a modern, abstract interpretation.
+    The concave curve at bottom = the bowl/cup of a scale (mizan).
+    Meaning: Islam (crescent), identity (M for Mizanly), balance (cup shape).
+    One stroke. One symbol. Multiple readings.
+  -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0E9B5F"/>
+      <stop offset="45%" stop-color="#0A7B4F"/>
+      <stop offset="100%" stop-color="#06633C"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0.3" x2="1" y2="0.7">
+      <stop offset="0%" stop-color="#E8C46A"/>
+      <stop offset="45%" stop-color="#C8963E"/>
+      <stop offset="100%" stop-color="#A67A2E"/>
+    </linearGradient>
+    <linearGradient id="goldBright" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#F0D88A"/>
+      <stop offset="100%" stop-color="#C8963E"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.4">
+      <stop offset="0%" stop-color="rgba(232,196,106,0.15)"/>
+      <stop offset="100%" stop-color="rgba(200,150,62,0)"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
+
+  <!-- Ambient glow -->
+  <circle cx="512" cy="490" r="320" fill="url(#glow)"/>
+
+  <!--
+    The Crescent-M shape:
+    A wide, shallow crescent on its back (horns pointing up).
+    Left horn rises to form first peak of M.
+    Right horn rises to form second peak of M.
+    The curve between them dips down (the valley of the M / the pan of a scale).
+  -->
+
+  <!-- Main crescent-M stroke -->
+  <path
+    d="M 250,600
+       Q 260,440 340,340
+       Q 400,280 420,300
+       Q 440,320 460,380
+       Q 490,460 512,480
+       Q 534,460 564,380
+       Q 584,320 604,300
+       Q 624,280 684,340
+       Q 764,440 774,600"
+    fill="none"
+    stroke="url(#gold)"
+    stroke-width="44"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Inner crescent echo (creates the crescent thickness illusion) -->
+  <path
+    d="M 310,580
+       Q 320,460 380,380
+       Q 420,340 445,365
+       Q 470,400 490,440
+       Q 505,470 512,475
+       Q 519,470 534,440
+       Q 554,400 579,365
+       Q 604,340 644,380
+       Q 704,460 714,580"
+    fill="none"
+    stroke="url(#gold)"
+    stroke-width="8"
+    stroke-linecap="round"
+    opacity="0.3"
+  />
+
+  <!-- Small star accent between the M peaks -->
+  <circle cx="512" cy="360" r="12" fill="url(#goldBright)" opacity="0.6"/>
+</svg>

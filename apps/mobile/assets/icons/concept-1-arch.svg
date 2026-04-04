@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!--
+    CONCEPT 1: "THE ARCH"
+    A single golden mihrab arch — the most iconic shape in Islamic architecture.
+    It's a doorway, an invitation, a focal point. Inside hangs a single lamp (light).
+    Meaning: Welcome, guidance, sacred space, community gathering.
+    Think: Telegram's paper plane simplicity, but rooted in Islamic geometry.
+  -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0E9B5F"/>
+      <stop offset="45%" stop-color="#0A7B4F"/>
+      <stop offset="100%" stop-color="#06633C"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0.3" y1="0" x2="0.7" y2="1">
+      <stop offset="0%" stop-color="#E8C46A"/>
+      <stop offset="45%" stop-color="#C8963E"/>
+      <stop offset="100%" stop-color="#A67A2E"/>
+    </linearGradient>
+    <linearGradient id="goldLight" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#E8C46A"/>
+      <stop offset="100%" stop-color="#D4A44E"/>
+    </linearGradient>
+    <radialGradient id="lampGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="rgba(232,196,106,0.25)"/>
+      <stop offset="60%" stop-color="rgba(200,150,62,0.08)"/>
+      <stop offset="100%" stop-color="rgba(200,150,62,0)"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
+
+  <!-- Subtle ambient light from the arch -->
+  <ellipse cx="512" cy="480" rx="200" ry="260" fill="url(#lampGlow)"/>
+
+  <!-- The Mihrab Arch — single continuous path -->
+  <!-- Pointed arch: two sides rise from base, curve inward, meet at a point -->
+  <path
+    d="M 340,740
+       L 340,420
+       Q 340,200 512,180
+       Q 684,200 684,420
+       L 684,740"
+    fill="none"
+    stroke="url(#gold)"
+    stroke-width="36"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Inner arch echo (thinner, subtler) -->
+  <path
+    d="M 390,740
+       L 390,440
+       Q 390,255 512,238
+       Q 634,255 634,440
+       L 634,740"
+    fill="none"
+    stroke="url(#gold)"
+    stroke-width="6"
+    stroke-linecap="round"
+    opacity="0.35"
+  />
+
+  <!-- Hanging lamp — simple teardrop -->
+  <line x1="512" y1="280" x2="512" y2="400" stroke="url(#goldLight)" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
+  <!-- Lamp body — small diamond shape -->
+  <path
+    d="M 512,400 L 530,430 L 512,470 L 494,430 Z"
+    fill="url(#gold)"
+    opacity="0.85"
+  />
+  <!-- Lamp glow dot -->
+  <circle cx="512" cy="435" r="8" fill="#E8C46A" opacity="0.7"/>
+</svg>

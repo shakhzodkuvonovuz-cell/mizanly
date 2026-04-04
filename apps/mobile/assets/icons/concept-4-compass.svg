@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!--
+    CONCEPT 4: "THE COMPASS"
+    A minimal compass needle inside a thin circle, pointing upward.
+    The needle has a slight asymmetry — one half gold, one half emerald-on-emerald.
+    Meaning: Direction (Qibla), purpose, moral compass, finding your path.
+    The circle represents unity (the Ummah), completeness.
+    Clean, geometric, modern — works at any size.
+  -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0E9B5F"/>
+      <stop offset="45%" stop-color="#0A7B4F"/>
+      <stop offset="100%" stop-color="#06633C"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0.3" y1="0" x2="0.7" y2="1">
+      <stop offset="0%" stop-color="#E8C46A"/>
+      <stop offset="45%" stop-color="#C8963E"/>
+      <stop offset="100%" stop-color="#A67A2E"/>
+    </linearGradient>
+    <linearGradient id="needleTop" x1="0.5" y1="1" x2="0.5" y2="0">
+      <stop offset="0%" stop-color="#C8963E"/>
+      <stop offset="100%" stop-color="#E8C46A"/>
+    </linearGradient>
+    <linearGradient id="needleBottom" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.4)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0.15)"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.35">
+      <stop offset="0%" stop-color="rgba(232,196,106,0.12)"/>
+      <stop offset="100%" stop-color="rgba(200,150,62,0)"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
+
+  <!-- Ambient glow -->
+  <circle cx="512" cy="512" r="300" fill="url(#glow)"/>
+
+  <!-- Outer circle (the compass ring) -->
+  <circle cx="512" cy="512" r="280" fill="none" stroke="url(#gold)" stroke-width="10" opacity="0.7"/>
+
+  <!-- Cardinal tick marks -->
+  <!-- North -->
+  <line x1="512" y1="232" x2="512" y2="270" stroke="url(#gold)" stroke-width="8" stroke-linecap="round"/>
+  <!-- South -->
+  <line x1="512" y1="754" x2="512" y2="792" stroke="url(#gold)" stroke-width="5" stroke-linecap="round" opacity="0.4"/>
+  <!-- East -->
+  <line x1="754" y1="512" x2="792" y2="512" stroke="url(#gold)" stroke-width="5" stroke-linecap="round" opacity="0.4"/>
+  <!-- West -->
+  <line x1="232" y1="512" x2="270" y2="512" stroke="url(#gold)" stroke-width="5" stroke-linecap="round" opacity="0.4"/>
+
+  <!-- Compass needle — north half (gold, pointing up) -->
+  <path
+    d="M 512,280 L 540,500 L 512,520 L 484,500 Z"
+    fill="url(#needleTop)"
+  />
+
+  <!-- Compass needle — south half (white/translucent, pointing down) -->
+  <path
+    d="M 512,744 L 540,524 L 512,504 L 484,524 Z"
+    fill="url(#needleBottom)"
+  />
+
+  <!-- Center pivot -->
+  <circle cx="512" cy="512" r="14" fill="url(#gold)"/>
+  <circle cx="512" cy="512" r="6" fill="#0A7B4F"/>
+</svg>

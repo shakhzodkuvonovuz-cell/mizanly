@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!--
+    CONCEPT 7: "THE WAVE"
+    A single flowing S-curve / wave that divides the icon into two balanced halves.
+    The wave is thick, confident, gold — like a brushstroke.
+    Above and below the wave = equal space = balance.
+    Also reads as: a path, a journey, a sound wave (voice).
+    Meaning: Balance, flow, voice, the middle path.
+    Think: the simplicity of the Nike swoosh or Shazam's S.
+  -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0E9B5F"/>
+      <stop offset="45%" stop-color="#0A7B4F"/>
+      <stop offset="100%" stop-color="#06633C"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0.3" x2="1" y2="0.7">
+      <stop offset="0%" stop-color="#EDD07A"/>
+      <stop offset="40%" stop-color="#C8963E"/>
+      <stop offset="100%" stop-color="#A67A2E"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.4">
+      <stop offset="0%" stop-color="rgba(232,196,106,0.1)"/>
+      <stop offset="100%" stop-color="rgba(200,150,62,0)"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
+  <circle cx="512" cy="512" r="360" fill="url(#glow)"/>
+
+  <!-- The Wave — single bold S-curve -->
+  <path
+    d="M 200,560
+       Q 340,340 512,460
+       Q 684,580 824,360"
+    fill="none"
+    stroke="url(#gold)"
+    stroke-width="52"
+    stroke-linecap="round"
+  />
+
+  <!-- Thin echo wave above (creates depth) -->
+  <path
+    d="M 240,490
+       Q 370,300 512,400
+       Q 654,500 784,310"
+    fill="none"
+    stroke="url(#gold)"
+    stroke-width="8"
+    stroke-linecap="round"
+    opacity="0.25"
+  />
+
+  <!-- Thin echo wave below -->
+  <path
+    d="M 240,630
+       Q 370,410 512,530
+       Q 654,650 784,430"
+    fill="none"
+    stroke="url(#gold)"
+    stroke-width="8"
+    stroke-linecap="round"
+    opacity="0.25"
+  />
+</svg>

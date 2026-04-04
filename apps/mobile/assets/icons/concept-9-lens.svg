@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!--
+    CONCEPT 9: "THE LENS"
+    Two overlapping circles creating a vesica piscis (almond/eye shape)
+    in the center. The overlap zone is filled with gold.
+    Meaning: Two perspectives meeting, common ground, balance of views,
+    seeing clearly, the intersection where understanding happens.
+    Also: looks like an abstract eye — "your perspective matters."
+    Geometric, clean, meaningful, universal.
+  -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0E9B5F"/>
+      <stop offset="45%" stop-color="#0A7B4F"/>
+      <stop offset="100%" stop-color="#06633C"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0.3" y1="0" x2="0.7" y2="1">
+      <stop offset="0%" stop-color="#EDD07A"/>
+      <stop offset="40%" stop-color="#C8963E"/>
+      <stop offset="100%" stop-color="#A67A2E"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.3">
+      <stop offset="0%" stop-color="rgba(232,196,106,0.15)"/>
+      <stop offset="100%" stop-color="rgba(200,150,62,0)"/>
+    </radialGradient>
+    <clipPath id="leftCircle">
+      <circle cx="400" cy="512" r="220"/>
+    </clipPath>
+    <clipPath id="rightCircle">
+      <circle cx="624" cy="512" r="220"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
+  <circle cx="512" cy="512" r="280" fill="url(#glow)"/>
+
+  <!-- Left circle (outline only) -->
+  <circle cx="400" cy="512" r="220" fill="none" stroke="url(#gold)" stroke-width="10" opacity="0.5"/>
+
+  <!-- Right circle (outline only) -->
+  <circle cx="624" cy="512" r="220" fill="none" stroke="url(#gold)" stroke-width="10" opacity="0.5"/>
+
+  <!-- Vesica piscis — the intersection (filled gold) -->
+  <!-- Created by drawing the intersection of two circles -->
+  <path
+    d="M 512,310
+       A 220,220 0 0,1 512,714
+       A 220,220 0 0,1 512,310
+       Z"
+    fill="url(#gold)"
+    opacity="0.85"
+  />
+
+  <!-- Center dot — the pupil / focal point -->
+  <circle cx="512" cy="512" r="20" fill="#0A7B4F"/>
+</svg>

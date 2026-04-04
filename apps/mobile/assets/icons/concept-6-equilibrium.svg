@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!--
+    CONCEPT 6: "EQUILIBRIUM"
+    Two abstract shapes in perfect balance — one rising, one grounding.
+    Like a yin-yang but completely reimagined as two flowing, organic forms
+    that interlock without touching. The negative space between them
+    forms a subtle "M" shape.
+    Meaning: Balance, duality, harmony, two sides of every story.
+    Universal — no cultural or religious symbols.
+  -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0E9B5F"/>
+      <stop offset="45%" stop-color="#0A7B4F"/>
+      <stop offset="100%" stop-color="#06633C"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#EDD07A"/>
+      <stop offset="45%" stop-color="#C8963E"/>
+      <stop offset="100%" stop-color="#A67A2E"/>
+    </linearGradient>
+    <linearGradient id="goldSoft" x1="0.8" y1="0" x2="0.2" y2="1">
+      <stop offset="0%" stop-color="#E8C46A"/>
+      <stop offset="50%" stop-color="#D4A44E"/>
+      <stop offset="100%" stop-color="#B8882E"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.38">
+      <stop offset="0%" stop-color="rgba(232,196,106,0.12)"/>
+      <stop offset="100%" stop-color="rgba(200,150,62,0)"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
+  <circle cx="512" cy="512" r="320" fill="url(#glow)"/>
+
+  <!-- Left form — rises from bottom-left, curves up and right -->
+  <path
+    d="M 300,680
+       Q 280,580 310,480
+       Q 340,380 400,320
+       Q 460,260 500,300
+       Q 520,320 510,370
+       Q 500,420 470,460
+       Q 430,510 400,540
+       Q 360,580 340,620
+       Q 320,660 300,680
+       Z"
+    fill="url(#gold)"
+  />
+
+  <!-- Right form — rises from bottom-right, mirrors and complements -->
+  <path
+    d="M 724,680
+       Q 744,580 714,480
+       Q 684,380 624,320
+       Q 564,260 524,300
+       Q 504,320 514,370
+       Q 524,420 554,460
+       Q 594,510 624,540
+       Q 664,580 684,620
+       Q 704,660 724,680
+       Z"
+    fill="url(#goldSoft)"
+  />
+
+  <!-- Central balance point — where they almost meet -->
+  <circle cx="512" cy="310" r="10" fill="#EDD07A" opacity="0.8"/>
+</svg>

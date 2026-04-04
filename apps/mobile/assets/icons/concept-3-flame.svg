@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!--
+    CONCEPT 3: "THE FLAME"
+    A single stylized flame/noor (divine light) rising upward.
+    In Islamic tradition, light (noor) represents guidance, truth, knowledge.
+    The flame shape subtly contains the letter M in its base curves.
+    Meaning: Guidance, illumination, warmth, spiritual light.
+    Distinct from any existing social app icon.
+  -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0E9B5F"/>
+      <stop offset="45%" stop-color="#0A7B4F"/>
+      <stop offset="100%" stop-color="#06633C"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0.5" y1="1" x2="0.5" y2="0">
+      <stop offset="0%" stop-color="#A67A2E"/>
+      <stop offset="40%" stop-color="#C8963E"/>
+      <stop offset="80%" stop-color="#E8C46A"/>
+      <stop offset="100%" stop-color="#F0D88A"/>
+    </linearGradient>
+    <linearGradient id="innerFlame" x1="0.5" y1="1" x2="0.5" y2="0">
+      <stop offset="0%" stop-color="#C8963E"/>
+      <stop offset="100%" stop-color="#F5E6C0"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.55" r="0.4">
+      <stop offset="0%" stop-color="rgba(232,196,106,0.2)"/>
+      <stop offset="100%" stop-color="rgba(200,150,62,0)"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
+
+  <!-- Ambient glow -->
+  <circle cx="512" cy="520" r="300" fill="url(#glow)"/>
+
+  <!-- Outer flame — the main shape -->
+  <!-- Base splits into two curves (subtle M shape), rises to a single point -->
+  <path
+    d="M 420,700
+       Q 400,620 430,540
+       Q 450,480 440,420
+       Q 430,360 470,290
+       Q 500,230 512,190
+       Q 524,230 554,290
+       Q 594,360 584,420
+       Q 574,480 594,540
+       Q 624,620 604,700
+       Q 570,720 512,730
+       Q 454,720 420,700
+       Z"
+    fill="url(#gold)"
+  />
+
+  <!-- Inner flame — brighter core -->
+  <path
+    d="M 472,680
+       Q 462,620 478,560
+       Q 488,510 485,460
+       Q 482,410 505,340
+       Q 512,310 519,340
+       Q 542,410 539,460
+       Q 536,510 546,560
+       Q 562,620 552,680
+       Q 535,695 512,700
+       Q 489,695 472,680
+       Z"
+    fill="url(#innerFlame)"
+    opacity="0.55"
+  />
+
+  <!-- Bright core point -->
+  <ellipse cx="512" cy="550" rx="18" ry="50" fill="rgba(255,255,255,0.2)" transform="rotate(0,512,550)"/>
+</svg>
