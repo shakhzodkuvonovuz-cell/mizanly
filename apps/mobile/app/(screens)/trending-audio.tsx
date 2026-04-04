@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -25,7 +25,7 @@ import { navigate } from '@/utils/navigation';
 
 export default function TrendingAudioScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();

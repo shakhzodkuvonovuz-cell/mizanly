@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, TextInput, Switch, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -23,7 +23,7 @@ import { showToast } from '@/components/ui/Toast';
 export default function CreatePlaylistScreen() {
   const router = useRouter();
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const params = useLocalSearchParams<{ channelId?: string }>();
   const insets = useSafeAreaInsets();
   const haptic = useContextualHaptic();

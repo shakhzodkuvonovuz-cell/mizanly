@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -60,7 +60,7 @@ interface InsightsData {
 
 function PostInsightsContent() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t, isRTL } = useTranslation();

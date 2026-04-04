@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, FlatList, Pressable,
   TextInput, Keyboard, Alert,
@@ -34,7 +34,7 @@ async function fetchSavedMessages(cursor?: string) {
 export default function SavedMessagesScreen() {
   const tc = useThemeColors();
   const insets = useSafeAreaInsets();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
   const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, Platform } from 'react-native';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -22,7 +22,7 @@ const THEMES = [
 
 export default function VideoPremiereScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { videoId, videoTitle } = useLocalSearchParams<{ videoId: string; videoTitle?: string }>();
   const router = useRouter();
   const haptic = useContextualHaptic();

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -39,7 +39,7 @@ const MADHAB_KEYS: Madhab[] = ['hanafi', 'maliki', 'shafii', 'hanbali'];
 
 function StatusTracker({ status }: { status: string }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t } = useTranslation();
   const steps = [
     { key: 'pending', label: t('scholar.pending') },
@@ -122,7 +122,7 @@ function StatusTracker({ status }: { status: string }) {
 
 function ScholarVerificationContent() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t } = useTranslation();
   const router = useRouter();
   const haptic = useContextualHaptic();
@@ -444,7 +444,7 @@ function ScholarVerificationContent() {
 
 export default function ScholarVerificationScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t } = useTranslation();
 
   return (

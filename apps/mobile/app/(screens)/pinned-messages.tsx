@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, FlatList, Pressable,
 } from 'react-native';
@@ -26,7 +26,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function PinnedMessagesScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const haptic = useContextualHaptic();

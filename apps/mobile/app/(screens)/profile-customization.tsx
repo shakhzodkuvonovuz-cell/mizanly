@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -89,7 +89,7 @@ function isValidUrl(url: string): boolean {
 
 function SectionLabel({ text, delay }: { text: string; delay: number }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   return (
     <Animated.View entering={FadeInUp.delay(delay).duration(400)}>
       <Text style={styles.sectionLabel}>{text}</Text>
@@ -109,7 +109,7 @@ function ToggleRow({
   isRTL: boolean;
 }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const haptic = useContextualHaptic();
 
   return (
@@ -133,7 +133,7 @@ function ToggleRow({
 
 function LoadingSkeleton() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   return (
     <View style={styles.skeletonWrap}>
       <Skeleton.Rect width={120} height={18} borderRadius={radius.sm} />
@@ -158,7 +158,7 @@ function LoadingSkeleton() {
 
 function ProfileCustomizationScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const haptic = useContextualHaptic();

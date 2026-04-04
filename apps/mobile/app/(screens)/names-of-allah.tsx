@@ -44,7 +44,7 @@ function NameCard({ name, isLearned, onToggleLearned, onShare, onPlayAudio, expa
   onToggleExpand: () => void;
 }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t, isRTL } = useTranslation();
   const haptic = useContextualHaptic();
 
@@ -124,7 +124,7 @@ function NameCard({ name, isLearned, onToggleLearned, onShare, onPlayAudio, expa
 
 export default function NamesOfAllahScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
   const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();

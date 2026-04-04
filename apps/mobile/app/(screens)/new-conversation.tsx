@@ -56,7 +56,7 @@ interface RecentContact extends User {
 
 export default function NewConversationScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
   const { t, isRTL } = useTranslation();
   const haptic = useContextualHaptic();

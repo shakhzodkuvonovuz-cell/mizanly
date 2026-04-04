@@ -54,7 +54,7 @@ function PlanCard({
   t: (key: string, params?: Record<string, string | number>) => string;
 }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   return (
     <Pressable accessibilityRole="button" onPress={() => onSelect(option.type)}>
       <LinearGradient
@@ -88,7 +88,7 @@ function ProgressRing({
   strokeWidth: number;
 }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const progress = Math.min(current / total, 1);
   const percent = Math.round(progress * 100);
   const circumference = (size - strokeWidth) * Math.PI;
@@ -134,7 +134,7 @@ function ProgressRing({
 
 function HeatMapRow({ days }: { days: number[] }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   return (
     <View style={styles.heatMapRow}>
       {days.map((value, index) => (
@@ -159,7 +159,7 @@ function HeatMapRow({ days }: { days: number[] }) {
 
 function HistoryItem({ plan, t }: { plan: QuranReadingPlan; t: (key: string, params?: Record<string, string | number>) => string }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const startDate = new Date(plan.startDate).toLocaleDateString();
   const endDate = new Date(plan.endDate).toLocaleDateString();
 
@@ -181,7 +181,7 @@ function HistoryItem({ plan, t }: { plan: QuranReadingPlan; t: (key: string, par
 
 function LoadingSkeleton() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   return (
     <View style={styles.skeletonContainer}>
       <Skeleton.Rect width={width - spacing.base * 2} height={200} borderRadius={radius.lg} />
@@ -195,7 +195,7 @@ function LoadingSkeleton() {
 
 function QuranReadingPlanContent() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
   const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();

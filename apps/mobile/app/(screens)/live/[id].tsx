@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, Alert,
   FlatList, TextInput, Platform, Share, Dimensions,
@@ -62,7 +62,7 @@ interface LiveParticipant {
 
 export default function LiveViewerScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t, isRTL } = useTranslation();
   const haptic = useContextualHaptic();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -277,7 +277,7 @@ export default function LiveViewerScreen() {
   // Floating reaction component
   function FloatingReactionBubble({ reaction }: { reaction: FloatingReaction }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
     const yAnim = useSharedValue(0);
     const opacityAnim = useSharedValue(1);
 
@@ -301,7 +301,7 @@ export default function LiveViewerScreen() {
   // Audio bar animated component
   function AudioBar({ value }: { value: Animated.SharedValue<number> }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
     const animatedStyle = useAnimatedStyle(() => ({
       height: `${value.value * 100}%`,
     }));

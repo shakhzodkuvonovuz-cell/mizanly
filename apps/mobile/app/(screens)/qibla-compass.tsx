@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Dimensions, Platform,
 } from 'react-native';
@@ -91,7 +91,7 @@ function getCardinalDirection(
 
 export default function QiblaCompassScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
   const { t } = useTranslation();
   const haptic = useContextualHaptic();

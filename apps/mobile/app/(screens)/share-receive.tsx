@@ -112,7 +112,7 @@ function SharedContentPreview({
   t: (key: string) => string;
 }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   if (sharedImage) {
     return (
       <Animated.View entering={FadeInUp.delay(100).duration(400)} style={styles.previewCard}>
@@ -190,7 +190,7 @@ function SpaceCard({
   t: (key: string) => string;
 }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   return (
     <Animated.View
       entering={FadeInUp.delay(Math.min(200 + index * 80, 400)).duration(350)}
@@ -233,7 +233,7 @@ function SpaceCard({
 
 function ShareReceiveContent() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
   const { t, isRTL } = useTranslation();
   const haptic = useContextualHaptic();

@@ -92,7 +92,7 @@ const TABS = [
 function CreatorDashboardContent() {
   const router = useRouter();
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();

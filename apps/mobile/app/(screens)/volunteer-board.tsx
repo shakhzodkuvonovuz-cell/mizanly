@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -77,7 +77,7 @@ function getCategoryIcon(category: string): IconName {
 
 function VolunteerBoardContent() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t } = useTranslation();
   const router = useRouter();
   const haptic = useContextualHaptic();

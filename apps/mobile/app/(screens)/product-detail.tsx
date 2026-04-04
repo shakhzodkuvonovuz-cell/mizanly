@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -97,7 +97,7 @@ function renderStars(rating: number, size: 'xs' | 'sm' = 'xs', inactiveColor: st
 
 function ProductDetailContent() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const haptic = useContextualHaptic();

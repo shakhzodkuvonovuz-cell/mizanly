@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, Pressable, ScrollView, useWindowDimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -25,7 +25,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 function PackCard({ pack, onPress, onAdd, onRemove, index }: { pack: StickerPack & { isCollected?: boolean }; onPress: () => void; onAdd: () => void; onRemove: () => void; index: number }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t } = useTranslation();
   const [isAdded, setIsAdded] = useState(pack.isCollected ?? false);
   const haptic = useContextualHaptic();

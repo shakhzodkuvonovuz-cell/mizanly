@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, Alert,
   FlatList,
@@ -48,7 +48,7 @@ const formatViews = formatCount;
 
 function VideoCard({ item, onPress, index }: { item: WatchHistoryItem; onPress: () => void; index: number }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t, isRTL } = useTranslation();
   return (
     <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
@@ -112,7 +112,7 @@ function VideoCard({ item, onPress, index }: { item: WatchHistoryItem; onPress: 
 
 export default function WatchHistoryScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t } = useTranslation();
   const router = useRouter();
   const haptic = useContextualHaptic();

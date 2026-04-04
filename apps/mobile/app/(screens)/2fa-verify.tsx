@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -36,7 +36,7 @@ export default function TwoFactorVerifyScreen() {
   const { t } = useTranslation();
   const tc = useThemeColors();
   const haptic = useContextualHaptic();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const [mode, setMode] = useState<'code' | 'backup'>('code');
   const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
   const [backupCode, setBackupCode] = useState('');

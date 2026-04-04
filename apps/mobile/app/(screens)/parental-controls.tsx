@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList,
 } from 'react-native';
@@ -39,7 +39,7 @@ function PinPad({
   subtitle?: string;
 }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const [pin, setPin] = useState('');
   const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
@@ -110,7 +110,7 @@ function AgeRatingSelector({
   onChange: (v: string) => void;
 }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const haptic = useContextualHaptic();
   return (
     <View style={styles.ageRatingRow}>
@@ -146,7 +146,7 @@ function DmRestrictionSelector({
   t: (k: string) => string;
 }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const haptic = useContextualHaptic();
   const labels: Record<string, string> = {
     none: t('parentalControls.dmNone'),
@@ -185,7 +185,7 @@ function ToggleRow({
   onToggle: (v: boolean) => void;
 }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const haptic = useContextualHaptic();
   const { isRTL } = useTranslation();
   return (
@@ -208,7 +208,7 @@ function ToggleRow({
 // ── Activity Digest Card ──
 function DigestCard({ childId }: { childId: string }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t, isRTL } = useTranslation();
   const digestQuery = useQuery({
     queryKey: ['parental-digest', childId],
@@ -289,7 +289,7 @@ function ChildCard({
   onChangePin: (childId: string) => void;
 }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const [expanded, setExpanded] = useState(false);
   const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
@@ -442,7 +442,7 @@ function ChildCard({
 // ── Main Screen ──
 export default function ParentalControlsScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const haptic = useContextualHaptic();

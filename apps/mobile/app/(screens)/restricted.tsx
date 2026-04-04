@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -39,7 +39,7 @@ interface RestrictedPage {
 
 export default function RestrictedScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
   const queryClient = useQueryClient();
   const { t } = useTranslation();

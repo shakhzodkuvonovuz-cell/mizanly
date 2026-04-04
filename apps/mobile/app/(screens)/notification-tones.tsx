@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList,
 } from 'react-native';
@@ -101,7 +101,7 @@ function generateToneWav(hz: number, durationMs = 300, sampleRate = 22050): stri
 
 function NotificationTonesScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
   const params = useLocalSearchParams<{
     conversationId: string;

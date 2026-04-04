@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, Dimensions, TextInput, Share,
 } from 'react-native';
@@ -30,7 +30,7 @@ const { width: screenWidth } = Dimensions.get('window');
 // Decorative pattern for border
 function GeometricPattern() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   return (
     <View style={styles.patternContainer}>
       {[...Array(8)].map((_, i) => (
@@ -51,7 +51,7 @@ function GeometricPattern() {
 
 export default function QuranShareScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
   const { t, isRTL } = useTranslation();
   const haptic = useContextualHaptic();

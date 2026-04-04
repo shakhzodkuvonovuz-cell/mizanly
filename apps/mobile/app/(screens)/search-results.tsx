@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
   FlatList,
@@ -36,7 +36,7 @@ type SearchTab = 'people' | 'posts' | 'threads' | 'reels' | 'hashtags';
 
 function HashtagRow({ hashtag, onPress, index }: { hashtag: Hashtag; onPress: () => void; index: number }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t } = useTranslation();
   return (
     <Animated.View entering={FadeInUp.delay(Math.min(index * 50, 500)).duration(400)}>
@@ -67,7 +67,7 @@ function HashtagRow({ hashtag, onPress, index }: { hashtag: Hashtag; onPress: ()
 
 function ReelGridItem({ reel, onPress, index }: { reel: Reel; onPress: () => void; index: number }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t } = useTranslation();
   return (
     <Animated.View entering={FadeInUp.delay(Math.min(index * 30, 500)).duration(400)} style={styles.reelGridItem}>
@@ -102,7 +102,7 @@ function ReelGridItem({ reel, onPress, index }: { reel: Reel; onPress: () => voi
 
 function UserRow({ user, onPress, index, onFollow }: { user: User; onPress: () => void; index: number; onFollow: (userId: string, follow: boolean) => void }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t } = useTranslation();
   const handleFollow = () => {
     onFollow(user.id, !user.isFollowing);
@@ -152,7 +152,7 @@ function UserRow({ user, onPress, index, onFollow }: { user: User; onPress: () =
 
 export default function SearchResultsScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const haptic = useContextualHaptic();

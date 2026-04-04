@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -40,7 +40,7 @@ const TRANSITIONS: { id: TransitionType; labelKey: string; icon: IconName }[] = 
 
 export default function StitchCreateScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
   const { t, isRTL } = useTranslation();
   const { reelId, username, displayName, videoUrl } = useLocalSearchParams<{

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet,
   FlatList, Pressable, Dimensions,
@@ -36,7 +36,7 @@ const GRID_ITEM_WIDTH = Math.floor((SCREEN_WIDTH - GRID_GAP * 2) / GRID_COLUMNS)
 
 export default function SoundScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t, isRTL } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();

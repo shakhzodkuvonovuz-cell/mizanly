@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -73,7 +73,7 @@ function EpisodeRow({
   isRTL: boolean;
 }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
 
   const haptic = useContextualHaptic();
@@ -119,7 +119,7 @@ function EpisodeRow({
 
 function LoadingSkeleton() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   return (
     <View style={styles.skeletonWrap}>
       <Skeleton.Rect width="100%" height={HERO_HEIGHT} borderRadius={0} />
@@ -149,7 +149,7 @@ function LoadingSkeleton() {
 
 function SeriesDetailScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const haptic = useContextualHaptic();

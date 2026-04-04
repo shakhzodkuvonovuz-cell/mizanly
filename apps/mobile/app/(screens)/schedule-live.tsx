@@ -53,7 +53,7 @@ const MINUTES = [0, 15, 30, 45];
 
 export default function ScheduleLiveScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();

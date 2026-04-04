@@ -75,7 +75,7 @@ function CountdownDisplay({
   isUrgent?: boolean;
 }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const pulseAnim = useSharedValue(1);
 
   useEffect(() => {
@@ -123,7 +123,7 @@ function CountdownDisplay({
 
 function ScheduleItem({ prayer, index, t }: { prayer: PrayerTime; index: number; t: (key: string) => string }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   return (
     <Animated.View entering={FadeInUp.delay(index * 50).duration(300)} style={styles.scheduleItem}>
       <View style={styles.scheduleIconContainer}>
@@ -162,7 +162,7 @@ function GoalItem({
   index: number;
 }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const haptic = useContextualHaptic();
   const { t } = useTranslation();
 
@@ -221,7 +221,7 @@ function GoalItem({
 
 export default function RamadanModeScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
   const { t } = useTranslation();
   const haptic = useContextualHaptic();

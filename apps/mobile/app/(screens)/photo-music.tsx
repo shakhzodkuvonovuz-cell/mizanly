@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList, Dimensions,
   ScrollView, TextInput, Alert,
@@ -45,7 +45,7 @@ const DURATION_OPTIONS = [2, 3, 5, 7];
 
 function PhotoMusicScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
   const { t, isRTL } = useTranslation();
   const haptic = useContextualHaptic();

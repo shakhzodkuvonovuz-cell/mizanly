@@ -1,4 +1,4 @@
-import { useState, useCallback, memo, useRef } from 'react';
+import { useState, useCallback, memo, useRef, useMemo } from 'react';
 import {
   View, Text, StyleSheet,
   FlatList, ScrollView, Dimensions, Pressable, Alert, Linking, Share,
@@ -54,7 +54,7 @@ type Tab = 'posts' | 'threads' | 'reels' | 'liked';
 
 const GridItem = memo(function GridItem({ post, onPress }: { post: Post; onPress: () => void }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -105,7 +105,7 @@ const GridItem = memo(function GridItem({ post, onPress }: { post: Post; onPress
 
 const ReelGridItem = memo(function ReelGridItem({ reel, onPress }: { reel: Reel; onPress: () => void }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -150,7 +150,7 @@ const ReelGridItem = memo(function ReelGridItem({ reel, onPress }: { reel: Reel;
 
 function StatItem({ num, label, onPress }: { num: number; label: string; onPress?: () => void }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { onPressIn, onPressOut, animatedStyle } = useAnimatedPress({ scaleTo: 0.92 });
   return (
     <Animated.View style={onPress ? animatedStyle : undefined}>
@@ -206,7 +206,7 @@ function FollowButton({ isFollowing, isPending, onPress }: FollowButtonProps) {
 
 export default function ProfileScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { username } = useLocalSearchParams<{ username: string }>();
   const router = useRouter();
   const { user: clerkUser } = useUser();

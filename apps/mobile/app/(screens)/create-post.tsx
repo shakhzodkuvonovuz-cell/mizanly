@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TextInput, Pressable,
   ScrollView, Platform, Dimensions,
@@ -60,7 +60,7 @@ export default function CreatePostScreen() {
   const router = useRouter();
   const { prefillContent, prefillMedia } = useLocalSearchParams<{ prefillContent?: string; prefillMedia?: string }>();
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { user } = useUser();
   const queryClient = useQueryClient();
   const { t } = useTranslation();

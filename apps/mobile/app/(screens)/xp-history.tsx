@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -68,7 +68,7 @@ function timeAgo(dateStr: string, locale?: Locale): string {
 
 function LevelBadge({ xpData, isRTL }: { xpData: XPData; isRTL: boolean }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t } = useTranslation();
   const progress = xpData.nextLevelXP > 0
     ? xpData.currentXP / xpData.nextLevelXP
@@ -122,7 +122,7 @@ function LevelBadge({ xpData, isRTL }: { xpData: XPData; isRTL: boolean }) {
 
 function XPEventRow({ event, index, isRTL }: { event: XPEvent; index: number; isRTL: boolean }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t } = useTranslation();
   const iconName = getReasonIcon(event.reason);
 
@@ -157,7 +157,7 @@ function XPEventRow({ event, index, isRTL }: { event: XPEvent; index: number; is
 
 function LoadingSkeleton() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   return (
     <View style={styles.skeletonWrap}>
       <Skeleton.Rect width="100%" height={120} borderRadius={radius.lg} />
@@ -177,7 +177,7 @@ function LoadingSkeleton() {
 
 function XPHistoryScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();

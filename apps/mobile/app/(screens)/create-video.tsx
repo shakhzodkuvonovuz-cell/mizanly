@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput, ScrollView,
 } from 'react-native';
@@ -48,7 +48,7 @@ interface PickedVideo {
 export default function CreateVideoScreen() {
   const router = useRouter();
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const insets = useSafeAreaInsets();
   const { user } = useUser();
   const queryClient = useQueryClient();

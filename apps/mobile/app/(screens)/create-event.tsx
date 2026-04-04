@@ -48,7 +48,7 @@ export default function CreateEventScreen() {
   const { t } = useTranslation();
   const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [eventType, setEventType] = useState<EventType>('in-person');

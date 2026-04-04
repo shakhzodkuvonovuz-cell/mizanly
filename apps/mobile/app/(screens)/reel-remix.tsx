@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
   Dimensions, Alert, ScrollView, KeyboardAvoidingView, Platform,
@@ -41,7 +41,7 @@ const MAX_RECORD_SECONDS = 60;
 
 export default function ReelRemixScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
   const params = useLocalSearchParams<{ originalReelId: string }>();
   const insets = useSafeAreaInsets();

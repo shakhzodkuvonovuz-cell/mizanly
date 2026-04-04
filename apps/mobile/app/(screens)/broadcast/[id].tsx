@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -39,7 +39,7 @@ type BroadcastChannelWithSubscription = BroadcastChannelType & { isSubscribed?: 
 export default function BroadcastChannelScreen() {
   const tc = useThemeColors();
   const isOffline = useIsOffline();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { id } = useLocalSearchParams<{ id: string }>();
   const navigation = useNavigation();
   const router = useRouter();

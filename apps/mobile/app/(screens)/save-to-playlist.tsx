@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList,
 } from 'react-native';
@@ -23,7 +23,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function SaveToPlaylistScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t, isRTL } = useTranslation();
   const haptic = useContextualHaptic();
   const { videoId } = useLocalSearchParams<{ videoId: string }>();

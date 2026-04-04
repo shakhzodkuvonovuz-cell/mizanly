@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TextInput,
   ScrollView, Alert, Dimensions, Pressable,
@@ -58,7 +58,7 @@ export default function CreateReelScreen() {
   const queryClient = useQueryClient();
   const haptic = useContextualHaptic();
   const { t } = useTranslation();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
 
   const [caption, setCaption] = useState('');
   const [video, setVideo] = useState<PickedVideo | null>(null);

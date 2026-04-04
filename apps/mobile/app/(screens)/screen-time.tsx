@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Pressable,
 } from 'react-native';
@@ -74,7 +74,7 @@ function getWeekDays(): string[] {
 
 function BarChart({ daily, isRTL }: { daily: DailyLog[]; isRTL: boolean }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t } = useTranslation();
   const weekDays = getWeekDays();
   const todayStr = weekDays[weekDays.length - 1];
@@ -114,7 +114,7 @@ function BarChart({ daily, isRTL }: { daily: DailyLog[]; isRTL: boolean }) {
 
 function StatCard({ label, value, icon, isRTL }: { label: string; value: string; icon: React.ReactNode; isRTL: boolean }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   return (
     <LinearGradient
       colors={colors.gradient.cardDark}
@@ -133,7 +133,7 @@ function StatCard({ label, value, icon, isRTL }: { label: string; value: string;
 
 export default function ScreenTimeScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const haptic = useContextualHaptic();

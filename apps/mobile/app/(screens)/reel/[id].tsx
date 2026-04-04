@@ -58,7 +58,7 @@ function CommentRow({
   onDeleted: () => void;
 }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const [localLiked, setLocalLiked] = useState((comment as Comment & { isLiked?: boolean }).isLiked ?? false);

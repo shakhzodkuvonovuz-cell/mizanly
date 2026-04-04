@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
   ScrollView,
@@ -89,7 +89,7 @@ function ThreadPart({
 }: ThreadPartProps) {
   const { t } = useTranslation();
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   return (
     <Animated.View entering={FadeInUp.delay(index * 100)} style={styles.part}>
       <View style={styles.partLeft}>
@@ -265,7 +265,7 @@ export default function CreateThreadScreen() {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const haptic = useContextualHaptic();
 
   const [parts, setParts] = useState<ChainPart[]>([{ content: '', media: [] }]);

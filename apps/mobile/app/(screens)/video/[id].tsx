@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, FlatList, Share,
   TextInput, KeyboardAvoidingView, Platform, AppState, Dimensions,
@@ -56,7 +56,7 @@ function ChapterMarker({ chapter, index, total, currentProgress, videoDuration, 
   nowPlayingLabel: string;
 }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const isPast = currentProgress > (chapter.startTime / (videoDuration || 1));
   const isCurrent = Math.abs(currentProgress - (chapter.startTime / (videoDuration || 1))) < 0.05;
 
@@ -94,7 +94,7 @@ function ChapterMarker({ chapter, index, total, currentProgress, videoDuration, 
 
 // Up Next recommended videos section (extracted to avoid Rules of Hooks issues)
 function UpNextSection({ videoId, tc }: { videoId: string; tc: ReturnType<typeof useThemeColors> }) {
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
   const { t } = useTranslation();
 
@@ -177,7 +177,7 @@ function UpNextSection({ videoId, tc }: { videoId: string; tc: ReturnType<typeof
 // #region VideoDetailScreen — Main Screen Component
 export default function VideoDetailScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useUser();

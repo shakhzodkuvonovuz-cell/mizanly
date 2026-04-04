@@ -50,7 +50,7 @@ function AmountButton({
   onPress: () => void;
 }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   return (
     <Pressable onPress={onPress} style={styles.amountButton}>
       <LinearGradient
@@ -82,7 +82,7 @@ function AmountButton({
 
 export default function SendTipScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
   const haptic = useContextualHaptic();
   const { t } = useTranslation();

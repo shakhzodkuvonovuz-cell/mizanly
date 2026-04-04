@@ -47,7 +47,7 @@ function ReplyRow({
   depth?: number;
 }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t, isRTL } = useTranslation();
   const timeAgo = formatDistanceToNowStrict(new Date(reply.createdAt), { addSuffix: true, locale: getDateFnsLocale() });
   const hasReplies = (reply._count?.replies ?? 0) > 0;
@@ -181,7 +181,7 @@ function ReplyRow({
 
 export default function ThreadDetailScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useUser();

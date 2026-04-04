@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   TextInput, FlatList,
@@ -32,7 +32,7 @@ const MIN_MEMBERS = 2;
 export default function CreateGroupScreen() {
   const router = useRouter();
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { user } = useUser();
   const haptic = useContextualHaptic();
   const { t } = useTranslation();

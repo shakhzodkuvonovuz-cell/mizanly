@@ -58,7 +58,7 @@ interface DeductionInput {
 
 function StepIndicator({ currentStep }: { currentStep: Step }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t } = useTranslation();
   const steps = [
     { num: 1, label: t('screens.zakatCalculator.stepAssets') },
@@ -126,7 +126,7 @@ function InputCard({
 }) {
   const tc = useThemeColors();
   const { isRTL: inputIsRTL } = useTranslation();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const [isFocused, setIsFocused] = useState(false);
 
   return (
@@ -170,7 +170,7 @@ function InputCard({
 
 export default function ZakatCalculatorScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
   const { t, isRTL } = useTranslation();
   const haptic = useContextualHaptic();

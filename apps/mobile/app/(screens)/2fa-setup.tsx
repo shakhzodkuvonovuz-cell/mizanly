@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -59,7 +59,7 @@ export default function TwoFactorSetupScreen() {
   const tc = useThemeColors();
   const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
 
   // Refs for OTP inputs
   const inputRefs = useRef<(TextInput | null)[]>(Array(6).fill(null));

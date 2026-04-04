@@ -79,7 +79,7 @@ function getCompassDirection(degrees: number): string {
 
 function CountdownTimer({ targetTime, nextPrayerName }: { targetTime: string; nextPrayerName: string }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t } = useTranslation();
   const [remaining, setRemaining] = useState('00:00:00');
 
@@ -128,7 +128,7 @@ function PrayerCard({
   index: number;
 }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t, isRTL: prayerIsRTL } = useTranslation();
   const haptic = useContextualHaptic();
   const pulseAnim = useSharedValue(1);
@@ -275,7 +275,7 @@ const ADHAN_STYLES: Array<{ key: string; value: string }> = [
 
 export default function PrayerTimesScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
   const { t, isRTL } = useTranslation();
   const queryClient = useQueryClient();

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import {
   View, Text, StyleSheet, TextInput,
@@ -28,7 +28,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 // Premium Toggle Switch Component
 function PremiumToggle({ value, onValueChange }: { value: boolean; onValueChange: (v: boolean) => void }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const haptic = useContextualHaptic();
   const translateX = useSharedValue(value ? 20 : 0);
   const scale = useSharedValue(1);
@@ -93,7 +93,7 @@ function Row({
   isLast?: boolean;
 }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const haptic = useContextualHaptic();
   const { isRTL } = useTranslation();
   const handlePress = onPress ? () => {
@@ -137,7 +137,7 @@ function Row({
 
 function SectionHeader({ title, icon }: { title: string; icon?: React.ComponentProps<typeof Icon>['name'] }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { isRTL } = useTranslation();
   return (
     <View style={[styles.sectionHeaderContainer, { flexDirection: rtlFlexRow(isRTL) }]}>
@@ -162,7 +162,7 @@ function SectionHeader({ title, icon }: { title: string; icon?: React.ComponentP
 
 export default function SettingsScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
   const { signOut } = useClerk();
   const queryClient = useQueryClient();

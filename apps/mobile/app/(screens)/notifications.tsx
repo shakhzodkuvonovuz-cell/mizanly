@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, SectionList,
 } from 'react-native';
@@ -154,7 +154,7 @@ function aggregateLikes(items: Notification[]): AggregatedNotification[] {
 
 function FollowRequestActions({ requestId, onDone }: { requestId?: string; onDone: () => void }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const [done, setDone] = useState<'accepted' | 'declined' | null>(null);
   const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
@@ -200,7 +200,7 @@ function FollowRequestActions({ requestId, onDone }: { requestId?: string; onDon
 
 function NotificationRow({ notification, index }: { notification: AggregatedNotification; index: number }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
   const queryClient = useQueryClient();
   const haptic = useContextualHaptic();
@@ -371,7 +371,7 @@ type NotifFilter = 'all' | 'mentions' | 'verified';
 
 export default function NotificationsScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
   const queryClient = useQueryClient();
   const haptic = useContextualHaptic();

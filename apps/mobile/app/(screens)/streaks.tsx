@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -57,7 +57,7 @@ function StreakCard({
   isRTL: boolean;
 }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t } = useTranslation();
   const meta = STREAK_META[streak.type] ?? { icon: 'trending-up' as IconName, color: colors.emerald };
   const translationKey = `gamification.streaks.${streak.type}` as const;
@@ -126,7 +126,7 @@ function StreakCard({
 
 function HeatmapCalendar({ days, isRTL }: { days: StreakDay[]; isRTL: boolean }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t } = useTranslation();
   const { width: windowWidth } = useWindowDimensions();
   const last30 = days.slice(-30);
@@ -179,7 +179,7 @@ function MilestoneBadges({
   isRTL: boolean;
 }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t } = useTranslation();
   const maxStreak = Math.max(...streaks.map((s) => s.longestDays), 0);
 
@@ -233,7 +233,7 @@ function MilestoneBadges({
 
 function LoadingSkeleton() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   return (
     <View style={styles.skeletonContainer}>
       {Array.from({ length: 3 }).map((_, i) => (
@@ -256,7 +256,7 @@ function LoadingSkeleton() {
 
 function StreaksScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();

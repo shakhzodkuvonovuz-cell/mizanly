@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -40,7 +40,7 @@ const REASONS = [
 
 export default function ReportScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const params = useLocalSearchParams<{ type: string; id: string }>();
   const router = useRouter();
   const { t } = useTranslation();

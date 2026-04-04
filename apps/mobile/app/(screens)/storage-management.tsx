@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -99,7 +99,7 @@ function StorageCategoryRow({
   isRTL: boolean;
 }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const haptic = useContextualHaptic();
   const { t } = useTranslation();
 
@@ -149,7 +149,7 @@ function StorageCategoryRow({
 
 function StorageLoadingSkeleton() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   return (
     <View style={styles.skeletonContainer}>
       <Skeleton.Rect width="100%" height={140} borderRadius={radius.lg} />
@@ -171,7 +171,7 @@ function StorageLoadingSkeleton() {
 
 export default function StorageManagementScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const haptic = useContextualHaptic();

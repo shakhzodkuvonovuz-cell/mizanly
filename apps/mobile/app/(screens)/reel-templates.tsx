@@ -44,7 +44,7 @@ function formatMs(ms: number): string {
 
 function TemplateCardSkeleton() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   return (
     <View style={styles.cardContainer}>
       <Skeleton.Rect width={CARD_WIDTH} height={CARD_IMAGE_HEIGHT} borderRadius={radius.md} />
@@ -58,7 +58,7 @@ function TemplateCardSkeleton() {
 
 function SegmentTimeline({ segments, totalDurationMs }: { segments: ReelTemplate['segments']; totalDurationMs: number }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const maxMs = totalDurationMs > 0 ? totalDurationMs : (segments.length > 0 ? segments[segments.length - 1].endMs : 1000);
 
   return (
@@ -85,7 +85,7 @@ function SegmentTimeline({ segments, totalDurationMs }: { segments: ReelTemplate
 
 export default function ReelTemplatesScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const haptic = useContextualHaptic();

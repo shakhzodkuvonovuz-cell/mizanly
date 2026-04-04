@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   FlatList, Dimensions,
@@ -38,7 +38,7 @@ type Tab = 'posts' | 'threads' | 'reels' | 'videos';
 
 function PostGrid({ post, onPress }: { post: Post; onPress: () => void }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t } = useTranslation();
   return (
     <Pressable
@@ -70,7 +70,7 @@ function PostGrid({ post, onPress }: { post: Post; onPress: () => void }) {
 
 function ReelGrid({ reel, onPress }: { reel: Reel; onPress: () => void }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t } = useTranslation();
   const hasThumbnail = reel.thumbnailUrl != null;
   return (
@@ -101,7 +101,7 @@ function ReelGrid({ reel, onPress }: { reel: Reel; onPress: () => void }) {
 
 function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t } = useTranslation();
   const hasThumbnail = video.thumbnailUrl != null;
   return (
@@ -135,7 +135,7 @@ function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
 
 export default function SavedScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t } = useTranslation();
   const haptic = useContextualHaptic();
   const router = useRouter();

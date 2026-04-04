@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -70,7 +70,7 @@ const INSTALLMENT_OPTIONS = [1, 2, 3, 4];
 
 function ImageCarousel({ images }: { images: string[] }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList<string>>(null);
 
@@ -139,7 +139,7 @@ function ReviewCard({
   isRTL: boolean;
 }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   return (
     <Animated.View entering={FadeInUp.delay(Math.min(index * 60, 400)).duration(400)}>
       <View style={styles.reviewCard}>
@@ -176,7 +176,7 @@ function ReviewCard({
 
 function LoadingSkeleton() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   return (
     <View style={styles.skeletonWrap}>
       <Skeleton.Rect width="100%" height={IMAGE_HEIGHT} borderRadius={0} />
@@ -197,7 +197,7 @@ function LoadingSkeleton() {
 
 function ProductDetailScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const haptic = useContextualHaptic();

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -26,7 +26,7 @@ interface ThemeRadioProps {
 
 function ThemeRadio({ icon, label, description, isActive, onPress }: ThemeRadioProps) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   return (
     <Pressable
       onPress={onPress}
@@ -63,7 +63,7 @@ function ThemeRadio({ icon, label, description, isActive, onPress }: ThemeRadioP
 
 function ColorSwatch({ bg, border, text }: { bg: string; border: string; text: string }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   return (
     <View style={styles.swatchOuter}>
       <LinearGradient
@@ -80,7 +80,7 @@ function ColorSwatch({ bg, border, text }: { bg: string; border: string; text: s
 
 function ThemeSettingsSkeleton() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   return (
     <View style={styles.skeletonContainer}>
       {/* Preview card skeleton */}
@@ -97,7 +97,7 @@ function ThemeSettingsSkeleton() {
 
 export default function ThemeSettingsScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const haptic = useContextualHaptic();

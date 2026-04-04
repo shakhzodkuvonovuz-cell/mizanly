@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   FlatList, Dimensions,
@@ -37,7 +37,7 @@ const GRID_ITEM = (SCREEN_W - 2) / 3;
 
 function GridItem({ post, onPress }: { post: Post; onPress: () => void }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const haptic = useContextualHaptic();
   return (
     <Pressable
@@ -67,7 +67,7 @@ function GridItem({ post, onPress }: { post: Post; onPress: () => void }) {
 
 export default function HashtagScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t, isRTL } = useTranslation();
   const { tag } = useLocalSearchParams<{ tag: string }>();
   const router = useRouter();
