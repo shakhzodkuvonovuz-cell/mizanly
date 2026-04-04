@@ -15,6 +15,7 @@ import { AiService } from '../ai/ai.service';
 import { acquireCronLock } from '../../common/utils/cron-lock';
 import { ContentSafetyService } from '../moderation/content-safety.service';
 import { QueueService } from '../../common/queue/queue.service';
+import { getExcludedUserIds } from '../../common/utils/excluded-users';
 import { Prisma, MessageType, ReportReason, StickerResponseType } from '@prisma/client';
 import { sanitizeText } from '../../common/utils/sanitize';
 
@@ -63,38 +64,18 @@ export class StoriesService {
   ) {}
 
   async getFeedStories(userId: string) {
-    const [follows, blocks, mutes, restricts] = await Promise.all([
+    // Use shared cached utility for excluded IDs (blocked + muted + restricted)
+    // instead of 3 separate unbounded queries (J08-C3). Cached in Redis for 60s.
+    const [follows, excludedIds] = await Promise.all([
       this.prisma.follow.findMany({
         where: { followerId: userId },
         select: { followingId: true },
         take: 10000,
       }),
-      this.prisma.block.findMany({
-        where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
-        select: { blockerId: true, blockedId: true },
-        take: 10000,
-      }),
-      this.prisma.mute.findMany({
-        where: { userId },
-        select: { mutedId: true },
-        take: 10000,
-      }),
-      this.prisma.restrict.findMany({
-        where: { restricterId: userId },
-        select: { restrictedId: true },
-        take: 10000,
-      }),
+      getExcludedUserIds(this.prisma, this.redis, userId),
     ]);
 
-    // Build excluded set: blocked (both directions) + muted + restricted
-    const excluded = new Set<string>();
-    for (const b of blocks) {
-      if (b.blockerId === userId) excluded.add(b.blockedId);
-      else excluded.add(b.blockerId);
-    }
-    for (const m of mutes) excluded.add(m.mutedId);
-    for (const r of restricts) excluded.add(r.restrictedId);
-
+    const excluded = new Set(excludedIds);
     const followingIds = follows.map((f) => f.followingId).filter((id) => !excluded.has(id));
     const ids = [userId, ...followingIds];
 
