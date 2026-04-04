@@ -318,6 +318,46 @@ export default function SearchResultsScreen() {
     onSettled: () => { followLockRef.current = false; },
   });
 
+  const peopleListEmpty = useMemo(() => (
+    <EmptyState
+      icon="users"
+      title={t('screens.search-results.noPeople')}
+      subtitle={t('screens.search-results.noPeopleSubtitle')}
+    />
+  ), [t]);
+
+  const postsListEmpty = useMemo(() => (
+    <EmptyState
+      icon="image"
+      title={t('screens.search-results.noPosts')}
+      subtitle={t('screens.search-results.noPostsSubtitle')}
+    />
+  ), [t]);
+
+  const threadsListEmpty = useMemo(() => (
+    <EmptyState
+      icon="message-circle"
+      title={t('screens.search-results.noThreads')}
+      subtitle={t('screens.search-results.noThreadsSubtitle')}
+    />
+  ), [t]);
+
+  const reelsListEmpty = useMemo(() => (
+    <EmptyState
+      icon="video"
+      title={t('screens.search-results.noReels')}
+      subtitle={t('screens.search-results.noReelsSubtitle')}
+    />
+  ), [t]);
+
+  const hashtagsListEmpty = useMemo(() => (
+    <EmptyState
+      icon="hash"
+      title={t('screens.search-results.noHashtags')}
+      subtitle={t('screens.search-results.noHashtagsSubtitle')}
+    />
+  ), [t]);
+
   return (
     <ScreenErrorBoundary>
       <View style={styles.container}>
@@ -421,13 +461,7 @@ export default function SearchResultsScreen() {
                         onFollow={(userId, follow) => followMutation.mutate({ userId, follow })}
                       />
                     ), [])}
-                    ListEmptyComponent={useMemo(() => (
-                      <EmptyState
-                        icon="users"
-                        title={t('screens.search-results.noPeople')}
-                        subtitle={t('screens.search-results.noPeopleSubtitle')}
-                      />
-                    ), [])}
+                    ListEmptyComponent={peopleListEmpty}
                     contentContainerStyle={{ paddingBottom: 40 }}
                     refreshControl={
                       <BrandedRefreshControl
@@ -455,13 +489,7 @@ export default function SearchResultsScreen() {
                     data={posts}
                     keyExtractor={(item) => item.id}
                     renderItem={useCallback(({ item }) => <PostCard post={item} />, [])}
-                    ListEmptyComponent={useMemo(() => (
-                      <EmptyState
-                        icon="image"
-                        title={t('screens.search-results.noPosts')}
-                        subtitle={t('screens.search-results.noPostsSubtitle')}
-                      />
-                    ), [])}
+                    ListEmptyComponent={postsListEmpty}
                     onEndReached={handleFetchNextPage}
                     onEndReachedThreshold={0.5}
                     contentContainerStyle={{ paddingBottom: 40 }}
@@ -491,13 +519,7 @@ export default function SearchResultsScreen() {
                     data={threads}
                     keyExtractor={(item) => item.id}
                     renderItem={useCallback(({ item }) => <ThreadCard thread={item} />, [])}
-                    ListEmptyComponent={useMemo(() => (
-                      <EmptyState
-                        icon="message-circle"
-                        title={t('screens.search-results.noThreads')}
-                        subtitle={t('screens.search-results.noThreadsSubtitle')}
-                      />
-                    ), [])}
+                    ListEmptyComponent={threadsListEmpty}
                     onEndReached={handleFetchNextPage}
                     onEndReachedThreshold={0.5}
                     contentContainerStyle={{ paddingBottom: 40 }}
@@ -542,13 +564,7 @@ export default function SearchResultsScreen() {
                     ), [])}
                     numColumns={3}
                     columnWrapperStyle={styles.reelGridRow}
-                    ListEmptyComponent={useMemo(() => (
-                      <EmptyState
-                        icon="video"
-                        title={t('screens.search-results.noReels')}
-                        subtitle={t('screens.search-results.noReelsSubtitle')}
-                      />
-                    ), [])}
+                    ListEmptyComponent={reelsListEmpty}
                     onEndReached={handleFetchNextPage}
                     onEndReachedThreshold={0.5}
                     contentContainerStyle={{ paddingBottom: 40 }}
@@ -590,13 +606,7 @@ export default function SearchResultsScreen() {
                         index={index}
                       />
                     ), [])}
-                    ListEmptyComponent={useMemo(() => (
-                      <EmptyState
-                        icon="hash"
-                        title={t('screens.search-results.noHashtags')}
-                        subtitle={t('screens.search-results.noHashtagsSubtitle')}
-                      />
-                    ), [])}
+                    ListEmptyComponent={hashtagsListEmpty}
                     onEndReached={handleFetchNextPage}
                     onEndReachedThreshold={0.5}
                     contentContainerStyle={{ paddingBottom: 40 }}
