@@ -93,7 +93,7 @@ function DhikrCounter({ target, initialCount, onComplete }: { target: number; in
       <Pressable
         onPress={handlePress}
         style={[styles.dhikrButton, isComplete && styles.dhikrButtonComplete]}
-        accessibilityLabel={`Dhikr counter ${count} of ${target}`}
+        accessibilityLabel={t('accessibility.dhikrCounter', { count, target })}
         accessibilityRole="button"
       >
         <Text style={[styles.dhikrCount, { color: tc.text.primary }]}>{count}</Text>

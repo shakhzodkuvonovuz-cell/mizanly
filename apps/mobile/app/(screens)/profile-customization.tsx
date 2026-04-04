@@ -317,7 +317,7 @@ function ProfileCustomizationScreen() {
                   }}
                   accessibilityRole="radio"
                   accessibilityState={{ selected: accentColor === color }}
-                  accessibilityLabel={`Color ${color}`}
+                  accessibilityLabel={t('accessibility.accentColor', { color })}
                 >
                   <View style={[styles.colorCircleOuter, accentColor === color && { borderColor: color }]}>
                     <View style={[styles.colorCircle, { backgroundColor: color }]}>

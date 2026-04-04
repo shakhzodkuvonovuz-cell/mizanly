@@ -892,7 +892,7 @@ export default function ProfileScreen() {
         <Pressable
           style={styles.threadRow}
           onPress={() => navigate(`/(screens)/thread/${thread.id}`)}
-          accessibilityLabel={`View thread by ${thread.user?.username}`}
+          accessibilityLabel={t('accessibility.viewThreadBy', { username: thread.user?.username })}
           accessibilityRole="button"
         >
           <Text style={[styles.threadContent, { textAlign: rtlTextAlign(isRTL) }]} numberOfLines={3}>{thread.content}</Text>

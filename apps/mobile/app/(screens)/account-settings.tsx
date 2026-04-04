@@ -46,9 +46,9 @@ function Row({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={label}
       style={styles.row}
       onPress={handlePress}
-
       disabled={!handlePress}
     >
       <View style={styles.rowText}>

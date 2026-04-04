@@ -390,7 +390,7 @@ export default function DiscoverScreen() {
 
       return {
         id: item.id,
-        title: isVideo ? String(itemRecord.title || 'Video') : isReel ? String((item as Reel).caption || 'Reel') : (item as Post).content?.slice(0, 60) || 'Post',
+        title: isVideo ? String(itemRecord.title || t('discover.fallbackVideo')) : isReel ? String((item as Reel).caption || t('discover.fallbackReel')) : (item as Post).content?.slice(0, 60) || t('discover.fallbackPost'),
         thumbnailUrl: isReel
           ? (item as Reel).thumbnailUrl || (item as Reel).videoUrl
           : isVideo
@@ -480,6 +480,7 @@ export default function DiscoverScreen() {
               {/* Quick links */}
               <View style={styles.quickLinksRow}>
                 <Pressable
+                  accessibilityRole="button"
                   style={({ pressed }) => [styles.quickLinkButton, { backgroundColor: tc.surface, borderColor: tc.border }, pressed && { opacity: 0.7 }]}
                   onPress={() => { haptic.navigate(); navigate('/(screens)/hashtag-explore'); }}
                 >
@@ -487,6 +488,8 @@ export default function DiscoverScreen() {
                   <Text style={[styles.quickLinkText, { color: tc.text.primary }]}>{t('screens.hashtag-explore.title')}</Text>
                 </Pressable>
                 <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('accessibility.selectCategory')}
                   style={({ pressed }) => [styles.quickLinkButton, { backgroundColor: tc.surface, borderColor: tc.border }, pressed && { opacity: 0.7 }]}
                   onPress={() => { haptic.navigate(); navigate('/(screens)/series-discover'); }}
                 >

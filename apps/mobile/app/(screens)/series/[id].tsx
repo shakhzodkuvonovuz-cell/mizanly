@@ -73,6 +73,7 @@ function EpisodeRow({
   isRTL: boolean;
 }) {
   const tc = useThemeColors();
+  const { t } = useTranslation();
   const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
 
@@ -92,7 +93,7 @@ function EpisodeRow({
     <Animated.View entering={FadeInUp.delay(Math.min(index * 60, 500)).duration(400)}>
       <Pressable
         onPress={handlePress}
-        accessibilityLabel={`Episode ${episode.number}: ${episode.title}`}
+        accessibilityLabel={t('accessibility.episodeLabel', { num: episode.number, title: episode.title })}
         accessibilityRole="button"
       >
         <View style={[styles.episodeRow, { flexDirection: rtlFlexRow(isRTL) }]}>
@@ -225,7 +226,7 @@ function SeriesDetailScreen() {
         <Pressable
           onPress={() => navigate(`/(screens)/profile/${data.creator.username}`)}
           style={[styles.creatorRow, { flexDirection: rtlFlexRow(isRTL) }]}
-          accessibilityLabel={`View ${data.creator.displayName}'s profile`}
+          accessibilityLabel={t('accessibility.viewSellerProfile', { name: data.creator.displayName })}
           accessibilityRole="button"
         >
           <Avatar uri={data.creator.avatarUrl} name={data.creator.displayName} size="md" />

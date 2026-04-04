@@ -582,6 +582,7 @@ export default function CreateReelScreen() {
               </Pressable>
 
               <Pressable
+                accessibilityLabel={t('accessibility.close')}
                 accessibilityRole="button"
                 style={styles.removeVideoButton}
                 onPress={removeVideo}
@@ -600,6 +601,7 @@ export default function CreateReelScreen() {
               {/* Mode toggle */}
               <View style={styles.modeToggle}>
                 <Pressable
+                  accessibilityLabel={t('accessibility.close')}
                   accessibilityRole="button"
                   onPress={() => setShowCamera(false)}
                   style={[styles.modeTab, !showCamera && styles.modeTabActive]}
@@ -608,6 +610,7 @@ export default function CreateReelScreen() {
                   <Text style={[styles.modeText, !showCamera && styles.modeTextActive]}>{t('createReel.gallery')}</Text>
                 </Pressable>
                 <Pressable
+                  accessibilityLabel={t('accessibility.openCamera')}
                   accessibilityRole="button"
                   onPress={handleOpenCamera}
                   style={[styles.modeTab, showCamera && styles.modeTabActive]}
@@ -688,6 +691,7 @@ export default function CreateReelScreen() {
                     </Pressable>
                   ) : (
                     <Pressable
+                      accessibilityLabel={t('accessibility.close')}
                       accessibilityRole="button"
                       onPress={() => {
                         if (clips.length > 0) {
@@ -720,6 +724,7 @@ export default function CreateReelScreen() {
                     </View>
                     {clips.length >= 2 && (
                       <Pressable
+                        accessibilityLabel={t('accessibility.selectCategory')}
                         accessibilityRole="button"
                         style={styles.transitionBadge}
                         onPress={() => {
@@ -764,6 +769,7 @@ export default function CreateReelScreen() {
               {/* Mode toggle */}
               <View style={styles.modeToggle}>
                 <Pressable
+                  accessibilityLabel={t('accessibility.close')}
                   accessibilityRole="button"
                   onPress={() => setShowCamera(false)}
                   style={[styles.modeTab, !showCamera && styles.modeTabActive]}
@@ -772,6 +778,7 @@ export default function CreateReelScreen() {
                   <Text style={[styles.modeText, !showCamera && styles.modeTextActive]}>{t('createReel.gallery')}</Text>
                 </Pressable>
                 <Pressable
+                  accessibilityLabel={t('accessibility.openCamera')}
                   accessibilityRole="button"
                   onPress={handleOpenCamera}
                   style={[styles.modeTab, showCamera && styles.modeTabActive]}
@@ -811,10 +818,11 @@ export default function CreateReelScreen() {
                       thumbnailUri === frame && !customThumbnail && styles.thumbnailFrameSelected,
                     ]}
                   >
-                    <ProgressiveImage uri={frame} width={80} height={45} accessibilityLabel="Content image" />
+                    <ProgressiveImage uri={frame} width={80} height={45} accessibilityLabel={t('accessibility.contentImage')} />
                   </Pressable>
                 ))}
                 <Pressable
+                  accessibilityLabel={t('accessibility.pickImage')}
                   accessibilityRole="button"
                   onPress={async () => {
                     const result = await ImagePicker.launchImageLibraryAsync({
@@ -917,6 +925,7 @@ export default function CreateReelScreen() {
               </Pressable>
 
               <Pressable
+                accessibilityLabel={t('accessibility.selectCategory')}
                 style={styles.toolbarButton}
                 onPress={() => navigate('/(screens)/reel-templates')}
                 accessibilityRole="button"
@@ -945,6 +954,7 @@ export default function CreateReelScreen() {
               </Pressable>
 
               <Pressable
+                accessibilityLabel={t('accessibility.pickImage')}
                 style={styles.toolbarButton}
                 onPress={() => navigate('/(screens)/green-screen-editor')}
                 accessibilityRole="button"
@@ -959,6 +969,7 @@ export default function CreateReelScreen() {
               </Pressable>
 
               <Pressable
+                accessibilityLabel={t('accessibility.selectAudioTrack')}
                 style={styles.toolbarButton}
                 onPress={() => navigate('/(screens)/audio-library')}
                 accessibilityRole="button"

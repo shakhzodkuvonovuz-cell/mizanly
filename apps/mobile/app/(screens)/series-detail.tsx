@@ -191,7 +191,7 @@ function SeriesDetailContent() {
         onPress={() => handleEpisodePress(item)}
         android_ripple={{ color: 'rgba(10,123,79,0.1)' }}
         accessibilityRole="button"
-        accessibilityLabel={`Episode ${item.number}: ${item.title}`}
+        accessibilityLabel={t('accessibility.episodeLabel', { num: item.number, title: item.title })}
       >
         <View style={styles.episodeNumber}>
           <Text style={styles.episodeNumberText}>{item.number}</Text>

@@ -210,6 +210,7 @@ function VoicePlayer({ mediaUrl, isOwn }: { mediaUrl: string; isOwn: boolean }) 
       </View>
       {/* Speed control — tap to cycle 1x → 1.5x → 2x */}
       <Pressable
+        accessibilityRole="button"
         onPress={() => {
           const next = (speedIndex + 1) % SPEED_OPTIONS.length;
           setSpeedIndex(next);
@@ -496,6 +497,7 @@ const MessageBubble = memo(function MessageBubble({
         {/* Spoiler overlay */}
         {message.isSpoiler && !spoilerRevealed ? (
           <Pressable
+            accessibilityRole="button"
             onPress={() => {
               haptic.tick();
               setSpoilerRevealed(true);
@@ -527,6 +529,8 @@ const MessageBubble = memo(function MessageBubble({
           <VoicePlayer mediaUrl={message.mediaUrl} isOwn={isOwn} />
         ) : (message.messageType as string) === 'CONTACT' ? (
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('accessibility.openProfile')}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 8, backgroundColor: `${colors.emerald}10`, borderRadius: radius.sm }}
             onPress={() => {
               try {
@@ -592,6 +596,7 @@ const MessageBubble = memo(function MessageBubble({
         )}
         {message.content && !translatedText && !isOwn && (
           <Pressable
+            accessibilityRole="button"
             onPress={async () => {
               setIsTranslating(true);
               try {
@@ -656,6 +661,7 @@ const MessageBubble = memo(function MessageBubble({
               }, {})
             ).map(([emoji, { count, hasOwn }]) => (
               <Pressable
+                accessibilityRole="button"
                 key={emoji}
                 style={[styles.reactionChip, { backgroundColor: tc.surface }, hasOwn && styles.reactionChipOwn]}
                 disabled={isReacting}
@@ -1600,6 +1606,7 @@ export default function ConversationScreen() {
           <View style={styles.reactionGrid}>
             {['❤️', '👍', '😂', '😮', '😢', '🤲'].map((emoji) => (
               <Pressable
+                accessibilityLabel={t('accessibility.close')}
                 accessibilityRole="button"
                 key={emoji}
                 style={[styles.reactionButton, { backgroundColor: tc.bgElevated }]}

@@ -314,6 +314,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
       const secs = Math.floor(item.duration % 60);
       return (
         <Pressable
+          accessibilityLabel={t('accessibility.pickVideo')}
           accessibilityRole="button"
           style={[styles.trailerPickerItem, isCurrentTrailer && styles.trailerPickerItemActive]}
 
@@ -356,7 +357,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
       <View style={styles.bannerContainer}>
         {channel?.bannerUrl ? (
           <>
-            <ProgressiveImage uri={channel.bannerUrl} width="100%" height={BANNER_HEIGHT} contentFit="cover" accessibilityLabel="Channel banner" />
+            <ProgressiveImage uri={channel.bannerUrl} width="100%" height={BANNER_HEIGHT} contentFit="cover" accessibilityLabel={t('accessibility.channelBanner')} />
             <LinearGradient
               colors={['rgba(13,17,23,0.3)', 'transparent', 'rgba(13,17,23,0.6)']}
               locations={[0, 0.5, 1]}
@@ -458,6 +459,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
         <Animated.View entering={FadeInUp.delay(150)} style={styles.trailerContainer}>
           <Text style={[styles.trailerSectionTitle, { color: tc.text.primary }]}>{t('channelTrailer.title')}</Text>
           <Pressable
+            accessibilityLabel={t('accessibility.goToChannel')}
             accessibilityRole="button"
             style={[styles.trailerCard, { backgroundColor: tc.surface }]}
            

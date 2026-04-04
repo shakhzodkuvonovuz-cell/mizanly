@@ -73,6 +73,7 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
   return (
     <Animated.View entering={index < 10 ? FadeInUp.delay(index * 50).duration(400) : undefined}>
       <Pressable
+        accessibilityRole="button"
         style={styles.postCard}
         onLongPress={handleLongPress}
         delayLongPress={500}
@@ -121,7 +122,7 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
       )}
 
       <View style={[styles.postActions, { borderTopColor: tc.borderLight }]}>
-        <Pressable style={styles.postAction} onPress={handleLike} accessibilityRole="button" accessibilityLabel={liked ? 'Unlike' : 'Like'}>
+        <Pressable style={styles.postAction} onPress={handleLike} accessibilityRole="button" accessibilityLabel={liked ? t('common.unlike') : t('common.like')}>
           <Icon
             name={liked ? 'heart-filled' : 'heart'}
             size="sm"
@@ -413,6 +414,7 @@ export default function CommunityPostsScreen() {
                     maxLength={POST_MAX_LENGTH}
                   />
                   <Pressable
+                    accessibilityLabel={t('accessibility.add')}
                     accessibilityRole="button"
                     style={[styles.composeButton, !composeText.trim() && selectedMediaList.length === 0 && styles.composeButtonDisabled]}
                     onPress={handleCreatePost}

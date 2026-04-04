@@ -215,7 +215,7 @@ export default function CameraScreen() {
             {/* Flash Toggle */}
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={flashOn ? "Turn flash off" : "Turn flash on"}
+              accessibilityLabel={flashOn ? t('accessibility.turnFlashOff') : t('accessibility.turnFlashOn')}
               style={[styles.controlPill, flashOn && styles.controlPillActive]}
               onPress={() => { haptic.tick(); setFlashOn(!flashOn); }}
             >
@@ -297,7 +297,7 @@ export default function CameraScreen() {
             <Animated.View style={[styles.captureButtonOuter, pulseStyle]}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={mode === 'video' && isRecording ? "Stop recording" : "Capture"}
+                accessibilityLabel={mode === 'video' && isRecording ? t('accessibility.stopRecording') : t('accessibility.capture')}
                 onPress={handleCapturePress}
 
                 style={styles.captureButtonTouch}

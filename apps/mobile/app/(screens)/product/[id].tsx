@@ -365,7 +365,7 @@ function ProductDetailScreen() {
             </Text>
             <Pressable
               onPress={() => navigate(`/(screens)/profile/${data.seller.username}`)}
-              accessibilityLabel={`View ${data.seller.displayName}'s profile`}
+              accessibilityLabel={t('accessibility.viewSellerProfile', { name: data.seller.displayName })}
               accessibilityRole="button"
             >
               <LinearGradient

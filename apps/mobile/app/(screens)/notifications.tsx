@@ -252,7 +252,7 @@ function NotificationRow({ notification, index }: { notification: AggregatedNoti
       onPress={handlePress}
       android_ripple={{ color: colors.active.emerald10 }}
       accessibilityRole="button"
-      accessibilityLabel={`View notification from ${notification.actor?.displayName ?? t('notifications.someone')}`}
+      accessibilityLabel={t('accessibility.viewNotification', { name: notification.actor?.displayName ?? t('notifications.someone') })}
     >
       <Animated.View entering={entranceAnimation} style={[styles.rowInner, { flexDirection: rtlFlexRow(isRTL) }]}>
         {/* Unread accent bar */}

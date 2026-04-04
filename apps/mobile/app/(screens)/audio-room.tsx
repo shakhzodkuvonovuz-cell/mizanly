@@ -551,6 +551,7 @@ export default function AudioRoomScreen() {
           >
             {/* Mic Toggle */}
             <Pressable
+              accessibilityLabel={t('accessibility.toggleSwitch')}
               accessibilityRole="button"
               style={({ pressed }) => [styles.controlButton, pressed && { opacity: 0.7 }]}
               onPress={handleToggleMic}
@@ -566,6 +567,7 @@ export default function AudioRoomScreen() {
 
             {/* Raise Hand */}
             <Pressable
+              accessibilityLabel={t('accessibility.toggleSwitch')}
               accessibilityRole="button"
               style={({ pressed }) => [styles.controlButton, pressed && { opacity: 0.7 }]}
               onPress={handleToggleHand}
@@ -581,6 +583,7 @@ export default function AudioRoomScreen() {
 
             {/* Reactions */}
             <Pressable
+              accessibilityLabel={t('accessibility.selectEmoji')}
               accessibilityRole="button"
               style={({ pressed }) => [styles.controlButton, pressed && { opacity: 0.7 }]}
               onPress={() => setReactionsSheetVisible(true)}
@@ -622,7 +625,7 @@ export default function AudioRoomScreen() {
               <Pressable
                 key={emoji}
                 accessibilityRole="button"
-                accessibilityLabel={`React with ${emoji}`}
+                accessibilityLabel={t('accessibility.reactWith', { emoji })}
                 style={styles.reactionButton}
                 onPress={() => handleReaction(emoji)}
               >

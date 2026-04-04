@@ -90,7 +90,7 @@ export default function CreateClipScreen() {
                 height={200}
                 borderRadius={radius.lg}
                 contentFit="cover"
-                accessibilityLabel={videoTitle as string || 'Video thumbnail'}
+                accessibilityLabel={videoTitle as string || t('clips.videoThumbnail')}
               />
             ) : (
               <View style={[styles.thumbnail, { backgroundColor: tc.surface, justifyContent: 'center', alignItems: 'center' }]}>
@@ -151,7 +151,7 @@ export default function CreateClipScreen() {
           {/* Source info */}
           <Animated.View entering={FadeInUp.delay(200).duration(300)} style={[styles.infoCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
             <Icon name="link" size="sm" color={tc.text.secondary} />
-            <Text style={[styles.infoText, { color: tc.text.secondary }]} numberOfLines={1}>{videoTitle || 'Source video'}</Text>
+            <Text style={[styles.infoText, { color: tc.text.secondary }]} numberOfLines={1}>{videoTitle || t('clips.sourceVideo')}</Text>
           </Animated.View>
 
           {/* Max duration hint */}

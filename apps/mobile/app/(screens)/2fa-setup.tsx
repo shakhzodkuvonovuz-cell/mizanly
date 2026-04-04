@@ -149,7 +149,7 @@ export default function TwoFactorSetupScreen() {
   const downloadBackupCodes = async () => {
     haptic.tick();
     try {
-      await Share.share({ message: backupCodes.join('\n'), title: '2FA Backup Codes' });
+      await Share.share({ message: backupCodes.join('\n'), title: t('auth.backupCodesShareTitle') });
     } catch {
       // User cancelled share
     }
