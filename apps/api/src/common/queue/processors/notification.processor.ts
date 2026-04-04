@@ -63,7 +63,6 @@ export class NotificationProcessor implements OnModuleInit, OnModuleDestroy {
             const delays = [1000, 10000, 60000];
             return delays[Math.min(attemptsMade - 1, delays.length - 1)];
           },
-          stalledInterval: 60000,
         },
       },
     );

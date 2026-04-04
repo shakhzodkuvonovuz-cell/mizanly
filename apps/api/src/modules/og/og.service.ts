@@ -25,7 +25,7 @@ function truncate(text: string, maxLen: number): string {
 /** Cache TTL for unfurl results: 1 hour in seconds */
 const UNFURL_CACHE_TTL = 3600;
 
-interface UnfurlResult {
+export interface UnfurlResult {
   url: string;
   domain: string;
   title: string | null;

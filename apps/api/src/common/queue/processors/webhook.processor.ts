@@ -61,7 +61,6 @@ export class WebhookProcessor implements OnModuleInit, OnModuleDestroy {
             const delays = [1000, 5000, 30000, 300000, 1800000];
             return delays[Math.min(attemptsMade - 1, delays.length - 1)];
           },
-          stalledInterval: 30000,
         },
       },
     );

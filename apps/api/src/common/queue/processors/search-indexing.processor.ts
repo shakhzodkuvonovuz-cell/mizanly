@@ -49,9 +49,7 @@ export class SearchIndexingProcessor implements OnModuleInit, OnModuleDestroy {
         concurrency: 5,
         lockDuration: 60000,
         maxStalledCount: 3,
-        settings: {
-          stalledInterval: 60000,
-        },
+        
       },
     );
 

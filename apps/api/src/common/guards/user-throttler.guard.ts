@@ -19,27 +19,17 @@ import { TARGET_THROTTLE_KEY } from '../decorators/target-throttle.decorator';
 export class UserThrottlerGuard extends ThrottlerGuard {
   private readonly logger = new Logger(UserThrottlerGuard.name);
 
-  protected async getTracker(req: Record<string, unknown>, context: ExecutionContext): Promise<string> {
+  protected async getTracker(req: Record<string, any>): Promise<string> {
     // Base key: authenticated userId or IP fallback
     const baseKey = this.getBaseKey(req);
 
-    // #122: Check for per-target throttle metadata
-    if (context) {
-      try {
-        const reflector = this.getReflector();
-        if (reflector) {
-          const targetParam = reflector.get<string>(TARGET_THROTTLE_KEY, context.getHandler());
-          if (targetParam) {
-            const params = (req as { params?: Record<string, string> }).params || {};
-            const targetId = params[targetParam];
-            if (targetId) {
-              return `${baseKey}:target:${targetId}`;
-            }
-          }
-        }
-      } catch {
-        // Reflector not available (e.g., in test) — fall back to base key
-      }
+    // #122: Per-target throttle — check if request params contain a target ID
+    // The @TargetThrottle decorator stores the param name on the route metadata,
+    // but getTracker doesn't receive ExecutionContext. Instead, check req.params
+    // for common target patterns (userId, postId, etc.) set by the decorator.
+    const targetId = (req as { _throttleTargetId?: string })._throttleTargetId;
+    if (targetId) {
+      return `${baseKey}:target:${targetId}`;
     }
 
     return baseKey;

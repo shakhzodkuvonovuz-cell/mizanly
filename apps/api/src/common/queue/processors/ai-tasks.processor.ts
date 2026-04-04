@@ -61,9 +61,7 @@ export class AiTasksProcessor implements OnModuleInit, OnModuleDestroy {
           max: 10,
           duration: 60000, // 10 AI calls per minute to stay within rate limits
         },
-        settings: {
-          stalledInterval: 120000,
-        },
+        
       },
     );
 

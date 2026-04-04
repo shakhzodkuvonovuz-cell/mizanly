@@ -67,9 +67,7 @@ export class AnalyticsProcessor implements OnModuleInit, OnModuleDestroy {
         concurrency: 5,
         lockDuration: 30000,
         maxStalledCount: 3,
-        settings: {
-          stalledInterval: 30000,
-        },
+        
       },
     );
 

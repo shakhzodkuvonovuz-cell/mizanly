@@ -101,9 +101,7 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
         concurrency: 3,
         lockDuration: 120000,
         maxStalledCount: 3,
-        settings: {
-          stalledInterval: 120000,
-        },
+        
       },
     );
 

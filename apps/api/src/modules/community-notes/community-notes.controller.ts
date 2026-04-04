@@ -6,6 +6,7 @@ import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { IsString, IsIn, MaxLength } from 'class-validator';
 import { CommunityNotesService } from './community-notes.service';
+import { EmbeddingContentType, NoteRating } from '@prisma/client';
 
 class CreateNoteDto {
   @IsString() @IsIn(['post', 'thread', 'reel']) contentType: string;
@@ -28,7 +29,7 @@ export class CommunityNotesController {
   @ApiOperation({ summary: 'Create a community note on content' })
   @Throttle({ default: { ttl: 60000, limit: 10 } })
   async createNote(@CurrentUser('id') userId: string, @Body() dto: CreateNoteDto) {
-    return this.communityNotesService.createNote(userId, dto.contentType, dto.contentId, dto.note);
+    return this.communityNotesService.createNote(userId, dto.contentType as EmbeddingContentType, dto.contentId, dto.note);
   }
 
   @UseGuards(OptionalClerkAuthGuard)
@@ -61,6 +62,6 @@ export class CommunityNotesController {
     @Param('noteId') noteId: string,
     @Body() dto: RateNoteDto,
   ) {
-    return this.communityNotesService.rateNote(userId, noteId, dto.rating);
+    return this.communityNotesService.rateNote(userId, noteId, dto.rating as NoteRating);
   }
 }

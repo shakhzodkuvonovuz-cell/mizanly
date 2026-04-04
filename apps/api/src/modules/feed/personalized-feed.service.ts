@@ -556,7 +556,7 @@ export class PersonalizedFeedService {
 
       const hasMore = scored.length > limit;
       const data = merged.slice(0, limit);
-      return { data, meta: { hasMore, cursor: data.length ? data[data.length - 1].id : null } };
+      return { data, meta: { hasMore, cursor: data.length ? data[data.length - 1].id : undefined } };
     }
 
     if (space === 'bakra') {
@@ -595,7 +595,7 @@ export class PersonalizedFeedService {
 
       const hasMore = scored.length > limit;
       const data = merged.slice(0, limit);
-      return { data, meta: { hasMore, cursor: data.length ? data[data.length - 1].id : null } };
+      return { data, meta: { hasMore, cursor: data.length ? data[data.length - 1].id : undefined } };
     }
 
     if (space === 'minbar') {
@@ -634,7 +634,7 @@ export class PersonalizedFeedService {
 
       const hasMore = scored.length > limit;
       const data = merged.slice(0, limit);
-      return { data, meta: { hasMore, cursor: data.length ? data[data.length - 1].id : null } };
+      return { data, meta: { hasMore, cursor: data.length ? data[data.length - 1].id : undefined } };
     }
 
     // majlis
@@ -674,7 +674,7 @@ export class PersonalizedFeedService {
 
     const hasMore = scored.length > limit;
     const data = merged.slice(0, limit);
-    return { data, meta: { hasMore, cursor: data.length ? data[data.length - 1].id : null } };
+    return { data, meta: { hasMore, cursor: data.length ? data[data.length - 1].id : undefined } };
   }
 
   /**
