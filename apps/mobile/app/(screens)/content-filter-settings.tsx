@@ -6,7 +6,6 @@ import {
   ScrollView,
   Switch,
   Pressable,
-  StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -122,7 +121,6 @@ function ContentFilterSettingsContent() {
   if (settingsQuery.isLoading) {
     return (
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
-        <StatusBar barStyle="light-content" />
         <GlassHeader
           title={t('contentFilter.title')}
           leftAction={{
@@ -147,7 +145,6 @@ function ContentFilterSettingsContent() {
   if (settingsQuery.isError) {
     return (
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
-        <StatusBar barStyle="light-content" />
         <GlassHeader
           title={t('contentFilter.title')}
           leftAction={{
@@ -171,7 +168,6 @@ function ContentFilterSettingsContent() {
 
   return (
     <View style={[styles.container, { backgroundColor: tc.bg }]}>
-      <StatusBar barStyle="light-content" />
       <GlassHeader
         title={t('contentFilter.title')}
         leftAction={{

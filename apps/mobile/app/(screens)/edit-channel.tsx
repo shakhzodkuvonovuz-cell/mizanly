@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, Pressable, Alert, KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ScrollView, Pressable, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 // Note: Alert kept for destructive unsaved-changes discard confirmation only
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -181,7 +181,6 @@ export default function EditChannelScreen() {
   return (
     <ScreenErrorBoundary>
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
-        <StatusBar barStyle="light-content" />
         <GlassHeader
           title={t('screens.editChannel.title')}
           leftAction={{ icon: 'arrow-left', onPress: handleBack, accessibilityLabel: t('common.back') }}

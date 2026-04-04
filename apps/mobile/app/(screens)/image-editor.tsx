@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, useWindowDimensions,
-  Image as RNImage, StatusBar, Alert,
+  Image as RNImage, Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, {
@@ -209,8 +209,6 @@ export default function ImageEditorScreen() {
   return (
     <ScreenErrorBoundary>
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
-        <StatusBar barStyle="light-content" />
-
         {/* Header */}
         <GlassHeader
           title={t('screens.imageEditor.title')}

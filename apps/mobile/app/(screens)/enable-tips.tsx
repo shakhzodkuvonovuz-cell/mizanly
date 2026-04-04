@@ -8,7 +8,6 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -152,7 +151,6 @@ export default function EnableTipsScreen() {
     return (
       <ScreenErrorBoundary>
         <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
-          <StatusBar barStyle="light-content" />
           <GlassHeader
             title={t('screens.enableTips.title')}
             leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -171,7 +169,6 @@ export default function EnableTipsScreen() {
     return (
       <ScreenErrorBoundary>
         <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
-          <StatusBar barStyle="light-content" />
           <GlassHeader
             title={t('screens.enableTips.title')}
             leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -192,7 +189,6 @@ export default function EnableTipsScreen() {
   return (
     <ScreenErrorBoundary>
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
-        <StatusBar barStyle="light-content" />
         <GlassHeader
           title={t('screens.enableTips.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}

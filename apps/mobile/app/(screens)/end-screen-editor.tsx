@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   View, Text, StyleSheet, TextInput,
   KeyboardAvoidingView, Platform, ScrollView,
-  Pressable, Alert, StatusBar,
+  Pressable, Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -219,7 +219,6 @@ export default function EndScreenEditorScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <StatusBar barStyle="light-content" />
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top', 'bottom']}>
         <GlassHeader
           title={t('endScreens.title')}

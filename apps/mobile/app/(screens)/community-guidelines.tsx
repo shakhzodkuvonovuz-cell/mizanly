@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -72,7 +72,6 @@ function GuidelinesContent() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
-      <StatusBar barStyle="light-content" />
       <GlassHeader
         title={t('safety.communityGuidelines', 'Community Guidelines')}
         leftAction={{ icon: 'arrow-left', onPress: () => { haptic.tick(); router.back(); }, accessibilityLabel: t('common.goBack') }}

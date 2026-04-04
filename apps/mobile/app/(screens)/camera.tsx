@@ -134,6 +134,12 @@ export default function CameraScreen() {
     }
   }, [permission, requestPermission, t]);
 
+  // StatusBar: light-content for dark camera background, restore on unmount
+  useEffect(() => {
+    StatusBar.setBarStyle('light-content');
+    return () => { StatusBar.setBarStyle('default'); };
+  }, []);
+
   // Clean up recording interval on unmount
   useEffect(() => {
     return () => {
@@ -161,7 +167,6 @@ export default function CameraScreen() {
     return (
       <ScreenErrorBoundary>
         <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-          <StatusBar barStyle="light-content" />
           <EmptyState
             icon="camera"
             title={t('camera.permissionRequired')}
@@ -177,8 +182,6 @@ export default function CameraScreen() {
   return (
     <ScreenErrorBoundary>
       <View style={styles.container}>
-        <StatusBar barStyle="light-content" hidden />
-
         {/* Camera Preview Placeholder */}
         <View style={styles.cameraPreview}>
           <LinearGradient

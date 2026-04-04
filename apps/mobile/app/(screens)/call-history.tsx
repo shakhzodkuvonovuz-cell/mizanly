@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -189,7 +189,6 @@ export default function CallHistoryScreen() {
   return (
     <ScreenErrorBoundary>
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
-        <StatusBar barStyle="light-content" />
         <GlassHeader
           title={t('calls.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}

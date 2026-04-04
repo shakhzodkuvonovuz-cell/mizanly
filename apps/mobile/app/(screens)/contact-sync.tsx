@@ -1,7 +1,7 @@
 import { useCallback, useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  FlatList, StatusBar,
+  FlatList,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -267,7 +267,6 @@ export default function ContactSyncScreen() {
     return (
       <ScreenErrorBoundary>
         <View style={[styles.container, { backgroundColor: tc.bg }]}>
-          <StatusBar barStyle="light-content" />
           <GlassHeader
             title={t('contactSync.title')}
             leftAction={{ icon: 'arrow-left', onPress: handleBack, accessibilityLabel: t('common.back') }}
@@ -289,7 +288,6 @@ export default function ContactSyncScreen() {
   return (
     <ScreenErrorBoundary>
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
-        <StatusBar barStyle="light-content" />
         <GlassHeader
           title={t('contactSync.title')}
           leftAction={{ icon: 'arrow-left', onPress: handleBack, accessibilityLabel: t('common.back') }}

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, Pressable, Dimensions, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, FadeIn, useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSpring } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -143,7 +143,6 @@ export default function VoicePostCreateScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <StatusBar barStyle="light-content" />
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         <GlassHeader
           title={t('community.voicePost')}

@@ -108,6 +108,16 @@ export default function CallScreen() {
     callType: callTypeParam as CallType | undefined, // [F4] Pass from push params
   });
 
+  // StatusBar: light-content for dark call background, restore on unmount
+  useEffect(() => {
+    StatusBar.setBarStyle('light-content');
+    if (Platform.OS === 'android') {
+      StatusBar.setTranslucent(true);
+      StatusBar.setBackgroundColor('transparent');
+    }
+    return () => { StatusBar.setBarStyle('default'); };
+  }, []);
+
   // [F28 fix] Only keep screen awake during active call, not after it ends.
   useEffect(() => {
     const active = livekit.status === 'connected' || livekit.status === 'reconnecting'
@@ -554,7 +564,6 @@ export default function CallScreen() {
   return (
     <ScreenErrorBoundary>
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
-        <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
         <LinearGradient colors={['rgba(10,123,79,0.15)', 'rgba(28,35,51,0.8)', tc.bg]} style={styles.gradientBg} />
 
         {/* Video grid (replaces old RTCView) */}

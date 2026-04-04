@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  ScrollView, StatusBar,
+  ScrollView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -207,7 +207,6 @@ export default function ContentSettingsScreen() {
   if (settingsQuery.isError) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
-        <StatusBar barStyle="light-content" />
         <GlassHeader
           title={t('settings.contentPreferences')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -228,7 +227,6 @@ export default function ContentSettingsScreen() {
   if (settingsQuery.isLoading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
-        <StatusBar barStyle="light-content" />
         <GlassHeader
           title={t('settings.contentPreferences')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -245,7 +243,6 @@ export default function ContentSettingsScreen() {
   return (
     <ScreenErrorBoundary>
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
-        <StatusBar barStyle="light-content" />
         <GlassHeader
           title={t('settings.contentPreferences')}
           leftAction={{ icon: 'arrow-left', onPress: () => { haptic.tick(); router.back(); }, accessibilityLabel: t('common.back') }}

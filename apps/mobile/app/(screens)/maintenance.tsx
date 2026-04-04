@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, StatusBar } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
@@ -62,7 +62,6 @@ function MaintenanceScreenContent() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top', 'bottom']}>
-      <StatusBar barStyle="light-content" />
       <Animated.View entering={FadeIn.duration(400)} style={styles.content}>
         <EmptyState
           icon="settings"

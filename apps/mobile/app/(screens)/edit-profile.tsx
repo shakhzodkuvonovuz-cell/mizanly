@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
-  ScrollView, Platform, KeyboardAvoidingView, Alert, StatusBar,
+  ScrollView, Platform, KeyboardAvoidingView, Alert,
 } from 'react-native';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter } from 'expo-router';
@@ -243,7 +243,6 @@ export default function EditProfileScreen() {
   return (
     <ScreenErrorBoundary>
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
-        <StatusBar barStyle="light-content" />
         <GlassHeader
           title={t('profile.editProfile')}
           leftAction={{ icon: 'x', onPress: handleBack, accessibilityLabel: t('common.cancel') }}

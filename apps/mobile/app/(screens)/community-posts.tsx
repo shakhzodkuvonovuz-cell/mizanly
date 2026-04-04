@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   FlatList, TextInput, KeyboardAvoidingView, Platform, ScrollView,
-  Alert, StatusBar,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
@@ -366,7 +366,6 @@ export default function CommunityPostsScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <View style={[styles.container, { backgroundColor: tc.bg }]}>
-          <StatusBar barStyle="light-content" />
           <GlassHeader
             title={t('communityPosts.title')}
             leftAction={{ icon: 'arrow-left', onPress: () => { haptic.tick(); router.back(); }, accessibilityLabel: t('common.back') }}
