@@ -84,8 +84,13 @@ func main() {
 	logger.Info("connected to Redis")
 
 	// Handlers
+	// [#521 fix] Pass a cancellable context so handler goroutines (sendCallPush,
+	// sendMissedCallPush) are cancelled during graceful shutdown instead of running
+	// with unbounded context.Background().
+	handlerCtx, handlerCancel := context.WithCancel(context.Background())
+	defer handlerCancel()
 	rl := middleware.NewRateLimiter(rdb)
-	h := handler.New(db, rdb, rl, cfg, logger)
+	h := handler.NewWithContext(handlerCtx, db, rdb, rl, cfg, logger)
 	sentryHandler := sentryhttp.New(sentryhttp.Options{Repanic: true})
 
 	// Security headers [M4 fix] includes Cache-Control: no-store for all API responses
@@ -213,6 +218,7 @@ func main() {
 	}
 	logger.Info("shutting down...")
 	cleanupCancel()
+	handlerCancel() // [#521] Cancel handler goroutines (sendCallPush, sendMissedCallPush)
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

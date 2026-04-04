@@ -65,11 +65,22 @@ type Handler struct {
 	egressClient  *lksdk.EgressClient
 	ingressClient *lksdk.IngressClient
 	authProvider  *lkauth.SimpleKeyProvider
+	// [#521 fix] shutdownCtx is cancelled on server shutdown — goroutines spawned by
+	// handlers (sendCallPush, sendMissedCallPush) derive their contexts from this so
+	// they respect graceful shutdown instead of using unbounded context.Background().
+	shutdownCtx context.Context
 }
 
 func New(db store.Querier, rdb *redis.Client, rl *middleware.RateLimiter, cfg *config.Config, logger *slog.Logger) *Handler {
+	return NewWithContext(context.Background(), db, rdb, rl, cfg, logger)
+}
+
+// NewWithContext creates a handler with an explicit shutdown context.
+// When ctx is cancelled (server shutdown), in-flight goroutines will be cancelled.
+func NewWithContext(ctx context.Context, db store.Querier, rdb *redis.Client, rl *middleware.RateLimiter, cfg *config.Config, logger *slog.Logger) *Handler {
 	return &Handler{
 		db: db, rdb: rdb, rl: rl, cfg: cfg, logger: logger,
+		shutdownCtx:   ctx,
 		roomClient:    lksdk.NewRoomServiceClient(cfg.LiveKitHost, cfg.LiveKitAPIKey, cfg.LiveKitAPISecret),
 		egressClient:  lksdk.NewEgressClient(cfg.LiveKitHost, cfg.LiveKitAPIKey, cfg.LiveKitAPISecret),
 		ingressClient: lksdk.NewIngressClient(cfg.LiveKitHost, cfg.LiveKitAPIKey, cfg.LiveKitAPISecret),
@@ -150,9 +161,12 @@ func (h *Handler) HandleCreateRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Room name: hash userID prefix to avoid leaking raw user IDs [G04-#4]
+	// Room name: hash userID to avoid leaking raw user IDs [G04-#4]
+	// [#521 fix] Use 16 bytes (128 bits) of SHA-256 instead of 4 bytes (32 bits).
+	// 4 bytes is brute-forceable against a known user ID list — an attacker with 1M user IDs
+	// could precompute all 4-byte prefixes and reverse the mapping. 16 bytes makes this infeasible.
 	idHash := sha256.Sum256([]byte(userID))
-	roomNameBase := fmt.Sprintf("%x_%d", idHash[:4], time.Now().UnixMilli())
+	roomNameBase := fmt.Sprintf("%x_%d", idHash[:16], time.Now().UnixMilli())
 	maxParticipants := uint32(len(allParticipants))
 	if req.CallType == "BROADCAST" {
 		maxParticipants = 10000
@@ -237,6 +251,7 @@ func (h *Handler) HandleCreateRoom(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// [H5] Log call creation metric
+	// SECURITY: Never log e2eeKey, e2eeSalt, or token — only operational metadata.
 	h.logger.Info("call_created",
 		"requestId", reqID, "callType", req.CallType,
 		"roomName", actualRoomName, "participantCount", len(allParticipants),
@@ -247,6 +262,8 @@ func (h *Handler) HandleCreateRoom(w http.ResponseWriter, r *http.Request) {
 		go h.sendCallPush(calleeIDs, actualRoomName, session.ID, req.CallType, userID)
 	}
 
+	// SECURITY [#521]: Response contains E2EE key material — Cache-Control: no-store prevents
+	// intermediate proxies/CDNs from caching. Never add response-body logging middleware.
 	w.Header().Set("Cache-Control", "no-store") // [M4]
 	writeJSON(w, http.StatusCreated, map[string]interface{}{
 		"data": session, "token": token, "room": room,
@@ -319,6 +336,7 @@ func (h *Handler) HandleCreateToken(w http.ResponseWriter, r *http.Request) {
 		e2eeSalt = base64.StdEncoding.EncodeToString(e2eeMaterial.Salt)
 	}
 
+	// SECURITY [#521]: Response contains E2EE key material — no-store, no response-body logging.
 	w.Header().Set("Cache-Control", "no-store") // [M4]
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"token": token, "e2eeKey": e2eeKey, "e2eeSalt": e2eeSalt, "success": true,
@@ -999,8 +1017,9 @@ func (h *Handler) sendCallPush(calleeIDs []string, roomName, sessionID, callType
 		}
 	}()
 
-	// [G05-#5 fix] Use a bounded context for the DB call
-	dbCtx, dbCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// [#521 fix] Use shutdownCtx instead of context.Background() — goroutine respects server shutdown.
+	// 10s timeout bounds the DB call; shutdownCtx cancellation aborts if server is terminating.
+	dbCtx, dbCancel := context.WithTimeout(h.shutdownCtx, 10*time.Second)
 	defer dbCancel()
 
 	// [F6] Look up caller display name from DB
@@ -1082,7 +1101,7 @@ func (h *Handler) postInternalPush(bodyBytes []byte) error {
 			time.Sleep(500 * time.Millisecond)
 		}
 
-		pushCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		pushCtx, cancel := context.WithTimeout(h.shutdownCtx, 5*time.Second)
 		req, err := http.NewRequestWithContext(pushCtx, "POST", url, bytes.NewReader(bodyBytes))
 		if err != nil {
 			cancel()
