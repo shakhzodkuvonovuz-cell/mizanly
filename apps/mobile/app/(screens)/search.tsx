@@ -321,6 +321,53 @@ export default function SearchScreen() {
     />
   ), [t, activeTab, debouncedQuery]);
 
+  const renderPostItem = useCallback(({ item }: { item: Post }) => <PostCard post={item} />, []);
+  const renderThreadItem = useCallback(({ item }: { item: Thread }) => <ThreadCard thread={item} />, []);
+  const renderReelItem = useCallback(({ item }: { item: Reel }) => (
+    <Pressable style={styles.reelRow} onPress={() => { haptic.navigate(); router.push(`/(screens)/reel/${item.id}`); }}>
+      <ProgressiveImage uri={item.thumbnailUrl || item.videoUrl} width={110} height={190} borderRadius={radius.sm} contentFit="cover" />
+      <View style={styles.reelInfo}>
+        <Text style={styles.reelCaption} numberOfLines={2}>{item.caption || t('search.noCaption')}</Text>
+        <View style={styles.reelStats}>
+          <Icon name="heart" size={14} color={tc.text.secondary} /><Text style={styles.reelStat}>{formatCount(item.likesCount)}</Text>
+          <Icon name="message-circle" size={14} color={tc.text.secondary} /><Text style={styles.reelStat}>{formatCount(item.commentsCount)}</Text>
+          <Icon name="eye" size={14} color={tc.text.secondary} /><Text style={styles.reelStat}>{formatCount(item.viewsCount)}</Text>
+        </View>
+        <View style={styles.reelUser}>
+          <Avatar uri={item.user.avatarUrl} name={item.user.username} size="xs" showRing={false} />
+          <Text style={styles.reelUsername}>@{item.user.username}</Text>
+        </View>
+      </View>
+    </Pressable>
+  ), [haptic, router, tc.text.secondary, t]);
+  const renderVideoItem = useCallback(({ item }: { item: Video }) => <VideoRow video={item} onPress={() => router.push(`/(screens)/video/${item.id}`)} />, [router]);
+  const renderChannelItem = useCallback(({ item }: { item: Channel }) => <ChannelRow channel={item} onPress={() => router.push(`/(screens)/channel/${item.handle}`)} />, [router]);
+  const renderSearchListItem = useCallback(({ item }: { item: SearchListItem }) => {
+    if (item.type === 'user') return <UserRow user={item.data} onPress={() => { haptic.navigate(); router.push(`/(screens)/profile/${item.data.username}`); }} />;
+    return (
+      <Pressable style={[styles.hashtagRow, { flexDirection: rtlFlexRow(isRTL) }]} onPress={() => { haptic.navigate(); router.push(`/(screens)/hashtag/${item.data.name}`); }} accessibilityRole="button" accessibilityLabel={t('search.viewHashtag', { name: item.data.name })}>
+        <View style={styles.hashtagIconWrap}><Icon name="hash" size="sm" color={colors.emerald} /></View>
+        <View><Text style={[styles.hashtagName, { textAlign: rtlTextAlign(isRTL) }]}>#{item.data.name}</Text><Text style={[styles.hashtagCount, { textAlign: rtlTextAlign(isRTL) }]}>{item.data.postsCount} {t('search.posts')}</Text></View>
+      </Pressable>
+    );
+  }, [haptic, router, isRTL, t]);
+  const renderHistoryItem = useCallback(({ item }: { item: string }) => (
+    <View style={[styles.historyItem, { flexDirection: rtlFlexRow(isRTL) }]}>
+      <Pressable style={[styles.historyText, { flexDirection: rtlFlexRow(isRTL) }]} onPress={() => { setQuery(item); setDebouncedQuery(item); }} accessibilityRole="button" accessibilityLabel={t('search.searchFor', { term: item })}>
+        <Icon name="clock" size={16} color={tc.text.secondary} /><Text style={styles.historyTerm}>{item}</Text>
+      </Pressable>
+      <Pressable onPress={() => { haptic.delete(); const updated = searchHistory.filter(h => h !== item); setSearchHistory(updated); AsyncStorage.setItem('search-history', JSON.stringify(updated)).catch(() => {}); }} hitSlop={8}>
+        <Icon name="x" size={16} color={tc.text.tertiary} />
+      </Pressable>
+    </View>
+  ), [isRTL, haptic, searchHistory, tc.text.secondary, tc.text.tertiary, t]);
+  const renderExploreItem = useCallback(({ item }: { item: Post }) => (
+    <Pressable style={styles.exploreItem} onPress={() => navigate(`/(screens)/post/${item.id}`)} accessibilityRole="button" accessibilityLabel={t('accessibility.viewPost')}>
+      {item.mediaUrls[0] ? <ProgressiveImage uri={item.mediaUrls[0]} width={120} height={120} borderRadius={radius.md} contentFit="cover" /> : <View style={[styles.exploreImage, { backgroundColor: tc.bgElevated }]}><Icon name="image" size={24} color={tc.text.tertiary} /></View>}
+      {item.postType === 'VIDEO' && <View style={styles.videoOverlay}><Icon name="play" size={14} color={tc.text.primary} /></View>}
+    </Pressable>
+  ), [tc.bgElevated, tc.text.tertiary, tc.text.primary, t]);
+
   return (
     <ScreenErrorBoundary>
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -402,9 +449,7 @@ export default function SearchScreen() {
           maxToRenderPerBatch={8}
                       data={posts}
                       keyExtractor={(item) => item.id}
-                      renderItem={({ item }) => (
-                        <PostCard post={item} />
-                      )}
+                      renderItem={renderPostItem}
                       ListEmptyComponent={postsSearchEmpty}
                       onEndReached={() => {
                         if (postsQuery.hasNextPage && !postsQuery.isFetchingNextPage) {
@@ -437,9 +482,7 @@ export default function SearchScreen() {
           maxToRenderPerBatch={8}
                       data={threads}
                       keyExtractor={(item) => item.id}
-                      renderItem={({ item }) => (
-                        <ThreadCard thread={item} />
-                      )}
+                      renderItem={renderThreadItem}
                       ListEmptyComponent={threadsSearchEmpty}
                       onEndReached={() => {
                         if (threadsQuery.hasNextPage && !threadsQuery.isFetchingNextPage) {
@@ -472,45 +515,7 @@ export default function SearchScreen() {
           maxToRenderPerBatch={8}
                       data={reels}
                       keyExtractor={(item) => item.id}
-                      renderItem={({ item }) => (
-                        <Pressable
-                          style={styles.reelRow}
-                          onPress={() => {
-                          haptic.navigate();
-                          router.push(`/(screens)/reel/${item.id}`);
-                        }}
-                        >
-                          <ProgressiveImage
-                            uri={item.thumbnailUrl || item.videoUrl}
-                            width={110}
-                            height={190}
-                            borderRadius={radius.sm}
-                            contentFit="cover"
-                          />
-                          <View style={styles.reelInfo}>
-                            <Text style={styles.reelCaption} numberOfLines={2}>
-                              {item.caption || t('search.noCaption')}
-                            </Text>
-                            <View style={styles.reelStats}>
-                              <Icon name="heart" size={14} color={tc.text.secondary} />
-                              <Text style={styles.reelStat}>{formatCount(item.likesCount)}</Text>
-                              <Icon name="message-circle" size={14} color={tc.text.secondary} />
-                              <Text style={styles.reelStat}>{formatCount(item.commentsCount)}</Text>
-                              <Icon name="eye" size={14} color={tc.text.secondary} />
-                              <Text style={styles.reelStat}>{formatCount(item.viewsCount)}</Text>
-                            </View>
-                            <View style={styles.reelUser}>
-                              <Avatar
-                                uri={item.user.avatarUrl}
-                                name={item.user.username}
-                                size="xs"
-                                showRing={false}
-                              />
-                              <Text style={styles.reelUsername}>@{item.user.username}</Text>
-                            </View>
-                          </View>
-                        </Pressable>
-                      )}
+                      renderItem={renderReelItem}
                       ListEmptyComponent={reelsSearchEmpty}
                       onEndReached={() => {
                         if (reelsQuery.hasNextPage && !reelsQuery.isFetchingNextPage) {
@@ -543,12 +548,7 @@ export default function SearchScreen() {
           maxToRenderPerBatch={8}
                       data={videos}
                       keyExtractor={(item) => item.id}
-                      renderItem={({ item }) => (
-                        <VideoRow
-                          video={item}
-                          onPress={() => router.push(`/(screens)/video/${item.id}`)}
-                        />
-                      )}
+                      renderItem={renderVideoItem}
                       ListEmptyComponent={videosSearchEmpty}
                       onEndReached={() => {
                         if (videosQuery.hasNextPage && !videosQuery.isFetchingNextPage) {
@@ -581,12 +581,7 @@ export default function SearchScreen() {
           maxToRenderPerBatch={8}
                       data={channels}
                       keyExtractor={(item) => item.id}
-                      renderItem={({ item }) => (
-                        <ChannelRow
-                          channel={item}
-                          onPress={() => router.push(`/(screens)/channel/${item.handle}`)}
-                        />
-                      )}
+                      renderItem={renderChannelItem}
                       ListEmptyComponent={channelsSearchEmpty}
                       onEndReached={() => {
                         if (channelsQuery.hasNextPage && !channelsQuery.isFetchingNextPage) {
@@ -618,39 +613,7 @@ export default function SearchScreen() {
                   : hashtags.map((h): SearchListItem => ({ type: 'hashtag', data: h }))
               }
               keyExtractor={(item, i) => item.type === 'user' ? item.data.id : `ht-${i}`}
-              renderItem={({ item }) => {
-                if (item.type === 'user') {
-                  return (
-                    <UserRow
-                      user={item.data}
-                      onPress={() => {
-                        haptic.navigate();
-                        router.push(`/(screens)/profile/${item.data.username}`);
-                      }}
-                    />
-                  );
-                }
-                return (
-                    <Pressable
-                      style={[styles.hashtagRow, { flexDirection: rtlFlexRow(isRTL) }]}
-                      onPress={() => {
-                        haptic.navigate();
-                        router.push(`/(screens)/hashtag/${item.data.name}`);
-                      }}
-                      accessibilityRole="button"
-                      accessibilityLabel={t('search.viewHashtag', { name: item.data.name })}
-                    >
-                      <View style={styles.hashtagIconWrap}>
-                        <Icon name="hash" size="sm" color={colors.emerald} />
-                      </View>
-                      <View>
-                        <Text style={[styles.hashtagName, { textAlign: rtlTextAlign(isRTL) }]}>#{item.data.name}</Text>
-                        <Text style={[styles.hashtagCount, { textAlign: rtlTextAlign(isRTL) }]}>{item.data.postsCount} {t('search.posts')}</Text>
-                      </View>
-                    </Pressable>
-                
-                );
-              }}
+              renderItem={renderSearchListItem}
               ListEmptyComponent={generalSearchEmpty}
               contentContainerStyle={{ paddingBottom: 40 }}
             />
@@ -667,33 +630,7 @@ export default function SearchScreen() {
           maxToRenderPerBatch={8}
                 data={searchHistory}
                 keyExtractor={(item, i) => `history-${i}`}
-                renderItem={({ item }) => (
-                  <View style={[styles.historyItem, { flexDirection: rtlFlexRow(isRTL) }]}>
-                    <Pressable
-                      style={[styles.historyText, { flexDirection: rtlFlexRow(isRTL) }]}
-                      onPress={() => {
-                        setQuery(item);
-                        setDebouncedQuery(item);
-                      }}
-                      accessibilityRole="button"
-                      accessibilityLabel={t('search.searchFor', { term: item })}
-                    >
-                      <Icon name="clock" size={16} color={tc.text.secondary} />
-                      <Text style={styles.historyTerm}>{item}</Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => {
-                        haptic.delete();
-                        const updated = searchHistory.filter(h => h !== item);
-                        setSearchHistory(updated);
-                        AsyncStorage.setItem('search-history', JSON.stringify(updated)).catch(() => {});
-                      }}
-                      hitSlop={8}
-                    >
-                      <Icon name="x" size={16} color={tc.text.tertiary} />
-                    </Pressable>
-                  </View>
-                )}
+                renderItem={renderHistoryItem}
                 contentContainerStyle={{ paddingBottom: spacing.lg }}
               />
               <Pressable
@@ -723,33 +660,7 @@ export default function SearchScreen() {
               data={explorePosts}
               numColumns={3}
               keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <Pressable
-                  style={styles.exploreItem}
-                  onPress={() => navigate(`/(screens)/post/${item.id}`)}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('accessibility.viewPost')}
-                >
-                  {item.mediaUrls[0] ? (
-                    <ProgressiveImage
-                      uri={item.mediaUrls[0]}
-                      width={120}
-                      height={120}
-                      borderRadius={radius.md}
-                      contentFit="cover"
-                    />
-                  ) : (
-                    <View style={[styles.exploreImage, { backgroundColor: tc.bgElevated }]}>
-                      <Icon name="image" size={24} color={tc.text.tertiary} />
-                    </View>
-                  )}
-                  {item.postType === 'VIDEO' && (
-                    <View style={styles.videoOverlay}>
-                      <Icon name="play" size={14} color={tc.text.primary} />
-                    </View>
-                  )}
-                </Pressable>
-              )}
+              renderItem={renderExploreItem}
               onEndReached={() => {
                 if (exploreQuery.hasNextPage && !exploreQuery.isFetchingNextPage) {
                   exploreQuery.fetchNextPage();
