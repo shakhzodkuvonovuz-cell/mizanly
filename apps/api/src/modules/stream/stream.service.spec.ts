@@ -186,6 +186,75 @@ describe('StreamService', () => {
       );
     });
 
+    it('should NOT increment channel videosCount for PROCESSING → PUBLISHED (already counted at creation)', async () => {
+      prisma.channel = { update: jest.fn().mockResolvedValue({}) };
+      prisma.video.findFirst.mockResolvedValueOnce({
+        id: 'video-2',
+        streamId: 'stream-proc',
+        status: 'PROCESSING',
+        channelId: 'ch-1',
+        userId: 'u1',
+        title: 'Test',
+        description: '',
+        tags: [],
+        category: 'OTHER',
+        user: { username: 'tester' },
+      });
+      prisma.video.update.mockResolvedValueOnce({});
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          success: true,
+          result: {
+            uid: 'stream-proc',
+            playback: { hls: 'https://stream.com/video.m3u8', dash: 'https://stream.com/video.mpd' },
+            input: { width: 1920, height: 1080 },
+          },
+        }),
+      });
+
+      await service.handleStreamReady('stream-proc');
+      expect(prisma.channel.update).not.toHaveBeenCalled();
+    });
+
+    it('should increment channel videosCount for DRAFT → PUBLISHED (re-publish after error)', async () => {
+      prisma.channel = { update: jest.fn().mockResolvedValue({}) };
+      prisma.video.findFirst.mockResolvedValueOnce({
+        id: 'video-3',
+        streamId: 'stream-draft',
+        status: 'DRAFT',
+        channelId: 'ch-1',
+        userId: 'u1',
+        title: 'Test',
+        description: '',
+        tags: [],
+        category: 'OTHER',
+        user: { username: 'tester' },
+      });
+      prisma.video.update.mockResolvedValueOnce({});
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          success: true,
+          result: {
+            uid: 'stream-draft',
+            playback: { hls: 'https://stream.com/video.m3u8', dash: 'https://stream.com/video.mpd' },
+            input: { width: 1920, height: 1080 },
+          },
+        }),
+      });
+
+      await service.handleStreamReady('stream-draft');
+      expect(prisma.channel.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'ch-1' },
+          data: { videosCount: { increment: 1 } },
+        }),
+      );
+    });
+
     it('should update reel when stream is ready', async () => {
       prisma.video.findFirst.mockResolvedValueOnce(null);
       prisma.reel.findFirst.mockResolvedValueOnce({

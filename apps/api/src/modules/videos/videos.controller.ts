@@ -377,4 +377,30 @@ export class VideosController {
   getChapters(@Param('id') id: string) {
     return this.videosService.getChapters(id);
   }
+
+  // ── Video Comment Likes ─────────────────────────────────
+
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @Post('comments/:commentId/like')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Like a video comment' })
+  likeComment(
+    @Param('commentId') commentId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.videosService.likeComment(commentId, userId);
+  }
+
+  @Delete('comments/:commentId/like')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @ApiOperation({ summary: 'Unlike a video comment' })
+  unlikeComment(
+    @Param('commentId') commentId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.videosService.unlikeComment(commentId, userId);
+  }
 }

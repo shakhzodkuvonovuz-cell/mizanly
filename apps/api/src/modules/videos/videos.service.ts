@@ -184,10 +184,10 @@ export class VideosService {
       })
       .catch((err) => {
         this.logger.error(`Stream upload failed for video ${video[0].id}`, err);
-        // Fall back to PUBLISHED with raw R2 URL
+        // Fall back to PUBLISHED with raw R2 URL — set publishedAt since no webhook will fire
         this.prisma.video.update({
           where: { id: video[0].id },
-          data: { status: 'PUBLISHED' },
+          data: { status: 'PUBLISHED', publishedAt: new Date() },
         }).catch((e) => this.logger.error('Failed to update video status', e));
       });
 
@@ -796,6 +796,64 @@ export class VideosService {
       this.prisma.$executeRaw`UPDATE "videos" SET "commentsCount" = GREATEST("commentsCount" - 1, 0) WHERE id = ${videoId}`,
     ]);
     return { deleted: true };
+  }
+
+  async likeComment(commentId: string, userId: string) {
+    const comment = await this.prisma.videoComment.findUnique({
+      where: { id: commentId },
+      select: { id: true, videoId: true, userId: true },
+    });
+    if (!comment) throw new NotFoundException('Comment not found');
+
+    try {
+      await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        const existing = await tx.videoCommentLike.findUnique({
+          where: { userId_commentId: { userId, commentId } },
+        });
+        if (existing) throw new ConflictException('Already liked');
+
+        await tx.videoCommentLike.create({ data: { userId, commentId } });
+        await tx.$executeRaw`UPDATE "video_comments" SET "likesCount" = "likesCount" + 1 WHERE id = ${commentId}`;
+      });
+    } catch (err: unknown) {
+      if (err instanceof ConflictException) throw err;
+      if (err instanceof Error && 'code' in err && (err as { code: string }).code === 'P2002') {
+        return { liked: true }; // Race condition — already liked
+      }
+      throw err;
+    }
+
+    // Notify comment author (not self)
+    if (comment.userId && comment.userId !== userId) {
+      try {
+        this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
+          userId: comment.userId,
+          actorId: userId,
+          type: 'VIDEO_COMMENT_LIKE',
+          videoId: comment.videoId,
+        }));
+      } catch (err) {
+        this.logger.error('Failed to create comment like notification', err instanceof Error ? err.message : err);
+      }
+    }
+
+    return { liked: true };
+  }
+
+  async unlikeComment(commentId: string, userId: string) {
+    const existing = await this.prisma.videoCommentLike.findUnique({
+      where: { userId_commentId: { userId, commentId } },
+    });
+    if (!existing) throw new NotFoundException('Like not found');
+
+    await this.prisma.$transaction([
+      this.prisma.videoCommentLike.delete({
+        where: { userId_commentId: { userId, commentId } },
+      }),
+      this.prisma.$executeRaw`UPDATE "video_comments" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${commentId}`,
+    ]);
+
+    return { liked: false };
   }
 
   async bookmark(videoId: string, userId: string) {

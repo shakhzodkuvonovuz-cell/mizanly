@@ -192,9 +192,9 @@ export class StreamService {
         },
       });
 
-      // If transitioning from error/draft to published, increment the channel videosCount
-      // (only increment was done at creation — this handles the re-publish case)
-      if (video.channelId && (previousStatus === 'DRAFT' || previousStatus === 'PROCESSING')) {
+      // Only increment videosCount when re-publishing from DRAFT (error recovery).
+      // PROCESSING → PUBLISHED does NOT increment because create() already did it.
+      if (video.channelId && previousStatus === 'DRAFT') {
         await this.prisma.channel.update({
           where: { id: video.channelId },
           data: { videosCount: { increment: 1 } },

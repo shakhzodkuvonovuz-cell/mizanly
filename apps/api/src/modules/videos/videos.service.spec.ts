@@ -93,6 +93,11 @@ describe('VideosService', () => {
               createMany: jest.fn(),
               deleteMany: jest.fn(),
             },
+            videoCommentLike: {
+              findUnique: jest.fn(),
+              create: jest.fn(),
+              delete: jest.fn(),
+            },
             $transaction: jest.fn(),
             $executeRaw: jest.fn(),
           },
@@ -1178,6 +1183,102 @@ describe('VideosService', () => {
       const result = await service.report('v1', 'u1', 'SPAM');
       expect(result).toEqual({ reported: true });
       expect(prisma.report.create).not.toHaveBeenCalled();
+    });
+  });
+
+  // ── Video comment like/unlike ──
+
+  describe('likeComment', () => {
+    it('should like a comment and increment likesCount', async () => {
+      prisma.videoComment.findUnique.mockResolvedValue({ id: 'c1', videoId: 'v1', userId: 'comment-author' });
+      prisma.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<void>) => {
+        await fn({
+          videoCommentLike: {
+            findUnique: jest.fn().mockResolvedValue(null),
+            create: jest.fn().mockResolvedValue({ id: 'like-1', userId: 'u1', commentId: 'c1' }),
+          },
+          $executeRaw: jest.fn(),
+        });
+      });
+
+      const result = await service.likeComment('c1', 'u1');
+      expect(result).toEqual({ liked: true });
+    });
+
+    it('should throw NotFoundException when comment not found', async () => {
+      prisma.videoComment.findUnique.mockResolvedValue(null);
+      await expect(service.likeComment('missing', 'u1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ConflictException when already liked', async () => {
+      prisma.videoComment.findUnique.mockResolvedValue({ id: 'c1', videoId: 'v1', userId: 'author' });
+      prisma.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<void>) => {
+        await fn({
+          videoCommentLike: {
+            findUnique: jest.fn().mockResolvedValue({ id: 'existing', userId: 'u1', commentId: 'c1' }),
+            create: jest.fn(),
+          },
+          $executeRaw: jest.fn(),
+        });
+      });
+
+      await expect(service.likeComment('c1', 'u1')).rejects.toThrow(ConflictException);
+    });
+
+    it('should handle P2002 race condition gracefully', async () => {
+      prisma.videoComment.findUnique.mockResolvedValue({ id: 'c1', videoId: 'v1', userId: 'author' });
+      const p2002Error = Object.assign(new Error('Unique constraint failed'), { code: 'P2002' });
+      prisma.$transaction.mockRejectedValue(p2002Error);
+
+      const result = await service.likeComment('c1', 'u1');
+      expect(result).toEqual({ liked: true });
+    });
+
+    it('should emit notification for non-self like', async () => {
+      prisma.videoComment.findUnique.mockResolvedValue({ id: 'c1', videoId: 'v1', userId: 'comment-author' });
+      prisma.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<void>) => {
+        await fn({
+          videoCommentLike: {
+            findUnique: jest.fn().mockResolvedValue(null),
+            create: jest.fn().mockResolvedValue({}),
+          },
+          $executeRaw: jest.fn(),
+        });
+      });
+
+      await service.likeComment('c1', 'u1');
+      expect(eventEmitter.emit).toHaveBeenCalled();
+    });
+
+    it('should NOT emit notification for self-like', async () => {
+      prisma.videoComment.findUnique.mockResolvedValue({ id: 'c1', videoId: 'v1', userId: 'u1' });
+      prisma.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<void>) => {
+        await fn({
+          videoCommentLike: {
+            findUnique: jest.fn().mockResolvedValue(null),
+            create: jest.fn().mockResolvedValue({}),
+          },
+          $executeRaw: jest.fn(),
+        });
+      });
+
+      await service.likeComment('c1', 'u1');
+      expect(eventEmitter.emit).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('unlikeComment', () => {
+    it('should unlike a comment and decrement likesCount', async () => {
+      prisma.videoCommentLike.findUnique.mockResolvedValue({ id: 'like-1', userId: 'u1', commentId: 'c1' });
+      prisma.$transaction.mockResolvedValue([{}, {}]);
+
+      const result = await service.unlikeComment('c1', 'u1');
+      expect(result).toEqual({ liked: false });
+    });
+
+    it('should throw NotFoundException when like not found', async () => {
+      prisma.videoCommentLike.findUnique.mockResolvedValue(null);
+      await expect(service.unlikeComment('c1', 'u1')).rejects.toThrow(NotFoundException);
     });
   });
 });
