@@ -142,7 +142,8 @@ describe('R4B-Tab1: boost-post.tsx', () => {
   });
 
   test('handleBoost has double-tap guard', () => {
-    expect(src).toContain('|| boosting) return');
+    // Guard includes boosting check plus offline check
+    expect(src).toContain('|| boosting || isOffline)');
   });
 
   test('pill styles have no hardcoded dark colors', () => {

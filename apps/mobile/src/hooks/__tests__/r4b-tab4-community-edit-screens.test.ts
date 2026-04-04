@@ -26,8 +26,10 @@ describe('community-guidelines', () => {
     expect(src).not.toContain("title: 'Safety'");
   });
 
-  test('has StatusBar component', () => {
-    expect(src).toContain('<StatusBar');
+  test('uses expo-status-bar auto-management (no hardcoded StatusBar)', () => {
+    expect(src).not.toContain('<StatusBar barStyle');
+    // Screen uses SafeAreaView for safe area handling
+    expect(src).toContain('SafeAreaView');
   });
 
   test('uses useContextualHaptic', () => {
@@ -81,8 +83,10 @@ describe('community-posts', () => {
     expect(src).toContain('<ProgressiveImage uri={media.uri}');
   });
 
-  test('has StatusBar component', () => {
-    expect(src).toContain('<StatusBar');
+  test('uses expo-status-bar auto-management (no hardcoded StatusBar)', () => {
+    expect(src).not.toContain('<StatusBar barStyle');
+    // Screen uses GlassHeader for status bar area management
+    expect(src).toContain('GlassHeader');
   });
 
   test('unlike count has theme color', () => {
@@ -118,8 +122,10 @@ describe('contact-sync', () => {
     expect(src).not.toContain('gap: 6 }');
   });
 
-  test('has StatusBar', () => {
-    expect(src).toContain('<StatusBar');
+  test('uses expo-status-bar auto-management (no hardcoded StatusBar)', () => {
+    expect(src).not.toContain('<StatusBar barStyle');
+    // Screen uses GlassHeader for status bar area management
+    expect(src).toContain('GlassHeader');
   });
 });
 
@@ -162,8 +168,10 @@ describe('content-filter-settings', () => {
     expect(src).toContain("{ color: tc.text.primary }");
   });
 
-  test('has StatusBar', () => {
-    expect(src).toContain('<StatusBar');
+  test('uses expo-status-bar auto-management (no hardcoded StatusBar)', () => {
+    expect(src).not.toContain('<StatusBar barStyle');
+    // Screen uses GlassHeader for status bar area management
+    expect(src).toContain('GlassHeader');
   });
 });
 
@@ -205,8 +213,10 @@ describe('content-settings', () => {
     expect(src).toContain("styles.divider, { backgroundColor: tc.border }");
   });
 
-  test('has StatusBar', () => {
-    expect(src).toContain('<StatusBar');
+  test('uses expo-status-bar auto-management (no hardcoded StatusBar)', () => {
+    expect(src).not.toContain('<StatusBar barStyle');
+    // Screen uses SafeAreaView for status bar area management
+    expect(src).toContain('SafeAreaView');
   });
 });
 
@@ -226,8 +236,10 @@ describe('edit-channel', () => {
     expect(src).toContain("actionLabel={t('common.retry')}");
   });
 
-  test('has StatusBar', () => {
-    expect(src).toContain('<StatusBar');
+  test('uses expo-status-bar auto-management (no hardcoded StatusBar)', () => {
+    expect(src).not.toContain('<StatusBar barStyle');
+    // Screen uses GlassHeader for status bar area management
+    expect(src).toContain('GlassHeader');
   });
 
   test('unsaved changes guard exists', () => {
@@ -274,8 +286,10 @@ describe('edit-profile', () => {
     expect(src).not.toMatch(/import.*\bSwitch\b.*from 'react-native'/);
   });
 
-  test('has StatusBar', () => {
-    expect(src).toContain('<StatusBar');
+  test('uses expo-status-bar auto-management (no hardcoded StatusBar)', () => {
+    expect(src).not.toContain('<StatusBar barStyle');
+    // Screen uses GlassHeader for status bar area management
+    expect(src).toContain('GlassHeader');
   });
 });
 
@@ -309,8 +323,10 @@ describe('eid-cards', () => {
     expect(section).toContain('fontFamily: fonts.body');
   });
 
-  test('has StatusBar', () => {
-    expect(src).toContain('<StatusBar');
+  test('uses expo-status-bar auto-management (no hardcoded StatusBar)', () => {
+    expect(src).not.toContain('<StatusBar barStyle');
+    // Screen uses SafeAreaView for status bar area management
+    expect(src).toContain('SafeAreaView');
   });
 });
 
@@ -341,8 +357,10 @@ describe('enable-tips', () => {
     expect(src).toContain('disabled={submitting}');
   });
 
-  test('has StatusBar', () => {
-    expect(src).toContain('<StatusBar');
+  test('uses expo-status-bar auto-management (no hardcoded StatusBar)', () => {
+    expect(src).not.toContain('<StatusBar barStyle');
+    // Screen uses SafeAreaView for status bar area management
+    expect(src).toContain('SafeAreaView');
   });
 });
 

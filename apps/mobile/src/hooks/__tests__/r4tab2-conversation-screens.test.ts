@@ -40,27 +40,27 @@ describe('R4-Tab2: RTL utilities', () => {
     expect(rtlFlexRow(false)).toBe('row');
   });
 
-  test('rtlMargin swaps left/right for RTL', () => {
+  test('rtlMargin returns marginStart/marginEnd (native RTL-aware)', () => {
     const ltr = rtlMargin(false, 8, 0);
-    expect(ltr).toEqual({ marginLeft: 8, marginRight: 0 });
+    expect(ltr).toEqual({ marginStart: 8, marginEnd: 0 });
     const rtl = rtlMargin(true, 8, 0);
-    expect(rtl).toEqual({ marginLeft: 0, marginRight: 8 });
+    expect(rtl).toEqual({ marginStart: 8, marginEnd: 0 });
   });
 
-  test('rtlBorderStart produces correct direction', () => {
+  test('rtlBorderStart produces borderStartWidth/Color (native RTL-aware)', () => {
     const ltr = rtlBorderStart(false, 3, colors.emerald);
-    expect(ltr).toHaveProperty('borderLeftWidth', 3);
-    expect(ltr).toHaveProperty('borderLeftColor', colors.emerald);
+    expect(ltr).toHaveProperty('borderStartWidth', 3);
+    expect(ltr).toHaveProperty('borderStartColor', colors.emerald);
     const rtl = rtlBorderStart(true, 3, colors.emerald);
-    expect(rtl).toHaveProperty('borderRightWidth', 3);
-    expect(rtl).toHaveProperty('borderRightColor', colors.emerald);
+    expect(rtl).toHaveProperty('borderStartWidth', 3);
+    expect(rtl).toHaveProperty('borderStartColor', colors.emerald);
   });
 
-  test('rtlAbsoluteStart and rtlAbsoluteEnd return correct sides', () => {
-    expect(rtlAbsoluteStart(false, 10)).toEqual({ left: 10 });
-    expect(rtlAbsoluteStart(true, 10)).toEqual({ right: 10 });
-    expect(rtlAbsoluteEnd(false, 10)).toEqual({ right: 10 });
-    expect(rtlAbsoluteEnd(true, 10)).toEqual({ left: 10 });
+  test('rtlAbsoluteStart and rtlAbsoluteEnd return start/end (native RTL-aware)', () => {
+    expect(rtlAbsoluteStart(false, 10)).toEqual({ start: 10 });
+    expect(rtlAbsoluteStart(true, 10)).toEqual({ start: 10 });
+    expect(rtlAbsoluteEnd(false, 10)).toEqual({ end: 10 });
+    expect(rtlAbsoluteEnd(true, 10)).toEqual({ end: 10 });
   });
 });
 

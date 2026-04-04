@@ -240,7 +240,7 @@ describe('2fa-setup', () => {
 
   test('D01-1..3: uses createStyles(tc) pattern', () => {
     expect(src).toContain('const createStyles = (tc:');
-    expect(src).toContain('const styles = createStyles(tc)');
+    expect(src).toContain('useMemo(() => createStyles(tc)');
   });
 
   test('D01-4: uses SafeAreaView', () => {
