@@ -94,6 +94,7 @@ import { CommunityNotesModule } from './modules/community-notes/community-notes.
 import { ChecklistsModule } from './modules/checklists/checklists.module';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
 import { WaitlistModule } from './modules/waitlist/waitlist.module';
+import { GiphyModule } from './modules/giphy/giphy.module';
 import { EmailModule } from './common/services/email.module';
 import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
@@ -218,6 +219,7 @@ import { ResponseTimeMiddleware } from './common/middleware/response-time.middle
     ChecklistsModule,
     WebhooksModule,
     WaitlistModule,
+    GiphyModule,
     EmailModule,
   ],
   providers: [

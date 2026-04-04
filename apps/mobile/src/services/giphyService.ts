@@ -5,8 +5,8 @@
  * and falls back to REST API for programmatic search.
  */
 
-const GIPHY_API_KEY = process.env.EXPO_PUBLIC_GIPHY_API_KEY || '';
-const GIPHY_BASE = 'https://api.giphy.com/v1';
+const GIPHY_SDK_KEY = process.env.EXPO_PUBLIC_GIPHY_API_KEY || '';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
 
 // ── Types ──
 export interface GiphyMediaItem {
@@ -41,10 +41,10 @@ let sdkAvailable = false;
  */
 export function initGiphy(): void {
   if (sdkInitialized) return;
-  if (!GIPHY_API_KEY) return;
+  if (!GIPHY_SDK_KEY) return;
   try {
     const { GiphySDK } = require('@giphy/react-native-sdk');
-    GiphySDK.configure({ apiKey: GIPHY_API_KEY });
+    GiphySDK.configure({ apiKey: GIPHY_SDK_KEY });
     sdkAvailable = true;
     sdkInitialized = true;
   } catch {
@@ -111,19 +111,16 @@ export function showGiphyPicker(options: {
   }
 }
 
-// ── REST API fallback ──
+// ── REST API fallback (proxied through backend — API key stays server-side) ──
 
 async function apiSearch(options: SearchOptions): Promise<GiphyMediaItem[]> {
-  if (!GIPHY_API_KEY) return [];
-
   const { query, type = 'gifs', limit = 20, offset = 0, rating = 'pg' } = options;
-  const contentPath = type === 'text' ? 'stickers' : type === 'emoji' ? 'emoji' : type;
 
   try {
     const isSearch = query && query !== 'trending';
     const endpoint = isSearch
-      ? `${GIPHY_BASE}/${contentPath}/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}&rating=${rating}`
-      : `${GIPHY_BASE}/${contentPath}/trending?api_key=${GIPHY_API_KEY}&limit=${limit}&offset=${offset}&rating=${rating}`;
+      ? `${API_URL}/giphy/search?q=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}&rating=${rating}`
+      : `${API_URL}/giphy/trending?limit=${limit}&offset=${offset}&rating=${rating}`;
 
     const res = await fetch(endpoint);
     if (!res.ok) return [];
