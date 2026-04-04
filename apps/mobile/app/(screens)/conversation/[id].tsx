@@ -38,6 +38,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { useStore } from '@/store';
 import { colors, spacing, fontSize, radius, animation, fontSizeExt, fonts } from '@/theme';
 import { messagesApi, uploadApi, aiApi } from '@/services/api';
+import { resizeForUpload } from '@/utils/imageResize';
 import {
   encryptMessage as signalEncrypt,
   decryptMessage as signalDecrypt,
@@ -1651,13 +1652,15 @@ export default function ConversationScreen() {
     });
     if (result.canceled || !result.assets[0]) return;
     const asset = result.assets[0];
-    const ext = asset.uri.split('.').pop() ?? 'jpg';
     setUploadingMedia(true);
     try {
+      // Resize + strip EXIF before encryption (prevents GPS leak in encrypted payload)
+      const resized = await resizeForUpload(asset.uri, asset.width, asset.height);
+
       // A4: Encrypt media file with per-file random key, upload encrypted blob to R2
-      const encResult = await encryptSmallMediaFile(asset.uri, `image/${ext}`, {
-        width: asset.width,
-        height: asset.height,
+      const encResult = await encryptSmallMediaFile(resized.uri, resized.mimeType, {
+        width: resized.width,
+        height: resized.height,
       });
 
       // Upload the encrypted file to R2
@@ -1680,9 +1683,9 @@ export default function ConversationScreen() {
         mediaSha256: encResult.mediaSha256 ? toBase64(encResult.mediaSha256) : '',
         totalChunks: encResult.totalChunks,
         fileSize: encResult.fileSize,
-        mimeType: `image/${ext}`,
-        width: asset.width,
-        height: asset.height,
+        mimeType: resized.mimeType,
+        width: resized.width,
+        height: resized.height,
       });
 
       // Codex-V7-F7+F6 FIX: Encrypt media for group (sender keys) OR 1:1 (Double Ratchet).
@@ -2203,13 +2206,13 @@ export default function ConversationScreen() {
                 onRefresh={onRefresh}
               />
             }
-            ListEmptyComponent={() => (
+            ListEmptyComponent={useMemo(() => (
               <View style={styles.emptyWrap}>
                 <Avatar uri={avatarUri} name={name} size="2xl" />
                 <Text style={[styles.emptyName, { color: tc.text.primary }]}>{name}</Text>
                 <Text style={[styles.emptyHint, { color: tc.text.secondary }]}>{t('risalah.startConversation')}</Text>
               </View>
-            )}
+            ), [])}
             contentContainerStyle={styles.messageList}
             onScrollToIndexFailed={({ index }) => flatListRef.current?.scrollToOffset({ offset: index * 100 })}
             onLayout={initialScrollDoneRef.current ? undefined : () => { initialScrollDoneRef.current = true; flatListRef.current?.scrollToEnd({ animated: false }); }}

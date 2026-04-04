@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   FlatList,
@@ -150,7 +150,7 @@ export default function FollowersScreen() {
           refreshControl={
             <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
-          ListEmptyComponent={() =>
+          ListEmptyComponent={useMemo(() =>
             followersQuery.isLoading ? (
               <View style={styles.skeletonList}>
                 {Array.from({ length: 8 }).map((_, i) => (
@@ -166,8 +166,8 @@ export default function FollowersScreen() {
             ) : (
               <EmptyState icon="users" title={t('screens.followers.emptyState')} subtitle={t('screens.followers.emptySubtitle')} />
             )
-          }
-          ListFooterComponent={() =>
+          , [])}
+          ListFooterComponent={useMemo(() =>
             followersQuery.isFetchingNextPage ? (
               <View style={styles.skeletonList}>
                 <View style={[styles.skeletonRow, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
@@ -179,7 +179,7 @@ export default function FollowersScreen() {
                 </View>
               </View>
             ) : null
-          }
+          , [])}
         />
       </SafeAreaView>}
     </ScreenErrorBoundary>

@@ -195,7 +195,7 @@ export default function HashtagScreen() {
               />
             </Animated.View>
           ), [])}
-          ListEmptyComponent={() =>
+          ListEmptyComponent={useMemo(() =>
             postsQuery.isLoading ? (
               <View style={styles.skeletonGrid}>
                 {Array.from({ length: 9 }).map((_, i) => (
@@ -209,8 +209,8 @@ export default function HashtagScreen() {
                 subtitle={t('screens.hashtag.emptySubtitle')}
               />
             )
-          }
-          ListFooterComponent={() =>
+          , [])}
+          ListFooterComponent={useMemo(() =>
             postsQuery.isFetchingNextPage ? (
               <View style={styles.skeletonGrid}>
                 {Array.from({ length: 3 }).map((_, i) => (
@@ -218,7 +218,7 @@ export default function HashtagScreen() {
                 ))}
               </View>
             ) : null
-          }
+          , [])}
           contentContainerStyle={{ paddingBottom: 40 }}
         />
       </View>

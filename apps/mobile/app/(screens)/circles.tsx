@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   FlatList, Alert, TextInput,
@@ -160,6 +160,16 @@ export default function CirclesScreen() {
     );
   };
 
+  const listEmpty = useMemo(() => (
+    <EmptyState
+      icon="users"
+      title={t('screens.circles.emptyTitle')}
+      subtitle={t('screens.circles.emptySubtitle')}
+      actionLabel={t('screens.circles.createFirstCircleButton')}
+      onAction={() => setShowCreate(true)}
+    />
+  ), [t]);
+
   if (circlesQuery.isError) {
     return (
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
@@ -253,15 +263,7 @@ export default function CirclesScreen() {
                 </Pressable>
               </Animated.View>
             ), [])}
-            ListEmptyComponent={() => (
-              <EmptyState
-                icon="users"
-                title={t('screens.circles.emptyTitle')}
-                subtitle={t('screens.circles.emptySubtitle')}
-                actionLabel={t('screens.circles.createFirstCircleButton')}
-                onAction={() => setShowCreate(true)}
-              />
-            )}
+            ListEmptyComponent={listEmpty}
           />
         )}
 

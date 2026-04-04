@@ -306,12 +306,12 @@ export default function NewConversationScreen() {
               />
             }
             renderItem={useCallback(({ item, index }) => renderUserRow(item, index), [])}
-            ListEmptyComponent={() => (
+            ListEmptyComponent={useMemo(() => (
               <EmptyState
                 icon="search"
                 title={t('messages.noUsersFound', { query: debouncedQuery })}
               />
-            )}
+            ), [])}
           />
         ) : (
           <SectionList
@@ -332,13 +332,13 @@ export default function NewConversationScreen() {
             )}
             renderItem={useCallback(({ item, index }) => renderUserRow(item, index), [])}
             stickySectionHeadersEnabled={false}
-            ListEmptyComponent={() => (
+            ListEmptyComponent={useMemo(() => (
               <EmptyState
                 icon="user"
                 title={t('newConversation.noContacts')}
                 subtitle={t('messages.searchByNameOrUsername')}
               />
-            )}
+            ), [])}
           />
         )}
       </SafeAreaView>

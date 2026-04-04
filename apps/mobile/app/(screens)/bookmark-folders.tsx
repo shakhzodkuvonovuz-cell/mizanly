@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Pressable, FlatList,
   Dimensions, Alert,
@@ -143,6 +143,16 @@ export default function BookmarkFoldersScreen() {
     router.push(`/(screens)/saved?collection=${encodeURIComponent(collectionName)}`);
   }, [router, haptic]);
 
+  const listEmpty = useMemo(() => (
+    <EmptyState
+      icon="bookmark"
+      title={t('screens.bookmarkFolders.emptyTitle')}
+      subtitle={t('screens.bookmarkFolders.emptySubtitle')}
+      actionLabel={t('screens.bookmarkFolders.createFolderButton')}
+      onAction={() => setCreateSheetVisible(true)}
+    />
+  ), [t]);
+
   if (collectionsQuery.isError) {
     return (
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
@@ -196,15 +206,7 @@ export default function BookmarkFoldersScreen() {
               />
             </Animated.View>
           ), [])}
-          ListEmptyComponent={() => (
-            <EmptyState
-              icon="bookmark"
-              title={t('screens.bookmarkFolders.emptyTitle')}
-              subtitle={t('screens.bookmarkFolders.emptySubtitle')}
-              actionLabel={t('screens.bookmarkFolders.createFolderButton')}
-              onAction={() => setCreateSheetVisible(true)}
-            />
-          )}
+          ListEmptyComponent={listEmpty}
           contentContainerStyle={[styles.gridContainer, { paddingTop: insets.top + 52 }]}
         />
 

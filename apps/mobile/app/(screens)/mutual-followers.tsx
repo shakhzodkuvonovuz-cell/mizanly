@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList,
 } from 'react-native';
@@ -259,7 +259,7 @@ export default function MutualFollowersScreen() {
           refreshControl={
             <BrandedRefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
           }
-          ListEmptyComponent={() =>
+          ListEmptyComponent={useMemo(() =>
             mutualFollowersQuery.isLoading ? null : (
               <View style={styles.emptyState}>
                 <EmptyState
@@ -269,8 +269,8 @@ export default function MutualFollowersScreen() {
                 />
               </View>
             )
-          }
-          ListFooterComponent={() =>
+          , [])}
+          ListFooterComponent={useMemo(() =>
             mutualFollowersQuery.isFetchingNextPage ? (
               <View style={styles.skeletonList}>
                 <View style={styles.skeletonRow}>
@@ -283,7 +283,7 @@ export default function MutualFollowersScreen() {
                 </View>
               </View>
             ) : null
-          }
+          , [])}
         />
       </View>
   

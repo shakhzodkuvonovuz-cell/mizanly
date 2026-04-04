@@ -192,7 +192,7 @@ export default function RestrictedScreen() {
                 </View>
               </Animated.View>
             ), [])}
-            ListFooterComponent={() =>
+            ListFooterComponent={useMemo(() =>
               query.isFetchingNextPage ? (
                 <View style={styles.skeletonRow}>
                   <Skeleton.Circle size={46} />
@@ -202,14 +202,13 @@ export default function RestrictedScreen() {
                   </View>
                 </View>
               ) : null
-            }
-            ListEmptyComponent={() => (
+            , [])}ListEmptyComponent={useMemo(() => (
               <EmptyState
                 icon="eye-off"
                 title={t('screens.restricted.emptyTitle')}
                 subtitle={t('screens.restricted.emptySubtitle')}
               />
-            )}
+            ), [])}           )}
           />
         )}
       </SafeAreaView>

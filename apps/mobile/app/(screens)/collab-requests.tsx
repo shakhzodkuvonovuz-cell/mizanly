@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   FlatList, Alert,
@@ -252,6 +252,30 @@ export default function CollabRequestsScreen() {
 
   const isError = activeTab === 'pending' ? pendingQuery.isError : acceptedQuery.isError;
 
+  const listFooter = useMemo(() =>
+    isFetchingNextPage ? (
+      <View style={styles.skeletonRow}>
+        <Skeleton.Circle size={46} />
+        <View style={{ flex: 1, gap: spacing.sm }}>
+          <Skeleton.Rect width={120} height={14} />
+          <Skeleton.Rect width={80} height={11} />
+        </View>
+      </View>
+    ) : null
+  , [isFetchingNextPage]);
+
+  const listEmpty = useMemo(() => (
+    <EmptyState
+      icon="users"
+      title={activeTab === 'pending' ? t('collabRequests.emptyState.noPendingInvites') : t('collabRequests.emptyState.noAcceptedCollaborations')}
+      subtitle={
+        activeTab === 'pending'
+          ? t('collabRequests.emptyState.pendingSubtitle')
+          : t('collabRequests.emptyState.acceptedSubtitle')
+      }
+    />
+  ), [activeTab, t]);
+
   if (isError) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
@@ -314,28 +338,8 @@ export default function CollabRequestsScreen() {
               <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
             renderItem={renderItem}
-            ListFooterComponent={() =>
-              isFetchingNextPage ? (
-                <View style={styles.skeletonRow}>
-                  <Skeleton.Circle size={46} />
-                  <View style={{ flex: 1, gap: spacing.sm }}>
-                    <Skeleton.Rect width={120} height={14} />
-                    <Skeleton.Rect width={80} height={11} />
-                  </View>
-                </View>
-              ) : null
-            }
-            ListEmptyComponent={() => (
-              <EmptyState
-                icon="users"
-                title={activeTab === 'pending' ? t('collabRequests.emptyState.noPendingInvites') : t('collabRequests.emptyState.noAcceptedCollaborations')}
-                subtitle={
-                  activeTab === 'pending'
-                    ? t('collabRequests.emptyState.pendingSubtitle')
-                    : t('collabRequests.emptyState.acceptedSubtitle')
-                }
-              />
-            )}
+            ListFooterComponent={listFooter}
+            ListEmptyComponent={listEmpty}
           />
         )}
       </SafeAreaView>

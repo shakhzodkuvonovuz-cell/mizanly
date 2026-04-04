@@ -979,7 +979,7 @@ export default function ProfileScreen() {
         onEndReachedThreshold={0.4}
         ListHeaderComponent={ListHeader}
         renderItem={renderItem}
-        ListEmptyComponent={() =>
+        ListEmptyComponent={useMemo(() =>
           currentQuery.isLoading ? (
             activeTab === 'threads' ? (
               <View>
@@ -999,12 +999,12 @@ export default function ProfileScreen() {
               title={activeTab === 'liked' ? t('profile.noLikedPosts') : t('profile.noContent')}
             />
           )
-        }
-        ListFooterComponent={() =>
+        , [])}
+        ListFooterComponent={useMemo(() =>
           currentQuery.isFetchingNextPage ? (
             activeTab === 'threads' ? <Skeleton.ThreadCard /> : <Skeleton.Rect width="100%" height={GRID_ITEM} />
           ) : null
-        }
+        , [])}
         refreshControl={
           <BrandedRefreshControl
             refreshing={currentQuery.isRefetching}

@@ -221,7 +221,7 @@ export default function WatchHistoryScreen() {
           renderItem={useCallback(({ item, index }) => (
             <VideoCard item={item} onPress={() => handleVideoPress(item)} index={index} />
           ), [])}
-          ListEmptyComponent={() =>
+          ListEmptyComponent={useMemo(() =>
             !watchHistoryQuery.isLoading ? (
               <EmptyState
                 icon="clock"
@@ -239,14 +239,14 @@ export default function WatchHistoryScreen() {
                 ))}
               </View>
             )
-          }
-          ListFooterComponent={() =>
+          , [])}
+          ListFooterComponent={useMemo(() =>
             watchHistoryQuery.isFetchingNextPage ? (
               <View style={styles.footer}>
                 <Skeleton.Rect width="100%" height={180} borderRadius={radius.md} />
               </View>
             ) : null
-          }
+          , [])}
           contentContainerStyle={styles.listContainer}
         />
       </View>

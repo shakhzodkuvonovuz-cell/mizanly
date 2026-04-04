@@ -367,7 +367,7 @@ export default function DownloadsScreen() {
               onAction={handleAction}
             />
           ), [])}
-          ListEmptyComponent={() =>
+          ListEmptyComponent={useMemo(() =>
             !downloadsQuery.isLoading ? (
               <EmptyState
                 icon="layers"
@@ -387,14 +387,14 @@ export default function DownloadsScreen() {
                 ))}
               </View>
             )
-          }
-          ListFooterComponent={() =>
+          , [])}
+          ListFooterComponent={useMemo(() =>
             downloadsQuery.isFetchingNextPage ? (
               <View style={styles.footer}>
                 <Skeleton.Rect width="100%" height={72} borderRadius={radius.md} />
               </View>
             ) : null
-          }
+          , [])}
           contentContainerStyle={styles.listContent}
         />
 

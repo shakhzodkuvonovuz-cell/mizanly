@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet,
   FlatList, Alert,
@@ -157,7 +157,7 @@ export default function MutedScreen() {
             
             );
           }, [])}
-          ListFooterComponent={() =>
+          ListFooterComponent={useMemo(() =>
             query.isFetchingNextPage ? (
               <View style={[styles.skeletonRow, { backgroundColor: tc.bgCard }]}>
                 <Skeleton.Circle size={46} />
@@ -167,13 +167,13 @@ export default function MutedScreen() {
                 </View>
               </View>
             ) : null
-          }
-          ListEmptyComponent={() => (
+          , [])ListEmptyComponent={useMemo(() => (
             <EmptyState
               icon="volume-x"
               title={t('screens.muted.emptyTitle')}
               subtitle={t('screens.muted.emptySubtitle')}
             />
+          ), [])}
           )}
         />
       )}

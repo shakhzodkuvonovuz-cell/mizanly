@@ -357,13 +357,13 @@ export default function SearchScreen() {
                       renderItem={useCallback(({ item }) => (
                         <PostCard post={item} />
                       ), [])}
-                      ListEmptyComponent={() => (
+                      ListEmptyComponent={useMemo(() => (
                         <EmptyState
                           icon="search"
                           title={t('search.noResultsFor', { type: t('search.posts'), query: debouncedQuery })}
                           subtitle={t('search.tryDifferent')}
                         />
-                      )}
+                      ), [])}
                       onEndReached={() => {
                         if (postsQuery.hasNextPage && !postsQuery.isFetchingNextPage) {
                           postsQuery.fetchNextPage();
@@ -398,13 +398,13 @@ export default function SearchScreen() {
                       renderItem={useCallback(({ item }) => (
                         <ThreadCard thread={item} />
                       ), [])}
-                      ListEmptyComponent={() => (
+                      ListEmptyComponent={useMemo(() => (
                         <EmptyState
                           icon="search"
                           title={t('search.noResultsFor', { type: t('search.threads'), query: debouncedQuery })}
                           subtitle={t('search.tryDifferent')}
                         />
-                      )}
+                      ), [])}
                       onEndReached={() => {
                         if (threadsQuery.hasNextPage && !threadsQuery.isFetchingNextPage) {
                           threadsQuery.fetchNextPage();
@@ -475,13 +475,13 @@ export default function SearchScreen() {
                           </View>
                         </Pressable>
                       ), [])}
-                      ListEmptyComponent={() => (
+                      ListEmptyComponent={useMemo(() => (
                         <EmptyState
                           icon="video"
                           title={t('search.noResultsFor', { type: t('search.reels'), query: debouncedQuery })}
                           subtitle={t('search.tryDifferent')}
                         />
-                      )}
+                      ), [])}
                       onEndReached={() => {
                         if (reelsQuery.hasNextPage && !reelsQuery.isFetchingNextPage) {
                           reelsQuery.fetchNextPage();
@@ -519,13 +519,13 @@ export default function SearchScreen() {
                           onPress={() => router.push(`/(screens)/video/${item.id}`)}
                         />
                       ), [])}
-                      ListEmptyComponent={() => (
+                      ListEmptyComponent={useMemo(() => (
                         <EmptyState
                           icon="video"
                           title={t('search.noResultsFor', { type: t('search.videos'), query: debouncedQuery })}
                           subtitle={t('search.tryDifferent')}
                         />
-                      )}
+                      ), [])}
                       onEndReached={() => {
                         if (videosQuery.hasNextPage && !videosQuery.isFetchingNextPage) {
                           videosQuery.fetchNextPage();
@@ -563,13 +563,13 @@ export default function SearchScreen() {
                           onPress={() => router.push(`/(screens)/channel/${item.handle}`)}
                         />
                       ), [])}
-                      ListEmptyComponent={() => (
+                      ListEmptyComponent={useMemo(() => (
                         <EmptyState
                           icon="users"
                           title={t('search.noResultsFor', { type: t('search.channels'), query: debouncedQuery })}
                           subtitle={t('search.tryDifferent')}
                         />
-                      )}
+                      ), [])}
                       onEndReached={() => {
                         if (channelsQuery.hasNextPage && !channelsQuery.isFetchingNextPage) {
                           channelsQuery.fetchNextPage();
@@ -633,13 +633,13 @@ export default function SearchScreen() {
                 
                 );
               }, [])}
-              ListEmptyComponent={() => (
+              ListEmptyComponent={useMemo(() => (
                 <EmptyState
                   icon="search"
                   title={t('search.noResultsFor', { type: activeTab === 'people' ? t('search.people') : t('search.hashtags'), query: debouncedQuery })}
                   subtitle={t('search.tryDifferent')}
                 />
-              )}
+              ), [])}
               contentContainerStyle={{ paddingBottom: 40 }}
             />
           )}

@@ -241,6 +241,31 @@ export default function CloseFriendsScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = insets.top + 52;
 
+  const listEmpty = useMemo(() =>
+    followersQuery.isLoading ? null : (
+      <EmptyState
+        icon="users"
+        title={searchQuery ? t('screens.closeFriends.emptySearchTitle') : t('screens.closeFriends.emptyDefaultTitle')}
+        subtitle={searchQuery ? t('screens.closeFriends.emptySearchSubtitle') : t('screens.closeFriends.emptyDefaultSubtitle')}
+      />
+    )
+  , [followersQuery.isLoading, searchQuery, t]);
+
+  const listFooter = useMemo(() =>
+    followersQuery.isFetchingNextPage ? (
+      <View style={styles.skeletonList}>
+        <View style={styles.skeletonRow}>
+          <Skeleton.Circle size={40} />
+          <View style={{ flex: 1, gap: 6 }}>
+            <Skeleton.Rect width={130} height={14} />
+            <Skeleton.Rect width={90} height={11} />
+          </View>
+          <Skeleton.Rect width={50} height={30} borderRadius={radius.full} />
+        </View>
+      </View>
+    ) : null
+  , [followersQuery.isFetchingNextPage]);
+
   if (followersQuery.isError) {
     return (
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
@@ -372,29 +397,8 @@ export default function CloseFriendsScreen() {
           refreshControl={
             <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
-          ListEmptyComponent={() =>
-            followersQuery.isLoading ? null : (
-              <EmptyState
-                icon="users"
-                title={searchQuery ? t('screens.closeFriends.emptySearchTitle') : t('screens.closeFriends.emptyDefaultTitle')}
-                subtitle={searchQuery ? t('screens.closeFriends.emptySearchSubtitle') : t('screens.closeFriends.emptyDefaultSubtitle')}
-              />
-            )
-          }
-          ListFooterComponent={() =>
-            followersQuery.isFetchingNextPage ? (
-              <View style={styles.skeletonList}>
-                <View style={styles.skeletonRow}>
-                  <Skeleton.Circle size={40} />
-                  <View style={{ flex: 1, gap: 6 }}>
-                    <Skeleton.Rect width={130} height={14} />
-                    <Skeleton.Rect width={90} height={11} />
-                  </View>
-                  <Skeleton.Rect width={50} height={30} borderRadius={radius.full} />
-                </View>
-              </View>
-            ) : null
-          }
+          ListEmptyComponent={listEmpty}
+          ListFooterComponent={listFooter}
         />
       </View>
   

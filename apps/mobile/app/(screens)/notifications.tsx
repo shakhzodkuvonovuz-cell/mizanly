@@ -488,7 +488,7 @@ export default function NotificationsScreen() {
           onScroll={onScrollElastic}
           scrollEventThrottle={16}
           refreshControl={<BrandedRefreshControl refreshing={query.isRefetching && !query.isFetchingNextPage} onRefresh={onRefresh} />}
-          ListEmptyComponent={() =>
+          ListEmptyComponent={useMemo(() =>
             query.isLoading ? (
               <View style={styles.skeletonList}>
                 {Array.from({ length: 8 }).map((_, i) => (
@@ -508,10 +508,10 @@ export default function NotificationsScreen() {
                 subtitle={t('notifications.noNotificationsSubtitle')}
               />
             )
-          }
-          ListFooterComponent={() =>
+          , [])}
+          ListFooterComponent={useMemo(() =>
             query.isFetchingNextPage ? <Skeleton.Rect width="100%" height={60} /> : null
-          }
+          , [])}
           contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}
           stickySectionHeadersEnabled={true}
         />

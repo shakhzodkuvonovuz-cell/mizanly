@@ -18,6 +18,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { searchApi, messagesApi, uploadApi } from '@/services/api';
+import { resizeForUpload } from '@/utils/imageResize';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -80,14 +81,15 @@ export default function CreateGroupScreen() {
   const createLockRef = useRef(false);
   const createMutation = useMutation({
     mutationFn: async () => {
-      // Upload avatar if selected
+      // Upload avatar if selected (resize + strip EXIF first)
       let groupAvatarUrl: string | undefined;
       if (avatarUri) {
-        const presign = await uploadApi.getPresignUrl('image/jpeg', 'group-avatars');
+        const resized = await resizeForUpload(avatarUri);
+        const presign = await uploadApi.getPresignUrl(resized.mimeType, 'group-avatars');
         const uploadRes = await fetch(presign.uploadUrl, {
           method: 'PUT',
-          body: await (await fetch(avatarUri)).blob(),
-          headers: { 'Content-Type': 'image/jpeg' },
+          body: await (await fetch(resized.uri)).blob(),
+          headers: { 'Content-Type': resized.mimeType },
         });
         if (!uploadRes.ok) throw new Error('Avatar upload failed');
         groupAvatarUrl = presign.publicUrl;
@@ -272,7 +274,7 @@ export default function CreateGroupScreen() {
                     <Icon name="plus" size="sm" color={colors.emerald} />
                   </Pressable>
                 ), [])}
-                ListEmptyComponent={() =>
+                ListEmptyComponent={useMemo(() =>
                   debouncedQuery.trim().length >= 2 ? (
                     <EmptyState
                       icon="search"
@@ -284,7 +286,7 @@ export default function CreateGroupScreen() {
                       title={t('messages.searchByNameOrUsername')}
                     />
                   )
-                }
+                , [])}
               />
             )}
           </View>

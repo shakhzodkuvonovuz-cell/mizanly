@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, Alert,
   TextInput, FlatList, Switch, Share,
@@ -159,12 +159,13 @@ export default function ConversationInfoScreen() {
     if (!result.canceled) {
       setNewAvatarUri(result.assets[0].uri);
       try {
-        // Upload and update group avatar
-        const presign = await uploadApi.getPresignUrl('image/jpeg', 'group-avatars');
+        // Resize + strip EXIF, then upload group avatar
+        const resized = await resizeForUpload(result.assets[0].uri, result.assets[0].width, result.assets[0].height);
+        const presign = await uploadApi.getPresignUrl(resized.mimeType, 'group-avatars');
         const uploadRes = await fetch(presign.uploadUrl, {
           method: 'PUT',
-          body: await (await fetch(result.assets[0].uri)).blob(),
-          headers: { 'Content-Type': 'image/jpeg' },
+          body: await (await fetch(resized.uri)).blob(),
+          headers: { 'Content-Type': resized.mimeType },
         });
         if (!uploadRes.ok) throw new Error('Avatar upload failed');
         updateGroupMutation.mutate({ groupAvatarUrl: presign.publicUrl });
@@ -762,7 +763,7 @@ export default function ConversationInfoScreen() {
                     <Icon name="plus" size="sm" color={colors.emerald} />
                   </Pressable>
                 ), [])}
-                ListEmptyComponent={() =>
+                ListEmptyComponent={useMemo(() =>
                   debouncedSearchQuery.trim().length >= 2 ? (
                     <View style={styles.empty}>
                       <Text style={[styles.emptyText, { color: tc.text.secondary }]}>{t('messages.noUsersFound', { query: debouncedSearchQuery })}</Text>
@@ -772,7 +773,7 @@ export default function ConversationInfoScreen() {
                       <Text style={[styles.hintText, { color: tc.text.tertiary }]}>{t('messages.searchByNameOrUsername')}</Text>
                     </View>
                   )
-                }
+                , [])}
               />
             )}
 

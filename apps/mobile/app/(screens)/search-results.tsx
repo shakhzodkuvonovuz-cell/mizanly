@@ -421,13 +421,13 @@ export default function SearchResultsScreen() {
                         onFollow={(userId, follow) => followMutation.mutate({ userId, follow })}
                       />
                     ), [])}
-                    ListEmptyComponent={() => (
+                    ListEmptyComponent={useMemo(() => (
                       <EmptyState
                         icon="users"
                         title={t('screens.search-results.noPeople')}
                         subtitle={t('screens.search-results.noPeopleSubtitle')}
                       />
-                    )}
+                    ), [])}
                     contentContainerStyle={{ paddingBottom: 40 }}
                     refreshControl={
                       <BrandedRefreshControl
@@ -455,13 +455,13 @@ export default function SearchResultsScreen() {
                     data={posts}
                     keyExtractor={(item) => item.id}
                     renderItem={useCallback(({ item }) => <PostCard post={item} />, [])}
-                    ListEmptyComponent={() => (
+                    ListEmptyComponent={useMemo(() => (
                       <EmptyState
                         icon="image"
                         title={t('screens.search-results.noPosts')}
                         subtitle={t('screens.search-results.noPostsSubtitle')}
                       />
-                    )}
+                    ), [])}
                     onEndReached={handleFetchNextPage}
                     onEndReachedThreshold={0.5}
                     contentContainerStyle={{ paddingBottom: 40 }}
@@ -491,13 +491,13 @@ export default function SearchResultsScreen() {
                     data={threads}
                     keyExtractor={(item) => item.id}
                     renderItem={useCallback(({ item }) => <ThreadCard thread={item} />, [])}
-                    ListEmptyComponent={() => (
+                    ListEmptyComponent={useMemo(() => (
                       <EmptyState
                         icon="message-circle"
                         title={t('screens.search-results.noThreads')}
                         subtitle={t('screens.search-results.noThreadsSubtitle')}
                       />
-                    )}
+                    ), [])}
                     onEndReached={handleFetchNextPage}
                     onEndReachedThreshold={0.5}
                     contentContainerStyle={{ paddingBottom: 40 }}
@@ -542,13 +542,13 @@ export default function SearchResultsScreen() {
                     ), [])}
                     numColumns={3}
                     columnWrapperStyle={styles.reelGridRow}
-                    ListEmptyComponent={() => (
+                    ListEmptyComponent={useMemo(() => (
                       <EmptyState
                         icon="video"
                         title={t('screens.search-results.noReels')}
                         subtitle={t('screens.search-results.noReelsSubtitle')}
                       />
-                    )}
+                    ), [])}
                     onEndReached={handleFetchNextPage}
                     onEndReachedThreshold={0.5}
                     contentContainerStyle={{ paddingBottom: 40 }}
@@ -590,13 +590,13 @@ export default function SearchResultsScreen() {
                         index={index}
                       />
                     ), [])}
-                    ListEmptyComponent={() => (
+                    ListEmptyComponent={useMemo(() => (
                       <EmptyState
                         icon="hash"
                         title={t('screens.search-results.noHashtags')}
                         subtitle={t('screens.search-results.noHashtagsSubtitle')}
                       />
-                    )}
+                    ), [])}
                     onEndReached={handleFetchNextPage}
                     onEndReachedThreshold={0.5}
                     contentContainerStyle={{ paddingBottom: 40 }}

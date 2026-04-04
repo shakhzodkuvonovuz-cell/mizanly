@@ -310,7 +310,7 @@ export default function SavedScreen() {
                 <PostGrid post={item} onPress={() => navigateOnce(`/(screens)/post/${item.id}`)} />
               </Animated.View>
             ), [])}
-            ListEmptyComponent={() =>
+            ListEmptyComponent={useMemo(() =>
               !savedPostsQuery.isLoading ? (
                 <EmptyState icon="bookmark" title={t('screens.saved.noPosts')} subtitle={t('screens.saved.noPostsSubtitle')} />
               ) : (
@@ -322,12 +322,12 @@ export default function SavedScreen() {
                   ))}
                 </View>
               )
-            }
-            ListFooterComponent={() =>
+            , [])}
+            ListFooterComponent={useMemo(() =>
               savedPostsQuery.isFetchingNextPage ? (
                 <Skeleton.Rect width="100%" height={60} />
               ) : null
-            }
+            , [])}
             contentContainerStyle={styles.gridContainer}
           />
         ) : activeTab === 'threads' ? (
@@ -348,8 +348,7 @@ export default function SavedScreen() {
               <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
                 <ThreadCard thread={item} viewerId={user?.id} isOwn={user?.username === item.user.username} />
               </Animated.View>
-            ), [])}
-            ListEmptyComponent={() =>
+            ), [])}ListEmptyComponent={useMemo(() =>
               !savedThreadsQuery.isLoading ? (
                 <EmptyState icon="bookmark" title={t('screens.saved.noThreads')} subtitle={t('screens.saved.noThreadsSubtitle')} />
               ) : (
@@ -372,12 +371,12 @@ export default function SavedScreen() {
                   ))}
                 </View>
               )
-            }
-            ListFooterComponent={() =>
+            , [])}            }
+            ListFooterComponent={useMemo(() =>
               savedThreadsQuery.isFetchingNextPage ? (
                 <Skeleton.Rect width="100%" height={60} />
               ) : null
-            }
+            , [])}
             contentContainerStyle={{ paddingBottom: 100 }}
           />
         ) : activeTab === 'reels' ? (
@@ -400,8 +399,7 @@ export default function SavedScreen() {
               <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
                 <ReelGrid reel={item} onPress={() => navigateOnce(`/(screens)/reel/${item.id}`)} />
               </Animated.View>
-            ), [])}
-            ListEmptyComponent={() =>
+       ListEmptyComponent={useMemo(() =>
               !savedReelsQuery.isLoading ? (
                 <EmptyState icon="bookmark" title={t('screens.saved.noReels')} subtitle={t('screens.saved.noReelsSubtitle')} />
               ) : (
@@ -413,12 +411,13 @@ export default function SavedScreen() {
                   ))}
                 </View>
               )
+            , [])}          )
             }
-            ListFooterComponent={() =>
+            ListFooterComponent={useMemo(() =>
               savedReelsQuery.isFetchingNextPage ? (
                 <Skeleton.Rect width="100%" height={60} />
               ) : null
-            }
+            , [])}
             contentContainerStyle={styles.gridContainer}
           />
         ) : (
@@ -438,9 +437,7 @@ export default function SavedScreen() {
             renderItem={useCallback(({ item, index }) => (
               <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
                 <VideoRow video={item} onPress={() => navigateOnce(`/(screens)/video/${item.id}`)} />
-              </Animated.View>
-            ), [])}
-            ListEmptyComponent={() =>
+              </Animated.VListEmptyComponent={useMemo(() =>
               !savedVideosQuery.isLoading ? (
                 <EmptyState icon="bookmark" title={t('screens.saved.noVideos')} subtitle={t('screens.saved.noVideosSubtitle')} />
               ) : (
@@ -457,12 +454,14 @@ export default function SavedScreen() {
                   ))}
                 </View>
               )
+            , [])}</View>
+              )
             }
-            ListFooterComponent={() =>
+            ListFooterComponent={useMemo(() =>
               savedVideosQuery.isFetchingNextPage ? (
                 <Skeleton.Rect width="100%" height={60} />
               ) : null
-            }
+            , [])}
             contentContainerStyle={{ paddingBottom: 100 }}
           />
         )}

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet,
   FlatList, Alert,
@@ -86,6 +86,26 @@ export default function BlockedScreen() {
     );
   };
 
+  const listFooter = useMemo(() =>
+    query.isFetchingNextPage ? (
+      <View style={[styles.skeletonRow, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
+        <Skeleton.Circle size={46} />
+        <View style={{ flex: 1, gap: spacing.sm }}>
+          <Skeleton.Rect width={120} height={14} />
+          <Skeleton.Rect width={80} height={11} />
+        </View>
+      </View>
+    ) : null
+  , [query.isFetchingNextPage, tc.bgCard, tc.border]);
+
+  const listEmpty = useMemo(() => (
+    <EmptyState
+      icon="slash"
+      title={t('screens.blocked.emptyTitle')}
+      subtitle={t('screens.blocked.emptySubtitle')}
+    />
+  ), [t]);
+
   if (query.isError) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
@@ -168,24 +188,8 @@ export default function BlockedScreen() {
             
             );
           }, [])}
-          ListFooterComponent={() =>
-            query.isFetchingNextPage ? (
-              <View style={[styles.skeletonRow, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
-                <Skeleton.Circle size={46} />
-                <View style={{ flex: 1, gap: spacing.sm }}>
-                  <Skeleton.Rect width={120} height={14} />
-                  <Skeleton.Rect width={80} height={11} />
-                </View>
-              </View>
-            ) : null
-          }
-          ListEmptyComponent={() => (
-            <EmptyState
-              icon="slash"
-              title={t('screens.blocked.emptyTitle')}
-              subtitle={t('screens.blocked.emptySubtitle')}
-            />
-          )}
+          ListFooterComponent={listFooter}
+          ListEmptyComponent={listEmpty}
         />
       )}
     </SafeAreaView>

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   FlatList,
@@ -193,13 +193,13 @@ export default function FollowRequestsScreen() {
                 onDecline={() => declineMutation.mutate(item.id)}
               />
             ), [])}
-            ListEmptyComponent={() => (
+            ListEmptyComponent={useMemo(() => (
               <EmptyState
                 icon="user"
                 title={t('screens.followRequests.emptyTitle')}
                 subtitle={t('screens.followRequests.emptySubtitle')}
               />
-            )}
+            ), [])}
           />
         )}
       </SafeAreaView>
