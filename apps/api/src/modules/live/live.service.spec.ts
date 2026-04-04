@@ -513,4 +513,81 @@ describe('LiveService', () => {
       }));
     });
   });
+
+  describe('getParticipants', () => {
+    it('returns paginated participants for existing session', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1' });
+      const mockParticipants = [
+        { userId: 'u1', role: 'VIEWER', joinedAt: new Date(), user: { id: 'u1', username: 'user1', displayName: 'User 1', avatarUrl: null, isVerified: false } },
+        { userId: 'u2', role: 'SPEAKER', joinedAt: new Date(), user: { id: 'u2', username: 'user2', displayName: 'User 2', avatarUrl: null, isVerified: true } },
+      ];
+      prisma.liveParticipant.findMany = jest.fn().mockResolvedValue(mockParticipants);
+
+      const result = await service.getParticipants('live1');
+      expect(result.data).toHaveLength(2);
+      expect(result.meta.hasMore).toBe(false);
+    });
+
+    it('throws NotFoundException for non-existent session', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue(null);
+      await expect(service.getParticipants('nonexistent')).rejects.toThrow(NotFoundException);
+    });
+
+    it('returns hasMore when more than limit', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1' });
+      const many = Array.from({ length: 21 }, (_, i) => ({
+        userId: `u${i}`, role: 'VIEWER', joinedAt: new Date(),
+        user: { id: `u${i}`, username: `user${i}`, displayName: `User ${i}`, avatarUrl: null, isVerified: false },
+      }));
+      prisma.liveParticipant.findMany = jest.fn().mockResolvedValue(many);
+
+      const result = await service.getParticipants('live1');
+      expect(result.data).toHaveLength(20);
+      expect(result.meta.hasMore).toBe(true);
+      expect(result.meta.cursor).toBe('u19');
+    });
+  });
+
+  describe('lowerHand', () => {
+    it('lowers raised hand back to viewer', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', status: 'LIVE' });
+      prisma.liveParticipant.findUnique.mockResolvedValue({ sessionId: 'live1', userId: 'u1', role: 'RAISED_HAND' });
+      prisma.liveParticipant.update.mockResolvedValue({ sessionId: 'live1', userId: 'u1', role: 'VIEWER' });
+
+      const result = await service.lowerHand('live1', 'u1');
+      expect(result.role).toBe('VIEWER');
+      expect(prisma.liveParticipant.update).toHaveBeenCalledWith({
+        where: { sessionId_userId: { sessionId: 'live1', userId: 'u1' } },
+        data: { role: 'VIEWER' },
+      });
+    });
+
+    it('throws NotFoundException for non-existent session', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue(null);
+      await expect(service.lowerHand('nonexistent', 'u1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws BadRequestException if session not live', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', status: 'ENDED' });
+      await expect(service.lowerHand('live1', 'u1')).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws NotFoundException if not a participant', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', status: 'LIVE' });
+      prisma.liveParticipant.findUnique.mockResolvedValue(null);
+      await expect(service.lowerHand('live1', 'u1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws BadRequestException if hand not raised', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', status: 'LIVE' });
+      prisma.liveParticipant.findUnique.mockResolvedValue({ role: 'VIEWER' });
+      await expect(service.lowerHand('live1', 'u1')).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws BadRequestException if already a speaker', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', status: 'LIVE' });
+      prisma.liveParticipant.findUnique.mockResolvedValue({ role: 'SPEAKER' });
+      await expect(service.lowerHand('live1', 'u1')).rejects.toThrow(BadRequestException);
+    });
+  });
 });

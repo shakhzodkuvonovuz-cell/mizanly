@@ -147,6 +147,22 @@ export class LiveController {
     return this.live.demoteToViewer(id, userId, targetUserId);
   }
 
+  @Get(':id/participants')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get live session participants (paginated)' })
+  async getParticipants(@Param('id') id: string, @Query('cursor') cursor?: string) {
+    return this.live.getParticipants(id, cursor);
+  }
+
+  @Post(':id/lower-hand')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Lower raised hand' })
+  async lowerHand(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.live.lowerHand(id, userId);
+  }
+
   @Patch(':id/recording')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()

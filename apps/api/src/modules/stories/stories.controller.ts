@@ -38,6 +38,10 @@ class ReportStoryDto {
   @IsString() @MinLength(3) @MaxLength(500) reason: string;
 }
 
+class ReactToStoryDto {
+  @IsString() @MinLength(1) @MaxLength(10) emoji: string;
+}
+
 @ApiTags('Stories (Saf)')
 @Controller('stories')
 export class StoriesController {
@@ -68,6 +72,13 @@ export class StoriesController {
   @ApiOperation({ summary: "Get user's highlight albums" })
   getHighlights(@Param('userId') userId: string) {
     return this.storiesService.getHighlights(userId);
+  }
+
+  @Get('highlights/album/:albumId')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get highlight album with stories' })
+  getHighlightAlbum(@Param('albumId') albumId: string) {
+    return this.storiesService.getHighlightAlbum(albumId);
   }
 
   @Get('me/archived')
@@ -206,6 +217,20 @@ export class StoriesController {
     @CurrentUser('id') userId: string,
   ) {
     return this.storiesService.addStoryToHighlight(storyId, albumId, userId);
+  }
+
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @Post(':id/react')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'React to a story with emoji' })
+  reactToStory(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body() dto: ReactToStoryDto,
+  ) {
+    return this.storiesService.reactToStory(id, userId, dto.emoji);
   }
 
   @Post(':id/report')

@@ -1,6 +1,7 @@
 import {
   Injectable,
   NotFoundException,
+  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
@@ -376,6 +377,41 @@ export class BookmarksService {
       name: g.collectionName,
       count: g._count.postId,
     }));
+  }
+
+  // Rename a bookmark collection
+  async renameCollection(userId: string, oldName: string, newName: string) {
+    if (oldName === newName) return { renamed: true, count: 0 };
+    if (oldName === 'default') throw new BadRequestException('Cannot rename the default collection');
+
+    const count = await this.prisma.savedPost.count({
+      where: { userId, collectionName: oldName },
+    });
+    if (count === 0) throw new NotFoundException('Collection not found');
+
+    await this.prisma.savedPost.updateMany({
+      where: { userId, collectionName: oldName },
+      data: { collectionName: newName },
+    });
+
+    return { renamed: true, count };
+  }
+
+  // Delete a bookmark collection (moves all posts back to "default")
+  async deleteCollection(userId: string, collectionName: string) {
+    if (collectionName === 'default') throw new BadRequestException('Cannot delete the default collection');
+
+    const count = await this.prisma.savedPost.count({
+      where: { userId, collectionName },
+    });
+    if (count === 0) throw new NotFoundException('Collection not found');
+
+    await this.prisma.savedPost.updateMany({
+      where: { userId, collectionName },
+      data: { collectionName: 'default' },
+    });
+
+    return { deleted: true, movedToDefault: count };
   }
 
   // Move a saved post to another collection

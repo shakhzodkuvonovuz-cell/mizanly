@@ -350,6 +350,54 @@ export class LiveService {
     });
   }
 
+  async getParticipants(sessionId: string, cursor?: string, limit = 20) {
+    const session = await this.prisma.liveSession.findUnique({
+      where: { id: sessionId },
+      select: { id: true },
+    });
+    if (!session) throw new NotFoundException('Session not found');
+
+    const participants = await this.prisma.liveParticipant.findMany({
+      where: { sessionId, leftAt: null },
+      select: {
+        userId: true,
+        role: true,
+        joinedAt: true,
+        user: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } },
+      },
+      orderBy: { joinedAt: 'asc' },
+      take: limit + 1,
+      ...(cursor ? { cursor: { sessionId_userId: { sessionId, userId: cursor } }, skip: 1 } : {}),
+    });
+
+    const hasMore = participants.length > limit;
+    if (hasMore) participants.pop();
+    return {
+      data: participants,
+      meta: {
+        cursor: hasMore ? participants[participants.length - 1].userId : null,
+        hasMore,
+      },
+    };
+  }
+
+  async lowerHand(sessionId: string, userId: string) {
+    const session = await this.prisma.liveSession.findUnique({ where: { id: sessionId } });
+    if (!session) throw new NotFoundException('Session not found');
+    if (session.status !== LiveStatus.LIVE) throw new BadRequestException('Session is not live');
+
+    const participant = await this.prisma.liveParticipant.findUnique({
+      where: { sessionId_userId: { sessionId, userId } },
+    });
+    if (!participant) throw new NotFoundException('Not a participant in this session');
+    if (participant.role !== LiveRole.RAISED_HAND) throw new BadRequestException('Hand is not raised');
+
+    return this.prisma.liveParticipant.update({
+      where: { sessionId_userId: { sessionId, userId } },
+      data: { role: LiveRole.VIEWER },
+    });
+  }
+
   async getHostSessions(userId: string, cursor?: string, limit = 20) {
     // A16-#6/#7 pattern: Use Prisma cursor pagination instead of manual id filter
     const sessions = await this.prisma.liveSession.findMany({

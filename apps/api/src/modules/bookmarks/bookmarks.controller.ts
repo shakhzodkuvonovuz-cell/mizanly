@@ -16,7 +16,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { BookmarksService } from './bookmarks.service';
-import { SavePostDto, MoveCollectionDto } from './dto/bookmark.dto';
+import { SavePostDto, MoveCollectionDto, RenameCollectionDto } from './dto/bookmark.dto';
 
 @ApiTags('Bookmarks')
 @ApiBearerAuth()
@@ -33,6 +33,28 @@ export class BookmarksController {
   @ApiOperation({ summary: 'Get collections' })
   getCollections(@CurrentUser('id') userId: string) {
     return this.service.getCollections(userId);
+  }
+
+  // PATCH /bookmarks/collections/:name
+  @Patch('collections/:name')
+  @ApiOperation({ summary: 'Rename a bookmark collection' })
+  renameCollection(
+    @CurrentUser('id') userId: string,
+    @Param('name') name: string,
+    @Body() dto: RenameCollectionDto,
+  ) {
+    return this.service.renameCollection(userId, name, dto.newName);
+  }
+
+  // DELETE /bookmarks/collections/:name
+  @Delete('collections/:name')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete a bookmark collection (moves posts to default)' })
+  deleteCollection(
+    @CurrentUser('id') userId: string,
+    @Param('name') name: string,
+  ) {
+    return this.service.deleteCollection(userId, name);
   }
 
   // --- Posts: compound sub-routes before simple param routes ---

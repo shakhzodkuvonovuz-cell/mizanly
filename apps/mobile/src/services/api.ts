@@ -527,12 +527,8 @@ export const storiesApi = {
   getViewers: (id: string, cursor?: string) =>
     api.get<PaginatedResponse<User>>(`/stories/${id}/viewers${qs({ cursor })}`),
   getHighlights: (userId: string) => api.get<StoryHighlightAlbum[]>(`/stories/highlights/${userId}`),
-  // X10-#2: Backend only has GET /stories/highlights/:userId — no album-by-ID endpoint exists
-  // @dead-endpoint: no backend route GET /stories/highlights/album/:albumId exists
-  getHighlightById: (albumId: string) => {
-    console.warn('storiesApi.getHighlightById: backend endpoint does not exist — returns 404');
-    return api.get<StoryHighlightAlbum>(`/stories/highlights/album/${albumId}`);
-  },
+  getHighlightById: (albumId: string) =>
+    api.get<StoryHighlightAlbum>(`/stories/highlights/album/${albumId}`),
   createHighlight: (title: string, coverUrl?: string) =>
     api.post<StoryHighlightAlbum>('/stories/highlights', { title, coverUrl }),
   updateHighlight: (albumId: string, data: UpdateHighlightPayload) =>
@@ -1080,13 +1076,9 @@ export const subtitlesApi = {
     api.patch<SubtitleTrack>(`/videos/${videoId}/subtitles/${trackId}`, data),
 };
 
-// X10-#10/#16: @dead-endpoint: no POST /stories/:id/react backend route exists
-// Story reactions need a backend endpoint to be built first
 export const storiesReactionsApi = {
-  react: (storyId: string, emoji: string) => {
-    console.warn('storiesReactionsApi.react: backend endpoint does not exist');
-    return api.post(`/stories/${storyId}/react`, { emoji });
-  },
+  react: (storyId: string, emoji: string) =>
+    api.post(`/stories/${storyId}/react`, { emoji }),
 };
 
 // ── Drafts ──
@@ -1170,18 +1162,12 @@ export const liveApi = {
     api.post(`/live/${id}/promote/${userId}`),
   demoteToViewer: (id: string, userId: string) =>
     api.post(`/live/${id}/demote/${userId}`),
-  // X10-#5: @dead-endpoint: no GET /live/:id/participants backend route exists
-  getParticipants: (id: string) => {
-    console.warn('liveApi.getParticipants: backend endpoint does not exist');
-    return api.get<LiveParticipant[]>(`/live/${id}/participants`);
-  },
+  getParticipants: (id: string, cursor?: string) =>
+    api.get<PaginatedResponse<LiveParticipant>>(`/live/${id}/participants${qs({ cursor })}`),
   getHostSessions: () =>
     api.get<LiveSession[]>('/live/my'),
-  // X10-#6: @dead-endpoint: no POST /live/:id/lower-hand backend route exists
-  lowerHand: (id: string) => {
-    console.warn('liveApi.lowerHand: backend endpoint does not exist');
-    return api.post(`/live/${id}/lower-hand`);
-  },
+  lowerHand: (id: string) =>
+    api.post(`/live/${id}/lower-hand`),
   // X10-#7: @dead-endpoint: no POST /live/:id/chat backend route exists
   sendChat: (id: string, message: string) => {
     console.warn('liveApi.sendChat: backend endpoint does not exist');
@@ -1399,6 +1385,10 @@ export const bookmarksApi = {
     api.get<{ saved: boolean }>(`/bookmarks/threads/${threadId}/status`),
   isVideoSaved: (videoId: string) =>
     api.get<{ saved: boolean }>(`/bookmarks/videos/${videoId}/status`),
+  renameCollection: (name: string, newName: string) =>
+    api.patch(`/bookmarks/collections/${encodeURIComponent(name)}`, { newName }),
+  deleteCollection: (name: string) =>
+    api.delete(`/bookmarks/collections/${encodeURIComponent(name)}`),
 };
 
 // ── Watch History ──

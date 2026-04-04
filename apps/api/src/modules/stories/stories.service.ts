@@ -550,6 +550,70 @@ export class StoriesService {
     });
   }
 
+  async getHighlightAlbum(albumId: string) {
+    const album = await this.prisma.storyHighlightAlbum.findUnique({
+      where: { id: albumId },
+      include: {
+        stories: {
+          where: { isArchived: true },
+          select: {
+            id: true,
+            mediaUrl: true,
+            mediaType: true,
+            thumbnailUrl: true,
+            textOverlay: true,
+            stickerData: true,
+            duration: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: 'asc' },
+          take: 100,
+        },
+        user: {
+          select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true },
+        },
+      },
+    });
+    if (!album) throw new NotFoundException('Highlight album not found');
+    return album;
+  }
+
+  async reactToStory(storyId: string, userId: string, emoji: string) {
+    const story = await this.prisma.story.findUnique({ where: { id: storyId } });
+    if (!story) throw new NotFoundException('Story not found');
+    if (story.isArchived) throw new BadRequestException('Cannot react to archived story');
+    if (story.expiresAt && story.expiresAt < new Date()) throw new BadRequestException('Cannot react to expired story');
+
+    // Block check
+    if (story.userId && userId !== story.userId) {
+      const blocked = await this.prisma.block.findFirst({
+        where: {
+          OR: [
+            { blockerId: userId, blockedId: story.userId },
+            { blockerId: story.userId, blockedId: userId },
+          ],
+        },
+      });
+      if (blocked) throw new ForbiddenException('Cannot interact with this story');
+    }
+
+    // Use sticker response with emoji type — same pattern as submitStickerResponse
+    return this.prisma.storyStickerResponse.upsert({
+      where: {
+        storyId_userId_stickerType: { storyId, userId, stickerType: StickerResponseType.emoji },
+      },
+      create: {
+        storyId,
+        userId,
+        stickerType: StickerResponseType.emoji,
+        responseData: { emoji } as Prisma.InputJsonValue,
+      },
+      update: {
+        responseData: { emoji } as Prisma.InputJsonValue,
+      },
+    });
+  }
+
   async createHighlight(userId: string, title: string, coverUrl?: string) {
     const count = await this.prisma.storyHighlightAlbum.count({ where: { userId } });
     // Finding #220: Highlight album limit — max 100

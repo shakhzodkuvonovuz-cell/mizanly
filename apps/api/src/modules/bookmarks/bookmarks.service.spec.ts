@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ConflictException } from '@nestjs/common';
+import { NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { BookmarksService } from './bookmarks.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
@@ -412,6 +412,68 @@ describe('BookmarksService', () => {
       const result = await service.getSavedVideos('user1');
       expect(result.data).toEqual([]);
       expect(result.meta.hasMore).toBe(false);
+    });
+  });
+
+  describe('renameCollection', () => {
+    beforeEach(() => {
+      prisma.savedPost.count = jest.fn();
+      prisma.savedPost.updateMany = jest.fn();
+    });
+
+    it('renames collection and returns count', async () => {
+      prisma.savedPost.count.mockResolvedValue(5);
+      prisma.savedPost.updateMany.mockResolvedValue({ count: 5 });
+
+      const result = await service.renameCollection('user1', 'oldName', 'newName');
+      expect(result).toEqual({ renamed: true, count: 5 });
+      expect(prisma.savedPost.updateMany).toHaveBeenCalledWith({
+        where: { userId: 'user1', collectionName: 'oldName' },
+        data: { collectionName: 'newName' },
+      });
+    });
+
+    it('returns early when names are identical', async () => {
+      const result = await service.renameCollection('user1', 'same', 'same');
+      expect(result).toEqual({ renamed: true, count: 0 });
+      expect(prisma.savedPost.count).not.toHaveBeenCalled();
+    });
+
+    it('throws BadRequestException for default collection', async () => {
+      await expect(service.renameCollection('user1', 'default', 'newName')).rejects.toThrow('Cannot rename the default collection');
+    });
+
+    it('throws NotFoundException when collection is empty', async () => {
+      prisma.savedPost.count.mockResolvedValue(0);
+      await expect(service.renameCollection('user1', 'nonexistent', 'newName')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('deleteCollection', () => {
+    beforeEach(() => {
+      prisma.savedPost.count = jest.fn();
+      prisma.savedPost.updateMany = jest.fn();
+    });
+
+    it('moves posts to default and returns count', async () => {
+      prisma.savedPost.count.mockResolvedValue(3);
+      prisma.savedPost.updateMany.mockResolvedValue({ count: 3 });
+
+      const result = await service.deleteCollection('user1', 'myCollection');
+      expect(result).toEqual({ deleted: true, movedToDefault: 3 });
+      expect(prisma.savedPost.updateMany).toHaveBeenCalledWith({
+        where: { userId: 'user1', collectionName: 'myCollection' },
+        data: { collectionName: 'default' },
+      });
+    });
+
+    it('throws BadRequestException for default collection', async () => {
+      await expect(service.deleteCollection('user1', 'default')).rejects.toThrow('Cannot delete the default collection');
+    });
+
+    it('throws NotFoundException when collection is empty', async () => {
+      prisma.savedPost.count.mockResolvedValue(0);
+      await expect(service.deleteCollection('user1', 'nonexistent')).rejects.toThrow(NotFoundException);
     });
   });
 });

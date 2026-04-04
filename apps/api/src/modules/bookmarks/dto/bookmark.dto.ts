@@ -19,3 +19,10 @@ export class MoveCollectionDto {
   @MaxLength(50)
   collectionName: string;
 }
+
+export class RenameCollectionDto {
+  @ApiProperty({ description: 'New name for the collection', required: true })
+  @IsString()
+  @MaxLength(50)
+  newName: string;
+}
