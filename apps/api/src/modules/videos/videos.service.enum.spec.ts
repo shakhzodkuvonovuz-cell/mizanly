@@ -25,6 +25,7 @@ describe('VideosService — enum validation', () => {
             user: { findUnique: jest.fn().mockResolvedValue({ id: 'u1', isPrivate: false }) },
             block: { findMany: jest.fn().mockResolvedValue([]) },
             mute: { findMany: jest.fn().mockResolvedValue([]) },
+            restrict: { findMany: jest.fn().mockResolvedValue([]) },
             report: { create: jest.fn().mockResolvedValue({ id: 'r1' }) },
           },
         },

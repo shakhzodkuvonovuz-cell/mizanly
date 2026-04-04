@@ -22,6 +22,7 @@ import { ContentSafetyService } from '../moderation/content-safety.service';
 import { AiService } from '../ai/ai.service';
 import { QueueService } from '../../common/queue/queue.service';
 import { PublishWorkflowService } from '../../common/services/publish-workflow.service';
+import { getExcludedUserIds } from '../../common/utils/excluded-users';
 
 const VIDEO_SELECT = {
   id: true,
@@ -267,22 +268,8 @@ export class VideosService {
       if (cached) return JSON.parse(cached);
     }
 
-    const [blocks, mutes] = userId ? await Promise.all([
-      this.prisma.block.findMany({ where: { OR: [{ blockerId: userId }, { blockedId: userId }] }, select: { blockerId: true, blockedId: true },
-      take: 10000,
-    }),
-      this.prisma.mute.findMany({ where: { userId }, select: { mutedId: true },
-      take: 10000,
-    }),
-    ]) : [[], []];
-
-    const excludedSet = new Set<string>();
-    for (const b of blocks) {
-      if (b.blockerId === userId) excludedSet.add(b.blockedId);
-      else excludedSet.add(b.blockerId);
-    }
-    for (const m of mutes) excludedSet.add(m.mutedId);
-    const excludedIds = [...excludedSet];
+    // Use shared cached utility (Redis-cached 60s) instead of 2 separate block+mute queries
+    const excludedIds = userId ? await getExcludedUserIds(this.prisma, this.redis, userId) : [];
 
     // Build feed: videos from subscribed channels + trending (by views)
     const subscribedChannels = userId ? await this.prisma.subscription.findMany({

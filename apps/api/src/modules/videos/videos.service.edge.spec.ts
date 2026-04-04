@@ -96,6 +96,7 @@ describe('VideosService — edge cases', () => {
             },
             block: { findMany: jest.fn().mockResolvedValue([]) },
             mute: { findMany: jest.fn().mockResolvedValue([]) },
+            restrict: { findMany: jest.fn().mockResolvedValue([]) },
             report: { create: jest.fn() },
             subscription: { findMany: jest.fn().mockResolvedValue([]) },
             premiere: {
@@ -132,6 +133,7 @@ describe('VideosService — edge cases', () => {
           provide: 'REDIS',
           useValue: {
             get: jest.fn().mockResolvedValue(null),
+            set: jest.fn().mockResolvedValue('OK'),
             setex: jest.fn().mockResolvedValue('OK'),
             del: jest.fn().mockResolvedValue(1),
           },

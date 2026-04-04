@@ -41,6 +41,9 @@ describe('VideosService', () => {
             mute: {
               findMany: jest.fn(),
             },
+            restrict: {
+              findMany: jest.fn().mockResolvedValue([]),
+            },
             subscription: {
               findMany: jest.fn(),
               findUnique: jest.fn(),
@@ -117,6 +120,7 @@ describe('VideosService', () => {
           provide: 'REDIS',
           useValue: {
             get: jest.fn(),
+            set: jest.fn(),
             setex: jest.fn(),
             del: jest.fn(),
           },
