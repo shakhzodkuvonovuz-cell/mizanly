@@ -90,10 +90,11 @@ func (s *Store) CheckBlockedAny(ctx context.Context, userIDs []string) (bool, er
 	return exists, err
 }
 
+// G06-#23: Exclude banned users — a banned user should not be callable.
 func (s *Store) UserExists(ctx context.Context, userID string) (bool, error) {
 	var exists bool
 	err := s.pool.QueryRow(ctx,
-		`SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)`, userID,
+		`SELECT EXISTS(SELECT 1 FROM users WHERE id = $1 AND ("isBanned" IS NULL OR "isBanned" = false))`, userID,
 	).Scan(&exists)
 	return exists, err
 }
@@ -397,9 +398,11 @@ func (s *Store) GetSessionWithParticipantsByRoomName(ctx context.Context, roomNa
 	return session, nil
 }
 
+// G06-#22: Scan livekitJoinedAt — consistent with getParticipants and getParticipantsBatch.
+// Previously omitted, leaving LivekitJoinedAt as zero value which could confuse callers.
 func (s *Store) getActiveParticipantsLight(ctx context.Context, sessionID string) ([]model.CallParticipant, error) {
 	rows, err := s.pool.Query(ctx,
-		`SELECT "sessionId", "userId", role, "joinedAt", "leftAt"
+		`SELECT "sessionId", "userId", role, "joinedAt", "leftAt", "livekitJoinedAt"
 		 FROM call_participants WHERE "sessionId" = $1 AND "leftAt" IS NULL`,
 		sessionID,
 	)
@@ -411,7 +414,7 @@ func (s *Store) getActiveParticipantsLight(ctx context.Context, sessionID string
 	var participants []model.CallParticipant
 	for rows.Next() {
 		var p model.CallParticipant
-		if err := rows.Scan(&p.SessionID, &p.UserID, &p.Role, &p.JoinedAt, &p.LeftAt); err != nil {
+		if err := rows.Scan(&p.SessionID, &p.UserID, &p.Role, &p.JoinedAt, &p.LeftAt, &p.LivekitJoinedAt); err != nil {
 			return nil, err
 		}
 		participants = append(participants, p)
@@ -592,11 +595,14 @@ func (s *Store) CleanupStaleRingingSessions(ctx context.Context, staleAfterSecs 
 		staleAfterSecs = 60
 	}
 	interval := fmt.Sprintf("%d seconds", staleAfterSecs)
+	// G06-#18: The updated_participants CTE result is intentionally unreferenced.
+	// PostgreSQL still executes it as a side-effect (CTEs are optimization fences).
+	// The RowsAffected() below reports the final UPDATE (session rows), not participant rows.
 	result, err := s.pool.Exec(ctx,
 		`WITH stale AS (
 			SELECT id FROM call_sessions
 			WHERE status = 'RINGING' AND "createdAt" < NOW() - CAST($1 AS INTERVAL)
-		), updated_participants AS (
+		), mark_left AS (
 			UPDATE call_participants SET "leftAt" = NOW()
 			WHERE "leftAt" IS NULL AND "sessionId" IN (SELECT id FROM stale)
 		)
@@ -704,6 +710,7 @@ type ErrUserInCall struct {
 	UserID string
 }
 
+// G02-L5: Include UserID in error message for debugging.
 func (e *ErrUserInCall) Error() string {
-	return "user is already in a call"
+	return fmt.Sprintf("user %s is already in a call", e.UserID)
 }

@@ -439,7 +439,7 @@ func (s *Store) GetPreKeyBundle(ctx context.Context, targetUserID string, device
 
 	bundle := model.PreKeyBundle{
 		IdentityKey:    base64.StdEncoding.EncodeToString(identityPub),
-		RegistrationID: regID,
+		RegistrationID: int32(regID),
 		DeviceID:       devID,
 		SupportedVersions: []int{1}, // Classical X3DH only for now
 	}
@@ -571,9 +571,14 @@ func (s *Store) rebuildMerkleCacheLocked(ctx context.Context) error {
 		}
 		// V4-F7: Domain separation prefix 0x00 for leaves (RFC 6962).
 		// V4-F8: Explicit allocation — no append mutation of shared slices.
-		leafData := make([]byte, 0, 1+len(uid)+len(pub))
-		leafData = append(leafData, 0x00) // Leaf prefix
-		leafData = append(leafData, []byte(uid)...)
+		// G02-L2: Length-delimit userId to prevent second-preimage collisions.
+		// Without length prefix, userId "abc" + key "d..." hashes same as userId "abcd" + key "...".
+		uidBytes := []byte(uid)
+		uidLen := byte(len(uidBytes)) // Clerk CUIDs are 25-28 chars, always < 255
+		leafData := make([]byte, 0, 1+1+len(uidBytes)+len(pub))
+		leafData = append(leafData, 0x00)     // Leaf prefix
+		leafData = append(leafData, uidLen)    // Length of userId (1 byte)
+		leafData = append(leafData, uidBytes...)
 		leafData = append(leafData, pub...)
 		leaf := sha256.Sum256(leafData)
 		s.cachedLeaves = append(s.cachedLeaves, leaf[:])

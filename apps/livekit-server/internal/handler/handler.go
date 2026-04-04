@@ -25,6 +25,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -98,6 +99,11 @@ func (h *Handler) HandleHealth(w http.ResponseWriter, r *http.Request) {
 // HandleCreateRoom creates a LiveKit room + DB session.
 func (h *Handler) HandleCreateRoom(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.UserIDFromContext(r.Context())
+	// G04-#12: Defense-in-depth — reject empty userID even if auth middleware missed it.
+	if userID == "" {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
 	reqID := middleware.RequestIDFromContext(r.Context()) // [H6]
 	if err := h.rl.CheckCreateRoom(r.Context(), userID); err != nil {
 		writeError(w, http.StatusTooManyRequests, "rate limit exceeded")
@@ -191,6 +197,12 @@ func (h *Handler) HandleCreateRoom(w http.ResponseWriter, r *http.Request) {
 	actualRoomName := ""
 	if session.LivekitRoomName != nil {
 		actualRoomName = *session.LivekitRoomName
+	}
+	// G04-#15: Guard against empty room name (schema allows NULL).
+	if actualRoomName == "" {
+		h.logger.Error("session created with empty room name", "sessionID", session.ID)
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
 	}
 
 	// [F31 fix] Nil-guard the LiveKit SDK call so the handler can be tested without
@@ -363,7 +375,8 @@ func (h *Handler) HandleDeleteRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// [F8 fix] Non-callers in group calls (3+ active participants) must use /leave.
-	// In 1:1 calls (2 participants), either party can end.
+	// In 1:1 calls (2 or fewer active participants), either party can end.
+	// G04-#13: Note — if participants leave a group call reducing it to 2, a non-caller can then end it.
 	if !isCaller(session, userID) && len(session.Participants) > 2 {
 		writeError(w, http.StatusForbidden, "only the call creator can end a group call — use /leave to leave")
 		return
@@ -619,6 +632,11 @@ func (h *Handler) HandleMuteParticipant(w http.ResponseWriter, r *http.Request) 
 func (h *Handler) HandleGetHistory(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.UserIDFromContext(r.Context())
 	cursor := r.URL.Query().Get("cursor")
+	// G05-#12: Limit cursor length — query params bypass maxBodySize; prevent memory DoS.
+	if len(cursor) > 256 {
+		writeError(w, http.StatusBadRequest, "invalid cursor")
+		return
+	}
 	var cursorPtr *string
 	if cursor != "" {
 		cursorPtr = &cursor
@@ -904,7 +922,10 @@ func (h *Handler) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 				callDuration := 0
 				if session.StartedAt != nil {
 					callDuration = int(eventTime.Sub(*session.StartedAt).Seconds())
+					// G05-#17: Log negative duration — indicates clock skew between LiveKit and DB.
 					if callDuration < 0 {
+						h.logger.Warn("negative call duration clamped to 0 — clock skew between LiveKit and DB",
+							"sessionID", session.ID, "computedDuration", callDuration)
 						callDuration = 0
 					}
 					if err := h.db.UpdateSessionDuration(ctx, session.ID, callDuration); err != nil {
@@ -1093,7 +1114,9 @@ func (h *Handler) sendMissedCallPush(calleeIDs []string, sessionID string, callT
 // First attempt: 5s timeout. If it fails, wait 500ms and retry with a fresh 5s timeout.
 // Two attempts total — covers transient network blips and NestJS cold starts.
 func (h *Handler) postInternalPush(bodyBytes []byte) error {
-	url := h.cfg.NestJSBaseURL + "/internal/push-to-users"
+	// G05-#18: Use strings.TrimRight to avoid double-slash if NestJSBaseURL has trailing slash
+	base := strings.TrimRight(h.cfg.NestJSBaseURL, "/")
+	url := base + "/internal/push-to-users"
 
 	for attempt := 0; attempt < 2; attempt++ {
 		if attempt > 0 {
@@ -1154,8 +1177,17 @@ func isCallerOrParticipant(session *model.CallSession, userID string) bool {
 
 // --- Helpers ---
 
+// G05-#13: Reject bodies with trailing JSON content — catches client bugs sooner.
 func decodeBody(r *http.Request, v interface{}) error {
-	return json.NewDecoder(io.LimitReader(r.Body, maxBodySize)).Decode(v)
+	dec := json.NewDecoder(io.LimitReader(r.Body, maxBodySize))
+	if err := dec.Decode(v); err != nil {
+		return err
+	}
+	// Reject trailing content after the first JSON value
+	if dec.More() {
+		return fmt.Errorf("unexpected trailing content after JSON body")
+	}
+	return nil
 }
 
 func filterAndDedup(ids []string) []string {

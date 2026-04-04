@@ -1615,19 +1615,31 @@ func TestMockStore_GetSessionByID_NotFound(t *testing.T) {
 	}
 }
 
+// G05-#15: Fixed — previously had a dead assertion inside an empty if-body.
+// The mock's MarkParticipantLeft removes from activeCalls, so GetSessionWithParticipantsByRoomName
+// returns all participants (including left ones) since the mock stores participants at creation.
+// This test verifies the mock returns a non-nil session with participants after a leave.
 func TestMockStore_GetSessionWithParticipants_FiltersLeft(t *testing.T) {
 	_, ms := newTestHandler()
 	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-filter", "caller-1", []string{"caller-1", "callee-1", "callee-2"}, 3)
 
 	// Mark one participant as left
 	session, _ := ms.GetSessionByRoomName(context.Background(), "room-filter")
+	if session == nil {
+		t.Fatal("expected session to exist")
+	}
 	ms.MarkParticipantLeft(context.Background(), session.ID, "callee-2")
 
-	// GetSessionWithParticipants should only return active participants
-	filtered, _ := ms.GetSessionWithParticipantsByRoomName(context.Background(), "room-filter")
-	if len(filtered.Participants) != 3 {
-		// Note: MarkParticipantLeft in mock only removes from activeCalls, doesn't set LeftAt
-		// This tests the mock behavior — the real store sets LeftAt
+	// GetSessionWithParticipants should return a valid session (mock doesn't filter left participants)
+	filtered, err := ms.GetSessionWithParticipantsByRoomName(context.Background(), "room-filter")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if filtered == nil {
+		t.Fatal("expected non-nil session")
+	}
+	if len(filtered.Participants) == 0 {
+		t.Error("expected at least some participants")
 	}
 }
 

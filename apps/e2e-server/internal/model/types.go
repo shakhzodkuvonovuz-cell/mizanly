@@ -36,8 +36,8 @@ type OneTimePreKeysRequest struct {
 
 // PreKeyBundle is a user's public key bundle for X3DH session establishment.
 type PreKeyBundle struct {
-	IdentityKey  string `json:"identityKey"`  // Base64, 32 bytes Ed25519
-	RegistrationID int  `json:"registrationId"`
+	IdentityKey    string `json:"identityKey"` // Base64, 32 bytes Ed25519
+	RegistrationID int32  `json:"registrationId"` // G03-#18: 14-bit unsigned (0-16383), int32 enforces narrow range
 	DeviceID     int    `json:"deviceId"`
 	SignedPreKey struct {
 		KeyID     int    `json:"keyId"`

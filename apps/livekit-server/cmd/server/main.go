@@ -111,6 +111,10 @@ func main() {
 			w.Header().Set("X-Frame-Options", "DENY")
 			w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 			w.Header().Set("Cache-Control", "no-store")
+			// G03-#6: Defense-in-depth headers — prevent resource loading if response is rendered in browser
+			w.Header().Set("Content-Security-Policy", "default-src 'none'")
+			w.Header().Set("Referrer-Policy", "no-referrer")
+			w.Header().Set("Permissions-Policy", "")
 			next.ServeHTTP(w, r)
 		})
 	}

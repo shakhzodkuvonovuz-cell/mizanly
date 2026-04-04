@@ -85,8 +85,11 @@ func (h *Handler) HandleRegisterIdentity(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// G01-#5: Return 400 instead of silently clamping invalid deviceID.
+	// Silent clamping masks client bugs — a client sending deviceId:0 would overwrite device 1's keys.
 	if req.DeviceID < 1 || req.DeviceID > 10 {
-		req.DeviceID = 1 // Default to 1 if out of range (max 10 devices per user)
+		writeError(w, http.StatusBadRequest, "deviceId must be between 1 and 10")
+		return
 	}
 
 	// Rate limit identity key changes: max 2 per 24 hours per user.
@@ -147,8 +150,10 @@ func (h *Handler) HandleUploadSignedPreKey(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// G01-#5: Return 400 instead of silently clamping invalid deviceID.
 	if req.DeviceID < 1 || req.DeviceID > 10 {
-		req.DeviceID = 1 // Default to 1 if out of range (max 10 devices per user)
+		writeError(w, http.StatusBadRequest, "deviceId must be between 1 and 10")
+		return
 	}
 
 	if err := h.store.UpsertSignedPreKey(r.Context(), userID, req.DeviceID, req.KeyID, req.PublicKey, req.Signature); err != nil {
@@ -177,8 +182,10 @@ func (h *Handler) HandleUploadOneTimePreKeys(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	// G01-#5: Return 400 instead of silently clamping invalid deviceID.
 	if req.DeviceID < 1 || req.DeviceID > 10 {
-		req.DeviceID = 1 // Default to 1 if out of range (max 10 devices per user)
+		writeError(w, http.StatusBadRequest, "deviceId must be between 1 and 10")
+		return
 	}
 
 	// G03-#11: Use model.PreKeyItem instead of anonymous struct.
@@ -380,6 +387,15 @@ func (h *Handler) HandleGetSenderKeys(w http.ResponseWriter, r *http.Request) {
 	groupID := extractPathParam(r, "/api/v1/e2e/sender-keys/")
 	if err := validatePathParam(groupID); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid groupId")
+		return
+	}
+
+	// G01-#4: Verify group membership on read, not just write.
+	// Previously, HandleStoreSenderKey checked membership but HandleGetSenderKeys did not,
+	// allowing banned/removed users to still fetch sender keys addressed to them.
+	isMember, err := h.store.VerifyGroupMembership(r.Context(), groupID, userID)
+	if err != nil || !isMember {
+		writeError(w, http.StatusForbidden, "not a member of this group")
 		return
 	}
 

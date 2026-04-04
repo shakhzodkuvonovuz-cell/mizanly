@@ -25,6 +25,10 @@ func (ct CallType) Valid() bool {
 func (ct CallType) String() string { return string(ct) }
 
 // CallSession represents a call session in the database.
+// G06-#17: e2eeKey and e2eeSalt are INTENTIONALLY omitted from this struct.
+// The Prisma schema has both as Bytes? fields, but excluding them here prevents
+// key material from ever being accidentally included in JSON responses.
+// E2EE material is only accessed via GetSessionE2EEMaterial which returns E2EEMaterial.
 type CallSession struct {
 	ID                string            `json:"id"`
 	CallType          CallType          `json:"callType"`
