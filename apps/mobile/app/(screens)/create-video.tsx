@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput, ScrollView,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useDraftPersistence } from '@/hooks/useDraftPersistence';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
@@ -82,8 +82,29 @@ export default function CreateVideoScreen() {
   const [showVisibilitySheet, setShowVisibilitySheet] = useState(false);
   const [showChannelSheet, setShowChannelSheet] = useState(false);
 
-  // Draft auto-save
-  const draftSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Draft persistence via shared hook
+  interface VideoDraft { title: string; description: string; category: VideoCategory; tags: string[]; channelId: string; visibility: Visibility }
+  const { save: saveDraftImmediate, clear: clearDraft, debouncedSave: debouncedSaveDraft } = useDraftPersistence<VideoDraft>(
+    'video-draft',
+    (draft) => {
+      if (draft.title) setTitle(draft.title);
+      if (draft.description) setDescription(draft.description);
+      if (draft.category) setSelectedCategory(draft.category);
+      if (draft.tags) setTags(draft.tags);
+      if (draft.channelId) setSelectedChannelId(draft.channelId);
+      if (draft.visibility) setVisibility(draft.visibility);
+      // Note: cannot restore video/thumbnail files
+    },
+    { debounceMs: 1000 },
+  );
+
+  // Debounced auto-save when fields change
+  useEffect(() => {
+    debouncedSaveDraft({
+      title, description, category: selectedCategory,
+      tags, channelId: selectedChannelId, visibility,
+    });
+  }, [title, description, selectedCategory, tags, selectedChannelId, visibility, debouncedSaveDraft]);
 
   // Fetch user's channels
   const channelsQuery = useQuery({
@@ -99,55 +120,6 @@ export default function CreateVideoScreen() {
       setSelectedChannelId(channels[0].id);
     }
   }, [channels, selectedChannelId]);
-
-  // Load draft on mount
-  useEffect(() => {
-    const loadDraft = async () => {
-      try {
-        const saved = await AsyncStorage.getItem('video-draft');
-        if (saved) {
-          const draft = JSON.parse(saved);
-          if (draft.title) setTitle(draft.title);
-          if (draft.description) setDescription(draft.description);
-          if (draft.category) setSelectedCategory(draft.category);
-          if (draft.tags) setTags(draft.tags);
-          if (draft.channelId) setSelectedChannelId(draft.channelId);
-          if (draft.visibility) setVisibility(draft.visibility);
-          // Note: cannot restore video/thumbnail files
-        }
-      } catch (err) {
-      }
-    };
-    loadDraft();
-
-    return () => {
-      if (draftSaveRef.current) clearTimeout(draftSaveRef.current);
-    };
-  }, []);
-
-  // Debounced auto-save
-  const saveDraft = useCallback(() => {
-    if (draftSaveRef.current) clearTimeout(draftSaveRef.current);
-    draftSaveRef.current = setTimeout(async () => {
-      try {
-        const draft = {
-          title,
-          description,
-          category: selectedCategory,
-          tags,
-          channelId: selectedChannelId,
-          visibility,
-        };
-        await AsyncStorage.setItem('video-draft', JSON.stringify(draft));
-      } catch (err) {
-      }
-    }, 1000);
-  }, [title, description, selectedCategory, tags, selectedChannelId, visibility]);
-
-  // Auto-save when fields change
-  useEffect(() => {
-    saveDraft();
-  }, [saveDraft]);
 
   // Generate thumbnail frames from video
   const generateFrames = async (videoUri: string, durationMs: number) => {
@@ -299,7 +271,7 @@ export default function CreateVideoScreen() {
     },
     onSuccess: (video) => {
       haptic.success();
-      AsyncStorage.removeItem('video-draft').catch(() => {});
+      clearDraft().catch(() => {});
       queryClient.invalidateQueries({ queryKey: ['videos-feed'] });
       queryClient.invalidateQueries({ queryKey: ['channel-videos'] });
       showToast({ message: t('createVideo.videoUploaded'), variant: 'success' });
@@ -661,15 +633,10 @@ export default function CreateVideoScreen() {
             icon={<Icon name="bookmark" size="sm" color={tc.text.primary} />}
             onPress={async () => {
               try {
-                const draft = {
-                  title,
-                  description,
-                  category: selectedCategory,
-                  tags,
-                  channelId: selectedChannelId,
-                  visibility,
-                };
-                await AsyncStorage.setItem('video-draft', JSON.stringify(draft));
+                await saveDraftImmediate({
+                  title, description, category: selectedCategory,
+                  tags, channelId: selectedChannelId, visibility,
+                });
                 setShowDiscardSheet(false);
                 showToast({ message: t('common.draftSaved'), variant: 'success' });
                 router.back();
@@ -684,7 +651,7 @@ export default function CreateVideoScreen() {
             destructive
             onPress={async () => {
               setShowDiscardSheet(false);
-              await AsyncStorage.removeItem('video-draft').catch(() => {});
+              await clearDraft().catch(() => {});
               router.back();
             }}
           />

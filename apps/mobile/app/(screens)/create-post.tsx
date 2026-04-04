@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, TextInput, Pressable,
   ScrollView, Platform, Dimensions,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useDraftPersistence } from '@/hooks/useDraftPersistence';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -106,58 +106,27 @@ export default function CreatePostScreen() {
   const [showTopics, setShowTopics] = useState(false);
 
   const inputRef = useRef<RichCaptionInputRef>(null);
-  const draftSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showDraftBanner, setShowDraftBanner] = useState(false);
 
-  // Load draft on mount
+  // Draft persistence via shared hook
+  const { save: saveDraftImmediate, clear: clearDraft, debouncedSave: debouncedSaveDraft } = useDraftPersistence<{ content: string; mediaUrls: string[] }>(
+    'post-draft',
+    (draft) => {
+      if (draft.content) setContent(draft.content);
+      // Note: mediaUrls are URLs, not local URIs. We cannot restore picked media files.
+      setShowDraftBanner(true);
+      setTimeout(() => setShowDraftBanner(false), 3000);
+    },
+  );
+
+  // Debounced auto-save when content or media changes
   useEffect(() => {
-    const loadDraft = async () => {
-      try {
-        const saved = await AsyncStorage.getItem('post-draft');
-        if (saved) {
-          const draft = JSON.parse(saved);
-          if (draft.content) setContent(draft.content);
-          if (draft.mediaUrls && draft.mediaUrls.length > 0) {
-            // Note: mediaUrls are URLs, not local URIs. We cannot restore picked media files.
-            // We'll only restore content for now.
-          }
-          setShowDraftBanner(true);
-          setTimeout(() => setShowDraftBanner(false), 3000);
-        }
-      } catch {
-        // D11#46: Draft may be corrupted — silently ignore
-      }
-    };
-    loadDraft();
-
-    return () => {
-      if (draftSaveRef.current) clearTimeout(draftSaveRef.current);
-    };
-  }, []);
-
-  // Debounced auto-save
-  const saveDraft = useCallback(() => {
-    if (draftSaveRef.current) clearTimeout(draftSaveRef.current);
-    draftSaveRef.current = setTimeout(async () => {
-      try {
-        if (!content.trim() && media.length === 0) {
-          await AsyncStorage.removeItem('post-draft');
-          return;
-        }
-        await AsyncStorage.setItem('post-draft', JSON.stringify({
-          content,
-          mediaUrls: media.map(m => m.uri),
-        }));
-      } catch {
-        // D11#47: Storage full — non-critical, skip silently
-      }
-    }, 2000);
-  }, [content, media]);
-
-  // Auto-save when content or media changes
-  useEffect(() => {
-    saveDraft();
-  }, [saveDraft]);
+    if (!content.trim() && media.length === 0) {
+      clearDraft().catch(() => {});
+      return;
+    }
+    debouncedSaveDraft({ content, mediaUrls: media.map(m => m.uri) });
+  }, [content, media, clearDraft, debouncedSaveDraft]);
 
   const circlesQuery = useQuery({
     queryKey: ['my-circles'],
@@ -321,9 +290,7 @@ export default function CreatePostScreen() {
     onSuccess: async () => {
       haptic.success();
       queryClient.invalidateQueries({ queryKey: ['saf-feed'] });
-      try {
-        await AsyncStorage.removeItem('post-draft');
-      } catch {}
+      await clearDraft().catch(() => {});
       showToast({ message: t('compose.postPublished'), variant: 'success' });
       router.back();
     },
@@ -830,10 +797,7 @@ export default function CreatePostScreen() {
             icon={<Icon name="bookmark" size="sm" color={tc.text.primary} />}
             onPress={async () => {
               try {
-                await AsyncStorage.setItem('post-draft', JSON.stringify({
-                  content,
-                  mediaUrls: media.map(m => m.uri),
-                }));
+                await saveDraftImmediate({ content, mediaUrls: media.map(m => m.uri) });
                 setShowDiscardSheet(false);
                 showToast({ message: t('common.draftSaved'), variant: 'success' });
                 router.back();
@@ -848,7 +812,7 @@ export default function CreatePostScreen() {
             destructive
             onPress={async () => {
               setShowDiscardSheet(false);
-              await AsyncStorage.removeItem('post-draft').catch(() => {});
+              await clearDraft().catch(() => {});
               router.back();
             }}
           />

@@ -404,9 +404,8 @@ describe('R4C-Tab3: create-post.tsx', () => {
   });
 
   test('draft load has error handling', () => {
-    // Draft load catch block should exist — search wider range
-    const draftSection = src.slice(src.indexOf('loadDraft'), src.indexOf('loadDraft') + 800);
-    expect(draftSection).toContain('catch');
+    // Draft persistence is delegated to useDraftPersistence hook (which has its own catch blocks + 14 tests)
+    expect(src).toContain('useDraftPersistence');
   });
 
   test('uses fonts.bodyBold instead of hardcoded font family', () => {

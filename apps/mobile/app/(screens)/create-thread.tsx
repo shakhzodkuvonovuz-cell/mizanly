@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, Pressable, TextInput,
   ScrollView,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useDraftPersistence } from '@/hooks/useDraftPersistence';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -291,49 +291,24 @@ export default function CreateThreadScreen() {
 
   // Refs for each part's input
   const inputRefs = useRef<Map<number, TextInput>>(new Map());
-  const draftSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Load draft on mount
+  // Draft persistence via shared hook
+  const { save: saveDraftImmediate, clear: clearDraft, debouncedSave: debouncedSaveDraft } = useDraftPersistence<{ parts: ChainPart[] }>(
+    THREAD_DRAFT_KEY,
+    (draft) => {
+      if (draft.parts) setParts(draft.parts);
+    },
+  );
+
+  // Debounced auto-save when parts change
   useEffect(() => {
-    const loadDraft = async () => {
-      try {
-        const saved = await AsyncStorage.getItem(THREAD_DRAFT_KEY);
-        if (saved) {
-          const draft = JSON.parse(saved);
-          if (draft.parts) setParts(draft.parts);
-        }
-      } catch (err) {
-        // ignore
-      }
-    };
-    loadDraft();
-
-    return () => {
-      if (draftSaveRef.current) clearTimeout(draftSaveRef.current);
-    };
-  }, []);
-
-  // Debounced auto-save
-  const saveDraft = useCallback(() => {
-    if (draftSaveRef.current) clearTimeout(draftSaveRef.current);
-    draftSaveRef.current = setTimeout(async () => {
-      try {
-        const hasContent = parts.some((p) => p.content.trim() || p.media.length > 0);
-        if (!hasContent) {
-          await AsyncStorage.removeItem(THREAD_DRAFT_KEY);
-          return;
-        }
-        await AsyncStorage.setItem(THREAD_DRAFT_KEY, JSON.stringify({ parts }));
-      } catch (err) {
-        // ignore
-      }
-    }, 2000);
-  }, [parts]);
-
-  // Auto-save when parts changes
-  useEffect(() => {
-    saveDraft();
-  }, [saveDraft]);
+    const hasContent = parts.some((p) => p.content.trim() || p.media.length > 0);
+    if (!hasContent) {
+      clearDraft().catch(() => {});
+      return;
+    }
+    debouncedSaveDraft({ parts });
+  }, [parts, clearDraft, debouncedSaveDraft]);
 
   const circlesQuery = useQuery({
     queryKey: ['my-circles'],
@@ -431,7 +406,7 @@ export default function CreateThreadScreen() {
     onSuccess: () => {
       haptic.success();
       queryClient.invalidateQueries({ queryKey: ['majlis-feed'] });
-      AsyncStorage.removeItem(THREAD_DRAFT_KEY).catch(() => {});
+      clearDraft().catch(() => {});
       showToast({ message: t('compose.threadPosted'), variant: 'success' });
       router.back();
     },
@@ -556,7 +531,7 @@ export default function CreateThreadScreen() {
             icon={<Icon name="bookmark" size="sm" color={tc.text.primary} />}
             onPress={async () => {
               try {
-                await AsyncStorage.setItem(THREAD_DRAFT_KEY, JSON.stringify({ parts }));
+                await saveDraftImmediate({ parts });
                 setShowDiscardSheet(false);
                 showToast({ message: t('common.draftSaved'), variant: 'success' });
                 router.back();
@@ -571,7 +546,7 @@ export default function CreateThreadScreen() {
             destructive
             onPress={async () => {
               setShowDiscardSheet(false);
-              await AsyncStorage.removeItem(THREAD_DRAFT_KEY).catch(() => {});
+              await clearDraft().catch(() => {});
               router.back();
             }}
           />
