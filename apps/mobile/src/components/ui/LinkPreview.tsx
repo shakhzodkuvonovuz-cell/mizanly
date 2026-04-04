@@ -6,10 +6,10 @@ import {
   Linking,
   Pressable,
 } from 'react-native';
-import { Image } from 'expo-image';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from './Icon';
+import { ProgressiveImage } from './ProgressiveImage';
 import { Skeleton } from './Skeleton';
 import { colors, spacing, radius, fontSize, shadow } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -132,9 +132,11 @@ export const LinkPreview = memo(function LinkPreview({ url, onPress }: LinkPrevi
             />
           ) : metadata?.imageUrl ? (
             <View style={styles.imageContainer}>
-              <Image
-                source={{ uri: metadata.imageUrl }}
-                style={styles.previewImage}
+              <ProgressiveImage
+                uri={metadata.imageUrl}
+                blurhash={null}
+                width="100%"
+                height={160}
                 contentFit="cover"
                 transition={200}
                 accessibilityLabel={metadata?.title ? `Preview image for ${metadata.title}` : 'Link preview image'}
@@ -228,7 +230,7 @@ const styles = StyleSheet.create({
   },
   previewImage: {
     width: '100%',
-    height: '100%',
+    height: 160,
   },
   imageOverlay: {
     position: 'absolute',

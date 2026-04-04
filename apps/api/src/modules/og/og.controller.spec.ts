@@ -30,6 +30,7 @@ describe('OgController', () => {
             getSitemapXml: jest.fn(),
             getRobotsTxt: jest.fn(),
             getLandingPage: jest.fn(),
+            fetchUrlMetadata: jest.fn(),
           },
         },
       ],
@@ -111,6 +112,35 @@ describe('OgController', () => {
       expect(service.getSitemapXml).toHaveBeenCalled();
       expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/xml; charset=utf-8');
       expect(res.send).toHaveBeenCalledWith('<xml>sitemap</xml>');
+    });
+  });
+
+  describe('unfurl', () => {
+    it('should call ogService.fetchUrlMetadata with the URL', async () => {
+      const mockResult = {
+        url: 'https://example.com',
+        domain: 'example.com',
+        title: 'Example',
+        description: 'An example page',
+        imageUrl: 'https://example.com/img.jpg',
+        faviconUrl: 'https://www.google.com/s2/favicons?domain=example.com&sz=64',
+      };
+      service.fetchUrlMetadata.mockResolvedValue(mockResult);
+
+      const result = await controller.unfurl('https://example.com');
+
+      expect(service.fetchUrlMetadata).toHaveBeenCalledWith('https://example.com');
+      expect(result).toEqual(mockResult);
+    });
+
+    it('should throw BadRequestException when url is missing', async () => {
+      const { BadRequestException } = require('@nestjs/common');
+      await expect(controller.unfurl(undefined)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for invalid URL', async () => {
+      const { BadRequestException } = require('@nestjs/common');
+      await expect(controller.unfurl('not-a-url')).rejects.toThrow(BadRequestException);
     });
   });
 });

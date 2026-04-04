@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
   View, Text, TextInput, StyleSheet,
-  FlatList,
   Pressable,
 } from 'react-native';
 import * as Location from 'expo-location';

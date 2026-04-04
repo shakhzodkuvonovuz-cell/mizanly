@@ -172,7 +172,7 @@ export function BottomSheet({ visible, onClose, children, snapPoint, blurBackdro
       </Animated.View>
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoid}
         pointerEvents="box-none"
       >

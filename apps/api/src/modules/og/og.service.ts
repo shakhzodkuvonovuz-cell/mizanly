@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import Redis from 'ioredis';
 import { PrismaService } from '../../config/prisma.service';
 import { assertNotPrivateUrl, safeFetch } from '../../common/utils/ssrf';
 
@@ -21,6 +22,18 @@ function truncate(text: string, maxLen: number): string {
   return text.substring(0, maxLen - 3) + '...';
 }
 
+/** Cache TTL for unfurl results: 1 hour in seconds */
+const UNFURL_CACHE_TTL = 3600;
+
+interface UnfurlResult {
+  url: string;
+  domain: string;
+  title: string | null;
+  description: string | null;
+  imageUrl: string | null;
+  faviconUrl: string | null;
+}
+
 @Injectable()
 export class OgService {
   private readonly appUrl: string;
@@ -28,6 +41,7 @@ export class OgService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    @Inject('REDIS') private readonly redis: Redis,
   ) {
     this.appUrl = this.config.get<string>('APP_URL') || 'https://mizanly.app';
   }
@@ -255,21 +269,31 @@ Sitemap: ${this.appUrl}/sitemap.xml
    * Fetch Open Graph metadata from an external URL.
    * Used by the mobile LinkPreview component to display rich link previews.
    * Includes SSRF protection: blocks private IPs and non-HTTPS URLs.
+   * Results are cached in Redis for 1 hour to avoid repeated external fetches.
    */
-  async fetchUrlMetadata(url: string): Promise<{
-    url: string;
-    domain: string;
-    title: string | null;
-    description: string | null;
-    imageUrl: string | null;
-    faviconUrl: string | null;
-  }> {
+  async fetchUrlMetadata(url: string): Promise<UnfurlResult> {
     // SSRF protection: resolve hostname to IP and check against private ranges
     const parsed = new URL(url);
     if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
       throw new NotFoundException('Invalid URL protocol');
     }
     const domain = parsed.hostname.replace('www.', '');
+    const cacheKey = `og:unfurl:${url}`;
+
+    // Check Redis cache first
+    try {
+      const cached = await this.redis.get(cacheKey);
+      if (cached) {
+        return JSON.parse(cached) as UnfurlResult;
+      }
+    } catch {
+      // Redis unavailable — continue without cache
+    }
+
+    const fallback: UnfurlResult = {
+      url, domain, title: null, description: null, imageUrl: null,
+      faviconUrl: `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
+    };
 
     try {
       await assertNotPrivateUrl(url, 'OG unfurl URL');
@@ -286,7 +310,8 @@ Sitemap: ${this.appUrl}/sitemap.xml
       );
 
       if (!response.ok) {
-        return { url, domain, title: null, description: null, imageUrl: null, faviconUrl: `https://www.google.com/s2/favicons?domain=${domain}&sz=64` };
+        await this.cacheUnfurlResult(cacheKey, fallback);
+        return fallback;
       }
 
       const html = await response.text();
@@ -320,7 +345,7 @@ Sitemap: ${this.appUrl}/sitemap.xml
         || getMetaContent('twitter:image')
         || null;
 
-      return {
+      const result: UnfurlResult = {
         url,
         domain,
         title: title ? truncate(title.trim(), 200) : null,
@@ -328,8 +353,20 @@ Sitemap: ${this.appUrl}/sitemap.xml
         imageUrl,
         faviconUrl: `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
       };
+
+      await this.cacheUnfurlResult(cacheKey, result);
+      return result;
     } catch {
-      return { url, domain, title: null, description: null, imageUrl: null, faviconUrl: `https://www.google.com/s2/favicons?domain=${domain}&sz=64` };
+      return fallback;
+    }
+  }
+
+  /** Cache unfurl result in Redis with TTL. Failures are silently ignored. */
+  private async cacheUnfurlResult(key: string, result: UnfurlResult): Promise<void> {
+    try {
+      await this.redis.setex(key, UNFURL_CACHE_TTL, JSON.stringify(result));
+    } catch {
+      // Redis unavailable — skip caching
     }
   }
 

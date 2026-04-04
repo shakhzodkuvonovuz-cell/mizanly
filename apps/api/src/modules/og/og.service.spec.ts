@@ -4,15 +4,22 @@ import { OgService } from './og.service';
 import { PrismaService } from '../../config/prisma.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
+const mockRedis = {
+  get: jest.fn().mockResolvedValue(null),
+  setex: jest.fn().mockResolvedValue('OK'),
+};
+
 describe('OgService', () => {
   let service: OgService;
   let prisma: any;
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ...globalMockProviders,
         OgService,
+        { provide: 'REDIS', useValue: mockRedis },
         {
           provide: PrismaService,
           useValue: {
@@ -211,6 +218,7 @@ describe('OgService', () => {
       const module2: TestingModule = await Test.createTestingModule({
         providers: [
           OgService,
+          { provide: 'REDIS', useValue: mockRedis },
           {
             provide: ConfigService,
             useValue: { get: jest.fn().mockImplementation((k: string) => k === 'APP_URL' ? 'https://staging.mizanly.app' : null) },
@@ -226,6 +234,52 @@ describe('OgService', () => {
       const svc2 = module2.get(OgService);
       const result = await svc2.getPostOg('p1');
       expect(result).toContain('staging.mizanly.app');
+    });
+  });
+
+  describe('fetchUrlMetadata', () => {
+    it('should return cached result when available in Redis', async () => {
+      const cached = {
+        url: 'https://example.com',
+        domain: 'example.com',
+        title: 'Cached Title',
+        description: 'Cached desc',
+        imageUrl: null,
+        faviconUrl: 'https://www.google.com/s2/favicons?domain=example.com&sz=64',
+      };
+      mockRedis.get.mockResolvedValueOnce(JSON.stringify(cached));
+
+      const result = await service.fetchUrlMetadata('https://example.com');
+
+      expect(mockRedis.get).toHaveBeenCalledWith('og:unfurl:https://example.com');
+      expect(result).toEqual(cached);
+    });
+
+    it('should throw NotFoundException for non-http(s) protocol', async () => {
+      await expect(service.fetchUrlMetadata('ftp://example.com/file')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should return fallback when fetch fails', async () => {
+      mockRedis.get.mockResolvedValueOnce(null);
+      // fetchUrlMetadata uses safeFetch which will fail on localhost
+      const result = await service.fetchUrlMetadata('https://this-domain-does-not-exist-test-12345.com');
+      expect(result.domain).toBe('this-domain-does-not-exist-test-12345.com');
+      expect(result.faviconUrl).toContain('favicons');
+    });
+
+    it('should gracefully handle Redis get failure', async () => {
+      mockRedis.get.mockRejectedValueOnce(new Error('Redis down'));
+      // Should not throw — falls through to fetch
+      const result = await service.fetchUrlMetadata('https://this-domain-does-not-exist-test-99999.com');
+      expect(result.domain).toBe('this-domain-does-not-exist-test-99999.com');
+    });
+
+    it('should gracefully handle Redis setex failure', async () => {
+      mockRedis.get.mockResolvedValueOnce(null);
+      mockRedis.setex.mockRejectedValueOnce(new Error('Redis down'));
+      // Should not throw — returns result without caching
+      const result = await service.fetchUrlMetadata('https://this-domain-also-no-exist-77777.com');
+      expect(result.domain).toBe('this-domain-also-no-exist-77777.com');
     });
   });
 });
