@@ -9,7 +9,7 @@ import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tansta
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { useUser } from '@clerk/clerk-expo';
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -36,6 +36,8 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const POST_MAX_LENGTH = 5000;
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
   post: ChannelPost;
   isOwnChannel: boolean;
@@ -49,6 +51,11 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
   const isOffline = useIsOffline();
   const [liked, setLiked] = useState(post.isLiked ?? false);
   const [likeCount, setLikeCount] = useState(post.likesCount);
+  // #255: Scale animation on long press visual feedback
+  const pressScale = useSharedValue(1);
+  const pressAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pressScale.value }],
+  }));
 
   useEffect(() => {
     setLiked(post.isLiked ?? false);
@@ -70,12 +77,22 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
     onLongPress(post);
   }, [onLongPress, post]);
 
+  const handlePressIn = useCallback(() => {
+    pressScale.value = withTiming(0.95, { duration: 150 });
+  }, [pressScale]);
+
+  const handlePressOut = useCallback(() => {
+    pressScale.value = withSpring(1, { damping: 15, stiffness: 300 });
+  }, [pressScale]);
+
   return (
-    <Animated.View entering={index < 10 ? FadeInUp.delay(Math.min(index, 15) * 50).duration(400) : undefined}>
+    <Animated.View entering={index < 10 ? FadeInUp.delay(Math.min(index, 15) * 50).duration(400) : undefined} style={pressAnimStyle}>
       <Pressable
         accessibilityRole="button"
         style={styles.postCard}
         onLongPress={handleLongPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         delayLongPress={500}
       >
         <LinearGradient

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -33,6 +33,8 @@ export default function CallHistoryScreen() {
   const { t } = useTranslation();
   const { user: clerkUser } = useUser();
   const [refreshing, setRefreshing] = useState(false);
+  const hasAnimatedRef = useRef(false);
+  useEffect(() => { hasAnimatedRef.current = true; }, []);
 
   // Clerk user ID matches callerId/receiverId
   const myUserId = clerkUser?.id;
@@ -97,7 +99,7 @@ export default function CallHistoryScreen() {
     const statusText = statusMap[item.status] || item.status;
 
     return (
-      <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 50).duration(400)}>
+      <Animated.View entering={!hasAnimatedRef.current ? FadeInUp.delay(Math.min(index, 15) * 50).duration(400) : undefined}>
         <LinearGradient
           colors={colors.gradient.cardDark}
           style={styles.row}

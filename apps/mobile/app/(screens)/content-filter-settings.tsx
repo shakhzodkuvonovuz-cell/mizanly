@@ -11,7 +11,7 @@ import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSequence, withTiming, withSpring } from 'react-native-reanimated';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -82,13 +82,23 @@ function ContentFilterSettingsContent() {
     },
   });
 
+  // #256: Scale micro-interaction on level select
+  const levelScale = useSharedValue(1);
+  const levelScaleStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: levelScale.value }],
+  }));
+
   const handleLevelChange = useCallback(
     (level: StrictnessLevel) => {
       haptic.tick();
       setLocalLevel(level);
       mutation.mutate({ strictnessLevel: level });
+      levelScale.value = withSequence(
+        withTiming(0.97, { duration: 80 }),
+        withSpring(1, { damping: 12, stiffness: 300 }),
+      );
     },
-    [mutation, haptic],
+    [mutation, haptic, levelScale],
   );
 
   const handleToggleBlurHaram = useCallback(
@@ -183,7 +193,7 @@ function ContentFilterSettingsContent() {
         showsVerticalScrollIndicator={false}
       >
         {/* Strictness Level Section */}
-        <Animated.View entering={FadeInUp.delay(0).duration(400)}>
+        <Animated.View entering={FadeInUp.delay(0).duration(400)} style={levelScaleStyle}>
         <Text style={[styles.sectionHeader, { color: tc.text.secondary }]}>{t('contentFilter.strictness')}</Text>
 
         {LEVELS.map((level) => {

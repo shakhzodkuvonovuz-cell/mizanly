@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -105,6 +105,8 @@ export default function BroadcastChannelsScreen() {
   });
 
   const searchInputRef = useRef<TextInput>(null);
+  const hasAnimatedRef = useRef(false);
+  useEffect(() => { hasAnimatedRef.current = true; }, []);
 
   const handleRefresh = useCallback(() => {
     if (activeTab === 'discover') {
@@ -145,7 +147,7 @@ export default function BroadcastChannelsScreen() {
   }, [haptic, t, queryClient]);
 
   const renderChannelItem = useCallback(({ item, index }: { item: BroadcastChannelWithSubscription; index: number }) => (
-    <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 50).duration(400)}>
+    <Animated.View entering={!hasAnimatedRef.current ? FadeInUp.delay(Math.min(index, 15) * 50).duration(400) : undefined}>
       <Pressable accessibilityRole="button" onPress={() => handleChannelPress(item)}>
         <LinearGradient
           colors={colors.gradient.cardDark}

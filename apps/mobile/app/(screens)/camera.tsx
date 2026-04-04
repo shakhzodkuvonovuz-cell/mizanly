@@ -41,6 +41,9 @@ export default function CameraScreen() {
   const captureScale = useSharedValue(1);
   const recordProgress = useSharedValue(0);
   const pulseAnim = useSharedValue(1);
+  // #249: Animated mode switch indicator
+  const modeScale = useSharedValue(1);
+  const modeOpacity = useSharedValue(1);
 
   // Recording timer
   const recordingInterval = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -247,22 +250,33 @@ export default function CameraScreen() {
 
         {/* Bottom Controls */}
         <SafeAreaView style={styles.bottomControls} edges={['bottom']}>
-          {/* Mode Selector */}
-          <View style={styles.modeSelector}>
+          {/* Mode Selector — #249: animated scale/opacity on switch */}
+          <Animated.View style={[styles.modeSelector, { transform: [{ scale: modeScale.value }], opacity: modeOpacity.value }]}>
             {(['photo', 'video', 'story'] as CameraMode[]).map((m) => (
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={t(`screens.camera.mode${m.charAt(0).toUpperCase() + m.slice(1)}`)}
                 key={m}
                 style={[styles.modePill, mode === m && styles.modePillActive]}
-                onPress={() => { haptic.navigate(); setMode(m); }}
+                onPress={() => {
+                  haptic.navigate();
+                  modeScale.value = withSequence(
+                    withTiming(0.92, { duration: 80 }),
+                    withSpring(1, { damping: 12, stiffness: 400 }),
+                  );
+                  modeOpacity.value = withSequence(
+                    withTiming(0.7, { duration: 80 }),
+                    withTiming(1, { duration: 150 }),
+                  );
+                  setMode(m);
+                }}
               >
                 <Text style={[styles.modeText, mode === m && styles.modeTextActive]}>
                   {t(`screens.camera.mode${m.charAt(0).toUpperCase() + m.slice(1)}`)}
                 </Text>
               </Pressable>
             ))}
-          </View>
+          </Animated.View>
 
           {/* Capture Controls */}
           <View style={styles.captureContainer}>

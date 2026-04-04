@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, Vibration, Platform, ScrollView, StatusBar, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Vibration, Platform, ScrollView, StatusBar, useWindowDimensions, LayoutAnimation, UIManager } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useUser } from '@clerk/clerk-expo';
 import { useQuery } from '@tanstack/react-query';
@@ -164,6 +164,18 @@ export default function CallScreen() {
   // [F8] Do NOT clear activeCall on unmount — the floating bar needs to persist
   // when user navigates away during an active call. Only clear on ended/failed.
   // The endCall handler already sets activeCall(null, null) via the status effect above.
+
+  // #248: Animate video grid layout when participants join/leave
+  const prevParticipantCount = useRef(livekit.remoteParticipants.length);
+  useEffect(() => {
+    if (livekit.remoteParticipants.length !== prevParticipantCount.current) {
+      if (Platform.OS === 'android') {
+        UIManager.setLayoutAnimationEnabledExperimental?.(true);
+      }
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      prevParticipantCount.current = livekit.remoteParticipants.length;
+    }
+  }, [livekit.remoteParticipants.length]);
 
   // ── Vibration for incoming calls ──
   // Ringtone audio is handled by CallKit (iOS) / ConnectionService (Android) natively.

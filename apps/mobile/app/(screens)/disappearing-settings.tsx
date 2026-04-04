@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMutation } from '@tanstack/react-query';
-import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInUp, FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -184,9 +184,11 @@ function DisappearingSettingsContent() {
                     </Text>
                   </View>
 
-                  {/* Check icon for selected */}
+                  {/* Check icon for selected — #254: scale entrance */}
                   {isSelected && (
-                    <Icon name="check" size="sm" color={colors.emerald} />
+                    <Animated.View entering={ZoomIn.duration(200).springify()}>
+                      <Icon name="check" size="sm" color={colors.emerald} />
+                    </Animated.View>
                   )}
                 </Pressable>
               );

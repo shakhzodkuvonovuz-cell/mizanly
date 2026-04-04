@@ -5,7 +5,7 @@ import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
+import Animated, { FadeInUp, FadeIn, useSharedValue, useAnimatedStyle, withSpring, withSequence, withTiming } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -158,6 +158,11 @@ function FollowerGrowthChart() {
   const tc = useThemeColors();
   const haptic = useContextualHaptic();
   const [period, setPeriod] = useState<GrowthPeriod>('7d');
+  // #251: Spring animation on period toggle
+  const toggleScale = useSharedValue(1);
+  const toggleAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: toggleScale.value }],
+  }));
 
   const { data: growthData, isLoading: growthLoading } = useQuery({
     queryKey: ['creator-growth'],
@@ -193,11 +198,18 @@ function FollowerGrowthChart() {
         </Text>
       </View>
 
-      {/* Period Toggle */}
-      <View style={styles.periodToggle}>
+      {/* Period Toggle — #251: spring animation on switch */}
+      <Animated.View style={[styles.periodToggle, toggleAnimStyle]}>
         <Pressable
           accessibilityRole="button"
-          onPress={() => { setPeriod('7d'); haptic.tick(); }}
+          onPress={() => {
+            setPeriod('7d');
+            haptic.tick();
+            toggleScale.value = withSequence(
+              withTiming(0.95, { duration: 80 }),
+              withSpring(1, { damping: 12, stiffness: 200 }),
+            );
+          }}
           style={({ pressed }) => [
             styles.periodTab,
             period === '7d' && styles.periodTabActive,
@@ -213,7 +225,14 @@ function FollowerGrowthChart() {
         </Pressable>
         <Pressable
           accessibilityRole="button"
-          onPress={() => { setPeriod('30d'); haptic.tick(); }}
+          onPress={() => {
+            setPeriod('30d');
+            haptic.tick();
+            toggleScale.value = withSequence(
+              withTiming(0.95, { duration: 80 }),
+              withSpring(1, { damping: 12, stiffness: 200 }),
+            );
+          }}
           style={({ pressed }) => [
             styles.periodTab,
             period === '30d' && styles.periodTabActive,
@@ -227,7 +246,7 @@ function FollowerGrowthChart() {
             {t('analytics.last30Days', '30 Days')}
           </Text>
         </Pressable>
-      </View>
+      </Animated.View>
 
       <LinearGradient
         colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
