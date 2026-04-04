@@ -169,7 +169,7 @@ describe('Final Push Part 2 — Messages, Reels, Follows, Gamification, Gifts', 
     it('setDisappearingTimer — null disables', async () => {
       prisma.conversation.update.mockResolvedValue({});
       const result = await service.setDisappearingTimer('c-1', 'u1', null);
-      expect(result.success).toBe(true);
+      expect(result).toEqual({ duration: null });
     });
 
     it('setDisappearingTimer — negative rejected', async () => {

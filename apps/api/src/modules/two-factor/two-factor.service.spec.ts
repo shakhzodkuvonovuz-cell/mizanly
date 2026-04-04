@@ -343,7 +343,7 @@ describe('TwoFactorService', () => {
       expect(result).toBe(true);
       // Should have stored session flag in Redis
       expect(mockRedis.setex).toHaveBeenCalledWith(
-        `2fa_verified:${mockUserId}`,
+        `2fa:verified:${mockUserId}`,
         86400, // 24 hours
         '1',
       );
@@ -379,7 +379,7 @@ describe('TwoFactorService', () => {
       mockRedis.get.mockResolvedValue('1');
       const result = await service.isTwoFactorVerified(mockUserId);
       expect(result).toBe(true);
-      expect(mockRedis.get).toHaveBeenCalledWith(`2fa_verified:${mockUserId}`);
+      expect(mockRedis.get).toHaveBeenCalledWith(`2fa:verified:${mockUserId}`);
     });
 
     it('should return false when 2FA is enabled but session flag missing', async () => {
@@ -393,7 +393,7 @@ describe('TwoFactorService', () => {
   describe('clearTwoFactorSession (#85)', () => {
     it('should delete the Redis session key', async () => {
       await service.clearTwoFactorSession(mockUserId);
-      expect(mockRedis.del).toHaveBeenCalledWith(`2fa_verified:${mockUserId}`);
+      expect(mockRedis.del).toHaveBeenCalledWith(`2fa:verified:${mockUserId}`);
     });
   });
 });

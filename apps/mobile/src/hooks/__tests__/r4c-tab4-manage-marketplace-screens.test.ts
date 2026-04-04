@@ -371,8 +371,8 @@ describe('R4C-Tab4: photo-music.tsx', () => {
     expect(src).toContain("showToast({ message: t('photoMusic.audioPlaybackFailed'");
   });
 
-  test('responsive dimensions listener', () => {
-    expect(src).toContain("Dimensions.addEventListener('change'");
+  test('responsive dimensions via useWindowDimensions hook', () => {
+    expect(src).toContain('useWindowDimensions');
   });
 
   test('RTL on music bar and caption footer', () => {

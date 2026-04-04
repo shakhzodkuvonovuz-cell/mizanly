@@ -48,8 +48,7 @@ describe('EventsService — authorization matrix', () => {
   it('should allow organizer to delete event', async () => {
     prisma.event.findUnique.mockResolvedValue(mockEvent);
     prisma.event.delete.mockResolvedValue({});
-    const result = await service.deleteEvent(userA, 'event-1');
-    expect(result).toBeDefined();
+    await service.deleteEvent(userA, 'event-1');
     expect(prisma.event.delete).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'event-1' } }));
   });
 

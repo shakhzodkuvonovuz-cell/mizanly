@@ -111,10 +111,10 @@ describe('Rate Limiting Integration', () => {
       expect(throttle!.ttl).toBe(60000);
     });
 
-    it('react should be throttled at 30 req / 60s', () => {
+    it('react should be throttled at 5 req / 60s (per-post target throttle)', () => {
       const throttle = getMethodThrottle(PostsController, 'react');
       expect(throttle).not.toBeNull();
-      expect(throttle!.limit).toBe(30);
+      expect(throttle!.limit).toBe(5);
       expect(throttle!.ttl).toBe(60000);
     });
 

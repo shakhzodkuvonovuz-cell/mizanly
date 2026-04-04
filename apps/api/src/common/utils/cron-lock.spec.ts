@@ -44,8 +44,11 @@ describe('acquireCronLock', () => {
     const redis = { set: jest.fn().mockResolvedValue('OK') } as any;
     await acquireCronLock(redis, 'cron:jobA', 55, logger);
     await acquireCronLock(redis, 'cron:jobB', 55, logger);
-    expect(redis.set).toHaveBeenCalledTimes(2);
+    // Each acquireCronLock makes 2 set calls: lock + lastrun timestamp
+    expect(redis.set).toHaveBeenCalledTimes(4);
     expect(redis.set).toHaveBeenNthCalledWith(1, 'cron:jobA', '1', 'EX', 55, 'NX');
-    expect(redis.set).toHaveBeenNthCalledWith(2, 'cron:jobB', '1', 'EX', 55, 'NX');
+    // 2nd call is the lastrun timestamp for jobA
+    expect(redis.set).toHaveBeenNthCalledWith(3, 'cron:jobB', '1', 'EX', 55, 'NX');
+    // 4th call is the lastrun timestamp for jobB
   });
 });

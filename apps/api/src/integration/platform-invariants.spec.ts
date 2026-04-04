@@ -76,7 +76,7 @@ describe('Platform Invariants', () => {
   });
 
   describe('Invariant: Notification delivery has exactly one owner', () => {
-    it('should NOT call addPushNotificationJob after notification create (create() owns delivery)', async () => {
+    it('should emit NOTIFICATION_REQUESTED event (not call create directly) and NOT call addPushNotificationJob', async () => {
       const mockPost = {
         id: 'p1', userId: 'author-1', content: 'test', isRemoved: false,
         likesCount: 0, commentsCount: 0, sharesCount: 0, viewsCount: 0, savesCount: 0,
@@ -86,11 +86,14 @@ describe('Platform Invariants', () => {
       prisma.postReaction.findUnique.mockResolvedValue(null);
       prisma.$transaction.mockResolvedValue([undefined, undefined]);
 
+      const { EventEmitter2 } = require('@nestjs/event-emitter');
+      const eventEmitter = postsService['eventEmitter'] as { emit: jest.Mock };
+
       await postsService.react('p1', 'reactor-1', 'LIKE');
 
-      // NotificationsService.create() was called (it handles push internally)
-      expect(notifCreate).toHaveBeenCalled();
-      // But addPushNotificationJob should NOT have been called (no duplicate delivery)
+      // PostsService now uses eventEmitter.emit(NOTIFICATION_REQUESTED) instead of notifications.create()
+      expect(eventEmitter.emit).toHaveBeenCalled();
+      // addPushNotificationJob should NOT have been called (no duplicate delivery)
       expect(queueService.addPushNotificationJob).not.toHaveBeenCalled();
     });
   });

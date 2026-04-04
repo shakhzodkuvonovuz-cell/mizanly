@@ -518,8 +518,7 @@ describe('Final Push Part 3 — breaking 3800', () => {
     it('deleteEvent — organizer can delete', async () => {
       prisma.event.findUnique.mockResolvedValue(ev);
       prisma.event.delete.mockResolvedValue({});
-      const result = await service.deleteEvent('organizer', 'e-1');
-      expect(result).toBeDefined();
+      await service.deleteEvent('organizer', 'e-1');
       expect(prisma.event.delete).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'e-1' } }));
     });
 

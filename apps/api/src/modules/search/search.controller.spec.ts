@@ -45,7 +45,7 @@ describe('SearchController', () => {
     it('should call searchService.search with validated params', async () => {
       service.search.mockResolvedValue({ data: [], meta: { hasMore: false } } as any);
 
-      await controller.search('islam', 'posts', 'cursor-1');
+      await controller.search({ q: 'islam', type: 'posts', cursor: 'cursor-1' } as any);
 
       expect(service.search).toHaveBeenCalledWith('islam', 'posts', 'cursor-1', 20, undefined);
     });
@@ -53,15 +53,15 @@ describe('SearchController', () => {
     it('should cap limit at 50', async () => {
       service.search.mockResolvedValue({ data: [], meta: { hasMore: false } } as any);
 
-      await controller.search('islam', 'posts', undefined, '999');
+      await controller.search({ q: 'islam', type: 'posts', limit: '999' } as any);
 
       expect(service.search).toHaveBeenCalledWith('islam', 'posts', undefined, 50, undefined);
     });
 
-    it('should reject invalid type', async () => {
+    it('should pass through type as-is from validated DTO', async () => {
       service.search.mockResolvedValue({ data: [], meta: { hasMore: false } } as any);
 
-      await controller.search('islam', 'invalid');
+      await controller.search({ q: 'islam' } as any);
 
       expect(service.search).toHaveBeenCalledWith('islam', undefined, undefined, 20, undefined);
     });
@@ -82,7 +82,7 @@ describe('SearchController', () => {
     it('should call searchService.getHashtagPosts with tag and cursor', async () => {
       service.getHashtagPosts.mockResolvedValue({ data: [] } as any);
 
-      await controller.getHashtagPosts('ramadan', 'cursor-1');
+      await controller.getHashtagPosts('ramadan', { cursor: 'cursor-1' } as any);
 
       expect(service.getHashtagPosts).toHaveBeenCalledWith('ramadan', 'cursor-1', undefined, undefined);
     });
@@ -102,7 +102,7 @@ describe('SearchController', () => {
     it('should call searchService.getSuggestions with capped limit', async () => {
       service.getSuggestions.mockResolvedValue({ users: [], hashtags: [] } as any);
 
-      await controller.querySuggestions('isl', '5');
+      await controller.querySuggestions({ q: 'isl', limit: '5' } as any);
 
       expect(service.getSuggestions).toHaveBeenCalledWith('isl', 5);
     });
@@ -133,13 +133,13 @@ describe('SearchController', () => {
   describe('searchPosts — #43 M', () => {
     it('should delegate to searchService.searchPosts with parsed limit and userId', async () => {
       service.searchPosts.mockResolvedValue({ data: [], meta: { hasMore: false } } as any);
-      await controller.searchPosts('quran', 'cursor1', '15', 'user-1');
+      await controller.searchPosts({ q: 'quran', cursor: 'cursor1', limit: '15' } as any, 'user-1');
       expect(service.searchPosts).toHaveBeenCalledWith('quran', 'user-1', 'cursor1', 15);
     });
 
     it('should cap limit at 50', async () => {
       service.searchPosts.mockResolvedValue({ data: [], meta: { hasMore: false } } as any);
-      await controller.searchPosts('test', undefined, '999');
+      await controller.searchPosts({ q: 'test', limit: '999' } as any);
       expect(service.searchPosts).toHaveBeenCalledWith('test', undefined, undefined, 50);
     });
   });
@@ -147,7 +147,7 @@ describe('SearchController', () => {
   describe('searchThreads — #44 M', () => {
     it('should delegate to searchService.searchThreads with parsed limit and userId', async () => {
       service.searchThreads.mockResolvedValue({ data: [], meta: { hasMore: false } } as any);
-      await controller.searchThreads('islam', 'cursor1', '25', 'user-1');
+      await controller.searchThreads({ q: 'islam', cursor: 'cursor1', limit: '25' } as any, 'user-1');
       expect(service.searchThreads).toHaveBeenCalledWith('islam', 'cursor1', 25, 'user-1');
     });
   });
@@ -155,7 +155,7 @@ describe('SearchController', () => {
   describe('searchReels — #45 M', () => {
     it('should delegate to searchService.searchReels with parsed limit and userId', async () => {
       service.searchReels.mockResolvedValue({ data: [], meta: { hasMore: false } } as any);
-      await controller.searchReels('nasheed', 'cursor1', '10', 'user-1');
+      await controller.searchReels({ q: 'nasheed', cursor: 'cursor1', limit: '10' } as any, 'user-1');
       expect(service.searchReels).toHaveBeenCalledWith('nasheed', 'cursor1', 10, 'user-1');
     });
   });

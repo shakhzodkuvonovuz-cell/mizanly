@@ -37,6 +37,12 @@ describe('LiveService', () => {
       publish: jest.fn().mockResolvedValue(1),
     };
 
+    // Add follow mock for notification queries in startLive/goLiveFromRehearsal
+    prisma.follow = {
+      findMany: jest.fn().mockResolvedValue([]),
+      findUnique: jest.fn().mockResolvedValue(null),
+    };
+
     const module = await Test.createTestingModule({
       providers: [
         ...globalMockProviders,LiveService,

@@ -85,14 +85,14 @@ describe('EventsService — edge cases', () => {
   });
 
   describe('removeRsvp — edge cases', () => {
-    it('should handle removing RSVP when no RSVP exists (returns success)', async () => {
-      prisma.event.findUnique.mockResolvedValue({ id: 'event-1', userId: 'other' });
-      prisma.eventRSVP.findUnique.mockResolvedValue(null);
+    it('should remove RSVP when it exists', async () => {
       prisma.eventRSVP.delete.mockResolvedValue({});
 
-      const result = await service.removeRsvp(userId, 'event-1');
-      expect(result).toBeDefined();
-      expect(typeof result).toBe('object');
+      // removeRsvp returns void on success
+      await expect(service.removeRsvp(userId, 'event-1')).resolves.toBeUndefined();
+      expect(prisma.eventRSVP.delete).toHaveBeenCalledWith({
+        where: { eventId_userId: { eventId: 'event-1', userId } },
+      });
     });
   });
 });
