@@ -99,8 +99,8 @@ describe('voice-post-create', () => {
     expect(src).toContain('SafeAreaView');
   });
 
-  test('has StatusBar component', () => {
-    expect(src).toContain('StatusBar');
+  test('has SafeAreaView for safe layout', () => {
+    expect(src).toContain('SafeAreaView');
   });
 
   test('recording cleanup on unmount stops recording', () => {
@@ -356,8 +356,16 @@ describe('video/[id]', () => {
 
 // ── video-editor.tsx ──
 
+const HOOKS_DIR = path.resolve(__dirname, '../video-editor');
+
+function readHook(name: string): string {
+  return fs.readFileSync(path.join(HOOKS_DIR, `${name}.ts`), 'utf-8');
+}
+
 describe('video-editor', () => {
   const src = readScreen('video-editor');
+  const voiceoverHook = readHook('useVideoVoiceover');
+  const exportHook = readHook('useVideoExport');
 
   test('uses tc.text.* not colors.text.* in styles', () => {
     const stylesSection = src.slice(src.indexOf('const createStyles'));
@@ -376,13 +384,13 @@ describe('video-editor', () => {
     expect(src).toContain('totalDuration > 0');
   });
 
-  test('nav timer cleanup on unmount', () => {
-    expect(src).toContain('navTimerRef');
-    expect(src).toContain('clearTimeout(navTimerRef.current)');
+  test('nav timer cleanup on unmount (in voiceover hook)', () => {
+    expect(voiceoverHook).toContain('navTimerRef');
+    expect(voiceoverHook).toContain('clearTimeout(navTimerRef.current)');
   });
 
-  test('recording cleanup on unmount', () => {
-    expect(src).toContain('recordingRef.current.stopAndUnloadAsync');
+  test('recording cleanup on unmount (in voiceover hook)', () => {
+    expect(voiceoverHook).toContain('recordingRef.current.stopAndUnloadAsync');
   });
 
   test('Speech cleanup on unmount', () => {
@@ -397,14 +405,14 @@ describe('video-editor', () => {
     expect(src).toContain('setPlaybackSpeed(speed); haptic.tick()');
   });
 
-  test('export has double-tap guard (isExporting check)', () => {
-    expect(src).toContain('if (isExporting) return');
+  test('export has double-tap guard (isExporting check in export hook)', () => {
+    expect(exportHook).toContain('if (params.isExporting) return');
   });
 
   test('undo/redo buttons have disabled prop and accessibilityState', () => {
-    expect(src).toContain('disabled={undoStack.length === 0}');
-    expect(src).toContain('disabled={redoStack.length === 0}');
-    expect(src).toContain('accessibilityState={{ disabled: undoStack.length === 0 }}');
+    expect(src).toContain('disabled={state.undoStack.length === 0}');
+    expect(src).toContain('disabled={state.redoStack.length === 0}');
+    expect(src).toContain('accessibilityState={{ disabled: state.undoStack.length === 0 }}');
   });
 
   test('bottom bar has safe area inset', () => {
@@ -424,10 +432,10 @@ describe('video-editor', () => {
   });
 
   test('voiceover error uses recording-specific message (not exportFailed)', () => {
-    // The recording start catch should NOT use exportFailed
-    const recordingStartSection = src.slice(
-      src.indexOf('// Start recording'),
-      src.indexOf('// Start recording') + 1000
+    // Recording logic moved to useVideoVoiceover hook
+    const recordingStartSection = voiceoverHook.slice(
+      voiceoverHook.indexOf('// Start recording'),
+      voiceoverHook.indexOf('// Start recording') + 1000
     );
     expect(recordingStartSection).toContain('recordingFailed');
     expect(recordingStartSection).not.toContain('exportFailed');

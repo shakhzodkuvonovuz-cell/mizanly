@@ -213,8 +213,8 @@ describe('prayer-times', () => {
     expect(src).toContain('rtlFlexRow(isRTL)');
   });
 
-  test('imports rtlFlexRow', () => {
-    expect(src).toContain("import { rtlFlexRow }");
+  test('imports rtlFlexRow and rtlChevron', () => {
+    expect(src).toContain("import { rtlFlexRow, rtlChevron }");
   });
 
   test('RTL applied to location, qibla, section, method, settings rows', () => {
