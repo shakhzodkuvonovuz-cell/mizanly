@@ -241,6 +241,20 @@ export default function HifzTrackerScreen() {
     reviewQuery.refetch();
   }, [progressQuery, statsQuery, reviewQuery]);
 
+  const renderSurahItem = useCallback(
+    ({ item }: { item: typeof SURAHS[0] }) => {
+      const progress = progressMap.get(item.num) ?? { surahNum: item.num, status: 'not_started', lastReviewedAt: null };
+      return (
+        <SurahRow
+          surah={item}
+          progress={progress}
+          onPress={() => { haptic.tick(); setStatusSheet({ visible: true, surahNum: item.num }); }}
+        />
+      );
+    },
+    [progressMap, haptic],
+  );
+
   const listHeader = useMemo(() => (
     <View>
       {/* Stats */}
@@ -318,16 +332,7 @@ export default function HifzTrackerScreen() {
         <FlatList
           data={SURAHS}
           keyExtractor={(item) => String(item.num)}
-          renderItem={({ item }) => {
-            const progress = progressMap.get(item.num) ?? { surahNum: item.num, status: 'not_started', lastReviewedAt: null };
-            return (
-              <SurahRow
-                surah={item}
-                progress={progress}
-                onPress={() => { haptic.tick(); setStatusSheet({ visible: true, surahNum: item.num }); }}
-              />
-            );
-          }}
+          renderItem={renderSurahItem}
           ListHeaderComponent={listHeader}
           refreshControl={
             <BrandedRefreshControl refreshing={progressQuery.isRefetching} onRefresh={handleRefresh} />

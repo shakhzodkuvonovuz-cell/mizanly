@@ -94,6 +94,41 @@ export default function MutedScreen() {
     />
   ), [t]);
 
+  const renderMutedItem = useCallback(
+    ({ item, index }: { item: MutedUser; index: number }) => {
+      const u = item.muted;
+      return (
+          <Animated.View entering={FadeInUp.delay(Math.min(index, 10) * 30).duration(300)}>
+            <LinearGradient
+              colors={colors.gradient.cardDark}
+              style={styles.row}
+            >
+              <Avatar uri={u.avatarUrl} name={u.displayName} size="md" />
+              <View style={styles.info}>
+                <Text style={[styles.name, { color: tc.text.primary }]}>{u.displayName}</Text>
+                <View style={styles.mutedBadge}>
+                  <Icon name="volume-x" size={10} color={tc.text.tertiary} />
+                  <Text style={[styles.username, { color: tc.text.secondary }]}>@{u.username}</Text>
+                </View>
+              </View>
+              <GradientButton
+                label={t('screens.muted.unmute')}
+                variant="secondary"
+                size="sm"
+                onPress={() => {
+                  haptic.tick();
+                  unmuteMutation.mutate(u.id);
+                }}
+                loading={unmuteMutation.isPending && unmuteMutation.variables === u.id}
+                disabled={unmuteMutation.isPending && unmuteMutation.variables === u.id}
+              />
+            </LinearGradient>
+          </Animated.View>
+      );
+    },
+    [haptic, unmuteMutation, tc.text.primary, tc.text.secondary, tc.text.tertiary, t],
+  );
+
   if (query.isError) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
@@ -145,38 +180,7 @@ export default function MutedScreen() {
           refreshControl={
             <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
-          renderItem={({ item, index }) => {
-            const u = item.muted;
-            return (
-                <Animated.View entering={FadeInUp.delay(Math.min(index, 10) * 30).duration(300)}>
-                  <LinearGradient
-                    colors={colors.gradient.cardDark}
-                    style={styles.row}
-                  >
-                    <Avatar uri={u.avatarUrl} name={u.displayName} size="md" />
-                    <View style={styles.info}>
-                      <Text style={[styles.name, { color: tc.text.primary }]}>{u.displayName}</Text>
-                      <View style={styles.mutedBadge}>
-                        <Icon name="volume-x" size={10} color={tc.text.tertiary} />
-                        <Text style={[styles.username, { color: tc.text.secondary }]}>@{u.username}</Text>
-                      </View>
-                    </View>
-                    <GradientButton
-                      label={t('screens.muted.unmute')}
-                      variant="secondary"
-                      size="sm"
-                      onPress={() => {
-                        haptic.tick();
-                        unmuteMutation.mutate(u.id);
-                      }}
-                      loading={unmuteMutation.isPending && unmuteMutation.variables === u.id}
-                      disabled={unmuteMutation.isPending && unmuteMutation.variables === u.id}
-                    />
-                  </LinearGradient>
-                </Animated.View>
-            
-            );
-          }}
+          renderItem={renderMutedItem}
           ListFooterComponent={listFooter}
           ListEmptyComponent={listEmpty}
         />

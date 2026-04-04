@@ -154,6 +154,44 @@ export default function HalalFinderScreen() {
     if (url) Linking.openURL(url).catch(() => {});
   }, []);
 
+  const renderCuisineChip = useCallback(
+    ({ item }: { item: string }) => (
+      <Pressable
+        onPress={() => {
+          haptic.tick();
+          setSelectedCuisine(selectedCuisine === item ? null : item);
+        }}
+        style={[
+          styles.chip, { backgroundColor: tc.bgElevated, borderColor: tc.border },
+          selectedCuisine === item && styles.chipActive,
+        ]}
+        accessibilityLabel={item}
+        accessibilityRole="button"
+      >
+        <Text style={[
+          styles.chipText,
+          { color: tc.text.secondary },
+          selectedCuisine === item && styles.chipTextActive,
+        ]}>
+          {item}
+        </Text>
+      </Pressable>
+    ),
+    [haptic, selectedCuisine, tc.bgElevated, tc.border, tc.text.secondary],
+  );
+
+  const renderRestaurantItem = useCallback(
+    ({ item, index }: { item: HalalRestaurant; index: number }) => (
+      <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
+        <RestaurantCard
+          restaurant={item}
+          onPress={() => handleOpenDirections(item)}
+        />
+      </Animated.View>
+    ),
+    [handleOpenDirections],
+  );
+
   const listHeader = useMemo(() => (
     <View>
       {/* Cuisine filter chips */}
@@ -163,28 +201,7 @@ export default function HalalFinderScreen() {
         data={CUISINE_TYPES}
         keyExtractor={(item) => item}
         contentContainerStyle={styles.chipsContainer}
-        renderItem={({ item }) => (
-          <Pressable
-            onPress={() => {
-              haptic.tick();
-              setSelectedCuisine(selectedCuisine === item ? null : item);
-            }}
-            style={[
-              styles.chip, { backgroundColor: tc.bgElevated, borderColor: tc.border },
-              selectedCuisine === item && styles.chipActive,
-            ]}
-            accessibilityLabel={item}
-            accessibilityRole="button"
-          >
-            <Text style={[
-              styles.chipText,
-              { color: tc.text.secondary },
-              selectedCuisine === item && styles.chipTextActive,
-            ]}>
-              {item}
-            </Text>
-          </Pressable>
-        )}
+        renderItem={renderCuisineChip}
       />
     </View>
   ), [selectedCuisine, haptic, tc]);
@@ -216,14 +233,7 @@ export default function HalalFinderScreen() {
         <FlatList
           data={restaurants}
           keyExtractor={(item) => item.id}
-          renderItem={({ item, index }) => (
-            <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
-              <RestaurantCard
-                restaurant={item}
-                onPress={() => handleOpenDirections(item)}
-              />
-            </Animated.View>
-          )}
+          renderItem={renderRestaurantItem}
           ListHeaderComponent={listHeader}
           ListEmptyComponent={listEmpty}
           refreshControl={

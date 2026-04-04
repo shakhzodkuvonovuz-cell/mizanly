@@ -73,11 +73,37 @@ export default function LinkChildAccountScreen() {
     },
   });
 
-  const handleSelectUser = (user: User) => {
+  const handleSelectUser = useCallback((user: User) => {
     haptic.tick();
     setSelectedUser(user);
     setPinStep('confirm');
-  };
+  }, [haptic]);
+
+  const renderUserSearchItem = useCallback(
+    ({ item }: { item: User }) => (
+      <Pressable
+        accessibilityRole="button"
+        style={[styles.userRow, { borderBottomColor: tc.border }, { flexDirection: rtlFlexRow(isRTL) }]}
+        onPress={() => handleSelectUser(item)}
+      >
+        <Avatar
+          uri={item.avatarUrl ?? null}
+          name={item.displayName ?? item.username}
+          size="md"
+        />
+        <View style={[styles.userInfo, rtlMargin(isRTL, spacing.md, 0)]}>
+          <Text style={[styles.userName, { color: tc.text.primary, textAlign: rtlTextAlign(isRTL) }]}>
+            {item.displayName ?? item.username}
+          </Text>
+          <Text style={[styles.userHandle, { color: tc.text.secondary, textAlign: rtlTextAlign(isRTL) }]}>
+            @{item.username}
+          </Text>
+        </View>
+        <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
+      </Pressable>
+    ),
+    [handleSelectUser, tc.border, tc.text.primary, tc.text.secondary, tc.text.tertiary, isRTL],
+  );
 
   const handleConfirm = () => {
     haptic.tick();
@@ -279,29 +305,7 @@ export default function LinkChildAccountScreen() {
                 onRefresh={() => searchResults.refetch()}
               />
             }
-            renderItem={({ item }) => (
-              <Pressable
-                accessibilityRole="button"
-                style={[styles.userRow, { borderBottomColor: tc.border }, { flexDirection: rtlFlexRow(isRTL) }]}
-                onPress={() => handleSelectUser(item)}
-
-              >
-                <Avatar
-                  uri={item.avatarUrl ?? null}
-                  name={item.displayName ?? item.username}
-                  size="md"
-                />
-                <View style={[styles.userInfo, rtlMargin(isRTL, spacing.md, 0)]}>
-                  <Text style={[styles.userName, { color: tc.text.primary, textAlign: rtlTextAlign(isRTL) }]}>
-                    {item.displayName ?? item.username}
-                  </Text>
-                  <Text style={[styles.userHandle, { color: tc.text.secondary, textAlign: rtlTextAlign(isRTL) }]}>
-                    @{item.username}
-                  </Text>
-                </View>
-                <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
-              </Pressable>
-            )}
+            renderItem={renderUserSearchItem}
             ListEmptyComponent={
               searchResults.isLoading ? (
                 <View style={{ gap: spacing.md, paddingTop: spacing.md }}>

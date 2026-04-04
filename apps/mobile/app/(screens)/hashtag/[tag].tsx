@@ -140,6 +140,18 @@ export default function HashtagScreen() {
     ) : null
   , [postsQuery.isFetchingNextPage]);
 
+  const renderGridItem = useCallback(
+    ({ item, index }: { item: Post; index: number }) => (
+      <Animated.View entering={FadeInUp.delay(Math.min(index, 10) * 50).duration(400)}>
+        <GridItem
+          post={item}
+          onPress={() => router.push(`/(screens)/post/${item.id}`)}
+        />
+      </Animated.View>
+    ),
+    [router],
+  );
+
   if (postsQuery.isError) {
     return (
       <View style={styles.container}>
@@ -213,14 +225,7 @@ export default function HashtagScreen() {
               onRefresh={() => postsQuery.refetch()}
             />
           }
-          renderItem={({ item, index }) => (
-            <Animated.View entering={FadeInUp.delay(Math.min(index, 10) * 50).duration(400)}>
-              <GridItem
-                post={item}
-                onPress={() => router.push(`/(screens)/post/${item.id}`)}
-              />
-            </Animated.View>
-          )}
+          renderItem={renderGridItem}
           ListEmptyComponent={listEmpty}
           ListFooterComponent={listFooter}
           contentContainerStyle={{ paddingBottom: 40 }}

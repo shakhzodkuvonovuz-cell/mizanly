@@ -272,6 +272,13 @@ export default function MosqueFinderScreen() {
     fetchData();
   }, [fetchData]);
 
+  const renderMosqueItem = useCallback(
+    ({ item, index }: { item: Mosque; index: number }) => (
+      <MosqueCard mosque={item} index={index} />
+    ),
+    [],
+  );
+
   const filteredMosques = useMemo(() => {
     if (!searchQuery.trim()) return mosques;
     const query = searchQuery.toLowerCase();
@@ -412,9 +419,7 @@ export default function MosqueFinderScreen() {
               </View>
             </>
           }
-          renderItem={({ item, index }) => (
-            <MosqueCard mosque={item} index={index} />
-          )}
+          renderItem={renderMosqueItem}
           ListEmptyComponent={
             <EmptyState
               icon="map-pin"

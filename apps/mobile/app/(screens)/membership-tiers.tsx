@@ -220,6 +220,17 @@ export default function MembershipTiersScreen() {
     }
   }, [fetchData, haptic]);
 
+  const renderTierItem = useCallback(
+    ({ item, index }: { item: MembershipTier; index: number }) => (
+      <TierCard
+        tier={item}
+        index={index}
+        onToggle={() => toggleTier(item.id)}
+      />
+    ),
+    [toggleTier],
+  );
+
   const handleCreateTier = useCallback(async () => {
     if (!currentUser) {
       showToast({ message: t('monetization.errors.userNotLoaded'), variant: 'error' });
@@ -307,13 +318,7 @@ export default function MembershipTiersScreen() {
                 </Animated.View>
               </>
             }
-            renderItem={({ item, index }) => (
-              <TierCard
-                tier={item}
-                index={index}
-                onToggle={() => toggleTier(item.id)}
-              />
-            )}
+            renderItem={renderTierItem}
             ListFooterComponent={
               <>
                 {/* Create New Tier Button / Form */}
