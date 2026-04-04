@@ -2334,4 +2334,34 @@ export class IslamicService {
 
     return { grade: null, collection: null };
   }
+
+  /**
+   * J07-C1: Hourly reconciliation of community dhikr counter.
+   * Compares Redis counter against DB SUM and corrects drift.
+   * Prevents silent divergence from lost increments, Redis restarts, or TTL expiry.
+   */
+  @Cron('0 * * * *') // Every hour, on the hour
+  async reconcileDhikrCounter() {
+    try {
+      if (!await acquireCronLock(this.redis, 'cron:reconcileDhikrCounter', 3500, this.logger)) return;
+
+      const dbResult = await this.prisma.dhikrSession.aggregate({ _sum: { count: true } });
+      const dbTotal = dbResult._sum.count ?? 0;
+
+      const redisRaw = await this.redis.get('community:dhikr:total');
+      const redisTotal = redisRaw ? parseInt(redisRaw, 10) : 0;
+
+      const drift = Math.abs(dbTotal - redisTotal);
+      if (drift === 0) return;
+
+      // Correct Redis to match DB (DB is source of truth)
+      await this.redis.setex('community:dhikr:total', 30 * 24 * 60 * 60, String(dbTotal));
+      this.logger.warn(
+        `Dhikr counter reconciled: Redis had ${redisTotal}, DB has ${dbTotal} (drift: ${drift})`,
+      );
+    } catch (error) {
+      this.logger.error('reconcileDhikrCounter cron failed', error instanceof Error ? error.message : error);
+      Sentry.captureException(error);
+    }
+  }
 }

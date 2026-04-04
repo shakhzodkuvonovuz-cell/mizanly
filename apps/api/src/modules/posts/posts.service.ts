@@ -1961,7 +1961,11 @@ export class PostsService {
     // Use Redis HyperLogLog for unique impression counting per post
     try {
       if (this.redis.pfadd) {
-        await this.redis.pfadd(`post:impressions:${postId}`, userId);
+        const key = `post:impressions:${postId}`;
+        await this.redis.pfadd(key, userId);
+        // J07-C2: Set 7-day TTL on HyperLogLog to prevent unbounded Redis memory growth
+        // Each HLL is 12KB — at 100K posts without TTL this would be 1.2GB
+        await this.redis.expire(key, 7 * 86400);
         return { tracked: true };
       }
     } catch {
