@@ -124,6 +124,7 @@ func main() {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
 				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 				w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+				w.Header().Set("Access-Control-Max-Age", "86400") // G06: cache preflight for 24h
 				w.Header().Set("Vary", "Origin")
 			}
 			if r.Method == "OPTIONS" {

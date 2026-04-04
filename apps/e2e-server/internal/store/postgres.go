@@ -537,9 +537,15 @@ type TransparencyRoot struct {
 // requests use the cached tree (O(log n) proof lookup instead of O(n) rebuild).
 // V5-F4: Caller MUST hold s.mu write lock.
 func (s *Store) rebuildMerkleCacheLocked(ctx context.Context) error {
+	// G02: Bound the DB query to 30s to prevent indefinite blocking if the
+	// database is slow or the connection is stalled. The parent context is
+	// preserved so callers can still cancel.
+	queryCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
 	// V8-F9 FIX: Include deviceId in query and cache keys. Previously only userId was used,
 	// so multi-device users had their leaf indices overwritten (only last device indexed).
-	rows, err := s.pool.Query(ctx,
+	rows, err := s.pool.Query(queryCtx,
 		`SELECT "userId", "deviceId", "publicKey" FROM e2e_identity_keys ORDER BY "createdAt" ASC`,
 	)
 	if err != nil {

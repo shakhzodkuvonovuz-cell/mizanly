@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/redis/go-redis/v9"
@@ -91,13 +92,17 @@ func (rl *RateLimiter) RateLimitMiddleware(targetIDFunc func(*http.Request) stri
 			if requesterID == "" || targetID == "" {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusBadRequest)
-				w.Write([]byte(`{"error":"bad request","message":"missing requester or target ID"}`))
+				if _, err := w.Write([]byte(`{"error":"bad request","message":"missing requester or target ID"}`)); err != nil {
+					slog.Error("write error response failed", "error", err)
+				}
 				return
 			}
 			if err := rl.CheckBundleFetch(r.Context(), requesterID, targetID); err != nil {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusTooManyRequests)
-				w.Write([]byte(`{"error":"rate limit exceeded"}`))
+				if _, err := w.Write([]byte(`{"error":"rate limit exceeded"}`)); err != nil {
+					slog.Error("write rate limit response failed", "error", err)
+				}
 				return
 			}
 			next.ServeHTTP(w, r)
