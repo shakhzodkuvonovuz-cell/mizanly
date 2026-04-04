@@ -1042,7 +1042,7 @@
     "separated": "Separated",
     "divorced": "Divorced",
     "preferNotToSay": "أفضل عدم الإفصاح",
-    "shareMessage": "Check out @{{username}} on Mizanly!",
+    "shareMessage": "اطلع على @{{username}} على ميزانلي!",
     "noContent": "No content yet",
     "noLikedPosts": "No liked posts yet",
     "threads": "Threads",
@@ -2119,7 +2119,7 @@
       "errorSubtitle": "يرجى المحاولة مرة أخرى",
       "profileUnavailable": "الملف الشخصي غير متاح",
       "profileUnavailableDesc": "تعذر تحميل ملفك الشخصي",
-      "shareTitle": "Check out {{name}}'s profile on Mizanly"
+      "shareTitle": "اطلع على ملف {{name}} على ميزانلي"
     },
     "sound": {
       "title": "صوت",
@@ -4958,5 +4958,15 @@
     "setForThis": "تعيين لهذه المحادثة فقط",
     "wallpaperApplied": "تم تطبيق الخلفية",
     "wallpaperRemoved": "تم إزالة الخلفية"
+  },
+  "time": {
+    "justNow": "الآن",
+    "minutesAgo": "منذ {{count}} د",
+    "hoursAgo": "منذ {{count}} س",
+    "daysAgo": "منذ {{count}} ي"
+  },
+  "distance": {
+    "km": "{{value}} كم",
+    "m": "{{value}} م"
   }
 }

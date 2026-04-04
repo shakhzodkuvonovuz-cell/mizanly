@@ -1042,7 +1042,7 @@
     "separated": "Ayrılmış",
     "divorced": "Boşanmış",
     "preferNotToSay": "Belirtmek istemiyorum",
-    "shareMessage": "Check out @{{username}} on Mizanly!",
+    "shareMessage": "Mizanly'da @{{username}} profiline göz atın!",
     "noContent": "No content yet",
     "noLikedPosts": "No liked posts yet",
     "threads": "Threads",
@@ -2402,7 +2402,7 @@
       "errorSubtitle": "Lütfen tekrar deneyin",
       "profileUnavailable": "Profil kullanılamıyor",
       "profileUnavailableDesc": "Profiliniz yüklenemedi",
-      "shareTitle": "Check out {{name}}'s profile on Mizanly"
+      "shareTitle": "Mizanly'da {{name}} profilini inceleyin"
     },
     "sound": {
       "title": "Ses",
@@ -4958,5 +4958,15 @@
     "setForThis": "Set for this chat only",
     "wallpaperApplied": "Wallpaper applied",
     "wallpaperRemoved": "Wallpaper removed"
+  },
+  "time": {
+    "justNow": "az önce",
+    "minutesAgo": "{{count}}dk önce",
+    "hoursAgo": "{{count}}sa önce",
+    "daysAgo": "{{count}}g önce"
+  },
+  "distance": {
+    "km": "{{value}} km",
+    "m": "{{value}} m"
   }
 }

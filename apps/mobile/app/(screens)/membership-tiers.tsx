@@ -28,6 +28,7 @@ import { usersApi } from '@/services/api';
 import type { MembershipTier, MembershipSubscription } from '@/types/monetization';
 import type { User } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { formatCurrency, formatNumber } from '@/utils/localeFormat';
 import { showToast } from '@/components/ui/Toast';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 
@@ -89,7 +90,7 @@ function TierCard({
             <View>
               <Text style={[styles.tierName, { color: tc.text.primary }]}>{tier.name}</Text>
               <Text style={[styles.tierPrice, { color: tierColors.color }]}>
-                ${tier.price.toFixed(2)}/{t('monetization.perMonth', 'month')}
+                {formatCurrency(tier.price)}/{t('monetization.perMonth', 'month')}
               </Text>
             </View>
           </View>
@@ -454,7 +455,7 @@ export default function MembershipTiersScreen() {
                     </View>
 
                     <Text style={styles.revenueAmount}>
-                      ${monthlyRevenue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}/month
+                      {formatCurrency(monthlyRevenue)}/{t('monetization.perMonth', 'month')}
                     </Text>
 
                     <View style={[styles.revenueStats, { flexDirection: rtlFlexRow(isRTL) }]}>

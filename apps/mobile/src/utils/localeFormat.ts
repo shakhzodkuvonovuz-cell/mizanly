@@ -54,6 +54,26 @@ export function formatDate(date: Date | string, style: 'short' | 'medium' | 'lon
 }
 
 /**
+ * Format a date+time with locale-appropriate format.
+ * e.g., "April 5, 2026, 3:30 PM" (en) or "٥ أبريل ٢٠٢٦ ٣:٣٠ م" (ar)
+ */
+export function formatDateTime(date: Date | string): string {
+  const locale = i18next.language || 'en';
+  const d = typeof date === 'string' ? new Date(date) : date;
+  try {
+    return new Intl.DateTimeFormat(locale, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    }).format(d);
+  } catch {
+    return d.toLocaleString();
+  }
+}
+
+/**
  * Format a relative time (e.g., "2 hours ago", "in 3 days").
  */
 export function formatRelativeTime(date: Date | string): string {
@@ -71,11 +91,12 @@ export function formatRelativeTime(date: Date | string): string {
     if (Math.abs(diffSec) < 604800) return rtf.format(-Math.floor(diffSec / 86400), 'day');
     return formatDate(d, 'short');
   } catch {
-    // Fallback
-    if (diffSec < 60) return 'just now';
-    if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
-    if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
-    return `${Math.floor(diffSec / 86400)}d ago`;
+    // Fallback — use i18n keys for translatable relative time
+    const t = i18next.t.bind(i18next);
+    if (diffSec < 60) return t('time.justNow', 'just now');
+    if (diffSec < 3600) return t('time.minutesAgo', { count: Math.floor(diffSec / 60), defaultValue: '{{count}}m ago' });
+    if (diffSec < 86400) return t('time.hoursAgo', { count: Math.floor(diffSec / 3600), defaultValue: '{{count}}h ago' });
+    return t('time.daysAgo', { count: Math.floor(diffSec / 86400), defaultValue: '{{count}}d ago' });
   }
 }
 

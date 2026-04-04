@@ -29,6 +29,7 @@ import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { formatNumber as localeFormatNumber } from '@/utils/localeFormat';
 
 // width now retrieved via useWindowDimensions() inside components
 
@@ -248,7 +249,9 @@ export default function MosqueFinderScreen() {
         id: m.id,
         name: m.name,
         address: m.address,
-        distance: m.distanceKm >= 1 ? `${m.distanceKm.toFixed(1)} km` : `${Math.round(m.distanceKm * 1000)} m`,
+        distance: m.distanceKm >= 1
+          ? t('distance.km', { value: localeFormatNumber(parseFloat(m.distanceKm.toFixed(1))), defaultValue: '{{value}} km' })
+          : t('distance.m', { value: localeFormatNumber(Math.round(m.distanceKm * 1000)), defaultValue: '{{value}} m' }),
         nextPrayer: computeNextPrayer(m.prayerTimes),
         nextPrayerTime: computeNextPrayerTime(m.prayerTimes),
         facilities: m.facilities,

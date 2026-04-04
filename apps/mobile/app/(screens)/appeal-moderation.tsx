@@ -28,6 +28,7 @@ import { appealsApi } from '@/services/api';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { showToast } from '@/components/ui/Toast';
+import { formatDate } from '@/utils/localeFormat';
 
 type AppealReason =
   | 'no-violation'
@@ -74,9 +75,7 @@ export default function AppealModerationScreen() {
       return {
         id: appeal.id,
         number: appeal.appealNumber ?? 1,
-        submittedDate: new Date(appeal.createdAt).toLocaleDateString('en-US', {
-          year: 'numeric', month: 'long', day: 'numeric',
-        }),
+        submittedDate: formatDate(appeal.createdAt, 'long'),
         status: (appeal.status as AppealStatus) || 'submitted',
       };
     },

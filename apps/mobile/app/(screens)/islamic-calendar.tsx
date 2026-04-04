@@ -19,6 +19,7 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { rtlFlexRow } from '@/utils/rtl';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { formatDate } from '@/utils/localeFormat';
 import { eventsApi } from '@/services/eventsApi';
 import {
   gregorianToHijri,
@@ -302,13 +303,8 @@ export default function IslamicCalendarScreen() {
   );
   const todayGregorian = useMemo(() => {
     const now = new Date();
-    return now.toLocaleDateString(isRTL ? 'ar' : 'en', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  }, [isRTL]);
+    return formatDate(now, 'long');
+  }, []);
 
   // Month state: 0-based (0 = Muharram), year is Hijri year
   const [currentMonth, setCurrentMonth] = useState(todayHijri.month - 1); // convert 1-based to 0-based

@@ -27,6 +27,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { formatCurrency as localeFormatCurrency } from '@/utils/localeFormat';
 import { rtlFlexRow } from '@/utils/rtl';
 import { islamicApi } from '@/services/islamicApi';
 
@@ -297,7 +298,7 @@ export default function ZakatCalculatorScreen() {
   }, [haptic, netWealth, zakatDue, t]);
 
   const formatCurrency = (value: number) => {
-    return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return localeFormatCurrency(value, 'USD');
   };
 
   return (

@@ -1111,7 +1111,7 @@
     "separated": "Separated",
     "divorced": "Divorced",
     "preferNotToSay": "Prefer not to say",
-    "shareMessage": "Check out @{{username}} on Mizanly!",
+    "shareMessage": "میزانلی پر @{{username}} کو دیکھیں!",
     "noContent": "No content yet",
     "noLikedPosts": "No liked posts yet",
     "threads": "Threads",
@@ -2409,7 +2409,7 @@
       "errorSubtitle": "Please try again",
       "profileUnavailable": "Profile unavailable",
       "profileUnavailableDesc": "Unable to load your profile",
-      "shareTitle": "Check out {{name}}'s profile on Mizanly"
+      "shareTitle": "میزانلی پر {{name}} کی پروفائل دیکھیں"
     },
     "sound": {
       "title": "Sound",
@@ -4971,5 +4971,15 @@
     "setForThis": "Set for this chat only",
     "wallpaperApplied": "Wallpaper applied",
     "wallpaperRemoved": "Wallpaper removed"
+  },
+  "time": {
+    "justNow": "ابھی",
+    "minutesAgo": "{{count}} منٹ پہلے",
+    "hoursAgo": "{{count}} گھنٹے پہلے",
+    "daysAgo": "{{count}} دن پہلے"
+  },
+  "distance": {
+    "km": "{{value}} کلومیٹر",
+    "m": "{{value}} میٹر"
   }
 }

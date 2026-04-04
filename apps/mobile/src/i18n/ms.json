@@ -1110,7 +1110,7 @@
     "separated": "Separated",
     "divorced": "Divorced",
     "preferNotToSay": "Prefer not to say",
-    "shareMessage": "Check out @{{username}} on Mizanly!",
+    "shareMessage": "Lihat @{{username}} di Mizanly!",
     "noContent": "No content yet",
     "noLikedPosts": "No liked posts yet",
     "threads": "Threads",
@@ -2408,7 +2408,7 @@
       "errorSubtitle": "Please try again",
       "profileUnavailable": "Profile unavailable",
       "profileUnavailableDesc": "Unable to load your profile",
-      "shareTitle": "Check out {{name}}'s profile on Mizanly"
+      "shareTitle": "Lihat profil {{name}} di Mizanly"
     },
     "sound": {
       "title": "Sound",
@@ -4964,5 +4964,15 @@
     "setForThis": "Set for this chat only",
     "wallpaperApplied": "Wallpaper applied",
     "wallpaperRemoved": "Wallpaper removed"
+  },
+  "time": {
+    "justNow": "baru sahaja",
+    "minutesAgo": "{{count}} minit lalu",
+    "hoursAgo": "{{count}} jam lalu",
+    "daysAgo": "{{count}} hari lalu"
+  },
+  "distance": {
+    "km": "{{value}} km",
+    "m": "{{value}} m"
   }
 }

@@ -28,6 +28,7 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { formatCount } from '@/utils/formatCount';
 import { rtlFlexRow } from '@/utils/rtl';
 import { api } from '@/services/api';
+import { formatCurrency } from '@/utils/localeFormat';
 
 // Feature gate: wallet/cashout backend is NOT implemented yet
 const CASHOUT_ENABLED = false;
@@ -243,7 +244,7 @@ function CashoutContent() {
               {t('cashout.amountSent', 'Amount')}
             </Text>
             <Text style={styles.successAmount}>
-              ${netAmount.toFixed(2)}
+              {formatCurrency(netAmount)}
             </Text>
           </Animated.View>
           <Animated.View entering={FadeInUp.delay(600).duration(400)} style={{ marginTop: spacing.xl }}>
@@ -319,7 +320,7 @@ function CashoutContent() {
               </Text>
             </View>
             <Text style={styles.balanceUsd}>
-              = ${(balance?.usdEquivalent ?? 0).toFixed(2)} USD
+              = {formatCurrency(balance?.usdEquivalent ?? 0)}
             </Text>
             <Text style={[styles.rateText, { color: tc.text.tertiary }]}>
               {t('cashout.exchangeRate', '100 diamonds = $0.70')}
@@ -360,8 +361,8 @@ function CashoutContent() {
           </View>
           {amount > 0 && (
             <Text style={[styles.usdEquivalent, { color: tc.text.secondary }]}>
-              = ${usdValue.toFixed(2)} USD
-              {fee > 0 && ` (${t('cashout.fee', 'fee')}: -$${fee.toFixed(2)})`}
+              = {formatCurrency(usdValue)}
+              {fee > 0 && ` (${t('cashout.fee', 'fee')}: -${formatCurrency(fee)})`}
             </Text>
           )}
           <Text style={[styles.minimumText, { color: tc.text.tertiary }]}>
@@ -521,7 +522,7 @@ function CashoutContent() {
                       </View>
                     </View>
                     <Text style={[styles.historyAmount, { color: tc.text.primary }]}>
-                      ${entry.amount.toFixed(2)}
+                      {formatCurrency(entry.amount)}
                     </Text>
                   </View>
                 );
@@ -541,7 +542,7 @@ function CashoutContent() {
         <GradientButton
           label={
             netAmount > 0
-              ? `${t('cashout.confirm', 'Confirm Cash Out')} — $${netAmount.toFixed(2)}`
+              ? `${t('cashout.confirm', 'Confirm Cash Out')} — ${formatCurrency(netAmount)}`
               : t('cashout.confirm', 'Confirm Cash Out')
           }
           icon="check-circle"

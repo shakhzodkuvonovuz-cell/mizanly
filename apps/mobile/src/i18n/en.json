@@ -4963,5 +4963,15 @@
     "setForThis": "Set for this chat only",
     "wallpaperApplied": "Wallpaper applied",
     "wallpaperRemoved": "Wallpaper removed"
+  },
+  "time": {
+    "justNow": "just now",
+    "minutesAgo": "{{count}}m ago",
+    "hoursAgo": "{{count}}h ago",
+    "daysAgo": "{{count}}d ago"
+  },
+  "distance": {
+    "km": "{{value}} km",
+    "m": "{{value}} m"
   }
 }

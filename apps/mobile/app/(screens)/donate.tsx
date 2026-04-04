@@ -29,6 +29,7 @@ import { paymentsApi } from '@/services/paymentsApi';
 import { rtlFlexRow } from '@/utils/rtl';
 import { useStore } from '@/store';
 import type { CharityCampaign, CharityDonation } from '@/types/islamic';
+import { formatCurrency as localeFormatCurrency } from '@/utils/localeFormat';
 
 const PRESET_AMOUNTS = [500, 1000, 2500, 5000]; // in cents
 const CURRENCIES = ['usd', 'gbp', 'eur'] as const;
@@ -42,8 +43,7 @@ const CURRENCY_SYMBOLS: Record<Currency, string> = {
 };
 
 function formatAmount(cents: number, currency: Currency): string {
-  const symbol = CURRENCY_SYMBOLS[currency];
-  return `${symbol}${(cents / 100).toFixed(2)}`;
+  return localeFormatCurrency(cents / 100, currency.toUpperCase());
 }
 
 function DonateScreenContent() {

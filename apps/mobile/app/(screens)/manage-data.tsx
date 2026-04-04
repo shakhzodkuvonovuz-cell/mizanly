@@ -23,6 +23,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi, accountApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { formatDate } from '@/utils/localeFormat';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -116,7 +117,7 @@ export default function ManageDataScreen() {
 
   const formatExportAsText = (data: Record<string, unknown>): string => {
     let text = `=== ${t('accountSettings.dataExportTitle')} ===\n`;
-    text += `${t('accountSettings.exported', 'Exported')}: ${new Date().toLocaleString()}\n\n`;
+    text += `${t('accountSettings.exported', 'Exported')}: ${formatDate(new Date(), 'long')}\n\n`;
 
     if (data.profile && typeof data.profile === 'object') {
       const profile = data.profile as Record<string, unknown>;
@@ -126,7 +127,7 @@ export default function ManageDataScreen() {
       if (profile.email) text += `${t('profile.email', 'Email')}: ${profile.email}\n`;
       if (profile.bio) text += `${t('profile.bio', 'Bio')}: ${profile.bio}\n`;
       if (profile.language) text += `${t('settings.language', 'Language')}: ${profile.language}\n`;
-      if (profile.createdAt) text += `${t('profile.joined', 'Joined')}: ${new Date(profile.createdAt as string).toLocaleDateString()}\n`;
+      if (profile.createdAt) text += `${t('profile.joined', 'Joined')}: ${formatDate(profile.createdAt as string, 'medium')}\n`;
       text += '\n';
     }
 
@@ -134,7 +135,7 @@ export default function ManageDataScreen() {
       text += `--- ${label} (${items.length}) ---\n`;
       items.slice(0, 50).forEach((item) => {
         const record = item as Record<string, unknown>;
-        const date = record.createdAt ? new Date(record.createdAt as string).toLocaleDateString() : '';
+        const date = record.createdAt ? formatDate(record.createdAt as string, 'short') : '';
         const content = (record.content || record.caption || record.title || '') as string;
         text += `  ${date}: ${content.slice(0, 120)}${content.length > 120 ? '...' : ''}\n`;
       });

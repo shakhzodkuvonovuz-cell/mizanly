@@ -30,6 +30,7 @@ import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 import { rtlFlexRow, rtlChevron } from '@/utils/rtl';
+import { formatDate } from '@/utils/localeFormat';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -692,7 +693,7 @@ export default function PrayerTimesScreen() {
               {formatHijriDate(new Date(), isRTL ? 'ar' : 'en')}
             </Text>
             <Text style={styles.dateSubtext}>
-              {new Date().toLocaleDateString(isRTL ? 'ar' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              {formatDate(new Date(), 'long')}
             </Text>
           </View>
         </ScrollView>

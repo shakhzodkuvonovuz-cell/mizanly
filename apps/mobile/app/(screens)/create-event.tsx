@@ -26,7 +26,7 @@ import type { Community } from '@/types/communities';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useDraftPersistence } from '@/hooks/useDraftPersistence';
 import * as ImagePicker from 'expo-image-picker';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -36,6 +36,7 @@ import { navigate } from '@/utils/navigation';
 import { showToast } from '@/components/ui/Toast';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { formatDateTime as localeFormatDateTime } from '@/utils/localeFormat';
 
 type EventType = 'in-person' | 'online' | 'hybrid';
 type PrivacyType = 'public' | 'members' | 'invite';
@@ -82,6 +83,22 @@ export default function CreateEventScreen() {
   });
   const communities = communitiesQuery.data ?? [];
   const communitiesLoading = communitiesQuery.isLoading;
+
+  // Draft persistence via shared hook
+  interface EventDraft { title: string; description: string; location: string; eventType: string; privacy: string; isOnline: boolean; allDay: boolean; selectedCommunity: string }
+  const { save: saveDraftImmediate, clear: clearDraft } = useDraftPersistence<EventDraft>(
+    'event-draft',
+    (draft) => {
+      if (draft.title) setTitle(draft.title);
+      if (draft.description) setDescription(draft.description);
+      if (draft.location) setLocation(draft.location);
+      if (draft.eventType) setEventType(draft.eventType as EventType);
+      if (draft.privacy) setPrivacy(draft.privacy as PrivacyType);
+      if (draft.isOnline !== undefined) setIsOnline(draft.isOnline);
+      if (draft.allDay !== undefined) setAllDay(draft.allDay);
+      if (draft.selectedCommunity) setSelectedCommunity(draft.selectedCommunity);
+    },
+  );
 
   const pickCoverPhoto = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -157,13 +174,7 @@ export default function CreateEventScreen() {
   }, [showDatePicker]);
 
   const formatDateTime = (date: Date) => {
-    return date.toLocaleString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    });
+    return localeFormatDateTime(date);
   };
 
   const getPrivacyIcon = () => {
@@ -604,7 +615,7 @@ export default function CreateEventScreen() {
       {/* Bottom Bar */}
       <View style={[styles.bottomBar, { backgroundColor: tc.bg, borderTopColor: tc.border, paddingBottom: Math.max(insets.bottom, spacing.base) }]}>
         <Pressable accessibilityRole="button" accessibilityLabel={t('events.saveDraft')} onPress={async () => {
-          await AsyncStorage.setItem('event-draft', JSON.stringify({ title, description, location, eventType, privacy, isOnline, allDay, selectedCommunity }));
+          await saveDraftImmediate({ title, description, location, eventType, privacy, isOnline, allDay, selectedCommunity });
           showToast({ message: t('common.saved'), variant: 'success' });
         }}>
           <Text style={styles.draftText}>{t('events.saveDraft')}</Text>
@@ -626,7 +637,7 @@ export default function CreateEventScreen() {
           icon={<Icon name="bookmark" size="sm" color={tc.text.primary} />}
           onPress={async () => {
             try {
-              await AsyncStorage.setItem('event-draft', JSON.stringify({ title, description, location, eventType, privacy, isOnline, allDay, selectedCommunity }));
+              await saveDraftImmediate({ title, description, location, eventType, privacy, isOnline, allDay, selectedCommunity });
               setShowDiscardSheet(false);
               showToast({ message: t('common.draftSaved'), variant: 'success' });
               router.back();
@@ -641,7 +652,7 @@ export default function CreateEventScreen() {
           destructive
           onPress={() => {
             setShowDiscardSheet(false);
-            AsyncStorage.removeItem('event-draft').catch(() => {});
+            clearDraft().catch(() => {});
             router.back();
           }}
         />

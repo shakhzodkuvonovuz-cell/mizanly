@@ -23,6 +23,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { showToast } from '@/components/ui/Toast';
+import { formatDate } from '@/utils/localeFormat';
 
 function Row({
   label,
@@ -142,11 +143,7 @@ export default function AccountSettingsScreen() {
   const primaryPhone = clerkUser?.phoneNumbers?.find(phone => phone.id === clerkUser.primaryPhoneNumberId)?.phoneNumber;
   const maskedEmail = primaryEmail ? primaryEmail.replace(/(.{2})(.*)(@.*)/, '$1***$3') : '';
   const maskedPhone = primaryPhone ? primaryPhone.replace(/(.{4})(.*)(.{4})/, '$1****$3') : '';
-  const joinedDate = userQuery.data?.createdAt ? new Date(userQuery.data.createdAt).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }) : '';
+  const joinedDate = userQuery.data?.createdAt ? formatDate(userQuery.data.createdAt, 'long') : '';
 
   const deactivateMutation = useMutation({
     mutationFn: () => usersApi.deactivate(),
@@ -166,7 +163,7 @@ export default function AccountSettingsScreen() {
 
   const formatExportAsText = useCallback((data: Record<string, unknown>): string => {
     let text = `=== ${t('accountSettings.dataExportTitle')} ===\n`;
-    text += `${t('accountSettings.exported', 'Exported')}: ${new Date().toLocaleString()}\n\n`;
+    text += `${t('accountSettings.exported', 'Exported')}: ${formatDate(new Date(), 'long')}\n\n`;
 
     if (data.profile && typeof data.profile === 'object') {
       const profile = data.profile as Record<string, unknown>;
@@ -176,7 +173,7 @@ export default function AccountSettingsScreen() {
       if (profile.email) text += `${t('profile.email', 'Email')}: ${profile.email}\n`;
       if (profile.bio) text += `${t('profile.bio', 'Bio')}: ${profile.bio}\n`;
       if (profile.language) text += `${t('settings.language', 'Language')}: ${profile.language}\n`;
-      if (profile.createdAt) text += `${t('profile.joined', 'Joined')}: ${new Date(profile.createdAt as string).toLocaleDateString()}\n`;
+      if (profile.createdAt) text += `${t('profile.joined', 'Joined')}: ${formatDate(profile.createdAt as string, 'medium')}\n`;
       text += '\n';
     }
 

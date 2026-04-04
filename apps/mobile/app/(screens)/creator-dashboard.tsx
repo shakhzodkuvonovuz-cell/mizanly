@@ -29,6 +29,7 @@ import { creatorApi } from '@/services/creatorApi';
 import { commerceApi } from '@/services/api';
 import { navigate } from '@/utils/navigation';
 import { formatCount } from '@/utils/formatCount';
+import { formatCurrency } from '@/utils/localeFormat';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH * 0.4;
@@ -157,7 +158,7 @@ function CreatorDashboardContent() {
         },
         {
           label: t('creatorDashboard.revenue', 'Revenue'),
-          value: `$${Number(overview.revenue ?? 0).toFixed(2)}`,
+          value: formatCurrency(Number(overview.revenue ?? 0)),
           change: formatChange(Number(overview.revenueChange ?? 0)),
           icon: 'bar-chart-2',
           color: colors.gold,
@@ -503,7 +504,7 @@ function CreatorDashboardContent() {
                     ]}
                   />
                 </View>
-                <Text style={styles.historyAmount}>${entry.amount.toFixed(0)}</Text>
+                <Text style={styles.historyAmount}>{formatCurrency(entry.amount)}</Text>
               </Animated.View>
             ))}
           </>
@@ -535,7 +536,7 @@ function CreatorDashboardContent() {
               <Icon name="bar-chart-2" size="sm" color={colors.gold} />
             </View>
             <Text style={[styles.salesSummaryValue, { color: tc.text.primary }]}>
-              ${salesData.totalSalesRevenue.toFixed(2)}
+              {formatCurrency(salesData.totalSalesRevenue)}
             </Text>
             <Text style={[styles.salesSummaryLabel, { color: tc.text.secondary }]}>
               {t('creatorDashboard.totalSalesRevenue', 'Total Sales Revenue')}
@@ -582,7 +583,7 @@ function CreatorDashboardContent() {
                   </Text>
                 </View>
                 <Text style={[styles.topProductRevenue, { color: colors.emerald }]}>
-                  ${product.revenue.toFixed(2)}
+                  {formatCurrency(product.revenue)}
                 </Text>
               </Animated.View>
             ))}
