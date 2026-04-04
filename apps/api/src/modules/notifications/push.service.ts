@@ -408,11 +408,11 @@ export class PushService {
     };
   }
 
-  buildPollVoteNotification(actorName: string, postId: string): { title: string; body: string; data: Record<string, string> } {
+  buildPollVoteNotification(actorName: string, targetId: string): { title: string; body: string; data: Record<string, string> } {
     return {
       title: 'Poll vote',
       body: `${actorName} voted on your poll`,
-      data: { type: 'poll_vote', postId, actorName },
+      data: { type: 'poll_vote', targetId, actorName },
     };
   }
 

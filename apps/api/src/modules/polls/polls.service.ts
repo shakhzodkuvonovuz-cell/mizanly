@@ -4,13 +4,19 @@ import {
   ForbiddenException,
   BadRequestException,
   ConflictException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { Prisma } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class PollsService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(PollsService.name);
+  constructor(
+    private prisma: PrismaService,
+    private notifications: NotificationsService,
+  ) {}
 
   async getPoll(pollId: string, userId?: string) {
     const poll = await this.prisma.poll.findUnique({
@@ -70,12 +76,15 @@ export class PollsService {
   }
 
   async vote(pollId: string, optionId: string, userId: string) {
-    // Check poll exists
+    // Check poll exists — include thread to find owner for notification
     const poll = await this.prisma.poll.findUnique({
       where: { id: pollId },
       include: {
         options: {
           where: { id: optionId },
+        },
+        thread: {
+          select: { id: true, userId: true },
         },
       },
     });
@@ -150,6 +159,18 @@ export class PollsService {
         throw new ConflictException('You have already voted in this poll');
       }
       throw error;
+    }
+
+    // Notify poll creator about the vote (skip self-votes)
+    if (poll.thread?.userId && poll.thread.userId !== userId) {
+      this.notifications.create({
+        userId: poll.thread.userId,
+        actorId: userId,
+        type: 'POLL_VOTE',
+        threadId: poll.threadId,
+        title: 'Poll vote',
+        body: `Someone voted on your poll`,
+      }).catch(err => this.logger.warn(`Poll vote notification failed: ${err instanceof Error ? err.message : err}`));
     }
 
     return { success: true };

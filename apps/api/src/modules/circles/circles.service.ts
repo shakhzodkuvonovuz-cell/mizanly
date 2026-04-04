@@ -157,6 +157,21 @@ export class CirclesService {
           body: `You were added to "${circle.name}"`,
         }).catch(err => this.logger.warn('Circle add notification failed', err.message));
       }
+
+      // Notify circle owner that members joined (fire-and-forget)
+      // Each added member triggers a CIRCLE_JOIN notification to the owner
+      for (const memberId of safeMemberIds.slice(0, 50)) {
+        if (memberId !== userId) {
+          this.notificationsService.create({
+            userId,
+            actorId: memberId,
+            type: 'CIRCLE_JOIN',
+            circleId,
+            title: circle.name,
+            body: `A new member joined "${circle.name}"`,
+          }).catch(err => this.logger.warn('Circle join notification failed', err.message));
+        }
+      }
     }
 
     return { added: result.count };

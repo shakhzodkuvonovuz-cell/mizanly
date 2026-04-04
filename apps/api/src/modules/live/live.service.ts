@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { StreamService } from '../stream/stream.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { LiveRole } from '@prisma/client';
 import { LiveStatus, LiveType, Prisma } from '@prisma/client';
 import { randomBytes } from 'crypto';
@@ -30,9 +31,11 @@ const LIVE_SESSION_LIST_SELECT = {
 
 @Injectable()
 export class LiveService {
+  private readonly logger = new Logger(LiveService.name);
   constructor(
     private prisma: PrismaService,
     private stream: StreamService,
+    private notifications: NotificationsService,
   ) {}
 
   async create(userId: string, data: { title: string; description?: string; thumbnailUrl?: string; liveType: string; scheduledAt?: string; isRecorded?: boolean }) {
@@ -175,6 +178,24 @@ export class LiveService {
       },
       select: LIVE_SESSION_LIST_SELECT,
     });
+
+    // Notify host's followers that a live session has started (fire-and-forget, capped at 100)
+    this.prisma.follow.findMany({
+      where: { followingId: userId },
+      select: { followerId: true },
+      take: 100,
+    }).then((followers: Array<{ followerId: string }>) => {
+      for (const f of followers) {
+        this.notifications.create({
+          userId: f.followerId,
+          actorId: userId,
+          type: 'LIVE_STARTED',
+          videoId: sessionId,
+          title: 'Live now',
+          body: `is live now: ${session.title}`,
+        }).catch((e: unknown) => this.logger.warn(`Live started notification failed: ${e instanceof Error ? e.message : e}`));
+      }
+    }).catch((e: unknown) => this.logger.warn(`Failed to fetch followers for live notification: ${e instanceof Error ? e.message : e}`));
 
     return {
       ...updated,
@@ -436,11 +457,31 @@ export class LiveService {
     if (!session.isRehearsal) throw new BadRequestException('Session is not in rehearsal mode');
     if (session.status !== LiveStatus.LIVE) throw new BadRequestException('Session is not active');
 
-    return this.prisma.liveSession.update({
+    const updated = await this.prisma.liveSession.update({
       where: { id: sessionId },
       data: { isRehearsal: false },
       select: LIVE_SESSION_LIST_SELECT,
     });
+
+    // Notify host's followers that rehearsal went public (fire-and-forget, capped at 100)
+    this.prisma.follow.findMany({
+      where: { followingId: userId },
+      select: { followerId: true },
+      take: 100,
+    }).then((followers: Array<{ followerId: string }>) => {
+      for (const f of followers) {
+        this.notifications.create({
+          userId: f.followerId,
+          actorId: userId,
+          type: 'LIVE_STARTED',
+          videoId: sessionId,
+          title: 'Live now',
+          body: `is live now: ${session.title}`,
+        }).catch((e: unknown) => this.logger.warn(`Live started notification failed: ${e instanceof Error ? e.message : e}`));
+      }
+    }).catch((e: unknown) => this.logger.warn(`Failed to fetch followers for live notification: ${e instanceof Error ? e.message : e}`));
+
+    return updated;
   }
 
   /**

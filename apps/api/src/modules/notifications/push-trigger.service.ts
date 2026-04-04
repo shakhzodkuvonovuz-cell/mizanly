@@ -139,12 +139,10 @@ export class PushTriggerService {
         break;
 
       case NotificationType.CHANNEL_POST:
-        if (notification.postId) {
-          await this.sendSafe(
-            notification.userId,
-            this.push.buildChannelPostNotification(actorName, notification.title || 'Channel', notification.postId),
-          );
-        }
+        await this.sendSafe(
+          notification.userId,
+          this.push.buildChannelPostNotification(actorName, notification.title || 'Channel', notification.postId || ''),
+        );
         break;
 
       case NotificationType.LIVE_STARTED:
@@ -209,10 +207,10 @@ export class PushTriggerService {
         break;
 
       case NotificationType.POLL_VOTE:
-        if (notification.postId) {
+        if (notification.postId || notification.threadId) {
           await this.sendSafe(
             notification.userId,
-            this.push.buildPollVoteNotification(actorName, notification.postId),
+            this.push.buildPollVoteNotification(actorName, notification.postId || notification.threadId || ''),
           );
         }
         break;

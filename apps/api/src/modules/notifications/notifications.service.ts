@@ -195,6 +195,7 @@ export class NotificationsService {
     videoId?: string;
     conversationId?: string;
     followRequestId?: string;
+    circleId?: string;
     title?: string;
     body?: string;
   }) {
@@ -271,7 +272,7 @@ export class NotificationsService {
     // Redis-based deduplication: suppress identical notifications within 5 minutes
     // Use content target ID for content notifications, or actorId+title hash for system notifications
     const targetId = params.postId || params.threadId || params.reelId || params.videoId
-      || params.commentId || params.conversationId || params.followRequestId
+      || params.commentId || params.conversationId || params.followRequestId || params.circleId
       || (params.actorId ? `actor:${params.actorId}:${(params.title || '').slice(0, 20)}` : 'none');
     const dedupeKey = `notif_dedup:${params.userId}:${params.type}:${targetId}`;
     try {
@@ -351,6 +352,7 @@ export class NotificationsService {
         videoId: params.videoId,
         conversationId: params.conversationId,
         followRequestId: params.followRequestId,
+        circleId: params.circleId,
         title: params.title,
         body: params.body,
       },

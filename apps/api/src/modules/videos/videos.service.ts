@@ -216,6 +216,26 @@ export class VideosService {
     // Invalidate video feed cache so new video appears immediately
     this.invalidateVideoFeedCache().catch((err) => this.logger.debug('Video feed cache invalidation failed', err instanceof Error ? err.message : err));
 
+    // Notify channel subscribers about the new video (fire-and-forget, capped at 200)
+    this.prisma.subscription.findMany({
+      where: { channelId: dto.channelId },
+      select: { userId: true },
+      take: 200,
+    }).then((subscribers: Array<{ userId: string }>) => {
+      for (const sub of subscribers) {
+        if (sub.userId !== userId) {
+          this.notifications.create({
+            userId: sub.userId,
+            actorId: userId,
+            type: 'VIDEO_PUBLISHED',
+            videoId: video[0].id,
+            title: dto.title,
+            body: `New video on ${channel.name}: ${dto.title}`,
+          }).catch((e: unknown) => this.logger.warn(`Video published notification failed: ${e instanceof Error ? e.message : e}`));
+        }
+      }
+    }).catch((e: unknown) => this.logger.warn(`Failed to fetch subscribers for video notification: ${e instanceof Error ? e.message : e}`));
+
     return {
       ...video[0],
       isLiked: false,

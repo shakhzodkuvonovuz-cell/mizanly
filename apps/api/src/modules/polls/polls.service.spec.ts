@@ -119,7 +119,9 @@ describe('PollsService', () => {
       const userId = 'user-456';
       const mockPoll = {
         id: pollId,
+        threadId: 'thread-1',
         options: [{ id: optionId }],
+        thread: { id: 'thread-1', userId: 'thread-owner' },
       };
       prisma.poll.findUnique.mockResolvedValue(mockPoll);
       prisma.pollVote.findFirst.mockResolvedValue(null);
@@ -129,7 +131,7 @@ describe('PollsService', () => {
 
       expect(prisma.poll.findUnique).toHaveBeenCalledWith({
         where: { id: pollId },
-        include: { options: { where: { id: optionId } } },
+        include: { options: { where: { id: optionId } }, thread: { select: { id: true, userId: true } } },
       });
       expect(prisma.pollVote.findFirst).toHaveBeenCalledWith({
         where: {

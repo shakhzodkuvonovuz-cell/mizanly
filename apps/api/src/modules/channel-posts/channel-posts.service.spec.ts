@@ -19,6 +19,7 @@ describe('ChannelPostsService', () => {
         delete: jest.fn(),
         count: jest.fn().mockResolvedValue(0),
       },
+      subscription: { findMany: jest.fn().mockResolvedValue([]) },
       channelSubscription: { findUnique: jest.fn() },
       channelPostLike: { findUnique: jest.fn().mockResolvedValue(null), create: jest.fn(), delete: jest.fn() },
       block: { findMany: jest.fn().mockResolvedValue([]) },
@@ -35,7 +36,7 @@ describe('ChannelPostsService', () => {
 
   describe('create', () => {
     it('should create post for channel owner', async () => {
-      prisma.channel.findUnique.mockResolvedValue({ id: 'ch1', userId: 'user1' });
+      prisma.channel.findUnique.mockResolvedValue({ id: 'ch1', userId: 'user1', name: 'TestChannel' });
       prisma.channelPost.create.mockResolvedValue({ id: 'cp1' });
       const result = await service.create('ch1', 'user1', { content: 'Hello' });
       expect(result.id).toBe('cp1');
@@ -47,7 +48,7 @@ describe('ChannelPostsService', () => {
     });
 
     it('should create post with media', async () => {
-      prisma.channel.findUnique.mockResolvedValue({ id: 'ch1', userId: 'user1' });
+      prisma.channel.findUnique.mockResolvedValue({ id: 'ch1', userId: 'user1', name: 'TestChannel' });
       prisma.channelPost.create.mockResolvedValue({ id: 'cp2', mediaUrl: 'url' });
       const result = await service.create('ch1', 'user1', { content: 'Photo', mediaUrl: 'url' });
       expect(result.mediaUrl).toBe('url');
@@ -113,7 +114,7 @@ describe('ChannelPostsService', () => {
 
   describe('R2-Tab2 audit fixes', () => {
     it('should run content moderation on create', async () => {
-      prisma.channel.findUnique.mockResolvedValue({ id: 'ch1', userId: 'user1' });
+      prisma.channel.findUnique.mockResolvedValue({ id: 'ch1', userId: 'user1', name: 'TestChannel' });
       prisma.channelPost.create.mockResolvedValue({ id: 'cp-mod', content: 'Safe content' });
       const cs = (service as any).contentSafety;
       cs.moderateText.mockResolvedValue({ safe: true, flags: [] });

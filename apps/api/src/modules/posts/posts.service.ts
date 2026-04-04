@@ -1151,11 +1151,12 @@ export class PostsService {
     ]);
 
     // Notify original post owner about the share (not self)
+    // Use QUOTE_POST when user added their own text, REPOST for plain share
     if (original.userId && original.userId !== userId) {
       this.notifications.create({
         userId: original.userId,
         actorId: userId,
-        type: 'REPOST',
+        type: content ? 'QUOTE_POST' : 'REPOST',
         postId,
       }).catch((err) => this.logger.error('Failed to create share notification', err));
     }
