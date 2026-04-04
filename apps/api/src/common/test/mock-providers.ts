@@ -1,4 +1,5 @@
 import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../config/prisma.service';
 import { AsyncJobService } from '../services/async-jobs.service';
 import { AnalyticsService } from '../services/analytics.service';
@@ -221,6 +222,17 @@ export const mockCircuitBreakerService = {
   },
 };
 
+export const mockEventEmitter = {
+  provide: EventEmitter2,
+  useValue: {
+    emit: jest.fn().mockReturnValue(true),
+    emitAsync: jest.fn().mockResolvedValue([]),
+    on: jest.fn().mockReturnThis(),
+    once: jest.fn().mockReturnThis(),
+    removeListener: jest.fn().mockReturnThis(),
+  },
+};
+
 export const mockPrismaService = {
   provide: PrismaService,
   useValue: {
@@ -263,6 +275,7 @@ export const globalMockProviders = [
   mockPrismaService,
   mockConfigService,
   mockRedis,
+  mockEventEmitter,
   mockPushTriggerService,
   mockPushService,
   mockNotificationsService,

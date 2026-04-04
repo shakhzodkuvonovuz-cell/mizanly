@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException, ConflictException, BadRequestException, Inject, Logger, Optional } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../config/prisma.service';
-import { NotificationsService } from '../notifications/notifications.service';
 import { QueueService } from '../../common/queue/queue.service';
 import { ChannelRole, ChannelType, MessageType } from '@prisma/client';
 import Redis from 'ioredis';
@@ -12,7 +11,6 @@ export class BroadcastService {
 
   constructor(
     private prisma: PrismaService,
-    private notifications: NotificationsService,
     @Optional() private queueService: QueueService | null,
     @Inject('REDIS') private redis: Redis,
   ) {}

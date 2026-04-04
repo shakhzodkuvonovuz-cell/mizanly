@@ -2,7 +2,8 @@ import { Injectable, NotFoundException, BadRequestException, ForbiddenException,
 import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../config/prisma.service';
-import { NotificationsService } from '../notifications/notifications.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NOTIFICATION_REQUESTED, NotificationRequestedEvent } from '../../common/events/notification.events';
 import { ProductCategory, HalalCategory, ZakatCategory, VolunteerCategory, OrderStatus, ProductStatus, SubscriptionPlan, SubscriptionStatus } from '@prisma/client';
 import Stripe from 'stripe';
 
@@ -16,7 +17,7 @@ export class CommerceService {
 
   constructor(
     private prisma: PrismaService,
-    private readonly notificationsService: NotificationsService,
+    private readonly eventEmitter: EventEmitter2,
     private readonly configService: ConfigService,
   ) {
     const secretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
@@ -246,13 +247,13 @@ export class CommerceService {
     }
 
     // Notify seller about the new order (outside transaction, fire-and-forget)
-    this.notificationsService.create({
+    this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
       userId: product.sellerId,
       actorId: userId,
       type: 'SYSTEM',
       title: 'New order',
       body: `You received a new order for "${product.title}"`,
-    }).catch(err => this.logger.warn('Order notification failed', err.message));
+    }));
 
     return { order, clientSecret: paymentIntent.client_secret };
   }
@@ -361,13 +362,13 @@ export class CommerceService {
 
     // Notify the buyer about order status change (skip if buyer was deleted)
     if (order.buyerId) {
-      this.notificationsService.create({
+      this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
         userId: order.buyerId,
         actorId: sellerId,
         type: 'SYSTEM',
         title: 'Order updated',
         body: `Your order status changed to "${status}"`,
-      }).catch(err => this.logger.warn('Order status notification failed', err.message));
+      }));
     }
 
     return updated;

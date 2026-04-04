@@ -3,7 +3,8 @@ import { PrismaService } from '../../config/prisma.service';
 import { Prisma } from '@prisma/client';
 import Redis from 'ioredis';
 import { ContentSafetyService } from '../moderation/content-safety.service';
-import { NotificationsService } from '../notifications/notifications.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NOTIFICATION_REQUESTED, NotificationRequestedEvent } from '../../common/events/notification.events';
 import { sanitizeText } from '@/common/utils/sanitize';
 import { getExcludedUserIds } from '../../common/utils/excluded-users';
 
@@ -14,7 +15,7 @@ export class ChannelPostsService {
     private prisma: PrismaService,
     @Inject('REDIS') private redis: Redis,
     private contentSafety: ContentSafetyService,
-    private notifications: NotificationsService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   async create(channelId: string, userId: string, data: { content: string; mediaUrls?: string[] }) {
@@ -42,13 +43,13 @@ export class ChannelPostsService {
     }).then((subscribers: Array<{ userId: string }>) => {
       for (const sub of subscribers) {
         if (sub.userId !== userId) {
-          this.notifications.create({
+          this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
             userId: sub.userId,
             actorId: userId,
             type: 'CHANNEL_POST',
             title: channel.name,
             body: `New post in ${channel.name}`,
-          }).catch((e: unknown) => this.logger.warn(`Channel post notification failed: ${e instanceof Error ? e.message : e}`));
+          }));
         }
       }
     }).catch((e: unknown) => this.logger.warn(`Failed to fetch subscribers for channel post notification: ${e instanceof Error ? e.message : e}`));

@@ -2,7 +2,8 @@ import { Injectable, NotFoundException, BadRequestException, ConflictException, 
 import { PrismaService } from '../../config/prisma.service';
 import { FatwaTopicType, IslamicEventType, ReputationTier, ScholarTopicType, MadhhabType, VolunteerCategory, MentorshipStatus, FatwaStatus, ScholarVerificationStatus } from '@prisma/client';
 import { Prisma } from '@prisma/client';
-import { NotificationsService } from '../notifications/notifications.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NOTIFICATION_REQUESTED, NotificationRequestedEvent } from '../../common/events/notification.events';
 import { ContentSafetyService } from '../moderation/content-safety.service';
 import { sanitizeText } from '@/common/utils/sanitize';
 
@@ -13,7 +14,7 @@ export class CommunityService {
   private readonly logger = new Logger(CommunityService.name);
   constructor(
     private prisma: PrismaService,
-    private readonly notificationsService: NotificationsService,
+    private readonly eventEmitter: EventEmitter2,
     private readonly contentSafety: ContentSafetyService,
   ) {}
 
@@ -68,13 +69,13 @@ export class CommunityService {
       });
 
       // Notify the mentor about the new mentorship request
-      this.notificationsService.create({
+      this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
         userId: dto.mentorId,
         actorId: menteeId,
         type: 'SYSTEM',
         title: 'Mentorship request',
         body: `You have a new mentorship request for "${dto.topic}"`,
-      }).catch(err => this.logger.warn('Mentorship notification failed', err.message));
+      }));
 
       return mentorship;
     } catch (e) {
@@ -185,13 +186,13 @@ export class CommunityService {
     });
 
     // Notify the asker that their question was answered
-    this.notificationsService.create({
+    this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
       userId: q.askerId,
       actorId: scholarId,
       type: 'SYSTEM',
       title: 'Fatwa answered',
       body: 'A scholar has answered your question',
-    }).catch(err => this.logger.warn('Fatwa answer notification failed', err.message));
+    }));
 
     return updated;
   }

@@ -8,14 +8,15 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { Prisma } from '@prisma/client';
-import { NotificationsService } from '../notifications/notifications.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NOTIFICATION_REQUESTED, NotificationRequestedEvent } from '../../common/events/notification.events';
 
 @Injectable()
 export class PollsService {
   private readonly logger = new Logger(PollsService.name);
   constructor(
     private prisma: PrismaService,
-    private notifications: NotificationsService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   async getPoll(pollId: string, userId?: string) {
@@ -163,14 +164,14 @@ export class PollsService {
 
     // Notify poll creator about the vote (skip self-votes)
     if (poll.thread?.userId && poll.thread.userId !== userId) {
-      this.notifications.create({
+      this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
         userId: poll.thread.userId,
         actorId: userId,
         type: 'POLL_VOTE',
         threadId: poll.threadId,
         title: 'Poll vote',
         body: `Someone voted on your poll`,
-      }).catch(err => this.logger.warn(`Poll vote notification failed: ${err instanceof Error ? err.message : err}`));
+      }));
     }
 
     return { success: true };

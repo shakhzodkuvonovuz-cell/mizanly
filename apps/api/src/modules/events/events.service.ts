@@ -9,14 +9,15 @@ import { PrismaService } from '../../config/prisma.service';
 import { EventTypeEnum, EventPrivacy, RsvpStatus } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { CreateEventDto, UpdateEventDto } from './events.controller';
-import { NotificationsService } from '../notifications/notifications.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NOTIFICATION_REQUESTED, NotificationRequestedEvent } from '../../common/events/notification.events';
 
 @Injectable()
 export class EventsService {
   private readonly logger = new Logger(EventsService.name);
   constructor(
     private prisma: PrismaService,
-    private readonly notificationsService: NotificationsService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async createEvent(userId: string, dto: CreateEventDto) {
@@ -350,13 +351,13 @@ export class EventsService {
 
       // Notify event organizer when someone RSVPs as "going"
       if (status === 'going' && event.userId !== userId) {
-        this.notificationsService.create({
+        this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
           userId: event.userId,
           actorId: userId,
           type: 'SYSTEM',
           title: 'New RSVP',
           body: 'Someone is going to your event',
-        }).catch(err => this.logger.warn('RSVP notification failed', err.message));
+        }));
       }
 
       return rsvp;

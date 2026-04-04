@@ -5,6 +5,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import * as Joi from 'joi';
 import { ScheduleModule } from '@nestjs/schedule';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { UserThrottlerGuard } from './common/guards/user-throttler.guard';
 import { LoggerModule } from 'nestjs-pino';
 import { PrismaModule } from './config/prisma.module';
@@ -139,6 +140,7 @@ import { ResponseTimeMiddleware } from './common/middleware/response-time.middle
       ...(process.env.REDIS_URL ? { storage: new ThrottlerStorageRedisService(process.env.REDIS_URL) } : {}),
     }),
     ScheduleModule.forRoot(),
+    EventEmitterModule.forRoot(),
     PrismaModule, RedisModule, AsyncJobsModule, QueueModule, FeatureFlagsModule, AnalyticsModule, PlatformServicesModule,
     AuthModule,
     UsersModule,
