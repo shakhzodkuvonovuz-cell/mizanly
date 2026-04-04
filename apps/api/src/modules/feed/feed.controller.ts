@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Put, Delete, Body, Param, Query, UseGuards, HttpCode, HttpStatus, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Get, Put, Delete, Body, Param, Query, UseGuards, HttpCode, HttpStatus, BadRequestException, Header } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
@@ -176,6 +176,7 @@ export class FeedController {
 
   @UseGuards(OptionalClerkAuthGuard)
   @Get('trending')
+  @Header('Cache-Control', 'public, max-age=60, stale-while-revalidate=120')
   @Throttle({ default: { ttl: 60000, limit: 30 } })
   @ApiOperation({ summary: 'Trending posts scored by engagement rate (anonymous-safe)' })
   @ApiQuery({ name: 'cursor', required: false, type: String })
@@ -191,6 +192,7 @@ export class FeedController {
 
   @UseGuards(OptionalClerkAuthGuard)
   @Get('featured')
+  @Header('Cache-Control', 'public, max-age=120, stale-while-revalidate=300')
   @Throttle({ default: { ttl: 60000, limit: 30 } })
   @ApiOperation({ summary: 'Staff-picked / featured posts (anonymous-safe)' })
   @ApiQuery({ name: 'cursor', required: false, type: String })
@@ -206,6 +208,7 @@ export class FeedController {
 
   @UseGuards(OptionalClerkAuthGuard)
   @Get('suggested-users')
+  @Header('Cache-Control', 'public, max-age=120, stale-while-revalidate=300')
   @Throttle({ default: { ttl: 60000, limit: 30 } })
   @ApiOperation({ summary: 'Suggested users to follow (for in-feed cards)' })
   @ApiQuery({ name: 'limit', required: false, type: Number })

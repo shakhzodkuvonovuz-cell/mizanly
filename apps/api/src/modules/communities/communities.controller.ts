@@ -10,6 +10,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Header,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -49,6 +50,7 @@ export class CommunitiesController {
 
   @Get(':id')
   @UseGuards(OptionalClerkAuthGuard)
+  @Header('Cache-Control', 'public, max-age=60, stale-while-revalidate=120')
   @ApiOperation({ summary: 'Get community detail' })
   getById(
     @Param('id') id: string,

@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useRef, useEffect, type MutableRefObject } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, Pressable, Share,
+  View, Text, StyleSheet, FlatList, ScrollView, Pressable, Share,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -278,20 +278,42 @@ export default function DuaCollectionScreen() {
         </Pressable>
       </View>
 
-      {/* Category chips (only when not in bookmarked view) */}
+      {/* Category chips — ScrollView + map to avoid nested VirtualizedList warning */}
       {!showBookmarked && categories.length > 0 && (
-        <FlatList
+        <ScrollView
           horizontal
-          inverted={isRTL}
           showsHorizontalScrollIndicator={false}
-          data={[null, ...categories]}
-          keyExtractor={(item) => item ?? 'all'}
           contentContainerStyle={styles.chipsRow}
-          renderItem={renderCategoryChip}
-        />
+          style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
+        >
+          {[null, ...categories].map((cat) => (
+            <Pressable
+              key={cat ?? 'all'}
+              onPress={() => { setSelectedCategory(cat); haptic.tick(); }}
+              style={[
+                styles.chip,
+                { backgroundColor: tc.bgElevated, borderColor: tc.border },
+                selectedCategory === cat && styles.chipActive,
+                isRTL ? { transform: [{ scaleX: -1 }] } : undefined,
+              ]}
+              accessibilityRole="button"
+            >
+              {cat && CATEGORY_ICONS[cat] && (
+                <Icon
+                  name={CATEGORY_ICONS[cat]}
+                  size={14}
+                  color={selectedCategory === cat ? '#fff' : tc.text.secondary}
+                />
+              )}
+              <Text style={[styles.chipText, selectedCategory === cat && styles.chipTextActive, { color: tc.text.secondary }]}>
+                {cat ? getCategoryLabel(cat) : t('common.viewAll')}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
       )}
     </View>
-  ), [dailyDuaQuery.data, categories, selectedCategory, showBookmarked, isRTL, locale, t, haptic, getCategoryLabel]);
+  ), [dailyDuaQuery.data, categories, selectedCategory, showBookmarked, isRTL, locale, t, haptic, getCategoryLabel, tc.bgElevated, tc.border, tc.text.secondary, tc.bgCard, tc.text.primary]);
 
   const listEmpty = useMemo(() => (
     !duasQuery.isLoading ? (

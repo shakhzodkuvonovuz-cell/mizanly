@@ -71,7 +71,7 @@ export class FeedTransparencyService {
     });
     if (!post || !post.userId) return { reasons: ['Post not found'] };
 
-    // Check if user follows the author
+    // Check if user follows the author — select only id for existence check
     const follows = await this.prisma.follow.findUnique({
       where: {
         followerId_followingId: {
@@ -79,6 +79,7 @@ export class FeedTransparencyService {
           followingId: post.userId,
         },
       },
+      select: { followerId: true },
     });
     if (follows) {
       reasons.push(`Posted by @${post.user?.username ?? 'unknown'}, who you follow`);
@@ -145,6 +146,7 @@ export class FeedTransparencyService {
           followingId: thread.userId,
         },
       },
+      select: { followerId: true },
     });
     if (follows) {
       reasons.push(`Posted by @${thread.user?.username ?? 'unknown'}, who you follow`);

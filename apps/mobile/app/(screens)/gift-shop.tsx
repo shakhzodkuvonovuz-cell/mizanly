@@ -344,19 +344,13 @@ function GiftShopContent() {
     >
       {renderBalanceBar()}
 
-      {/* Buy Coins Section */}
+      {/* Buy Coins Section — using map instead of FlatList inside ScrollView */}
       <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>{t('giftShop.buyCoins', 'Buy Coins')}</Text>
-      <FlatList
-        data={COIN_PACKAGES}
-        renderItem={renderCoinPackage}
-        keyExtractor={(item) => String(item.coins)}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.packagesRow}
-        scrollEnabled={false}
-      />
+      <View style={styles.packagesRow}>
+        {COIN_PACKAGES.map((item, index) => renderCoinPackage({ item, index }))}
+      </View>
 
-      {/* Gift Catalog */}
+      {/* Gift Catalog — using map instead of FlatList inside ScrollView */}
       <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>{t('giftShop.giftCatalog', 'Gift Catalog')}</Text>
       {catalogLoading ? (
         <View style={styles.catalogGrid}>
@@ -367,14 +361,9 @@ function GiftShopContent() {
           ))}
         </View>
       ) : (
-        <FlatList
-          data={giftItems}
-          renderItem={renderGiftItem}
-          keyExtractor={(item) => item.type}
-          numColumns={2}
-          columnWrapperStyle={styles.catalogRow}
-          scrollEnabled={false}
-        />
+        <View style={styles.catalogGrid}>
+          {giftItems.map((item, index) => renderGiftItem({ item, index }))}
+        </View>
       )}
 
       {/* Cash Out */}
@@ -630,6 +619,7 @@ const styles = StyleSheet.create({
   },
   // Coin packages
   packagesRow: {
+    flexDirection: 'row',
     gap: spacing.md,
     paddingBottom: spacing.base,
   },

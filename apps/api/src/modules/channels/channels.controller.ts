@@ -9,6 +9,7 @@ import {
   Param,
   Query,
   UseGuards,
+  Header,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -60,6 +61,7 @@ export class ChannelsController {
 
   @Get(':handle')
   @UseGuards(OptionalClerkAuthGuard)
+  @Header('Cache-Control', 'public, max-age=60, stale-while-revalidate=120')
   @ApiOperation({ summary: 'Get channel by handle' })
   getByHandle(
     @Param('handle') handle: string,

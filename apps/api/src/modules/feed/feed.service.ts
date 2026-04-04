@@ -256,6 +256,7 @@ export class FeedService {
   async getContentFilter(userId: string) {
     return this.prisma.contentFilterSetting.findUnique({
       where: { userId },
+      select: { hideMusic: true, strictnessLevel: true },
     });
   }
 

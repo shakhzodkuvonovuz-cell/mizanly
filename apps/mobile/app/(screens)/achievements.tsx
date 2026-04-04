@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   FlatList,
+  ScrollView,
   Pressable,
   useWindowDimensions,
 } from 'react-native';
@@ -231,50 +232,48 @@ function AchievementsScreen() {
 
   const keyExtractor = useCallback((item: Achievement) => item.id, []);
 
-  const renderCategoryChip = useCallback(
-    ({ item: cat }: { item: { key: AchievementCategory; label: string } }) => (
-      <Pressable
-        onPress={() => handleCategoryChange(cat.key)}
-        style={({ pressed }) => pressed && { opacity: 0.7 }}
-        accessibilityRole="tab"
-        accessibilityState={{ selected: selectedCategory === cat.key }}
-        accessibilityLabel={cat.label}
-      >
-        <LinearGradient
-          colors={
-            selectedCategory === cat.key
-              ? [colors.emeraldLight, colors.emerald]
-              : colors.gradient.cardDark
-          }
-          style={styles.chip}
-        >
-          <Text
-            style={[
-              styles.chipText,
-              { color: tc.text.secondary },
-              selectedCategory === cat.key && styles.chipTextActive,
-            ]}
-          >
-            {cat.label}
-          </Text>
-        </LinearGradient>
-      </Pressable>
-    ),
-    [handleCategoryChange, selectedCategory, tc.text.secondary],
-  );
-
   const ListHeader = (
     <>
-      {/* Category chips */}
-      <FlatList
-        data={categories}
+      {/* Category chips — ScrollView + map to avoid nested VirtualizedList warning */}
+      <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item.key}
         contentContainerStyle={styles.chipRow}
-        inverted={isRTL}
-        renderItem={renderCategoryChip}
-      />
+        style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
+      >
+        {categories.map((cat) => (
+          <Pressable
+            key={cat.key}
+            onPress={() => handleCategoryChange(cat.key)}
+            style={({ pressed }) => [
+              pressed && { opacity: 0.7 },
+              isRTL ? { transform: [{ scaleX: -1 }] } : undefined,
+            ]}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: selectedCategory === cat.key }}
+            accessibilityLabel={cat.label}
+          >
+            <LinearGradient
+              colors={
+                selectedCategory === cat.key
+                  ? [colors.emeraldLight, colors.emerald]
+                  : colors.gradient.cardDark
+              }
+              style={styles.chip}
+            >
+              <Text
+                style={[
+                  styles.chipText,
+                  { color: tc.text.secondary },
+                  selectedCategory === cat.key && styles.chipTextActive,
+                ]}
+              >
+                {cat.label}
+              </Text>
+            </LinearGradient>
+          </Pressable>
+        ))}
+      </ScrollView>
 
       {/* Progress counter */}
       <Animated.View entering={FadeIn.duration(400)} style={[styles.counterRow, { flexDirection: rtlFlexRow(isRTL) }]}>

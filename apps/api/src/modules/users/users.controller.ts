@@ -10,6 +10,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Header,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -303,6 +304,7 @@ export class UsersController {
   // currentUserId extracted from verified auth context — never from query params
   @Get(':username')
   @UseGuards(OptionalClerkAuthGuard)
+  @Header('Cache-Control', 'public, max-age=30, stale-while-revalidate=60')
   @ApiOperation({ summary: 'Public profile (respects blocks)' })
   getProfile(
     @Param('username') username: string,
