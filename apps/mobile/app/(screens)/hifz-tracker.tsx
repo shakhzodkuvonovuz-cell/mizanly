@@ -318,7 +318,7 @@ export default function HifzTrackerScreen() {
         <FlatList
           data={SURAHS}
           keyExtractor={(item) => String(item.num)}
-          renderItem={({ item }) => {
+          renderItem={useCallback(({ item }) => {
             const progress = progressMap.get(item.num) ?? { surahNum: item.num, status: 'not_started', lastReviewedAt: null };
             return (
               <SurahRow
@@ -327,7 +327,7 @@ export default function HifzTrackerScreen() {
                 onPress={() => { haptic.tick(); setStatusSheet({ visible: true, surahNum: item.num }); }}
               />
             );
-          }}
+          }, [])}
           ListHeaderComponent={listHeader}
           refreshControl={
             <BrandedRefreshControl refreshing={progressQuery.isRefetching} onRefresh={handleRefresh} />

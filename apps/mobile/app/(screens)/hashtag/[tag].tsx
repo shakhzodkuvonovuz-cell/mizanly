@@ -187,14 +187,14 @@ export default function HashtagScreen() {
               onRefresh={() => postsQuery.refetch()}
             />
           }
-          renderItem={({ item, index }) => (
+          renderItem={useCallback(({ item, index }) => (
             <Animated.View entering={FadeInUp.delay(Math.min(index, 10) * 50).duration(400)}>
               <GridItem
                 post={item}
                 onPress={() => router.push(`/(screens)/post/${item.id}`)}
               />
             </Animated.View>
-          )}
+          ), [])}
           ListEmptyComponent={() =>
             postsQuery.isLoading ? (
               <View style={styles.skeletonGrid}>

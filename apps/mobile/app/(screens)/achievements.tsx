@@ -241,7 +241,7 @@ function AchievementsScreen() {
         keyExtractor={(item) => item.key}
         contentContainerStyle={styles.chipRow}
         inverted={isRTL}
-        renderItem={({ item: cat }) => (
+        renderItem={useCallback(({ item: cat }) => (
           <Pressable
             onPress={() => handleCategoryChange(cat.key)}
             style={({ pressed }) => pressed && { opacity: 0.7 }}
@@ -268,7 +268,7 @@ function AchievementsScreen() {
               </Text>
             </LinearGradient>
           </Pressable>
-        )}
+        ), [])}
       />
 
       {/* Progress counter */}

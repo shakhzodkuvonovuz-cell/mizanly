@@ -187,7 +187,7 @@ export default function BookmarkFoldersScreen() {
           refreshControl={
             <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
-          renderItem={({ item, index }) => (
+          renderItem={useCallback(({ item, index }) => (
             <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
               <FolderCard
                 folder={item}
@@ -195,7 +195,7 @@ export default function BookmarkFoldersScreen() {
                 onLongPress={() => handleDeleteFolder(item.name)}
               />
             </Animated.View>
-          )}
+          ), [])}
           ListEmptyComponent={() => (
             <EmptyState
               icon="bookmark"

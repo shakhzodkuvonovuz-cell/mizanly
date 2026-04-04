@@ -418,9 +418,9 @@ export const StickerPackBrowser = memo(function StickerPackBrowser({ onClose }: 
             removeClippedSubviews={true}
                 data={selectedPack.stickers}
                 numColumns={4}
-                renderItem={({ item }) => (
+                renderItem={useCallback(({ item }) => (
                   <Image source={{ uri: item.imageUrl }} style={styles.stickerImage} resizeMode="contain" />
-                )}
+                ), [])}
                 keyExtractor={item => item.id}
                 contentContainerStyle={styles.stickerGrid}
               />

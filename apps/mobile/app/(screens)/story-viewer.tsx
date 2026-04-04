@@ -664,7 +664,7 @@ const StoryGroupPage = memo(function StoryGroupPage({
                 onRefresh={() => viewersQuery.refetch()}
               />
             }
-            renderItem={({ item }) => (
+            renderItem={useCallback(({ item }) => (
               <View style={styles.viewerRow}>
                 <Avatar uri={item.avatarUrl} name={item.displayName} size="sm" />
                 <View style={styles.viewerInfo}>
@@ -672,7 +672,7 @@ const StoryGroupPage = memo(function StoryGroupPage({
                   <Text style={[styles.viewerUsername, { color: tc.text.secondary }]}>@{item.username}</Text>
                 </View>
               </View>
-            )}
+            ), [])}
             ListEmptyComponent={
               <Text style={[styles.viewersEmpty, { color: tc.text.tertiary }]}>{t('saf.noViewsYet')}</Text>
             }

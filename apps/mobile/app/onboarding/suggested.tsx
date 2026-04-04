@@ -100,7 +100,7 @@ function SuggestedScreenContent() {
               onRefresh={() => refetch()}
             />
           }
-          renderItem={({ item }: { item: User }) => {
+          renderItem={useCallback(({ item }: { item: User }) => {
             const isFollowing = following.has(item.id);
             return (
               <View style={styles.row}>
@@ -121,7 +121,7 @@ function SuggestedScreenContent() {
                 </Pressable>
               </View>
             );
-          }}
+          }, [])}
         />
       )}
 

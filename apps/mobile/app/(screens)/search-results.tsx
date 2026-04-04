@@ -413,14 +413,14 @@ export default function SearchResultsScreen() {
             removeClippedSubviews={true}
                     data={people}
                     keyExtractor={(item) => item.id}
-                    renderItem={({ item, index }) => (
+                    renderItem={useCallback(({ item, index }) => (
                       <UserRow
                         user={item}
                         onPress={() => router.push(`/(screens)/profile/${item.username}`)}
                         index={index}
                         onFollow={(userId, follow) => followMutation.mutate({ userId, follow })}
                       />
-                    )}
+                    ), [])}
                     ListEmptyComponent={() => (
                       <EmptyState
                         icon="users"
@@ -454,7 +454,7 @@ export default function SearchResultsScreen() {
             removeClippedSubviews={true}
                     data={posts}
                     keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => <PostCard post={item} />}
+                    renderItem={useCallback(({ item }) => <PostCard post={item} />, [])}
                     ListEmptyComponent={() => (
                       <EmptyState
                         icon="image"
@@ -490,7 +490,7 @@ export default function SearchResultsScreen() {
             removeClippedSubviews={true}
                     data={threads}
                     keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => <ThreadCard thread={item} />}
+                    renderItem={useCallback(({ item }) => <ThreadCard thread={item} />, [])}
                     ListEmptyComponent={() => (
                       <EmptyState
                         icon="message-circle"
@@ -520,9 +520,9 @@ export default function SearchResultsScreen() {
             removeClippedSubviews={true}
                     data={Array.from({ length: 9 })}
                     keyExtractor={(_, i) => `skeleton-${i}`}
-                    renderItem={() => (
+                    renderItem={useCallback(() => (
                       <Skeleton.Rect width={120} height={160} />
-                    )}
+                    ), [])}
                     numColumns={3}
                     columnWrapperStyle={styles.reelGridRow}
                     scrollEnabled={false}
@@ -533,13 +533,13 @@ export default function SearchResultsScreen() {
             removeClippedSubviews={true}
                     data={reels}
                     keyExtractor={(item) => item.id}
-                    renderItem={({ item, index }) => (
+                    renderItem={useCallback(({ item, index }) => (
                       <ReelGridItem
                         reel={item}
                         onPress={() => router.push(`/(screens)/reel/${item.id}`)}
                         index={index}
                       />
-                    )}
+                    ), [])}
                     numColumns={3}
                     columnWrapperStyle={styles.reelGridRow}
                     ListEmptyComponent={() => (
@@ -583,13 +583,13 @@ export default function SearchResultsScreen() {
             removeClippedSubviews={true}
                     data={hashtags}
                     keyExtractor={(item) => item.id || `ht-${item.name}`}
-                    renderItem={({ item, index }) => (
+                    renderItem={useCallback(({ item, index }) => (
                       <HashtagRow
                         hashtag={item}
                         onPress={() => router.push(`/(screens)/hashtag/${item.name}`)}
                         index={index}
                       />
-                    )}
+                    ), [])}
                     ListEmptyComponent={() => (
                       <EmptyState
                         icon="hash"

@@ -395,7 +395,7 @@ function CreateCarouselScreen() {
               }
             }}
             getItemLayout={(_, index) => ({ length: 72 + spacing.sm, offset: (72 + spacing.sm) * index, index })}
-            renderItem={({ item, index }) => (
+            renderItem={useCallback(({ item, index }) => (
               <SlideThumb
                 slide={item}
                 index={index}
@@ -408,7 +408,7 @@ function CreateCarouselScreen() {
                 total={slides.length}
                 t={t}
               />
-            )}
+            ), [])}
             ListFooterComponent={
               slides.length < MAX_SLIDES ? (
                 <Pressable

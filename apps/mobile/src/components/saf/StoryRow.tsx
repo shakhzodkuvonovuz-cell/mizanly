@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { FlatList, View, StyleSheet } from 'react-native';
 import { useUser } from '@clerk/clerk-expo';
 import { StoryBubble } from './StoryBubble';
@@ -42,13 +42,13 @@ export const StoryRow = memo(function StoryRow({ groups, onPressGroup, onPressOw
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.content}
-      renderItem={({ item, index }) => (
+      renderItem={useCallback(({ item, index }) => (
         <StoryBubble
           group={item}
           isOwn={index === 0}
           onPress={() => index === 0 ? onPressOwn() : onPressGroup(item, index - 1)}
         />
-      )}
+      ), [])}
       style={[styles.row, { borderBottomColor: tc.border }]}
     />
   );

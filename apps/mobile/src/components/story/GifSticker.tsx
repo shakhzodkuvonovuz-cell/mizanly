@@ -291,7 +291,7 @@ export const GifSearch = memo(function GifSearch({ onSelect, onClose, style }: G
         keyExtractor={item => item.id}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.categoryList}
-        renderItem={({ item }) => {
+        renderItem={useCallback(({ item }) => {
           const isActive = item.id === activeCategory && !query;
           const iconName: IconName = GIF_CATEGORY_ICONS[item.id] || 'star';
           return (
@@ -314,7 +314,7 @@ export const GifSearch = memo(function GifSearch({ onSelect, onClose, style }: G
               </Text>
             </Pressable>
           );
-        }}
+        }, [])}
       />
 
       {/* GIF grid */}

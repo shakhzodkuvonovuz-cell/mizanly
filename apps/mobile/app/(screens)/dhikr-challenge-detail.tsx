@@ -311,11 +311,11 @@ export default function DhikrChallengeDetailScreen() {
           <FlatList
             data={detail?.topContributors ?? []}
             keyExtractor={(item, index) => `${item.userId}-${index}`}
-            renderItem={({ item, index }) => (
+            renderItem={useCallback(({ item, index }) => (
               <Animated.View entering={FadeInUp.delay(350 + Math.min(index, 15) * 50).duration(300)}>
                 <ContributorRow contributor={item} rank={index + 1} />
               </Animated.View>
-            )}
+            ), [])}
             ListHeaderComponent={renderHeader}
             ListEmptyComponent={
               <EmptyState

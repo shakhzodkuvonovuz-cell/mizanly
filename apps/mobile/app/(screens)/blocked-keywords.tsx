@@ -178,7 +178,7 @@ export default function BlockedKeywordsScreen() {
               refreshControl={
                 <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
               }
-              renderItem={({ item, index }) => (
+              renderItem={useCallback(({ item, index }) => (
                 <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
                   <LinearGradient
                     colors={colors.gradient.cardDark}
@@ -208,7 +208,7 @@ export default function BlockedKeywordsScreen() {
                     </Pressable>
                   </LinearGradient>
                 </Animated.View>
-              )}
+              ), [])}
               ItemSeparatorComponent={() => <View style={styles.divider} />}
               ListEmptyComponent={
                 <EmptyState

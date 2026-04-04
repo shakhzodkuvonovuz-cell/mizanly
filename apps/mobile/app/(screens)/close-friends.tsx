@@ -356,7 +356,7 @@ export default function CloseFriendsScreen() {
             removeClippedSubviews={true}
           data={filteredFollowers}
           keyExtractor={(item) => item.id}
-          renderItem={({ item, index }) => (
+          renderItem={useCallback(({ item, index }) => (
             <UserRow
               user={item}
               isMe={currentUserId === item.id}
@@ -366,7 +366,7 @@ export default function CloseFriendsScreen() {
               disabled={!isReady || toggleMemberMutation.isPending}
               index={index}
             />
-          )}
+          ), [])}
           onEndReached={onEndReached}
           onEndReachedThreshold={0.4}
           refreshControl={

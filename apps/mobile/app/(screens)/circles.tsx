@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   FlatList, Alert, TextInput,
@@ -212,7 +212,7 @@ export default function CirclesScreen() {
             refreshControl={
               <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
-            renderItem={({ item, index }) => (
+            renderItem={useCallback(({ item, index }) => (
               <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
                 <Pressable style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
                 <LinearGradient
@@ -252,7 +252,7 @@ export default function CirclesScreen() {
                 </LinearGradient>
                 </Pressable>
               </Animated.View>
-            )}
+            ), [])}
             ListEmptyComponent={() => (
               <EmptyState
                 icon="users"

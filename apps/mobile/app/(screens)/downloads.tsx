@@ -359,14 +359,14 @@ export default function DownloadsScreen() {
               <FilterChips active={filter} onChange={setFilter} />
             </View>
           }
-          renderItem={({ item, index }) => (
+          renderItem={useCallback(({ item, index }) => (
             <DownloadItem
               item={item}
               index={index}
               onLongPress={handleLongPress}
               onAction={handleAction}
             />
-          )}
+          ), [])}
           ListEmptyComponent={() =>
             !downloadsQuery.isLoading ? (
               <EmptyState

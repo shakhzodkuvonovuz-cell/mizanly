@@ -337,7 +337,7 @@ export default function AudioLibraryScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={[styles.audioList, currentTrackId ? { paddingBottom: 120 } : undefined]}
           refreshControl={<BrandedRefreshControl refreshing={isRefetching} onRefresh={() => refetch()} />}
-          renderItem={({ item, index }) => (
+          renderItem={useCallback(({ item, index }) => (
             <AudioCard
               track={item}
               isPlaying={isPlaying}
@@ -347,7 +347,7 @@ export default function AudioLibraryScreen() {
               onToggleFavorite={() => toggleFavorite(item.id)}
               index={index}
             />
-          )}
+          ), [])}
           ListEmptyComponent={
             isLoading ? (
               <View style={{ padding: spacing.base, gap: spacing.md }}>

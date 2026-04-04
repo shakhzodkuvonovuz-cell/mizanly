@@ -360,14 +360,14 @@ export default function CommunitiesScreen() {
           data={filteredCommunities}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
-          renderItem={({ item, index }) => (
+          renderItem={useCallback(({ item, index }) => (
             <CommunityCard
               community={item}
               index={index}
               onJoin={handleJoin}
               onPress={handleCommunityPress}
             />
-          )}
+          ), [])}
           ListEmptyComponent={loading ? (
             <View style={styles.skeletonContainer}>
               {[...Array(3)].map((_, i) => (

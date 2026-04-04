@@ -181,7 +181,7 @@ export default function FollowRequestsScreen() {
             refreshControl={
               <BrandedRefreshControl refreshing={requestsQuery.isRefetching} onRefresh={() => requestsQuery.refetch()} />
             }
-            renderItem={({ item, index }) => (
+            renderItem={useCallback(({ item, index }) => (
               <RequestRow
                 request={item}
                 index={index}
@@ -192,7 +192,7 @@ export default function FollowRequestsScreen() {
                 onAccept={() => acceptMutation.mutate(item.id)}
                 onDecline={() => declineMutation.mutate(item.id)}
               />
-            )}
+            ), [])}
             ListEmptyComponent={() => (
               <EmptyState
                 icon="user"

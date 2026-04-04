@@ -243,7 +243,7 @@ export default function MutualFollowersScreen() {
           contentContainerStyle={{ paddingTop: headerHeight }}
           data={mutualFollowers}
           keyExtractor={(item) => item.id}
-          renderItem={({ item, index }) => (
+          renderItem={useCallback(({ item, index }) => (
             <UserRow
               user={item}
               isMe={currentUserId === item.id}
@@ -253,7 +253,7 @@ export default function MutualFollowersScreen() {
               index={index}
               isToggling={followMutation.isPending || unfollowMutation.isPending}
             />
-          )}
+          ), [])}
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.4}
           refreshControl={

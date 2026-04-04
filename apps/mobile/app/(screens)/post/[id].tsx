@@ -728,7 +728,7 @@ export default function PostDetailScreen() {
             />
           }
           ListHeaderComponent={listHeader}
-          renderItem={({ item }) => (
+          renderItem={useCallback(({ item }) => (
             <CommentRow
               comment={item}
               postId={id}
@@ -740,7 +740,7 @@ export default function PostDetailScreen() {
                 queryClient.invalidateQueries({ queryKey: ['post', id] });
               }}
             />
-          )}
+          ), [])}
           ListEmptyComponent={listEmpty}
           ListFooterComponent={listFooter}
           contentContainerStyle={{ paddingBottom: 140 }}

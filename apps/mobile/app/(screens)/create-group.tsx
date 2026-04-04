@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   TextInput, FlatList,
@@ -252,7 +252,7 @@ export default function CreateGroupScreen() {
                 removeClippedSubviews={true}
                 keyboardShouldPersistTaps="handled"
                 refreshControl={<BrandedRefreshControl refreshing={searchQuery.isFetching} onRefresh={() => searchQuery.refetch()} />}
-                renderItem={({ item }) => (
+                renderItem={useCallback(({ item }) => (
                   <Pressable
                     style={[styles.userRow, { borderBottomColor: tc.border }]}
                     onPress={() => handleAddMember(item)}
@@ -271,7 +271,7 @@ export default function CreateGroupScreen() {
                     </View>
                     <Icon name="plus" size="sm" color={colors.emerald} />
                   </Pressable>
-                )}
+                ), [])}
                 ListEmptyComponent={() =>
                   debouncedQuery.trim().length >= 2 ? (
                     <EmptyState

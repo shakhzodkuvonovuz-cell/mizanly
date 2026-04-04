@@ -354,9 +354,9 @@ export default function SearchScreen() {
           maxToRenderPerBatch={8}
                       data={posts}
                       keyExtractor={(item) => item.id}
-                      renderItem={({ item }) => (
+                      renderItem={useCallback(({ item }) => (
                         <PostCard post={item} />
-                      )}
+                      ), [])}
                       ListEmptyComponent={() => (
                         <EmptyState
                           icon="search"
@@ -395,9 +395,9 @@ export default function SearchScreen() {
           maxToRenderPerBatch={8}
                       data={threads}
                       keyExtractor={(item) => item.id}
-                      renderItem={({ item }) => (
+                      renderItem={useCallback(({ item }) => (
                         <ThreadCard thread={item} />
-                      )}
+                      ), [])}
                       ListEmptyComponent={() => (
                         <EmptyState
                           icon="search"
@@ -436,7 +436,7 @@ export default function SearchScreen() {
           maxToRenderPerBatch={8}
                       data={reels}
                       keyExtractor={(item) => item.id}
-                      renderItem={({ item }) => (
+                      renderItem={useCallback(({ item }) => (
                         <Pressable
                           style={styles.reelRow}
                           onPress={() => {
@@ -474,7 +474,7 @@ export default function SearchScreen() {
                             </View>
                           </View>
                         </Pressable>
-                      )}
+                      ), [])}
                       ListEmptyComponent={() => (
                         <EmptyState
                           icon="video"
@@ -513,12 +513,12 @@ export default function SearchScreen() {
           maxToRenderPerBatch={8}
                       data={videos}
                       keyExtractor={(item) => item.id}
-                      renderItem={({ item }) => (
+                      renderItem={useCallback(({ item }) => (
                         <VideoRow
                           video={item}
                           onPress={() => router.push(`/(screens)/video/${item.id}`)}
                         />
-                      )}
+                      ), [])}
                       ListEmptyComponent={() => (
                         <EmptyState
                           icon="video"
@@ -557,12 +557,12 @@ export default function SearchScreen() {
           maxToRenderPerBatch={8}
                       data={channels}
                       keyExtractor={(item) => item.id}
-                      renderItem={({ item }) => (
+                      renderItem={useCallback(({ item }) => (
                         <ChannelRow
                           channel={item}
                           onPress={() => router.push(`/(screens)/channel/${item.handle}`)}
                         />
-                      )}
+                      ), [])}
                       ListEmptyComponent={() => (
                         <EmptyState
                           icon="users"
@@ -600,7 +600,7 @@ export default function SearchScreen() {
                   : hashtags.map((h): SearchListItem => ({ type: 'hashtag', data: h }))
               }
               keyExtractor={(item, i) => item.type === 'user' ? item.data.id : `ht-${i}`}
-              renderItem={({ item }) => {
+              renderItem={useCallback(({ item }) => {
                 if (item.type === 'user') {
                   return (
                     <UserRow
@@ -632,7 +632,7 @@ export default function SearchScreen() {
                     </Pressable>
                 
                 );
-              }}
+              }, [])}
               ListEmptyComponent={() => (
                 <EmptyState
                   icon="search"
@@ -655,7 +655,7 @@ export default function SearchScreen() {
           maxToRenderPerBatch={8}
                 data={searchHistory}
                 keyExtractor={(item, i) => `history-${i}`}
-                renderItem={({ item }) => (
+                renderItem={useCallback(({ item }) => (
                   <View style={[styles.historyItem, { flexDirection: rtlFlexRow(isRTL) }]}>
                     <Pressable
                       style={[styles.historyText, { flexDirection: rtlFlexRow(isRTL) }]}
@@ -681,7 +681,7 @@ export default function SearchScreen() {
                       <Icon name="x" size={16} color={tc.text.tertiary} />
                     </Pressable>
                   </View>
-                )}
+                ), [])}
                 contentContainerStyle={{ paddingBottom: spacing.lg }}
               />
               <Pressable
@@ -711,7 +711,7 @@ export default function SearchScreen() {
               data={explorePosts}
               numColumns={3}
               keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
+              renderItem={useCallback(({ item }) => (
                 <Pressable
                   style={styles.exploreItem}
                   onPress={() => navigate(`/(screens)/post/${item.id}`)}
@@ -737,7 +737,7 @@ export default function SearchScreen() {
                     </View>
                   )}
                 </Pressable>
-              )}
+              ), [])}
               onEndReached={() => {
                 if (exploreQuery.hasNextPage && !exploreQuery.isFetchingNextPage) {
                   exploreQuery.fetchNextPage();

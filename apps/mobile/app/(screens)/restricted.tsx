@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -158,7 +158,7 @@ export default function RestrictedScreen() {
                 onRefresh={onRefresh}
               />
             }
-            renderItem={({ item, index }) => (
+            renderItem={useCallback(({ item, index }) => (
               <Animated.View entering={FadeInUp.delay(Math.min(index, 10) * 30).duration(300)}>
                 <View style={styles.row}>
                   <Avatar
@@ -191,7 +191,7 @@ export default function RestrictedScreen() {
                   />
                 </View>
               </Animated.View>
-            )}
+            ), [])}
             ListFooterComponent={() =>
               query.isFetchingNextPage ? (
                 <View style={styles.skeletonRow}>

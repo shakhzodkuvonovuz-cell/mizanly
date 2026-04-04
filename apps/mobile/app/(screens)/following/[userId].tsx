@@ -136,7 +136,7 @@ export default function FollowingScreen() {
           removeClippedSubviews={true}
           data={following}
           keyExtractor={(item) => item.id}
-          renderItem={({ item, index }) => (
+          renderItem={useCallback(({ item, index }) => (
             <UserRow
               user={item}
               isMe={clerkUser?.id === item.id}
@@ -144,7 +144,7 @@ export default function FollowingScreen() {
               onFollow={() => !followMutation.isPending && followMutation.mutate(item)}
               index={index}
             />
-          )}
+          ), [])}
           onEndReached={onEndReached}
           onEndReachedThreshold={0.4}
           refreshControl={

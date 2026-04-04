@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   TextInput, FlatList, SectionList,
@@ -305,7 +305,7 @@ export default function NewConversationScreen() {
                 onRefresh={() => searchQuery.refetch()}
               />
             }
-            renderItem={({ item, index }) => renderUserRow(item, index)}
+            renderItem={useCallback(({ item, index }) => renderUserRow(item, index), [])}
             ListEmptyComponent={() => (
               <EmptyState
                 icon="search"
@@ -330,7 +330,7 @@ export default function NewConversationScreen() {
             renderSectionHeader={({ section }) => (
               <Text style={styles.sectionLabel}>{section.title}</Text>
             )}
-            renderItem={({ item, index }) => renderUserRow(item, index)}
+            renderItem={useCallback(({ item, index }) => renderUserRow(item, index), [])}
             stickySectionHeadersEnabled={false}
             ListEmptyComponent={() => (
               <EmptyState

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet,
   FlatList, Alert,
@@ -137,7 +137,7 @@ export default function BlockedScreen() {
           refreshControl={
             <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
-          renderItem={({ item, index }) => {
+          renderItem={useCallback(({ item, index }) => {
             const u = item.blocked;
             return (
                 <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 30).duration(300)}>
@@ -167,7 +167,7 @@ export default function BlockedScreen() {
                 </Animated.View>
             
             );
-          }}
+          }, [])}
           ListFooterComponent={() =>
             query.isFetchingNextPage ? (
               <View style={[styles.skeletonRow, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>

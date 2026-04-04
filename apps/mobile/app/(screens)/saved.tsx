@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   FlatList, Dimensions,
@@ -305,11 +305,11 @@ export default function SavedScreen() {
             refreshControl={
               <BrandedRefreshControl refreshing={refreshingPosts} onRefresh={onRefreshPosts} />
             }
-            renderItem={({ item, index }) => (
+            renderItem={useCallback(({ item, index }) => (
               <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
                 <PostGrid post={item} onPress={() => navigateOnce(`/(screens)/post/${item.id}`)} />
               </Animated.View>
-            )}
+            ), [])}
             ListEmptyComponent={() =>
               !savedPostsQuery.isLoading ? (
                 <EmptyState icon="bookmark" title={t('screens.saved.noPosts')} subtitle={t('screens.saved.noPostsSubtitle')} />
@@ -344,11 +344,11 @@ export default function SavedScreen() {
             refreshControl={
               <BrandedRefreshControl refreshing={refreshingThreads} onRefresh={onRefreshThreads} />
             }
-            renderItem={({ item, index }) => (
+            renderItem={useCallback(({ item, index }) => (
               <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
                 <ThreadCard thread={item} viewerId={user?.id} isOwn={user?.username === item.user.username} />
               </Animated.View>
-            )}
+            ), [])}
             ListEmptyComponent={() =>
               !savedThreadsQuery.isLoading ? (
                 <EmptyState icon="bookmark" title={t('screens.saved.noThreads')} subtitle={t('screens.saved.noThreadsSubtitle')} />
@@ -396,11 +396,11 @@ export default function SavedScreen() {
             refreshControl={
               <BrandedRefreshControl refreshing={refreshingReels} onRefresh={onRefreshReels} />
             }
-            renderItem={({ item, index }) => (
+            renderItem={useCallback(({ item, index }) => (
               <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
                 <ReelGrid reel={item} onPress={() => navigateOnce(`/(screens)/reel/${item.id}`)} />
               </Animated.View>
-            )}
+            ), [])}
             ListEmptyComponent={() =>
               !savedReelsQuery.isLoading ? (
                 <EmptyState icon="bookmark" title={t('screens.saved.noReels')} subtitle={t('screens.saved.noReelsSubtitle')} />
@@ -435,11 +435,11 @@ export default function SavedScreen() {
             refreshControl={
               <BrandedRefreshControl refreshing={refreshingVideos} onRefresh={onRefreshVideos} />
             }
-            renderItem={({ item, index }) => (
+            renderItem={useCallback(({ item, index }) => (
               <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
                 <VideoRow video={item} onPress={() => navigateOnce(`/(screens)/video/${item.id}`)} />
               </Animated.View>
-            )}
+            ), [])}
             ListEmptyComponent={() =>
               !savedVideosQuery.isLoading ? (
                 <EmptyState icon="bookmark" title={t('screens.saved.noVideos')} subtitle={t('screens.saved.noVideosSubtitle')} />

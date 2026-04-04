@@ -542,11 +542,11 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
           data={activeTab === 'videos' ? regularVideos : activeTab === 'playlists' ? playlists : []}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingBottom: spacing['3xl'] }}
-          renderItem={({ item }) => {
+          renderItem={useCallback(({ item }) => {
             if (activeTab === 'videos') return <VideoCard video={item as Video} />;
             if (activeTab === 'playlists') return <PlaylistCard playlist={item as Playlist} />;
             return null;
-          }}
+          }, [])}
           ListHeaderComponent={
             <>
               {ListHeader}
@@ -728,7 +728,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
           <FlatList
             data={videos}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => {
+            renderItem={useCallback(({ item }) => {
               const isCurrentTrailer = channel?.trailerVideoId === item.id;
               const mins = Math.floor(item.duration / 60);
               const secs = Math.floor(item.duration % 60);
@@ -763,7 +763,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
                   )}
                 </Pressable>
               );
-            }}
+            }, [])}
             ListEmptyComponent={
               <EmptyState
                 icon="video"

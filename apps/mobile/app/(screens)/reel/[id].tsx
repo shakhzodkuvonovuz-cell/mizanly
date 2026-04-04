@@ -572,7 +572,7 @@ export default function ReelDetailScreen() {
               />
             }
             ListHeaderComponent={listHeader}
-            renderItem={({ item }) => (
+            renderItem={useCallback(({ item }) => (
               <CommentRow
                 comment={item}
                 reelId={id}
@@ -583,7 +583,7 @@ export default function ReelDetailScreen() {
                   queryClient.invalidateQueries({ queryKey: ['reel', id] });
                 }}
               />
-            )}
+            ), [])}
             ListEmptyComponent={listEmpty}
             ListFooterComponent={listFooter}
             contentContainerStyle={{ paddingBottom: 100 }}
@@ -665,7 +665,7 @@ export default function ReelDetailScreen() {
             <FlatList
               data={conversationsQuery.data ?? []}
               keyExtractor={(item) => item.id}
-              renderItem={({ item }: { item: Conversation }) => {
+              renderItem={useCallback(({ item }: { item: Conversation }) => {
                 const displayName = item.isGroup
                   ? item.groupName ?? t('risalah.group')
                   : item.members.find((m) => m.user.id !== user?.id)?.user.displayName ?? t('risalah.chat');
@@ -684,7 +684,7 @@ export default function ReelDetailScreen() {
                     <Icon name="send" size="sm" color={tc.text.secondary} />
                   </Pressable>
                 );
-              }}
+              }, [])}
               contentContainerStyle={{ paddingBottom: spacing['2xl'] }}
             />
           )}

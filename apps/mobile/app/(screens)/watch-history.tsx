@@ -218,9 +218,9 @@ export default function WatchHistoryScreen() {
           refreshControl={
             <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
-          renderItem={({ item, index }) => (
+          renderItem={useCallback(({ item, index }) => (
             <VideoCard item={item} onPress={() => handleVideoPress(item)} index={index} />
-          )}
+          ), [])}
           ListEmptyComponent={() =>
             !watchHistoryQuery.isLoading ? (
               <EmptyState

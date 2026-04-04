@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, Alert,
   TextInput, FlatList, Switch, Share,
@@ -22,6 +22,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
 import { messagesApi, blocksApi, searchApi, uploadApi } from '@/services/api';
+import { resizeForUpload } from '@/utils/imageResize';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { showToast } from '@/components/ui/Toast';
@@ -742,7 +743,7 @@ export default function ConversationInfoScreen() {
                 keyExtractor={(item) => item.id}
                 removeClippedSubviews={true}
                 refreshControl={<BrandedRefreshControl refreshing={memberSearchQuery.isFetching} onRefresh={() => memberSearchQuery.refetch()} />}
-                renderItem={({ item }) => (
+                renderItem={useCallback(({ item }) => (
                   <Pressable
                     accessibilityRole="button"
                     style={[styles.userRow, { borderBottomColor: tc.border }]}
@@ -760,7 +761,7 @@ export default function ConversationInfoScreen() {
                     </View>
                     <Icon name="plus" size="sm" color={colors.emerald} />
                   </Pressable>
-                )}
+                ), [])}
                 ListEmptyComponent={() =>
                   debouncedSearchQuery.trim().length >= 2 ? (
                     <View style={styles.empty}>

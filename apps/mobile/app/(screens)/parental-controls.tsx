@@ -668,13 +668,13 @@ export default function ParentalControlsScreen() {
               </View>
             </Animated.View>
           }
-          renderItem={({ item }) => (
+          renderItem={useCallback(({ item }) => (
             <ChildCard
               control={item}
               onUnlink={handleUnlink}
               onChangePin={handleChangePin}
             />
-          )}
+          ), [])}
           ListEmptyComponent={
             childrenQuery.isLoading ? (
               <View style={{ gap: spacing.md }}>

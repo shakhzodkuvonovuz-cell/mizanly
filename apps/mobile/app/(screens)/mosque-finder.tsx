@@ -412,9 +412,9 @@ export default function MosqueFinderScreen() {
               </View>
             </>
           }
-          renderItem={({ item, index }) => (
+          renderItem={useCallback(({ item, index }) => (
             <MosqueCard mosque={item} index={index} />
-          )}
+          ), [])}
           ListEmptyComponent={
             <EmptyState
               icon="map-pin"

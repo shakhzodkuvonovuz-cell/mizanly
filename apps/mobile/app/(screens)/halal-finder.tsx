@@ -163,7 +163,7 @@ export default function HalalFinderScreen() {
         data={CUISINE_TYPES}
         keyExtractor={(item) => item}
         contentContainerStyle={styles.chipsContainer}
-        renderItem={({ item }) => (
+        renderItem={useCallback(({ item }) => (
           <Pressable
             onPress={() => {
               haptic.tick();
@@ -184,7 +184,7 @@ export default function HalalFinderScreen() {
               {item}
             </Text>
           </Pressable>
-        )}
+        ), [])}
       />
     </View>
   ), [selectedCuisine, haptic, tc]);
@@ -216,14 +216,14 @@ export default function HalalFinderScreen() {
         <FlatList
           data={restaurants}
           keyExtractor={(item) => item.id}
-          renderItem={({ item, index }) => (
+          renderItem={useCallback(({ item, index }) => (
             <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
               <RestaurantCard
                 restaurant={item}
                 onPress={() => handleOpenDirections(item)}
               />
             </Animated.View>
-          )}
+          ), [])}
           ListHeaderComponent={listHeader}
           ListEmptyComponent={listEmpty}
           refreshControl={

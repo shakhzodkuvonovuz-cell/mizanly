@@ -347,7 +347,7 @@ function ChallengesScreen() {
           keyExtractor={(c) => c.key}
           inverted={isRTL}
           contentContainerStyle={styles.chipScrollRow}
-          renderItem={({ item: cat }) => (
+          renderItem={useCallback(({ item: cat }) => (
             <Pressable
               onPress={() => {
                 haptic.tick();
@@ -380,7 +380,7 @@ function ChallengesScreen() {
                 </Text>
               </View>
             </Pressable>
-          )}
+          ), [])}
         />
       )}
     </>

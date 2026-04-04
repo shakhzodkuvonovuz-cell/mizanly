@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet,
   FlatList, Alert,
@@ -125,7 +125,7 @@ export default function MutedScreen() {
           refreshControl={
             <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
-          renderItem={({ item, index }) => {
+          renderItem={useCallback(({ item, index }) => {
             const u = item.muted;
             return (
                 <Animated.View entering={FadeInUp.delay(Math.min(index, 10) * 30).duration(300)}>
@@ -156,7 +156,7 @@ export default function MutedScreen() {
                 </Animated.View>
             
             );
-          }}
+          }, [])}
           ListFooterComponent={() =>
             query.isFetchingNextPage ? (
               <View style={[styles.skeletonRow, { backgroundColor: tc.bgCard }]}>
