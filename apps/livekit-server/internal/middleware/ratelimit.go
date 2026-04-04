@@ -54,6 +54,11 @@ func WithTestMode() RateLimiterOption {
 
 // CheckCreateRoom enforces room creation rate limit: 10 per minute per user.
 func (rl *RateLimiter) CheckCreateRoom(ctx context.Context, userID string) error {
+	// Defense-in-depth: reject empty userID even though auth middleware should block it.
+	// Without this, all unauthenticated requests share one rate limit bucket ("lk:rl:room:").
+	if userID == "" {
+		return fmt.Errorf("rate limit check requires non-empty userID")
+	}
 	if rl.rdb == nil {
 		if rl.testMode {
 			return nil
@@ -67,6 +72,10 @@ func (rl *RateLimiter) CheckCreateRoom(ctx context.Context, userID string) error
 
 // CheckTokenRequest enforces token request rate limit: 30 per minute per user.
 func (rl *RateLimiter) CheckTokenRequest(ctx context.Context, userID string) error {
+	// Defense-in-depth: reject empty userID even though auth middleware should block it.
+	if userID == "" {
+		return fmt.Errorf("rate limit check requires non-empty userID")
+	}
 	if rl.rdb == nil {
 		if rl.testMode {
 			return nil

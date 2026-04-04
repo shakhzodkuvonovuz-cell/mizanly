@@ -48,6 +48,19 @@ func TestRateLimiter_NilRedis_FailsClosed(t *testing.T) {
 	}
 }
 
+// Empty userID must be rejected (defense-in-depth — auth middleware normally blocks it)
+func TestRateLimiter_EmptyUserID_Rejected(t *testing.T) {
+	rl := NewRateLimiter(nil, WithTestMode())
+	ctx := context.Background()
+
+	if err := rl.CheckCreateRoom(ctx, ""); err == nil {
+		t.Error("expected error for empty userID (CheckCreateRoom)")
+	}
+	if err := rl.CheckTokenRequest(ctx, ""); err == nil {
+		t.Error("expected error for empty userID (CheckTokenRequest)")
+	}
+}
+
 // [G06-#8 fix] Nil Redis in test mode passes through
 func TestRateLimiter_NilRedis_TestModeAllows(t *testing.T) {
 	rl := NewRateLimiter(nil, WithTestMode())

@@ -219,11 +219,13 @@ func (s *Store) InsertOneTimePreKeys(ctx context.Context, userID string, deviceI
 	}
 	defer tx.Rollback(ctx)
 
-	// G02-H2: FOR SHARE instead of FOR UPDATE — count query only needs read consistency,
-	// not exclusive lock. FOR UPDATE on COUNT(*) locks ALL matching rows, causing contention.
+	// G02-H2: Removed FOR UPDATE/FOR SHARE from COUNT(*) — row-level locks on aggregate
+	// queries lock ALL matching rows, causing contention. The transaction isolation level
+	// (READ COMMITTED) already provides snapshot consistency for the count. The subsequent
+	// INSERT within the same transaction prevents TOCTOU races via ON CONFLICT.
 	var count int
 	err = tx.QueryRow(ctx,
-		`SELECT COUNT(*) FROM e2e_one_time_pre_keys WHERE "userId" = $1 AND "deviceId" = $2 FOR SHARE`,
+		`SELECT COUNT(*) FROM e2e_one_time_pre_keys WHERE "userId" = $1 AND "deviceId" = $2`,
 		userID, deviceID,
 	).Scan(&count)
 	if err != nil {
@@ -673,7 +675,14 @@ func (s *Store) GetTransparencyRoot(ctx context.Context) (*TransparencyRoot, err
 	defer s.mu.RUnlock()
 
 	if s.cachedTreeSize == 0 {
-		return &TransparencyRoot{Root: "", TreeSize: 0, UpdatedAt: time.Now().UTC().Format(time.RFC3339)}, nil
+		// V6-F13: Even empty tree uses cacheRebuiltAt, not time.Now().
+		// If the cache hasn't been rebuilt yet (zero time), return the zero value
+		// so clients see the tree was never populated — not a fresh timestamp.
+		updatedAt := s.cacheRebuiltAt
+		if updatedAt.IsZero() {
+			updatedAt = time.Time{} // explicit zero
+		}
+		return &TransparencyRoot{Root: "", TreeSize: 0, UpdatedAt: updatedAt.Format(time.RFC3339)}, nil
 	}
 
 	// V6-F13 FIX: Return actual cache rebuild time, not time.Now().
