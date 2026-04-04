@@ -2,7 +2,6 @@ import { Test } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { HealthController } from './health.controller';
 import { PrismaService } from '../../config/prisma.service';
-import { AsyncJobService } from '../../common/services/async-jobs.service';
 import { FeatureFlagsService } from '../../common/services/feature-flags.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
@@ -38,11 +37,6 @@ describe('HealthController', () => {
 
     const mockRedis = mockRedisInstance;
 
-    const mockAsyncJobService = {
-      enqueue: jest.fn(),
-      getStats: jest.fn().mockReturnValue({ pending: 0, active: 0, completed: 0, failed: 0 }),
-    };
-
     const mockFeatureFlagsService = {
       getAllFlags: jest.fn().mockResolvedValue({}),
       isEnabledForUser: jest.fn().mockResolvedValue(false),
@@ -54,7 +48,6 @@ describe('HealthController', () => {
         ...globalMockProviders,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: 'REDIS', useValue: mockRedis },
-        { provide: AsyncJobService, useValue: mockAsyncJobService },
         { provide: FeatureFlagsService, useValue: mockFeatureFlagsService },
         { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue('test') } },
       ],

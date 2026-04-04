@@ -1,7 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../config/prisma.service';
-import { AsyncJobService } from '../services/async-jobs.service';
 import { AnalyticsService } from '../services/analytics.service';
 import { FeatureFlagsService } from '../services/feature-flags.service';
 import { PushTriggerService } from '../../modules/notifications/push-trigger.service';
@@ -115,14 +114,6 @@ export const mockRedis = {
     pfadd: jest.fn().mockResolvedValue(1),
     pfcount: jest.fn().mockResolvedValue(0),
     duplicate: jest.fn().mockReturnValue({ subscribe: jest.fn().mockResolvedValue(undefined), on: jest.fn() }),
-  },
-};
-
-export const mockAsyncJobService = {
-  provide: AsyncJobService,
-  useValue: {
-    enqueue: jest.fn(),
-    getStats: jest.fn().mockReturnValue({ enqueued: 0, completed: 0, failed: 0, retried: 0, deprecated: true }),
   },
 };
 
@@ -282,7 +273,6 @@ export const globalMockProviders = [
   mockGamificationService,
   mockAiService,
   mockStreamService,
-  mockAsyncJobService,
   mockQueueService,
   mockAnalyticsService,
   mockFeatureFlagsService,

@@ -4,7 +4,6 @@ import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
-import { AsyncJobService } from '../../common/services/async-jobs.service';
 import { QueueService } from '../../common/queue/queue.service';
 import { FeatureFlagsService } from '../../common/services/feature-flags.service';
 import { CircuitBreakerService } from '../../common/services/circuit-breaker.service';
@@ -24,7 +23,6 @@ export class HealthController {
   constructor(
     private prisma: PrismaService,
     @Inject('REDIS') private redis: Redis,
-    private jobs: AsyncJobService,
     private queueService: QueueService,
     private flags: FeatureFlagsService,
     private configService: ConfigService,
@@ -123,7 +121,6 @@ export class HealthController {
     return {
       timestamp: new Date().toISOString(),
       counts: { users: userCount, posts: postCount, threads: threadCount, reels: reelCount },
-      inProcessJobs: this.jobs.getStats(),
       queues: await this.queueService.getStats(),
       circuitBreakers: this.circuitBreakers.getStatus(),
       uptime: Math.round(process.uptime()),

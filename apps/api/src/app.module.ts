@@ -10,7 +10,6 @@ import { UserThrottlerGuard } from './common/guards/user-throttler.guard';
 import { LoggerModule } from 'nestjs-pino';
 import { PrismaModule } from './config/prisma.module';
 import { RedisModule } from './config/redis.module';
-import { AsyncJobsModule } from './common/services/async-jobs.module';
 import { QueueModule } from './common/queue/queue.module';
 import { FeatureFlagsModule } from './common/services/feature-flags.module';
 import { AnalyticsModule } from './common/services/analytics.module';
@@ -141,7 +140,7 @@ import { ResponseTimeMiddleware } from './common/middleware/response-time.middle
     }),
     ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),
-    PrismaModule, RedisModule, AsyncJobsModule, QueueModule, FeatureFlagsModule, AnalyticsModule, PlatformServicesModule,
+    PrismaModule, RedisModule, QueueModule, FeatureFlagsModule, AnalyticsModule, PlatformServicesModule,
     AuthModule,
     UsersModule,
     PostsModule,
