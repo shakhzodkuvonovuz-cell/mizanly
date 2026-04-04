@@ -23,6 +23,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { showToast } from '@/components/ui/Toast';
+import { useIsOffline } from '@/hooks/useIsOffline';
 
 type WellbeingSettings = Parameters<typeof settingsApi.updateWellbeing>[0];
 
@@ -144,6 +145,7 @@ export default function ContentSettingsScreen() {
   const { t } = useTranslation();
   const tc = useThemeColors();
   const haptic = useContextualHaptic();
+  const isOffline = useIsOffline();
 
   // Settings from API
   const settingsQuery = useQuery({
@@ -188,6 +190,10 @@ export default function ContentSettingsScreen() {
   });
 
   const handleUpdateSensitiveContent = (v: boolean) => {
+    if (isOffline) {
+      showToast({ message: t('common.offline', 'You are offline'), variant: 'error' });
+      return;
+    }
     haptic.tick();
     setSensitiveContent(v);
     wellbeingMutation.mutate({ sensitiveContent: v });

@@ -70,6 +70,7 @@ function SummaryCard({ title, value, change, icon, index }: { title: string; val
 function BarChart({ stats }: { stats: CreatorStat[] }) {
   const { t } = useTranslation();
   const tc = useThemeColors();
+  const [focusedBar, setFocusedBar] = useState<string | null>(null);
   if (!stats.length) return null;
 
   // Aggregate views per day (sum across spaces)
@@ -100,7 +101,18 @@ function BarChart({ stats }: { stats: CreatorStat[] }) {
       >
         <View style={styles.chart}>
           {dates.map((date, i) => (
-            <View key={date} style={styles.barWrapper}>
+            <Pressable
+              key={date}
+              style={styles.barWrapper}
+              onLongPress={() => setFocusedBar(focusedBar === date ? null : date)}
+              accessibilityRole="button"
+              accessibilityLabel={`${new Date(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}: ${formatCompactNumber(values[i])} ${t('analytics.views', 'views')}`}
+            >
+              {focusedBar === date && (
+                <View style={styles.barTooltip}>
+                  <Text style={styles.barTooltipText}>{formatCompactNumber(values[i])}</Text>
+                </View>
+              )}
               <LinearGradient
                 colors={[colors.emerald, colors.gold]}
                 style={[
@@ -113,7 +125,7 @@ function BarChart({ stats }: { stats: CreatorStat[] }) {
               <Text style={[styles.barLabel, { color: tc.text.tertiary }]}>
                 {new Date(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
               </Text>
-            </View>
+            </Pressable>
           ))}
         </View>
       </LinearGradient>
@@ -553,6 +565,18 @@ const styles = StyleSheet.create({
   barLabel: {
     fontSize: fontSize.xs,
     marginTop: spacing.xs,
+  },
+  barTooltip: {
+    backgroundColor: colors.emerald,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+    marginBottom: spacing.xs,
+  },
+  barTooltipText: {
+    color: '#fff',
+    fontSize: fontSize.xs,
+    fontWeight: '700',
   },
   // Follower growth
   growthContainer: {
