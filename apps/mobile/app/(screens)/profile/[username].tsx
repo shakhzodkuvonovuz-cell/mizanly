@@ -67,7 +67,7 @@ const GridItem = memo(function GridItem({ post, onPress }: { post: Post; onPress
         onPressIn={() => { scale.value = withSpring(0.96, animation.spring.snappy); }}
         onPressOut={() => { scale.value = withSpring(1, animation.spring.snappy); }}
         style={styles.gridItem}
-        accessibilityLabel="View post"
+        accessibilityLabel={t('accessibility.viewPost')}
         accessibilityRole="button"
       >
         {post.mediaUrls.length > 0 ? (
@@ -118,7 +118,7 @@ const ReelGridItem = memo(function ReelGridItem({ reel, onPress }: { reel: Reel;
         onPressIn={() => { scale.value = withSpring(0.96, animation.spring.snappy); }}
         onPressOut={() => { scale.value = withSpring(1, animation.spring.snappy); }}
         style={styles.gridItem}
-        accessibilityLabel="View reel"
+        accessibilityLabel={t('accessibility.viewReel')}
         accessibilityRole="button"
       >
         {reel.thumbnailUrl ? (
