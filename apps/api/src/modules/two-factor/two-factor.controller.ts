@@ -84,7 +84,7 @@ export class TwoFactorController {
     if (!isValid) {
       throw new BadRequestException('Invalid verification code');
     }
-    return { success: true, message: 'Two-factor authentication enabled' };
+    return { message: 'Two-factor authentication enabled' };
   }
 
   @Post('validate')
@@ -116,7 +116,7 @@ export class TwoFactorController {
     @Body() dto: DisableDto,
   ) {
     await this.twoFactorService.disable(userId, dto.code);
-    return { success: true, message: 'Two-factor authentication disabled' };
+    return { message: 'Two-factor authentication disabled' };
   }
 
   @Get('status')
@@ -142,6 +142,6 @@ export class TwoFactorController {
     if (!valid) {
       throw new BadRequestException('Invalid backup code');
     }
-    return { success: true, message: 'Backup code accepted' };
+    return { message: 'Backup code accepted' };
   }
 }

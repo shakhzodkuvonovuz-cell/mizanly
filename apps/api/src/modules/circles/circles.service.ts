@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException, ForbiddenException, InternalServerErrorException, BadRequestException, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../config/prisma.service';
-import { NotificationsService } from '../notifications/notifications.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NOTIFICATION_REQUESTED, NotificationRequestedEvent } from '../../common/events/notification.events';
 
 function generateSlug(name: string): string {
   return name
@@ -19,7 +20,7 @@ export class CirclesService {
   private readonly logger = new Logger(CirclesService.name);
   constructor(
     private prisma: PrismaService,
-    private readonly notificationsService: NotificationsService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async getMyCircles(userId: string) {
@@ -149,27 +150,27 @@ export class CirclesService {
 
       // Notify each added member (fire-and-forget, capped at 50 to avoid spam)
       for (const memberId of safeMemberIds.slice(0, 50)) {
-        this.notificationsService.create({
+        this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
           userId: memberId,
           actorId: userId,
           type: 'CIRCLE_INVITE',
           title: 'Added to circle',
           body: `You were added to "${circle.name}"`,
-        }).catch(err => this.logger.warn('Circle add notification failed', err.message));
+        }));
       }
 
       // Notify circle owner that members joined (fire-and-forget)
       // Each added member triggers a CIRCLE_JOIN notification to the owner
       for (const memberId of safeMemberIds.slice(0, 50)) {
         if (memberId !== userId) {
-          this.notificationsService.create({
+          this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
             userId,
             actorId: memberId,
             type: 'CIRCLE_JOIN',
             circleId,
             title: circle.name,
             body: `A new member joined "${circle.name}"`,
-          }).catch(err => this.logger.warn('Circle join notification failed', err.message));
+          }));
         }
       }
     }
@@ -202,14 +203,14 @@ export class CirclesService {
 
       // Notify each removed member (fire-and-forget, capped at 50)
       for (const memberId of safeIds.slice(0, 50)) {
-        this.notificationsService.create({
+        this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
           userId: memberId,
           actorId: userId,
           type: 'SYSTEM',
           circleId,
           title: 'Removed from circle',
           body: `You were removed from "${circle.name}"`,
-        }).catch(err => this.logger.warn('Circle remove notification failed', err.message));
+        }));
       }
     }
 

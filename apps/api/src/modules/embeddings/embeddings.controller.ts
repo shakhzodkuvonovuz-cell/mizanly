@@ -28,6 +28,6 @@ export class EmbeddingsController {
       throw new ForbiddenException('Admin access required');
     }
     const result = await this.pipeline.backfillAll();
-    return { data: result, success: true };
+    return result;
   }
 }

@@ -110,7 +110,7 @@ export class DownloadsService {
     if (download.userId !== userId) throw new ForbiddenException();
 
     await this.prisma.offlineDownload.delete({ where: { id: downloadId } });
-    return { success: true };
+    return;
   }
 
   /** Aggregate fileSize for all complete downloads of a user */

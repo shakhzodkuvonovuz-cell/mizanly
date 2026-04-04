@@ -1,13 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CirclesService } from './circles.service';
 import { PrismaService } from '../../config/prisma.service';
-import { NotificationsService } from '../notifications/notifications.service';
+import { NOTIFICATION_REQUESTED } from '../../common/events/notification.events';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('CirclesService', () => {
   let service: CirclesService;
-  let notificationsService: { create: jest.Mock };
+  let eventEmitter: { emit: jest.Mock };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let prisma: any;
 
@@ -49,7 +50,7 @@ describe('CirclesService', () => {
     }).compile();
 
     service = module.get<CirclesService>(CirclesService);
-    notificationsService = module.get(NotificationsService) as unknown as { create: jest.Mock };
+    eventEmitter = module.get(EventEmitter2) as unknown as { emit: jest.Mock };
   });
 
   afterEach(() => {
@@ -300,23 +301,29 @@ describe('CirclesService', () => {
       await service.removeMembers(circleId, userId, memberIds);
 
       // Should notify each removed member
-      expect(notificationsService.create).toHaveBeenCalledTimes(2);
-      expect(notificationsService.create).toHaveBeenCalledWith({
-        userId: 'user-456',
-        actorId: userId,
-        type: 'SYSTEM',
-        circleId,
-        title: 'Removed from circle',
-        body: 'You were removed from "Study Group"',
-      });
-      expect(notificationsService.create).toHaveBeenCalledWith({
-        userId: 'user-789',
-        actorId: userId,
-        type: 'SYSTEM',
-        circleId,
-        title: 'Removed from circle',
-        body: 'You were removed from "Study Group"',
-      });
+      expect(eventEmitter.emit).toHaveBeenCalledTimes(2);
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        NOTIFICATION_REQUESTED,
+        expect.objectContaining({
+          userId: 'user-456',
+          actorId: userId,
+          type: 'SYSTEM',
+          circleId,
+          title: 'Removed from circle',
+          body: 'You were removed from "Study Group"',
+        }),
+      );
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        NOTIFICATION_REQUESTED,
+        expect.objectContaining({
+          userId: 'user-789',
+          actorId: userId,
+          type: 'SYSTEM',
+          circleId,
+          title: 'Removed from circle',
+          body: 'You were removed from "Study Group"',
+        }),
+      );
     });
 
     it('should not send notifications when no members are actually removed', async () => {
@@ -328,7 +335,7 @@ describe('CirclesService', () => {
 
       await service.removeMembers(circleId, userId, ['user-456']);
 
-      expect(notificationsService.create).not.toHaveBeenCalled();
+      expect(eventEmitter.emit).not.toHaveBeenCalled();
     });
 
     it('should not send notification when trying to remove the owner', async () => {
@@ -341,7 +348,7 @@ describe('CirclesService', () => {
 
       expect(result).toEqual({ removed: 0 });
       expect(prisma.circleMember.deleteMany).not.toHaveBeenCalled();
-      expect(notificationsService.create).not.toHaveBeenCalled();
+      expect(eventEmitter.emit).not.toHaveBeenCalled();
     });
   });
 

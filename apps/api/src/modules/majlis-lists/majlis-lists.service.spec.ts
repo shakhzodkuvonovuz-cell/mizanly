@@ -353,7 +353,7 @@ describe('MajlisListsService', () => {
       expect(prisma.majlisList.delete).toHaveBeenCalledWith({
         where: { id: listId },
       });
-      expect(result.success).toBe(true);
+      expect(result).toBeUndefined();
     });
 
     it('should throw NotFoundException if list does not exist', async () => {
@@ -470,7 +470,7 @@ describe('MajlisListsService', () => {
         where: { listId_userId: { listId, userId: 'user-456' } },
       });
       expect(prisma.$transaction).toHaveBeenCalled();
-      expect(result.success).toBe(true);
+      expect(result).toBeUndefined();
     });
 
     it('should throw NotFoundException if list does not exist', async () => {
@@ -545,7 +545,7 @@ describe('MajlisListsService', () => {
         where: { listId_userId: { listId, userId: memberUserId } },
       });
       expect(prisma.$transaction).toHaveBeenCalled();
-      expect(result.success).toBe(true);
+      expect(result).toBeUndefined();
     });
 
     it('should throw NotFoundException if list does not exist', async () => {

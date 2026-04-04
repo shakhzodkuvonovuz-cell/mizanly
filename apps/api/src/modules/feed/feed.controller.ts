@@ -171,7 +171,7 @@ export class FeedController {
     @Body() body: TrackSessionSignalDto,
   ) {
     await this.personalizedFeed.trackSessionSignal(userId, body);
-    return { success: true };
+    return;
   }
 
   @UseGuards(OptionalClerkAuthGuard)

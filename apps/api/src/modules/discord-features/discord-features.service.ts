@@ -187,7 +187,7 @@ export class DiscordFeaturesService {
       data: { replyCount: 0 },
     });
 
-    return { success: true };
+    return;
   }
 
   // ── Webhooks ────────────────────────────────────────────
@@ -305,7 +305,7 @@ export class DiscordFeaturesService {
       });
     }
 
-    return { success: true, webhookId: webhook.id };
+    return { webhookId: webhook.id };
   }
 
   // ── Stage Sessions (Moderated Audio) ────────────────────
@@ -394,7 +394,7 @@ export class DiscordFeaturesService {
       data: { audienceCount: { increment: 1 } },
     });
 
-    return { success: true, sessionId };
+    return { sessionId };
   }
 
   async leaveStageAsListener(sessionId: string, userId: string) {
@@ -409,7 +409,7 @@ export class DiscordFeaturesService {
       });
     }
 
-    return { success: true, sessionId };
+    return { sessionId };
   }
 
   async getActiveStageSessions(circleId?: string) {

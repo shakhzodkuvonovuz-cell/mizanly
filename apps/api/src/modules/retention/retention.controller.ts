@@ -22,6 +22,6 @@ export class RetentionController {
     @Body() body: TrackSessionDepthDto,
   ) {
     await this.retention.trackSessionDepth(userId, body);
-    return { success: true };
+    return;
   }
 }

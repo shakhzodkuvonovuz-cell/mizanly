@@ -386,7 +386,7 @@ describe('AudioRoomsService', () => {
 
       const result = await service.leave(roomId, userId);
 
-      expect(result).toEqual({ success: true });
+      expect(result).toBeUndefined();
       expect(mockPrismaService.audioRoomParticipant.delete).toHaveBeenCalledWith({
         where: { roomId_userId: { roomId, userId } },
       });
@@ -431,7 +431,7 @@ describe('AudioRoomsService', () => {
 
       const result = await service.changeRole(roomId, hostId, dto);
 
-      expect(result).toEqual({ success: true });
+      expect(result).toBeUndefined();
       expect(mockPrismaService.audioRoomParticipant.update).toHaveBeenCalledWith({
         where: { roomId_userId: { roomId, userId: targetUserId } },
         data: { role: AudioRoomRole.SPEAKER },

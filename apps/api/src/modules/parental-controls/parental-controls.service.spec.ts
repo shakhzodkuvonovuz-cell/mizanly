@@ -96,7 +96,7 @@ describe('ParentalControlsService', () => {
       prisma.user.update.mockResolvedValue({});
 
       const result = await service.unlinkChild('parent-1', 'child-1', '1234');
-      expect(result.success).toBe(true);
+      expect(result).toBeUndefined();
     });
 
     it('should throw ForbiddenException with wrong PIN', async () => {

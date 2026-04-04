@@ -136,7 +136,7 @@ describe('TelegramFeaturesController', () => {
   describe('reorderChatFolders', () => {
     it('should call service.reorderChatFolders with userId and folderIds', async () => {
       const dto = { folderIds: ['f-2', 'f-1'] };
-      service.reorderChatFolders.mockResolvedValue({ success: true } as any);
+      service.reorderChatFolders.mockResolvedValue(undefined as any);
       await controller.reorderChatFolders(userId, dto as any);
       expect(service.reorderChatFolders).toHaveBeenCalledWith(userId, ['f-2', 'f-1']);
     });

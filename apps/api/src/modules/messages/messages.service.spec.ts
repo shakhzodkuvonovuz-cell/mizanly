@@ -1058,13 +1058,13 @@ describe('MessagesService', () => {
     it('should set timer duration', async () => {
       prisma.conversation.update.mockResolvedValue({});
       const result = await service.setDisappearingTimer('conv-1', 'user-1', 86400);
-      expect(result).toEqual({ success: true, duration: 86400 });
+      expect(result).toEqual({ duration: 86400 });
     });
 
     it('should allow null to disable', async () => {
       prisma.conversation.update.mockResolvedValue({});
       const result = await service.setDisappearingTimer('conv-1', 'user-1', null);
-      expect(result).toEqual({ success: true, duration: null });
+      expect(result).toEqual({ duration: null });
     });
 
     it('should throw BadRequestException for zero duration', async () => {
@@ -1668,14 +1668,14 @@ describe('MessagesService', () => {
       jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
       prisma.conversation.update.mockResolvedValue({});
       const result = await service.setDisappearingTimer('conv-1', 'user-1', 3600);
-      expect(result).toEqual({ success: true, duration: 3600 });
+      expect(result).toEqual({ duration: 3600 });
     });
 
     it('should clear timer with null', async () => {
       jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ role: 'member' });
       prisma.conversation.update.mockResolvedValue({});
       const result = await service.setDisappearingTimer('conv-1', 'user-1', null);
-      expect(result).toEqual({ success: true, duration: null });
+      expect(result).toEqual({ duration: null });
     });
 
     it('should reject negative duration', async () => {

@@ -329,7 +329,7 @@ describe('EventsService', () => {
 
       const result = await service.deleteEvent(userId, eventId);
 
-      expect(result).toEqual({ success: true });
+      expect(result).toBeUndefined();
       expect(mockPrismaService.event.delete).toHaveBeenCalledWith({ where: { id: eventId } });
     });
 
@@ -414,7 +414,7 @@ describe('EventsService', () => {
 
       const result = await service.removeRsvp(userId, eventId);
 
-      expect(result).toEqual({ success: true });
+      expect(result).toBeUndefined();
       expect(mockPrismaService.eventRSVP.delete).toHaveBeenCalledWith({
         where: { eventId_userId: { eventId, userId } },
       });

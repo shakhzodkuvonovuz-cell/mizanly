@@ -1034,11 +1034,11 @@ export class VideosService {
       ]);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        return { success: true }; // Already set — idempotent
+        return; // Already set — idempotent
       }
       throw error;
     }
-    return { success: true };
+    return;
   }
 
   async removePremiereReminder(videoId: string, userId: string) {
@@ -1051,7 +1051,7 @@ export class VideosService {
       }),
       this.prisma.$executeRaw`UPDATE video_premieres SET "reminderCount" = GREATEST("reminderCount" - 1, 0) WHERE id = ${premiere.id}`,
     ]);
-    return { success: true };
+    return;
   }
 
   async startPremiere(videoId: string, userId: string) {
@@ -1070,7 +1070,7 @@ export class VideosService {
       }),
     ]);
 
-    return { success: true };
+    return;
   }
 
   // Bug 25: Add viewerCount increment for premieres
@@ -1127,7 +1127,7 @@ export class VideosService {
     const video = await this.prisma.video.findFirst({ where: { id: videoId, userId } });
     if (!video) throw new NotFoundException();
     await this.prisma.endScreen.deleteMany({ where: { videoId } });
-    return { success: true };
+    return;
   }
 
   // ── Video Chapters ─────────────────────────────────

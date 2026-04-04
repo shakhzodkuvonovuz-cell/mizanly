@@ -149,7 +149,7 @@ describe('GamificationService', () => {
       prisma.$executeRaw.mockResolvedValue(1);
 
       const result = await service.joinChallenge('user-1', 'ch-1');
-      expect(result.success).toBe(true);
+      expect(result).toBeUndefined();
     });
 
     it('should throw NotFoundException for non-existent challenge', async () => {

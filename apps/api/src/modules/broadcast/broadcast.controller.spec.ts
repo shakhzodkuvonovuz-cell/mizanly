@@ -67,7 +67,7 @@ describe('BroadcastController', () => {
 
   describe('subscribe', () => {
     it('should call service.subscribe', async () => {
-      mockService.subscribe.mockResolvedValue({ success: true });
+      mockService.subscribe.mockResolvedValue(undefined);
       await controller.subscribe('channel-1', 'user-1');
       expect(service.subscribe).toHaveBeenCalledWith('channel-1', 'user-1');
     });

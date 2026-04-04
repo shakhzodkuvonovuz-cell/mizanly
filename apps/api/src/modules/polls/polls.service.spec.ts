@@ -140,7 +140,7 @@ describe('PollsService', () => {
         },
       });
       expect(prisma.$transaction).toHaveBeenCalled();
-      expect(result.success).toBe(true);
+      expect(result).toBeUndefined();
     });
 
     it('should throw NotFoundException if poll does not exist', async () => {
@@ -204,7 +204,7 @@ describe('PollsService', () => {
         },
       });
       expect(prisma.$transaction).toHaveBeenCalled();
-      expect(result.success).toBe(true);
+      expect(result).toBeUndefined();
     });
 
     it('should throw BadRequestException if user has not voted', async () => {
@@ -341,7 +341,7 @@ describe('PollsService', () => {
       prisma.$transaction.mockResolvedValue([{}, {}, {}]);
 
       const result = await service.vote('poll-mc', 'opt2', 'user1');
-      expect(result.success).toBe(true);
+      expect(result).toBeUndefined();
     });
 
     it('should throw ConflictException when voting same option twice in multi-choice', async () => {

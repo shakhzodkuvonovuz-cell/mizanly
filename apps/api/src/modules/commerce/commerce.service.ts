@@ -595,7 +595,7 @@ export class CommerceService {
         });
       }
 
-      return { success: true };
+      return;
     });
   }
 
@@ -656,7 +656,7 @@ export class CommerceService {
         });
       }
 
-      return { success: true, raisedAmount: Number(updated.raisedAmount) };
+      return { raisedAmount: Number(updated.raisedAmount) };
     });
   }
 

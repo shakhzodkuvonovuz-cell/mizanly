@@ -40,16 +40,15 @@ describe('RetentionController', () => {
       const result = await controller.trackSession(userId, defaultBody);
 
       expect(service.trackSessionDepth).toHaveBeenCalledWith(userId, defaultBody);
-      expect(result).toEqual({ success: true });
+      expect(result).toBeUndefined();
     });
 
-    it('should return { success: true } on successful tracking', async () => {
+    it('should return undefined (void) on successful tracking', async () => {
       service.trackSessionDepth.mockResolvedValue(undefined);
 
       const result = await controller.trackSession(userId, defaultBody);
 
-      expect(result).toEqual({ success: true });
-      expect(Object.keys(result)).toEqual(['success']);
+      expect(result).toBeUndefined();
     });
 
     it('should propagate service errors to the caller', async () => {
@@ -94,7 +93,7 @@ describe('RetentionController', () => {
       const result = await controller.trackSession(userId, body);
 
       expect(service.trackSessionDepth).toHaveBeenCalledWith(userId, body);
-      expect(result).toEqual({ success: true });
+      expect(result).toBeUndefined();
     });
 
     it('should work with maximum valid numeric values', async () => {
@@ -109,7 +108,7 @@ describe('RetentionController', () => {
       const result = await controller.trackSession(userId, body);
 
       expect(service.trackSessionDepth).toHaveBeenCalledWith(userId, body);
-      expect(result).toEqual({ success: true });
+      expect(result).toBeUndefined();
     });
 
     it('should pass the userId from @CurrentUser decorator, not from body', async () => {

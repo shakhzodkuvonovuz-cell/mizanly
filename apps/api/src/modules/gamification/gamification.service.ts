@@ -363,7 +363,7 @@ export class GamificationService {
       }));
     }
 
-    return { success: true };
+    return;
   }
 
   async updateChallengeProgress(userId: string, challengeId: string, progress: number) {

@@ -119,7 +119,7 @@ export class ParentalControlsService {
       }),
     ]);
 
-    return { success: true };
+    return;
   }
 
   async getMyChildren(parentUserId: string) {

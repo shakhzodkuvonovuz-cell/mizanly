@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { CirclesController } from './circles.controller';
 import { CirclesService } from './circles.service';
-import { NotificationsModule } from '../notifications/notifications.module';
 
 /**
  * CirclesModule — user-facing circle management (create, rename, add/remove members).
@@ -12,5 +11,5 @@ import { NotificationsModule } from '../notifications/notifications.module';
  * - CommunitiesModule: public/private communities with roles, rules, moderation (like Discord servers)
  * Both use the Prisma Circle model but serve different user-facing features.
  */
-@Module({ imports: [NotificationsModule], controllers: [CirclesController], providers: [CirclesService], exports: [CirclesService] })
+@Module({ controllers: [CirclesController], providers: [CirclesService], exports: [CirclesService] })
 export class CirclesModule {}

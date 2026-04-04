@@ -75,7 +75,7 @@ export class InternalPushController {
     }
 
     if (!body.userIds || body.userIds.length === 0) {
-      return { success: true, sent: 0 };
+      return { sent: 0 };
     }
 
     // Cap at 100 users per request (defense-in-depth, DTO also enforces)
@@ -89,7 +89,7 @@ export class InternalPushController {
       });
 
       this.logger.log(`Internal push sent to ${userIds.length} users`);
-      return { success: true, sent: userIds.length };
+      return { sent: userIds.length };
     } catch (err) {
       // [F40 fix] Return HTTP 500 on push failure, not 200 with { success: false }.
       // The Go caller checks HTTP status code, not response body. A 200 would

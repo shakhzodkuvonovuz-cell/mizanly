@@ -902,7 +902,7 @@ describe('VideosService', () => {
       prisma.$executeRaw.mockResolvedValue(1);
 
       const result = await service.setPremiereReminder('video-1', 'user-1');
-      expect(result).toEqual({ success: true });
+      expect(result).toBeUndefined();
     });
 
     it('should throw NotFoundException when premiere not found', async () => {
@@ -918,7 +918,7 @@ describe('VideosService', () => {
       prisma.$executeRaw.mockResolvedValue(1);
 
       const result = await service.removePremiereReminder('video-1', 'user-1');
-      expect(result).toEqual({ success: true });
+      expect(result).toBeUndefined();
     });
   });
 
@@ -928,7 +928,7 @@ describe('VideosService', () => {
       prisma.videoPremiere.update.mockResolvedValue({});
 
       const result = await service.startPremiere('video-1', 'user-1');
-      expect(result).toEqual({ success: true });
+      expect(result).toBeUndefined();
     });
 
     it('should throw NotFoundException for non-owner', async () => {
@@ -996,7 +996,7 @@ describe('VideosService', () => {
       prisma.video.findFirst.mockResolvedValue({ id: 'v1', userId: 'u1' });
       prisma.endScreen.deleteMany.mockResolvedValue({});
       const result = await service.deleteEndScreens('v1', 'u1');
-      expect(result).toEqual({ success: true });
+      expect(result).toBeUndefined();
     });
 
     it('should throw NotFoundException for non-owner', async () => {

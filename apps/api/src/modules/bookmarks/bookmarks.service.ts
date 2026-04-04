@@ -89,7 +89,7 @@ export class BookmarksService {
       }
       throw error;
     }
-    return { success: true };
+    return;
   }
 
   // Save a thread
@@ -138,7 +138,7 @@ export class BookmarksService {
       }
       throw error;
     }
-    return { success: true };
+    return;
   }
 
   // Save a video
@@ -195,7 +195,7 @@ export class BookmarksService {
       }
       throw error;
     }
-    return { success: true };
+    return;
   }
 
   // Get saved posts with optional collection filter

@@ -480,7 +480,7 @@ export class PaymentsService {
       this.logger.error(`Stripe attach payment method failed: ${msg}`);
       throw new BadRequestException('Failed to attach payment method');
     }
-    return { success: true };
+    return;
   }
 
   // ==================== Webhook Handlers ====================

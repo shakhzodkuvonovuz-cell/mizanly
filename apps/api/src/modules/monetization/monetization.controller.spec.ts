@@ -205,12 +205,12 @@ describe('MonetizationController', () => {
   describe('requestCashout', () => {
     it('should call monetizationService.requestCashout with userId and dto', async () => {
       const dto = { amount: 200, payoutSpeed: 'standard' as const, paymentMethodId: 'acct_123' };
-      service.requestCashout.mockResolvedValue({ success: true } as any);
+      service.requestCashout.mockResolvedValue(undefined as any);
 
       const result = await controller.requestCashout(userId, dto as any);
 
       expect(service.requestCashout).toHaveBeenCalledWith(userId, dto);
-      expect(result).toEqual({ success: true });
+      expect(result).toBeUndefined();
     });
   });
 

@@ -89,7 +89,7 @@ describe('DiscordFeaturesService — edge cases', () => {
     prisma.message.create.mockResolvedValue({ id: 'msg-1' });
 
     const result = await service.executeWebhook('token', { content: 'Hello from CI' });
-    expect(result.success).toBe(true);
+    expect(result.webhookId).toBe('wh-1');
     expect(prisma.message.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
@@ -105,7 +105,7 @@ describe('DiscordFeaturesService — edge cases', () => {
       id: 'stage-1', status: 'live', audienceCount: 0,
     });
     const result = await service.leaveStageAsListener('stage-1', userId);
-    expect(result.success).toBe(true);
+    expect(result.sessionId).toBe('stage-1');
     expect(prisma.stageSession.update).not.toHaveBeenCalled();
   });
 

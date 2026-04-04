@@ -174,7 +174,7 @@ export class PollsService {
       }));
     }
 
-    return { success: true };
+    return;
   }
 
   async retractVote(pollId: string, userId: string, optionId?: string) {
@@ -209,7 +209,7 @@ export class PollsService {
 
     await this.prisma.$transaction(ops);
 
-    return { success: true };
+    return;
   }
 
   async getVoters(pollId: string, optionId: string, cursor?: string) {

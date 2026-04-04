@@ -12,7 +12,8 @@ import { TIME_WINDOWS } from '../../common/constants/feed-scoring';
 import { CreateReelDto } from './dto/create-reel.dto';
 import { Prisma, ReelStatus, CommentPermission, ReactionType, ReportReason } from '@prisma/client';
 import Redis from 'ioredis';
-import { NotificationsService } from '../notifications/notifications.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NOTIFICATION_REQUESTED, NotificationRequestedEvent } from '../../common/events/notification.events';
 import { StreamService } from '../stream/stream.service';
 import { sanitizeText } from '@/common/utils/sanitize';
 import { extractHashtags } from '@/common/utils/hashtag';
@@ -83,7 +84,7 @@ export class ReelsService {
   constructor(
     private prisma: PrismaService,
     @Inject('REDIS') private redis: Redis,
-    private notifications: NotificationsService,
+    private eventEmitter: EventEmitter2,
     private stream: StreamService,
     private gamification: GamificationService,
     private ai: AiService,
@@ -231,14 +232,14 @@ export class ReelsService {
         });
         for (const record of taggedRecords) {
           if (record.userId !== userId) {
-            this.notifications.create({
+            this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
               userId: record.userId,
               actorId: userId,
               type: 'MENTION',
               reelId: reel.id,
               title: 'Tagged you',
               body: `@${actorUsername} tagged you in a reel`,
-            }).catch((err) => this.logger.error('Failed to create tag notification', err));
+            }));
           }
         }
       }
@@ -252,14 +253,14 @@ export class ReelsService {
         });
         for (const mentioned of mentionedUsers) {
           if (mentioned.id !== userId) {
-            this.notifications.create({
+            this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
               userId: mentioned.id,
               actorId: userId,
               type: 'MENTION',
               reelId: reel.id,
               title: 'Mentioned you',
               body: `@${actorUsername ?? 'Someone'} mentioned you in a reel`,
-            }).catch((err) => this.logger.error('Failed to create mention notification', err));
+            }));
           }
         }
       }
@@ -283,11 +284,11 @@ export class ReelsService {
         // Skip notification for scheduled reels — they're not "live" yet
         const freshReel = await this.prisma.reel.findUnique({ where: { id: reel.id }, select: { scheduledAt: true } });
         if (!freshReel?.scheduledAt || new Date(freshReel.scheduledAt) <= new Date()) {
-          this.notifications.create({
+          this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
             userId, actorId: null, type: 'SYSTEM', reelId: reel.id,
             title: 'Reel ready!',
             body: 'Your reel has finished processing and is now live.',
-          }).catch((err) => this.logger.warn('Reel ready notification failed', err instanceof Error ? err.message : err));
+          }));
         }
       })
       .catch((err) => {
@@ -299,11 +300,11 @@ export class ReelsService {
           // Notify user their reel is ready — skip for scheduled reels
           const freshReel = await this.prisma.reel.findUnique({ where: { id: reel.id }, select: { scheduledAt: true } });
           if (!freshReel?.scheduledAt || new Date(freshReel.scheduledAt) <= new Date()) {
-            this.notifications.create({
+            this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
               userId, actorId: null, type: 'SYSTEM', reelId: reel.id,
               title: 'Reel ready!',
               body: 'Your reel has finished processing and is now live.',
-            }).catch((err) => this.logger.warn('Reel ready notification failed (fallback path)', err instanceof Error ? err.message : err));
+            }));
           }
         }).catch((e) => this.logger.error('Failed to update reel status', e));
       });
@@ -691,10 +692,10 @@ export class ReelsService {
       ]);
       // Notify reel owner (skip self-notification) — use REEL_LIKE so PushTriggerService routes correctly
       if (reel.userId && reel.userId !== userId) {
-        this.notifications.create({
+        this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
           userId: reel.userId, actorId: userId,
           type: 'REEL_LIKE', reelId,
-        }).catch((err) => this.logger.error('Failed to create notification', err));
+        }));
       }
     } catch (err: unknown) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
@@ -791,11 +792,11 @@ export class ReelsService {
     ]);
     // Notify reel owner (skip self-notification) — use REEL_COMMENT so PushTriggerService routes correctly
     if (reel.userId && reel.userId !== userId) {
-      this.notifications.create({
+      this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
         userId: reel.userId, actorId: userId,
         type: 'REEL_COMMENT', reelId,
         body: content.substring(0, 100),
-      }).catch((err) => this.logger.error('Failed to create notification', err));
+      }));
     }
     return comment;
   }
@@ -1291,11 +1292,11 @@ export class ReelsService {
         }).catch(err => this.logger.warn('Unpublish workflow failed for moderated reel', err instanceof Error ? err.message : err));
 
         // Notify user their content was removed
-        this.notifications.create({
+        this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
           userId, actorId: userId, type: 'SYSTEM', reelId,
           title: 'Content removed',
           body: 'Your reel was removed because it violates community guidelines.',
-        }).catch((err) => this.logger.warn('Reel content removal notification failed', err instanceof Error ? err.message : err));
+        }));
       } else if (result.classification === 'WARNING') {
         await this.prisma.reel.update({
           where: { id: reelId },

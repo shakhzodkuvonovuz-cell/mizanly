@@ -185,7 +185,7 @@ export class MajlisListsService {
       where: { id },
     });
 
-    return { success: true };
+    return;
   }
 
   async getMembers(userId: string | undefined, listId: string, cursor?: string, limit = 20) {
@@ -289,7 +289,7 @@ export class MajlisListsService {
       }),
     ]);
 
-    return { success: true };
+    return;
   }
 
   async removeMember(userId: string, listId: string, memberUserId: string) {
@@ -322,7 +322,7 @@ export class MajlisListsService {
       this.prisma.$executeRaw`UPDATE "majlis_lists" SET "membersCount" = GREATEST("membersCount" - 1, 0) WHERE id = ${listId}`,
     ]);
 
-    return { success: true };
+    return;
   }
 
   async getTimeline(userId: string | undefined, listId: string, cursor?: string, limit = 20) {

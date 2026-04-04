@@ -61,14 +61,11 @@ describe('BookmarksService — edge cases', () => {
   });
 
   describe('unsavePost — edge cases', () => {
-    it('should handle unsaving a post that was not saved (no error)', async () => {
-      prisma.savedPost.findUnique.mockResolvedValue(null);
-      prisma.savedPost.delete.mockResolvedValue({});
+    it('should return undefined on successful unsave', async () => {
+      prisma.$transaction.mockResolvedValue(undefined);
 
-      // Service may return success even if not found (idempotent)
       const result = await service.unsavePost(userId, 'post-1');
-      expect(result).toBeDefined();
-      expect(typeof result).toBe('object');
+      expect(result).toBeUndefined();
     });
   });
 

@@ -57,7 +57,7 @@ describe('TwoFactorController', () => {
       const result = await controller.verify(userId, { code: '123456' } as any);
 
       expect(service.verify).toHaveBeenCalledWith(userId, '123456');
-      expect(result).toEqual({ success: true, message: 'Two-factor authentication enabled' });
+      expect(result).toEqual({ message: 'Two-factor authentication enabled' });
     });
 
     it('should throw BadRequestException when code is invalid', async () => {
@@ -105,7 +105,7 @@ describe('TwoFactorController', () => {
       const result = await controller.disable(userId, { code: '123456' } as any);
 
       expect(service.disable).toHaveBeenCalledWith(userId, '123456');
-      expect(result).toEqual({ success: true, message: 'Two-factor authentication disabled' });
+      expect(result).toEqual({ message: 'Two-factor authentication disabled' });
     });
   });
 
@@ -138,7 +138,7 @@ describe('TwoFactorController', () => {
       const result = await controller.backup(userId, { backupCode: 'ABCDE12345' } as any);
 
       expect(service.useBackupCode).toHaveBeenCalledWith(userId, 'ABCDE12345');
-      expect(result).toEqual({ success: true, message: 'Backup code accepted' });
+      expect(result).toEqual({ message: 'Backup code accepted' });
     });
 
     it('should throw BadRequestException when backup code is invalid', async () => {

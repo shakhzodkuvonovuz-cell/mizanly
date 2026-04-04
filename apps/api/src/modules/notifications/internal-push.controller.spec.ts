@@ -36,7 +36,7 @@ describe('InternalPushController', () => {
         data: { type: 'incoming_call', roomName: 'room-1' },
       });
 
-      expect(result).toEqual({ success: true, sent: 2 });
+      expect(result).toEqual({ sent: 2 });
       expect(pushService.sendToUsers).toHaveBeenCalledWith(
         ['u1', 'u2'],
         { title: 'Incoming Call', body: 'You have a call', data: { type: 'incoming_call', roomName: 'room-1' } },
@@ -72,7 +72,7 @@ describe('InternalPushController', () => {
         body: 'Test',
       });
 
-      expect(result).toEqual({ success: true, sent: 0 });
+      expect(result).toEqual({ sent: 0 });
       expect(pushService.sendToUsers).not.toHaveBeenCalled();
     });
 

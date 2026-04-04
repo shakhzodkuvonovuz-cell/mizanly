@@ -528,7 +528,7 @@ export class MonetizationService {
 
     this.logger.log(`User ${userId} cashed out ${diamonds} diamonds ($${usdAmount.toFixed(2)}, ${payoutSpeed})`);
 
-    return { success: true };
+    return;
   }
 
   async getPayoutHistory(userId: string, cursor?: string, limit = 20) {

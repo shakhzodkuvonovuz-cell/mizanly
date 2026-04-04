@@ -281,7 +281,7 @@ export class AudioRoomsService {
       where: { roomId_userId: { roomId: id, userId } },
     });
 
-    return { success: true };
+    return;
   }
 
   // Change participant role (host only)
@@ -338,7 +338,7 @@ export class AudioRoomsService {
       data: { role: newRole },
     });
 
-    return { success: true };
+    return;
   }
 
   // Toggle hand raised

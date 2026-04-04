@@ -281,7 +281,7 @@ export class TelegramFeaturesService {
         this.prisma.chatFolder.updateMany({ where: { id, userId }, data: { position: index } }),
       ),
     );
-    return { success: true };
+    return;
   }
 
   // ── Slow Mode ───────────────────────────────────────────
@@ -317,7 +317,7 @@ export class TelegramFeaturesService {
     // Log admin action
     await this.logAdminAction(conversationId, adminId, 'SLOW_MODE_CHANGED', undefined, `Slow mode set to ${seconds}s`);
 
-    return { success: true, slowModeSeconds: seconds };
+    return { slowModeSeconds: seconds };
   }
 
   // ── Admin Log ───────────────────────────────────────────

@@ -286,7 +286,7 @@ describe('CommerceController', () => {
 
   describe('contributeWaqf — H21a', () => {
     it('should delegate to commerceService.contributeWaqf', async () => {
-      service.contributeWaqf.mockResolvedValue({ success: true } as any);
+      service.contributeWaqf.mockResolvedValue({ raisedAmount: 500 } as any);
       await controller.contributeWaqf(userId, 'wf-1', { amount: 500 } as any);
       expect(service.contributeWaqf).toHaveBeenCalledWith(userId, 'wf-1', 500);
     });
@@ -303,7 +303,7 @@ describe('CommerceController', () => {
 
   describe('contributeTreasury — H23a', () => {
     it('should delegate to commerceService.contributeTreasury', async () => {
-      service.contributeTreasury.mockResolvedValue({ success: true } as any);
+      service.contributeTreasury.mockResolvedValue(undefined as any);
       await controller.contributeTreasury(userId, 'treasury-1', { amount: 100 } as any);
       expect(service.contributeTreasury).toHaveBeenCalledWith(userId, 'treasury-1', 100);
     });

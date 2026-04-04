@@ -105,7 +105,7 @@ describe('FeedController', () => {
       const body = { contentId: 'p1', action: 'like' as const };
       const result = await controller.trackSessionSignal('user-1', body);
       expect(mockPersonalizedFeed.trackSessionSignal).toHaveBeenCalledWith('user-1', body);
-      expect(result).toEqual({ success: true });
+      expect(result).toBeUndefined();
     });
   });
 

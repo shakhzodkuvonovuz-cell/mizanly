@@ -296,7 +296,7 @@ describe('TelegramFeaturesService', () => {
     it('should reorder folders', async () => {
       prisma.chatFolder.findMany.mockResolvedValue([{ id: 'f-1' }]);
       const result = await service.reorderChatFolders('user-1', ['f-1']);
-      expect(result.success).toBe(true);
+      expect(result).toBeUndefined();
     });
 
     it('should throw BadRequestException for empty array', async () => {

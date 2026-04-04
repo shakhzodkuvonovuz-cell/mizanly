@@ -50,7 +50,7 @@ describe('EmbeddingsController', () => {
         select: { role: true },
       });
       expect(pipeline.backfillAll).toHaveBeenCalled();
-      expect(result).toEqual({ data: mockResult, success: true });
+      expect(result).toEqual(mockResult);
     });
 
     it('should throw ForbiddenException for non-admin user', async () => {

@@ -465,7 +465,7 @@ describe('DiscordFeaturesService', () => {
         id: 'wh-1', isActive: true, targetChannelId: null, circleId: 'c1',
       });
       const result = await service.executeWebhook('test-token', { content: 'Hello' });
-      expect(result.success).toBe(true);
+      expect(result.webhookId).toBe('wh-1');
       // Should have looked up by hashed token
       expect(prisma.webhook.findUnique).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -482,7 +482,7 @@ describe('DiscordFeaturesService', () => {
           id: 'wh-1', isActive: true, targetChannelId: null, circleId: 'c1',
         }); // raw token fallback succeeds
       const result = await service.executeWebhook('legacy-raw-token', { content: 'Hello' });
-      expect(result.success).toBe(true);
+      expect(result.webhookId).toBe('wh-1');
       expect(prisma.webhook.findUnique).toHaveBeenCalledTimes(2);
     });
 
@@ -771,7 +771,7 @@ describe('DiscordFeaturesService', () => {
     it('should increment audienceCount for live session', async () => {
       prisma.stageSession.findUnique.mockResolvedValue({ ...mockStage, status: 'STAGE_LIVE' });
       const result = await service.joinStageAsListener('stage-1', 'user-2');
-      expect(result.success).toBe(true);
+      expect(result.sessionId).toBe('stage-1');
       expect(prisma.stageSession.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: { audienceCount: { increment: 1 } },
@@ -796,7 +796,7 @@ describe('DiscordFeaturesService', () => {
     it('should decrement audienceCount when count > 0', async () => {
       prisma.stageSession.findUnique.mockResolvedValue({ ...mockStage, audienceCount: 5 });
       const result = await service.leaveStageAsListener('stage-1', 'user-2');
-      expect(result.success).toBe(true);
+      expect(result.sessionId).toBe('stage-1');
       expect(prisma.stageSession.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: { audienceCount: { decrement: 1 } },
@@ -807,7 +807,7 @@ describe('DiscordFeaturesService', () => {
     it('should not decrement below zero', async () => {
       prisma.stageSession.findUnique.mockResolvedValue({ ...mockStage, audienceCount: 0 });
       const result = await service.leaveStageAsListener('stage-1', 'user-2');
-      expect(result.success).toBe(true);
+      expect(result.sessionId).toBe('stage-1');
       expect(prisma.stageSession.update).not.toHaveBeenCalled();
     });
 

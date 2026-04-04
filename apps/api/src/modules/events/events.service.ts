@@ -297,7 +297,7 @@ export class EventsService {
     }
 
     await this.prisma.event.delete({ where: { id } });
-    return { success: true };
+    return;
   }
 
   async rsvpToEvent(userId: string, eventId: string, status: 'going' | 'maybe' | 'not_going') {
@@ -395,7 +395,7 @@ export class EventsService {
       }
       throw error;
     }
-    return { success: true };
+    return;
   }
 
   async listAttendees(eventId: string, cursor?: string, limit = 20, status?: string) {

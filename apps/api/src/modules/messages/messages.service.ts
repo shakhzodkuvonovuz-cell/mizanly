@@ -1223,7 +1223,7 @@ export class MessagesService {
       where: { id: conversationId },
       data: { disappearingDuration: duration },
     });
-    return { success: true, duration };
+    return { duration };
   }
 
   async archiveConversationForUser(conversationId: string, userId: string) {
