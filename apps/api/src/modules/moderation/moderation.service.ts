@@ -306,6 +306,25 @@ export class ModerationService {
             data: { isDeleted: true },
           });
         }
+        // Finding #69: Also handle thread/reel/video soft-delete on moderation review
+        if (report.reportedThreadId) {
+          await tx.thread.update({
+            where: { id: report.reportedThreadId },
+            data: { isRemoved: true },
+          });
+        }
+        if (report.reportedReelId) {
+          await tx.reel.update({
+            where: { id: report.reportedReelId },
+            data: { isRemoved: true },
+          });
+        }
+        if (report.reportedVideoId) {
+          await tx.video.update({
+            where: { id: report.reportedVideoId },
+            data: { isRemoved: true },
+          });
+        }
       }
 
       // Create moderation log for non-dismiss actions

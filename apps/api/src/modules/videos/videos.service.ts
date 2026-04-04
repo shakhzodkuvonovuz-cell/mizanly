@@ -436,6 +436,15 @@ export class VideosService {
       }
     }
 
+    // Pre-save thumbnail moderation on update (prevents bait-and-switch with harmful thumbnails)
+    if (dto.thumbnailUrl && dto.thumbnailUrl !== video.thumbnailUrl) {
+      const imageResult = await this.ai.moderateImage(dto.thumbnailUrl);
+      if (imageResult.classification === 'BLOCK') {
+        this.logger.warn(`Video update blocked: thumbnail BLOCKED — ${imageResult.reason}, userId=${userId}, videoId=${videoId}`);
+        throw new BadRequestException('Thumbnail image violates community guidelines');
+      }
+    }
+
     const updated = await this.prisma.video.update({
       where: { id: videoId },
       data: {
