@@ -196,6 +196,23 @@ export class ReelsService {
       }
     }
 
+    // Media processing: EXIF strip, resize variants, BlurHash for thumbnail (fire-and-forget)
+    if (dto.thumbnailUrl) {
+      const mediaKey = dto.thumbnailUrl.split('/').slice(-3).join('/');
+      this.queueService.addMediaProcessingJob({
+        mediaUrl: dto.thumbnailUrl, mediaKey, userId, contentType: 'reel', contentId: reel.id,
+      }).catch(err => this.logger.warn(`Failed to queue media processing for reel ${reel.id}: ${err instanceof Error ? err.message : err}`));
+    }
+    // For photo carousels, process each image
+    if (dto.isPhotoCarousel && dto.carouselUrls?.length) {
+      for (const url of dto.carouselUrls) {
+        const mediaKey = url.split('/').slice(-3).join('/');
+        this.queueService.addMediaProcessingJob({
+          mediaUrl: url, mediaKey, userId, contentType: 'reel', contentId: reel.id,
+        }).catch(err => this.logger.warn(`Failed to queue media processing for reel carousel ${reel.id}: ${err instanceof Error ? err.message : err}`));
+      }
+    }
+
     // --- Side effects deferred for scheduled content ---
     // Notifications, gamification XP only fire when content is actually published.
     // For scheduled content, these are triggered by the scheduling cron in publishOverdueContent().

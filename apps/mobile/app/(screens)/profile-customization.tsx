@@ -23,6 +23,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { gamificationApi, uploadApi } from '@/services/api';
+import { resizeForUpload } from '@/utils/imageResize';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -221,12 +222,11 @@ function ProfileCustomizationScreen() {
     if (!result.canceled && result.assets[0]) {
       try {
         const uri = result.assets[0].uri;
-        const ext = uri.split('.').pop()?.toLowerCase() ?? 'jpg';
-        const contentType = `image/${ext}`;
-        const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl(contentType, 'backgrounds');
-        const fileRes = await fetch(uri);
+        const resized = await resizeForUpload(uri, result.assets[0].width, result.assets[0].height);
+        const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl(resized.mimeType, 'backgrounds');
+        const fileRes = await fetch(resized.uri);
         const blob = await fileRes.blob();
-        const uploadRes = await fetch(uploadUrl, { method: 'PUT', body: blob, headers: { 'Content-Type': contentType } });
+        const uploadRes = await fetch(uploadUrl, { method: 'PUT', body: blob, headers: { 'Content-Type': resized.mimeType } });
         if (!uploadRes.ok) throw new Error('Upload failed');
         setBackgroundImageUrl(publicUrl);
         haptic.success();

@@ -70,6 +70,48 @@ export class QueueService implements OnModuleDestroy {
     return job.id!;
   }
 
+  // ── Media Processing Jobs ──────────────────────────────────
+
+  /**
+   * Enqueue a media processing job (EXIF strip, resize variants, BlurHash generation).
+   * Called after successful media upload in content creation flows.
+   */
+  async addMediaProcessingJob(data: {
+    mediaUrl: string;
+    mediaKey: string;
+    userId: string;
+    contentType: 'post' | 'story' | 'thread' | 'reel' | 'video';
+    contentId: string;
+  }): Promise<string> {
+    const resizeJob = await this.circuitBreaker.exec('redis', () =>
+      this.mediaQueue.add('image-resize', this.withCorrelation({
+        type: 'image-resize' as const,
+        ...data,
+      }), {
+        jobId: `media:resize:${data.mediaKey}`,
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 2000 },
+      }),
+    );
+
+    // Enqueue BlurHash generation as a separate job
+    this.circuitBreaker.exec('redis', () =>
+      this.mediaQueue.add('blurhash', this.withCorrelation({
+        type: 'blurhash' as const,
+        ...data,
+      }), {
+        jobId: `media:blurhash:${data.mediaKey}`,
+        attempts: 2,
+        backoff: { type: 'exponential', delay: 1000 },
+      }),
+    ).catch((err) => {
+      this.logger.warn(`Failed to enqueue BlurHash job for ${data.mediaKey}: ${err instanceof Error ? err.message : err}`);
+    });
+
+    this.logger.debug(`Enqueued media processing jobs for ${data.mediaKey}`);
+    return resizeJob.id!;
+  }
+
   // ── Analytics Jobs ────────────────────────────────────────
 
   async addGamificationJob(data: {

@@ -165,6 +165,14 @@ export class VideosService {
       }),
     ]);
 
+    // Media processing: EXIF strip, resize variants, BlurHash for thumbnail (fire-and-forget)
+    if (dto.thumbnailUrl) {
+      const mediaKey = dto.thumbnailUrl.split('/').slice(-3).join('/');
+      this.queueService.addMediaProcessingJob({
+        mediaUrl: dto.thumbnailUrl, mediaKey, userId, contentType: 'video', contentId: video[0].id,
+      }).catch(err => this.logger.warn(`Failed to queue media processing for video ${video[0].id}: ${err instanceof Error ? err.message : err}`));
+    }
+
     // Kick off Cloudflare Stream ingestion (async — don't block response)
     this.stream.uploadFromUrl(dto.videoUrl, { title: dto.title, creatorId: userId })
       .then(async (streamId) => {

@@ -25,6 +25,7 @@ import { CharCountRing } from '@/components/ui/CharCountRing';
 import { Autocomplete } from '@/components/ui/Autocomplete';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { reelsApi, uploadApi } from '@/services/api';
+import { resizeForUpload } from '@/utils/imageResize';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -426,10 +427,11 @@ export default function CreateReelScreen() {
         // Step 2: Upload thumbnail if we have one
         let thumbnailUrl = presign.publicUrl;
         if (thumbnailUri) {
-          const thumbPresign = await uploadApi.getPresignUrl('image/jpeg', 'thumbnails');
-          const thumbResponse = await fetch(thumbnailUri);
+          const resizedThumb = await resizeForUpload(thumbnailUri);
+          const thumbPresign = await uploadApi.getPresignUrl(resizedThumb.mimeType, 'thumbnails');
+          const thumbResponse = await fetch(resizedThumb.uri);
           const thumbBlob = await thumbResponse.blob();
-          await fetch(thumbPresign.uploadUrl, { method: 'PUT', body: thumbBlob, headers: { 'Content-Type': 'image/jpeg' } });
+          await fetch(thumbPresign.uploadUrl, { method: 'PUT', body: thumbBlob, headers: { 'Content-Type': resizedThumb.mimeType } });
           thumbnailUrl = thumbPresign.publicUrl;
         }
 

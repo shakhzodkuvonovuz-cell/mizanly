@@ -28,6 +28,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius, fontSizeExt, fonts, animation } from '@/theme';
 import { storiesApi, uploadApi } from '@/services/api';
+import { resizeForUpload } from '@/utils/imageResize';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
@@ -513,10 +514,17 @@ export default function CreateStoryScreen() {
     mutationFn: async () => {
       let mediaUrl = '';
       if (mediaUri) {
-        const contentType = mediaType === 'video' ? 'video/mp4' : 'image/jpeg';
+        let uploadUri = mediaUri;
+        let contentType: string;
+        if (mediaType === 'video') {
+          contentType = 'video/mp4';
+        } else {
+          const resized = await resizeForUpload(mediaUri);
+          uploadUri = resized.uri;
+          contentType = resized.mimeType;
+        }
         const upload = await uploadApi.getPresignUrl(contentType, 'stories');
-        // Actually upload the media blob to R2
-        const response = await fetch(mediaUri);
+        const response = await fetch(uploadUri);
         const blob = await response.blob();
         await fetch(upload.uploadUrl, { method: 'PUT', body: blob, headers: { 'Content-Type': contentType } });
         mediaUrl = upload.publicUrl;

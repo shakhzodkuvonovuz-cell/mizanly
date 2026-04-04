@@ -21,6 +21,7 @@ import { RichText } from '@/components/ui/RichText';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { formatCount } from '@/utils/formatCount';
 import { channelsApi, channelPostsApi, uploadApi } from '@/services/api';
+import { resizeForUpload } from '@/utils/imageResize';
 import { showToast } from '@/components/ui/Toast';
 import type { ChannelPost, Channel, PaginatedResponse } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
@@ -226,9 +227,17 @@ export default function CommunityPostsScreen() {
       try {
         uploadedUrls = await Promise.all(
           selectedMediaList.map(async (media) => {
-            const contentType = media.type === 'video' ? 'video/mp4' : 'image/jpeg';
+            let uploadUri = media.uri;
+            let contentType: string;
+            if (media.type === 'video') {
+              contentType = 'video/mp4';
+            } else {
+              const resized = await resizeForUpload(media.uri);
+              uploadUri = resized.uri;
+              contentType = resized.mimeType;
+            }
             const presign = await uploadApi.getPresignUrl(contentType, 'community-posts');
-            const response = await fetch(media.uri);
+            const response = await fetch(uploadUri);
             const blob = await response.blob();
             await fetch(presign.uploadUrl, {
               method: 'PUT',

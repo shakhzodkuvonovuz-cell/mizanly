@@ -24,6 +24,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { storiesApi, uploadApi } from '@/services/api';
+import { resizeForUpload } from '@/utils/imageResize';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -226,17 +227,18 @@ function PhotoMusicScreen() {
     mutationFn: async () => {
       setIsPosting(true);
 
-      // Upload all images
+      // Upload all images (resize + strip EXIF first)
       const uploadedUrls: string[] = [];
       for (const img of images) {
-        const presignData = await uploadApi.getPresignUrl('image/jpeg', 'stories');
+        const resized = await resizeForUpload(img.uri);
+        const presignData = await uploadApi.getPresignUrl(resized.mimeType, 'stories');
 
-        const response = await fetch(img.uri);
+        const response = await fetch(resized.uri);
         const blob = await response.blob();
         await fetch(presignData.uploadUrl, {
           method: 'PUT',
           body: blob,
-          headers: { 'Content-Type': 'image/jpeg' },
+          headers: { 'Content-Type': resized.mimeType },
         });
 
         uploadedUrls.push(presignData.publicUrl);

@@ -20,6 +20,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts, shadow, animation } from '@/theme';
 import { storiesApi, uploadApi } from '@/services/api';
+import { resizeForUpload } from '@/utils/imageResize';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -171,14 +172,15 @@ function DisposableCameraScreen() {
       setIsPosting(true);
 
       const uploadPhoto = async (uri: string): Promise<string> => {
-        const presignData = await uploadApi.getPresignUrl('image/jpeg', 'stories');
+        const resized = await resizeForUpload(uri);
+        const presignData = await uploadApi.getPresignUrl(resized.mimeType, 'stories');
 
-        const response = await fetch(uri);
+        const response = await fetch(resized.uri);
         const blob = await response.blob();
         await fetch(presignData.uploadUrl, {
           method: 'PUT',
           body: blob,
-          headers: { 'Content-Type': 'image/jpeg' },
+          headers: { 'Content-Type': resized.mimeType },
         });
 
         return presignData.publicUrl;

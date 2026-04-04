@@ -200,6 +200,14 @@ export class StoriesService {
       select: STORY_SELECT,
     });
 
+    // Media processing: EXIF strip, resize variants, BlurHash (fire-and-forget for images)
+    if (data.mediaType?.startsWith('image') && data.mediaUrl) {
+      const mediaKey = data.mediaUrl.split('/').slice(-3).join('/');
+      this.queueService.addMediaProcessingJob({
+        mediaUrl: data.mediaUrl, mediaKey, userId, contentType: 'story', contentId: story.id,
+      }).catch(err => this.logger.warn(`Failed to queue media processing for story ${story.id}: ${err instanceof Error ? err.message : err}`));
+    }
+
     // Image moderation (async, non-blocking)
     if (data.mediaType?.startsWith('image')) {
       this.moderateStoryImage(userId, story.id, data.mediaUrl).catch((err: Error) => {

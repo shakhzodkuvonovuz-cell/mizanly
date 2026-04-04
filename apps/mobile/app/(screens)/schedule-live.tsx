@@ -20,6 +20,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { liveApi, uploadApi } from '@/services/api';
+import { resizeForUpload } from '@/utils/imageResize';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { showToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -120,16 +121,15 @@ export default function ScheduleLiveScreen() {
 
       let thumbnailUrl: string | undefined;
       if (thumbnail) {
-        const ext = thumbnail.uri.split('.').pop()?.toLowerCase() ?? 'jpg';
-        const contentType = `image/${ext}`;
-        const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl(contentType, 'live-thumbnails');
+        const resized = await resizeForUpload(thumbnail.uri, thumbnail.width, thumbnail.height);
+        const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl(resized.mimeType, 'live-thumbnails');
 
-        const fileRes = await fetch(thumbnail.uri);
+        const fileRes = await fetch(resized.uri);
         const blob = await fileRes.blob();
         const uploadRes = await fetch(uploadUrl, {
           method: 'PUT',
           body: blob,
-          headers: { 'Content-Type': contentType },
+          headers: { 'Content-Type': resized.mimeType },
         });
         if (!uploadRes.ok) throw new Error('Thumbnail upload failed');
         thumbnailUrl = publicUrl;

@@ -247,4 +247,70 @@ describe('QueueService', () => {
       expect(jobData.secret).toBeUndefined();
     });
   });
+
+  describe('addMediaProcessingJob', () => {
+    const mediaData = {
+      mediaUrl: 'https://media.mizanly.app/posts/u1/abc.jpg',
+      mediaKey: 'posts/u1/abc.jpg',
+      userId: 'u1',
+      contentType: 'post' as const,
+      contentId: 'p1',
+    };
+
+    it('should enqueue image-resize job to media queue with dedup key', async () => {
+      const result = await service.addMediaProcessingJob(mediaData);
+      expect(result).toBe('job-1');
+      expect(mediaQueue.add).toHaveBeenCalledWith(
+        'image-resize',
+        expect.objectContaining({
+          type: 'image-resize',
+          mediaUrl: 'https://media.mizanly.app/posts/u1/abc.jpg',
+          mediaKey: 'posts/u1/abc.jpg',
+          userId: 'u1',
+          contentType: 'post',
+          contentId: 'p1',
+        }),
+        expect.objectContaining({
+          jobId: 'media:resize:posts/u1/abc.jpg',
+          attempts: 3,
+        }),
+      );
+    });
+
+    it('should also enqueue blurhash job as a separate job', async () => {
+      await service.addMediaProcessingJob(mediaData);
+      // Should have been called twice: once for image-resize, once for blurhash
+      expect(mediaQueue.add).toHaveBeenCalledTimes(2);
+      expect(mediaQueue.add).toHaveBeenCalledWith(
+        'blurhash',
+        expect.objectContaining({
+          type: 'blurhash',
+          mediaKey: 'posts/u1/abc.jpg',
+          contentId: 'p1',
+        }),
+        expect.objectContaining({
+          jobId: 'media:blurhash:posts/u1/abc.jpg',
+          attempts: 2,
+        }),
+      );
+    });
+
+    it('should use circuit breaker for Redis', async () => {
+      await service.addMediaProcessingJob(mediaData);
+      expect(circuitBreaker.exec).toHaveBeenCalledWith('redis', expect.any(Function));
+    });
+
+    it('should not throw if blurhash enqueue fails', async () => {
+      // First call (image-resize) succeeds, second (blurhash) fails
+      let callCount = 0;
+      circuitBreaker.exec.mockImplementation((_name: string, fn: () => Promise<unknown>) => {
+        callCount++;
+        if (callCount === 2) return Promise.reject(new Error('Redis down'));
+        return fn();
+      });
+      // Should not throw — blurhash failure is caught internally
+      const result = await service.addMediaProcessingJob(mediaData);
+      expect(result).toBe('job-1');
+    });
+  });
 });

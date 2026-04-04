@@ -22,6 +22,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi, uploadApi, profileLinksApi } from '@/services/api';
+import { resizeForUpload } from '@/utils/imageResize';
 import type { ProfileLink, User } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
@@ -127,14 +128,13 @@ export default function EditProfileScreen() {
     if (!result.canceled) setCoverUri(result.assets[0].uri);
   };
 
-  // ── Upload helper ──
+  // ── Upload helper (resize + strip EXIF first) ──
   const uploadImage = async (uri: string, folder: 'avatars' | 'covers') => {
-    const ext = uri.split('.').pop()?.toLowerCase() ?? 'jpg';
-    const contentType = `image/${ext}`;
-    const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl(contentType, folder);
-    const fileRes = await fetch(uri);
+    const resized = await resizeForUpload(uri);
+    const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl(resized.mimeType, folder);
+    const fileRes = await fetch(resized.uri);
     const blob = await fileRes.blob();
-    const res = await fetch(uploadUrl, { method: 'PUT', body: blob, headers: { 'Content-Type': contentType } });
+    const res = await fetch(uploadUrl, { method: 'PUT', body: blob, headers: { 'Content-Type': resized.mimeType } });
     if (!res.ok) throw new Error('Image upload failed');
     return publicUrl;
   };

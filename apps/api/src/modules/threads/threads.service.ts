@@ -413,6 +413,18 @@ export class ThreadsService {
         ),
       );
     }
+    // Media processing: EXIF strip, resize variants, BlurHash (fire-and-forget for images)
+    if (dto.mediaUrls?.length) {
+      for (const [idx, url] of dto.mediaUrls.entries()) {
+        if (dto.mediaTypes?.[idx]?.startsWith('image')) {
+          const mediaKey = url.split('/').slice(-3).join('/');
+          this.queueService.addMediaProcessingJob({
+            mediaUrl: url, mediaKey, userId, contentType: 'thread', contentId: thread.id,
+          }).catch(err => this.logger.warn(`Failed to queue media processing for thread ${thread.id}: ${err instanceof Error ? err.message : err}`));
+        }
+      }
+    }
+
     // --- Side effects deferred for scheduled content ---
     // Notifications and gamification XP only fire when content is actually published.
     // For scheduled content, these are triggered by the scheduling cron in publishOverdueContent().

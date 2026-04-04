@@ -22,6 +22,7 @@ import { CharCountRing } from '@/components/ui/CharCountRing';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { channelsApi, videosApi, uploadApi } from '@/services/api';
+import { resizeForUpload } from '@/utils/imageResize';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
@@ -268,14 +269,15 @@ export default function CreateVideoScreen() {
       if (!videoRes.ok) throw new Error('Failed to upload video');
       const videoUrl = videoPresign.publicUrl;
 
-      // 2. Upload thumbnail if exists
+      // 2. Upload thumbnail if exists (resize + strip EXIF)
       let thumbnailUrl = undefined;
       if (thumbnailUri) {
-        const thumbPresign = await uploadApi.getPresignUrl('image/jpeg', 'thumbnails');
+        const resizedThumb = await resizeForUpload(thumbnailUri);
+        const thumbPresign = await uploadApi.getPresignUrl(resizedThumb.mimeType, 'thumbnails');
         const thumbRes = await fetch(thumbPresign.uploadUrl, {
           method: 'PUT',
-          body: await fetch(thumbnailUri).then(r => r.blob()),
-          headers: { 'Content-Type': 'image/jpeg' },
+          body: await fetch(resizedThumb.uri).then(r => r.blob()),
+          headers: { 'Content-Type': resizedThumb.mimeType },
         });
         if (thumbRes.ok) {
           thumbnailUrl = thumbPresign.publicUrl;

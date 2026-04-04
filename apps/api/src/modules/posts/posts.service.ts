@@ -663,6 +663,18 @@ export class PostsService {
       this.queueService.addModerationJob({ content: dto.content, contentType: 'post', contentId: post.id }).catch(err => this.logger.warn('Failed to queue moderation for post', err instanceof Error ? err.message : err));
     }
 
+    // Media processing: EXIF strip, resize variants, BlurHash (fire-and-forget for images)
+    if (dto.mediaUrls?.length) {
+      for (const [idx, url] of dto.mediaUrls.entries()) {
+        if (dto.mediaTypes?.[idx]?.startsWith('image')) {
+          const mediaKey = url.split('/').slice(-3).join('/');
+          this.queueService.addMediaProcessingJob({
+            mediaUrl: url, mediaKey, userId, contentType: 'post', contentId: post.id,
+          }).catch(err => this.logger.warn(`Failed to queue media processing for post ${post.id}: ${err instanceof Error ? err.message : err}`));
+        }
+      }
+    }
+
     // Image moderation: ALWAYS runs at creation time (even for scheduled content)
     if (dto.mediaUrls?.length && dto.mediaTypes?.some((t: string) => t.startsWith('image'))) {
       for (const [idx, url] of dto.mediaUrls.entries()) {

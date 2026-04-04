@@ -24,6 +24,7 @@ import { showToast } from '@/components/ui/Toast';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { Circle } from '@/types';
 import { threadsApi, uploadApi, circlesApi } from '@/services/api';
+import { resizeForUpload } from '@/utils/imageResize';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
@@ -387,10 +388,10 @@ export default function CreateThreadScreen() {
             const mediaUrls: string[] = [];
             const mediaTypes: string[] = [];
             for (const item of part.media) {
-              const ext = item.uri.split('.').pop() ?? 'jpg';
-              const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl(`image/${ext}`, 'threads');
-              const blob = await (await fetch(item.uri)).blob();
-              await fetch(uploadUrl, { method: 'PUT', body: blob, headers: { 'Content-Type': `image/${ext}` } });
+              const resized = await resizeForUpload(item.uri);
+              const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl(resized.mimeType, 'threads');
+              const blob = await (await fetch(resized.uri)).blob();
+              await fetch(uploadUrl, { method: 'PUT', body: blob, headers: { 'Content-Type': resized.mimeType } });
               mediaUrls.push(publicUrl);
               mediaTypes.push('image');
             }

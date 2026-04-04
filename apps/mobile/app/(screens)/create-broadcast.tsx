@@ -19,6 +19,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { showToast } from '@/components/ui/Toast';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { broadcastApi, uploadApi } from '@/services/api';
+import { resizeForUpload } from '@/utils/imageResize';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -67,19 +68,18 @@ export default function CreateBroadcastScreen() {
     if (!result.canceled) setAvatarUri(result.assets[0].uri);
   };
 
-  // Upload avatar if selected
+  // Upload avatar if selected (resize + strip EXIF first)
   const uploadAvatar = async (uri: string): Promise<string> => {
-    const ext = uri.split('.').pop()?.toLowerCase() ?? 'jpg';
-    const contentType = `image/${ext}`;
-    const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl(contentType, 'broadcast');
+    const resized = await resizeForUpload(uri);
+    const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl(resized.mimeType, 'broadcast');
     let fileRes: Response;
     try {
-      fileRes = await fetch(uri);
+      fileRes = await fetch(resized.uri);
     } catch {
       throw new Error(t('createBroadcast.imageAccessError'));
     }
     const blob = await fileRes.blob();
-    const res = await fetch(uploadUrl, { method: 'PUT', body: blob, headers: { 'Content-Type': contentType } });
+    const res = await fetch(uploadUrl, { method: 'PUT', body: blob, headers: { 'Content-Type': resized.mimeType } });
     if (!res.ok) throw new Error('Image upload failed');
     return publicUrl;
   };
