@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
-  ScrollView,
+  ScrollView, Platform, KeyboardAvoidingView,
 } from 'react-native';
 import { useDraftPersistence } from '@/hooks/useDraftPersistence';
 import { useRouter } from 'expo-router';
@@ -430,6 +430,7 @@ export default function CreateThreadScreen() {
   return (
     <ScreenErrorBoundary>
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: tc.border }]}>
           <Pressable onPress={handleBack} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('common.close')}>
@@ -725,8 +726,9 @@ export default function CreateThreadScreen() {
             setAutocomplete({ partIndex: null, type: null, query: '' });
           }}
         />
+      </KeyboardAvoidingView>
       </SafeAreaView>
-  
+
     </ScreenErrorBoundary>
   );
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  TextInput, FlatList, SectionList,
+  TextInput, FlatList, SectionList, Platform, KeyboardAvoidingView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -247,6 +247,7 @@ export default function NewConversationScreen() {
   return (
     <ScreenErrorBoundary>
       <SafeAreaView style={styles.container} edges={['top']}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         {/* Header */}
         <GlassHeader
           title={t('messages.newMessage')}
@@ -318,6 +319,7 @@ export default function NewConversationScreen() {
             removeClippedSubviews={true}
             data={people}
             keyExtractor={(item) => item.id}
+            keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
             refreshControl={
               <BrandedRefreshControl
@@ -332,6 +334,7 @@ export default function NewConversationScreen() {
           <SectionList
             sections={sections}
             keyExtractor={(item) => item.id}
+            keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
             refreshControl={
               <BrandedRefreshControl
@@ -350,6 +353,7 @@ export default function NewConversationScreen() {
             ListEmptyComponent={sectionListEmpty}
           />
         )}
+      </KeyboardAvoidingView>
       </SafeAreaView>
     </ScreenErrorBoundary>
   );

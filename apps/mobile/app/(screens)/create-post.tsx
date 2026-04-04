@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TextInput, Pressable,
-  ScrollView, Platform, Dimensions,
+  ScrollView, Platform, Dimensions, KeyboardAvoidingView,
 } from 'react-native';
 import { useDraftPersistence } from '@/hooks/useDraftPersistence';
 import { useQuery } from '@tanstack/react-query';
@@ -313,6 +313,7 @@ export default function CreatePostScreen() {
   return (
     <ScreenErrorBoundary>
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: tc.border }]}>
           <Pressable
@@ -789,6 +790,7 @@ export default function CreatePostScreen() {
             </AnimatedAccordion>
           </Animated.View>
         </ScrollView>
+      </KeyboardAvoidingView>
 
         {/* Discard confirmation */}
         <BottomSheet visible={showDiscardSheet} onClose={() => setShowDiscardSheet(false)}>

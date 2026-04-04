@@ -468,6 +468,8 @@ export default function SearchResultsScreen() {
                   </View>
                 ) : (
                   <FlatList
+            keyboardDismissMode="on-drag"
+            keyboardShouldPersistTaps="handled"
             removeClippedSubviews={true}
                     data={people}
                     keyExtractor={(item) => item.id}
@@ -496,6 +498,8 @@ export default function SearchResultsScreen() {
                   </View>
                 ) : (
                   <FlatList
+            keyboardDismissMode="on-drag"
+            keyboardShouldPersistTaps="handled"
             removeClippedSubviews={true}
                     data={posts}
                     keyExtractor={(item) => item.id}
@@ -526,6 +530,8 @@ export default function SearchResultsScreen() {
                   </View>
                 ) : (
                   <FlatList
+            keyboardDismissMode="on-drag"
+            keyboardShouldPersistTaps="handled"
             removeClippedSubviews={true}
                     data={threads}
                     keyExtractor={(item) => item.id}
@@ -550,6 +556,8 @@ export default function SearchResultsScreen() {
               <>
                 {isLoading.reels ? (
                   <FlatList
+            keyboardDismissMode="on-drag"
+            keyboardShouldPersistTaps="handled"
             removeClippedSubviews={true}
                     data={Array.from({ length: 9 })}
                     keyExtractor={(_, i) => `skeleton-${i}`}
@@ -561,6 +569,8 @@ export default function SearchResultsScreen() {
                   />
                 ) : (
                   <FlatList
+            keyboardDismissMode="on-drag"
+            keyboardShouldPersistTaps="handled"
             removeClippedSubviews={true}
                     data={reels}
                     keyExtractor={(item) => item.id}
@@ -599,6 +609,8 @@ export default function SearchResultsScreen() {
                   </View>
                 ) : (
                   <FlatList
+            keyboardDismissMode="on-drag"
+            keyboardShouldPersistTaps="handled"
             removeClippedSubviews={true}
                     data={hashtags}
                     keyExtractor={(item) => item.id || `ht-${item.name}`}

@@ -465,6 +465,8 @@ export default function SearchScreen() {
                     </View>
                   ) : (
                     <FlatList
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
           removeClippedSubviews={true}
           windowSize={7}
           maxToRenderPerBatch={8}
@@ -498,6 +500,8 @@ export default function SearchScreen() {
                     </View>
                   ) : (
                     <FlatList
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
           removeClippedSubviews={true}
           windowSize={7}
           maxToRenderPerBatch={8}
@@ -531,6 +535,8 @@ export default function SearchScreen() {
                     </View>
                   ) : (
                     <FlatList
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
           removeClippedSubviews={true}
           windowSize={7}
           maxToRenderPerBatch={8}
@@ -564,6 +570,8 @@ export default function SearchScreen() {
                     </View>
                   ) : (
                     <FlatList
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
           removeClippedSubviews={true}
           windowSize={7}
           maxToRenderPerBatch={8}
@@ -597,6 +605,8 @@ export default function SearchScreen() {
                     </View>
                   ) : (
                     <FlatList
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
           removeClippedSubviews={true}
           windowSize={7}
           maxToRenderPerBatch={8}
@@ -625,6 +635,8 @@ export default function SearchScreen() {
             </>
           ) : (
             <FlatList<SearchListItem>
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
           removeClippedSubviews={true}
           windowSize={7}
           maxToRenderPerBatch={8}
@@ -646,6 +658,8 @@ export default function SearchScreen() {
           {searchHistory.length > 0 ? (
             <>
               <FlatList
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
           removeClippedSubviews={true}
           windowSize={7}
           maxToRenderPerBatch={8}
@@ -675,6 +689,8 @@ export default function SearchScreen() {
         showExplore ? (
           <View style={styles.exploreSection}>
             <FlatList
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
           removeClippedSubviews={true}
           windowSize={7}
           maxToRenderPerBatch={8}
