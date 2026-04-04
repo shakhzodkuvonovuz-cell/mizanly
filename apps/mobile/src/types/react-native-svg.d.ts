@@ -35,8 +35,11 @@ declare module 'react-native-svg' {
     strokeDasharray?: string;
     strokeDashoffset?: number | string;
     strokeLinecap?: 'butt' | 'round' | 'square';
+    rotation?: number;
+    origin?: string;
     transform?: string;
     children?: React.ReactNode;
+    animatedProps?: Record<string, unknown>;
   }
 
   interface GProps {

@@ -145,13 +145,15 @@ describe('CommunityController', () => {
   });
 
   describe('getActiveWatchParties', () => {
-    it('should call communityService.getActiveWatchParties', async () => {
-      service.getActiveWatchParties.mockResolvedValue([{ id: 'wp-1' }] as any);
+    it('should call communityService.getActiveWatchParties with cursor', async () => {
+      const paginated = { data: [{ id: 'wp-1' }], meta: { cursor: 'wp-1', hasMore: false } };
+      service.getActiveWatchParties.mockResolvedValue(paginated as any);
 
-      const result = await controller.getActiveWatchParties();
+      const result = await controller.getActiveWatchParties('cursor-1');
 
-      expect(service.getActiveWatchParties).toHaveBeenCalled();
-      expect(result).toHaveLength(1);
+      expect(service.getActiveWatchParties).toHaveBeenCalledWith('cursor-1');
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.hasMore).toBe(false);
     });
   });
 

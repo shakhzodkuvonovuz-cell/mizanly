@@ -92,12 +92,13 @@ export default function LiveViewerScreen() {
   });
 
   const live = liveQuery.data;
-  const participants = (participantsQuery.data ?? []).map((p): LiveParticipant => ({
+  const rawParticipants = participantsQuery.data?.data ?? [];
+  const participants = rawParticipants.map((p): LiveParticipant => ({
     id: p.id,
     userId: p.userId,
     user: p.user ?? { id: p.userId, username: '' },
     role: (String(p.role).toUpperCase()) as 'HOST' | 'SPEAKER' | 'LISTENER',
-    raisedHand: !!(p as { handRaised?: boolean }).handRaised,
+    raisedHand: !!(p as unknown as { handRaised?: boolean }).handRaised,
   }));
 
   // Animated values for visual effects

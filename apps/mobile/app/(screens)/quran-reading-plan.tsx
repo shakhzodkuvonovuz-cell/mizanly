@@ -20,6 +20,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import Svg, { Circle } from 'react-native-svg';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -91,39 +92,38 @@ function ProgressRing({
   const styles = useMemo(() => createStyles(tc), [tc]);
   const progress = Math.min(current / total, 1);
   const percent = Math.round(progress * 100);
-  const circumference = (size - strokeWidth) * Math.PI;
+  const r = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * r;
   const strokeDashoffset = circumference * (1 - progress);
+  const center = size / 2;
 
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      {/* Background ring */}
-      <View
-        style={[
-          styles.ringBg,
-          {
-            width: size,
-            height: size,
-            borderRadius: radius.full,
-            borderWidth: strokeWidth,
-          },
-        ]}
-      />
-      {/* Progress arc via a gradient overlay trick */}
-      <LinearGradient
-        colors={[colors.emerald, colors.goldLight]}
-        style={[
-          styles.ringProgress,
-          {
-            width: size,
-            height: size,
-            borderRadius: radius.full,
-            borderWidth: strokeWidth,
-            borderColor: 'transparent',
-          },
-        ]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      />
+      <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        {/* Background ring */}
+        <Circle
+          cx={center}
+          cy={center}
+          r={r}
+          stroke={tc.surface}
+          strokeWidth={strokeWidth}
+          fill="none"
+        />
+        {/* Progress arc */}
+        <Circle
+          cx={center}
+          cy={center}
+          r={r}
+          stroke={colors.emerald}
+          strokeWidth={strokeWidth}
+          fill="none"
+          strokeDasharray={`${circumference}`}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          rotation={-90}
+          origin={`${center},${center}`}
+        />
+      </Svg>
       {/* Center content */}
       <View style={[styles.ringCenter, { width: size - strokeWidth * 2, height: size - strokeWidth * 2, borderRadius: (size - strokeWidth * 2) / 2 }]}>
         <Text style={styles.ringPercent}>{percent}%</Text>
@@ -621,13 +621,6 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   ringContainer: {
     alignItems: 'center',
     marginVertical: spacing.lg,
-  },
-  ringBg: {
-    position: 'absolute',
-    borderColor: tc.surface,
-  },
-  ringProgress: {
-    position: 'absolute',
   },
   ringCenter: {
     position: 'absolute',

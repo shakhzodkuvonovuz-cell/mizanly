@@ -22,6 +22,7 @@ describe('CommunityService — cursor pagination fixes', () => {
             islamicEvent: { findMany: jest.fn().mockResolvedValue([]) },
             voicePost: { findMany: jest.fn().mockResolvedValue([]) },
             waqfFund: { findMany: jest.fn().mockResolvedValue([]) },
+            watchParty: { findMany: jest.fn().mockResolvedValue([]) },
             user: { findUnique: jest.fn() },
           },
         },
@@ -74,6 +75,21 @@ describe('CommunityService — cursor pagination fixes', () => {
     expect(prisma.waqfFund.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ cursor: { id: 'cursor-id' }, skip: 1 }),
     );
+  });
+
+  it('getActiveWatchParties should use Prisma cursor pagination', async () => {
+    await service.getActiveWatchParties('cursor-id');
+    expect(prisma.watchParty.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ cursor: { id: 'cursor-id' }, skip: 1 }),
+    );
+  });
+
+  it('getActiveWatchParties should return data with meta when no cursor', async () => {
+    await service.getActiveWatchParties();
+    const call = prisma.watchParty.findMany.mock.calls[0][0];
+    expect(call.cursor).toBeUndefined();
+    expect(call.skip).toBeUndefined();
+    expect(call.take).toBe(21); // limit + 1 for hasMore detection
   });
 
   it('should not include cursor when no cursor provided', async () => {

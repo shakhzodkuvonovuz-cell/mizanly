@@ -320,16 +320,20 @@ export class CommunityService {
     });
   }
 
-  async getActiveWatchParties() {
-    return this.prisma.watchParty.findMany({
+  async getActiveWatchParties(cursor?: string, limit = 20) {
+    const parties = await this.prisma.watchParty.findMany({
       where: {
         isActive: true,
         host: { isBanned: false, isDeactivated: false, isDeleted: false },
       },
       orderBy: { viewerCount: 'desc' },
-      take: 50,
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       include: { host: { select: USER_SELECT } },
     });
+    const hasMore = parties.length > limit;
+    if (hasMore) parties.pop();
+    return { data: parties, meta: { cursor: parties[parties.length - 1]?.id || null, hasMore } };
   }
 
   // ── Shared Collections ──────────────────────────────────

@@ -170,8 +170,8 @@ export class CommunityController {
   @Get('watch-parties')
   @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Get active watch parties' })
-  getActiveWatchParties() {
-    return this.communityService.getActiveWatchParties();
+  getActiveWatchParties(@Query('cursor') cursor?: string) {
+    return this.communityService.getActiveWatchParties(cursor);
   }
 
   // ── Collections ─────────────────────────────────────────

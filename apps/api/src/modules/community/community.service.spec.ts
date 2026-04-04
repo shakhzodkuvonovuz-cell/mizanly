@@ -335,10 +335,20 @@ describe('CommunityService', () => {
   });
 
   describe('getActiveWatchParties', () => {
-    it('should return active watch parties', async () => {
+    it('should return active watch parties with cursor pagination', async () => {
       prisma.watchParty.findMany.mockResolvedValue([{ id: 'wp-1', isActive: true }]);
       const result = await service.getActiveWatchParties();
-      expect(result).toHaveLength(1);
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.hasMore).toBe(false);
+      expect(result.meta.cursor).toBe('wp-1');
+    });
+
+    it('should detect hasMore when more items than limit', async () => {
+      const items = Array.from({ length: 21 }, (_, i) => ({ id: `wp-${i}`, isActive: true }));
+      prisma.watchParty.findMany.mockResolvedValue(items);
+      const result = await service.getActiveWatchParties();
+      expect(result.data).toHaveLength(20);
+      expect(result.meta.hasMore).toBe(true);
     });
   });
 
