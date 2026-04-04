@@ -567,7 +567,6 @@ export default function CashoutScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   scrollView: {
     flex: 1,

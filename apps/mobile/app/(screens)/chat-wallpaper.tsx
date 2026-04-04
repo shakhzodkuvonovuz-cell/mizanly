@@ -47,8 +47,8 @@ interface PatternItem {
 const SOLID_COLORS: SolidColor[] = [
   { name: 'Emerald', value: colors.emerald },
   { name: 'Gold', value: colors.gold },
-  { name: 'Dark', value: colors.dark.bg },
-  { name: 'Surface', value: colors.dark.surface },
+  { name: 'Dark', value: '#0D1117' },
+  { name: 'Surface', value: '#2D3548' },
   { name: 'Red', value: '#DC2626' },
   { name: 'Blue', value: '#2563EB' },
   { name: 'Purple', value: colors.extended.violet },
@@ -60,14 +60,14 @@ const SOLID_COLORS: SolidColor[] = [
 ];
 
 const GRADIENT_PAIRS: GradientPair[] = [
-  { name: 'Emerald Night', colors: [colors.emerald, colors.dark.bg] },
-  { name: 'Golden Dusk', colors: [colors.gold, colors.dark.bg] },
-  { name: 'Purple Night', colors: [colors.extended.violet, colors.dark.bg] },
-  { name: 'Ocean Deep', colors: ['#2563EB', colors.dark.bg] },
+  { name: 'Emerald Night', colors: [colors.emerald, '#0D1117'] },
+  { name: 'Golden Dusk', colors: [colors.gold, '#0D1117'] },
+  { name: 'Purple Night', colors: [colors.extended.violet, '#0D1117'] },
+  { name: 'Ocean Deep', colors: ['#2563EB', '#0D1117'] },
   { name: 'Emerald Gold', colors: [colors.emerald, colors.gold] },
   { name: 'Sunset', colors: ['#EA580C', '#DC2626'] },
-  { name: 'Teal Depth', colors: ['#0D9488', colors.dark.bg] },
-  { name: 'Rose Night', colors: ['#DB2777', colors.dark.bg] },
+  { name: 'Teal Depth', colors: ['#0D9488', '#0D1117'] },
+  { name: 'Rose Night', colors: ['#DB2777', '#0D1117'] },
 ];
 
 const PATTERNS: PatternItem[] = [

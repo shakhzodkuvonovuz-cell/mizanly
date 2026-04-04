@@ -322,7 +322,6 @@ export default function ContentFilterSettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   body: {
     flex: 1,

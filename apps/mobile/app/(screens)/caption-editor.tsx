@@ -689,7 +689,6 @@ export default function CaptionEditorScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   previewContainer: {
     marginHorizontal: spacing.base,

@@ -480,7 +480,6 @@ export default function ChallengesScreenWrapper() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
   },
   content: {
     flex: 1,

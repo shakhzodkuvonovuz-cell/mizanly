@@ -482,7 +482,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: '#2D3548',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
@@ -497,7 +497,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     backgroundColor: colors.emerald,
     borderWidth: 3,
-    borderColor: colors.dark.bg,
   },
   heroInfo: {
     flex: 1,
@@ -569,7 +568,6 @@ const styles = StyleSheet.create({
   sectionCount: {
     fontSize: fontSize.sm,
     color: colors.text.tertiary,
-    backgroundColor: colors.dark.surface,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: radius.full,
@@ -597,7 +595,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: '#2D3548',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,

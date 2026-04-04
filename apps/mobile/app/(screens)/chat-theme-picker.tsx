@@ -79,10 +79,10 @@ const PATTERNS: ThemeOption[] = [
 
 const PHOTOS: ThemeOption[] = [
   { id: 'upload', name: 'Upload Photo', icon: 'image' },
-  { id: 'nature1', name: 'Nature 1', color: colors.dark.surface },
-  { id: 'nature2', name: 'Nature 2', color: colors.dark.surface },
-  { id: 'abstract1', name: 'Abstract 1', color: colors.dark.surface },
-  { id: 'abstract2', name: 'Abstract 2', color: colors.dark.surface },
+  { id: 'nature1', name: 'Nature 1', color: '#2D3548' },
+  { id: 'nature2', name: 'Nature 2', color: '#2D3548' },
+  { id: 'abstract1', name: 'Abstract 1', color: '#2D3548' },
+  { id: 'abstract2', name: 'Abstract 2', color: '#2D3548' },
 ];
 
 export default function ChatThemePickerScreen() {
