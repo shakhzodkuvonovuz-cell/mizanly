@@ -895,11 +895,17 @@ export default function ConversationScreen() {
   const [isEncrypted] = useState(true); // Always encrypted via Signal Protocol
   const [decryptedContents, setDecryptedContents] = useState<Map<string, string>>(new Map());
 
-  // Clean up timer on unmount
+  // Clean up timers on unmount
   useEffect(() => {
     return () => {
       if (recordingTimerRef.current) {
         clearInterval(recordingTimerRef.current);
+      }
+      if (typingTimerRef.current) {
+        clearTimeout(typingTimerRef.current);
+      }
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
       }
     };
   }, []);

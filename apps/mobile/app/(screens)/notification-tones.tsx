@@ -144,15 +144,17 @@ function NotificationTonesScreen() {
   }, [haptic]);
 
   const soundRef = useRef<Audio.Sound | null>(null);
+  const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handlePreview = useCallback(async (toneId: string) => {
     haptic.tick();
+    if (previewTimerRef.current) { clearTimeout(previewTimerRef.current); previewTimerRef.current = null; }
 
     const tone = TONE_OPTIONS.find((o) => o.id === toneId);
     if (!tone || tone.previewHz === 0) {
       // Silent tone — just show brief visual
       setPlayingTone(toneId);
-      setTimeout(() => setPlayingTone(null), 400);
+      previewTimerRef.current = setTimeout(() => { previewTimerRef.current = null; setPlayingTone(null); }, 400);
       return;
     }
 
@@ -181,14 +183,15 @@ function NotificationTonesScreen() {
       });
     } catch {
       // Fallback: just show visual feedback if audio fails
-      setTimeout(() => setPlayingTone(null), 400);
+      previewTimerRef.current = setTimeout(() => { previewTimerRef.current = null; setPlayingTone(null); }, 400);
     }
   }, [haptic]);
 
-  // Cleanup audio on unmount
+  // Cleanup audio + timer on unmount
   useEffect(() => {
     return () => {
       soundRef.current?.unloadAsync().catch(() => {});
+      if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
     };
   }, []);
 

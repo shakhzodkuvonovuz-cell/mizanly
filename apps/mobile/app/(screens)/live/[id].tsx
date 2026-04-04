@@ -130,15 +130,24 @@ export default function LiveViewerScreen() {
     }
   }, [live?.liveType]);
 
-  // Floating reactions animation
+  // Floating reactions animation — tracked timers to prevent setState on unmounted component
+  const reactionTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+  useEffect(() => {
+    return () => {
+      for (const timer of reactionTimersRef.current) clearTimeout(timer);
+      reactionTimersRef.current.clear();
+    };
+  }, []);
   const addFloatingReaction = (emoji: string) => {
     haptic.tick();
     const reactionId = Date.now().toString();
     const startX = ((emoji.charCodeAt(0) * 2654435761 + Date.now()) % (SCREEN_WIDTH - 100)) + 50;
     setFloatingReactions(prev => [...prev, { id: reactionId, emoji, startX }]);
-    setTimeout(() => {
+    const timer = setTimeout(() => {
+      reactionTimersRef.current.delete(timer);
       setFloatingReactions(prev => prev.filter(r => r.id !== reactionId));
     }, 3000);
+    reactionTimersRef.current.add(timer);
   };
 
   // Viewer count bump animation

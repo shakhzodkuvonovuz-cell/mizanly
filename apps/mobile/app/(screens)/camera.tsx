@@ -134,6 +134,15 @@ export default function CameraScreen() {
     }
   }, [permission, requestPermission, t]);
 
+  // Clean up recording interval on unmount
+  useEffect(() => {
+    return () => {
+      if (recordingInterval.current) {
+        clearInterval(recordingInterval.current);
+      }
+    };
+  }, []);
+
   // Start pulse animation on mount
   useEffect(() => {
     pulseAnim.value = withRepeat(

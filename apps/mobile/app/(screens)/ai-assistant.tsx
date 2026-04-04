@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput,
   Pressable, ActivityIndicator, KeyboardAvoidingView, Platform,
@@ -51,6 +51,10 @@ export default function AiAssistantScreen() {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
   const generateLockRef = useRef(false);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    return () => { if (copyTimerRef.current) clearTimeout(copyTimerRef.current); };
+  }, []);
 
   // Caption suggestion
   const captionMutation = useMutation({
@@ -109,7 +113,11 @@ export default function AiAssistantScreen() {
     setCopiedIndex(index);
     haptic.success();
     showToast({ message: t('common.copied'), variant: 'success' });
-    setTimeout(() => setCopiedIndex(null), 2000);
+    if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    copyTimerRef.current = setTimeout(() => {
+      copyTimerRef.current = null;
+      setCopiedIndex(null);
+    }, 2000);
   };
 
   const handleCopyHashtags = () => {

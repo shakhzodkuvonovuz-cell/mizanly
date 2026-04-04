@@ -79,6 +79,22 @@ export default function CallScreen() {
   const [reactions, setReactions] = useState<Array<{ emoji: string; id: number }>>([]);
   const [showVerification, setShowVerification] = useState(false);
   const [incomingAnswered, setIncomingAnswered] = useState(false);
+  // Track fire-and-forget timers (reactions, debounce) to prevent setState on unmounted component
+  const pendingTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+  useEffect(() => {
+    return () => {
+      for (const timer of pendingTimersRef.current) clearTimeout(timer);
+      pendingTimersRef.current.clear();
+    };
+  }, []);
+
+  const setTrackedTimeout = useCallback((fn: () => void, ms: number) => {
+    const timer = setTimeout(() => {
+      pendingTimersRef.current.delete(timer);
+      fn();
+    }, ms);
+    pendingTimersRef.current.add(timer);
+  }, []);
 
   const setActiveCall = useStore(s => s.setActiveCall);
   const setActiveCallDuration = useStore(s => s.setActiveCallDuration);
@@ -335,7 +351,7 @@ export default function CallScreen() {
             const rid = Date.now();
             // [F15] Cap at 10 simultaneous reactions to prevent jank from floods
             setReactions(prev => [...prev.slice(-9), { emoji, id: rid }]);
-            setTimeout(() => setReactions(prev => prev.filter(r => r.id !== rid)), 3000);
+            setTrackedTimeout(() => setReactions(prev => prev.filter(r => r.id !== rid)), 3000);
           }
           break;
         }
@@ -365,8 +381,8 @@ export default function CallScreen() {
     if (actionLockRef.current) return;
     actionLockRef.current = true;
     fn();
-    setTimeout(() => { actionLockRef.current = false; }, 300);
-  }, []);
+    setTrackedTimeout(() => { actionLockRef.current = false; }, 300);
+  }, [setTrackedTimeout]);
   const handleEndCall = useCallback(() => debounced(() => { haptic.delete(); livekit.endCall(); }), [haptic, livekit, debounced]);
   const handleToggleMute = useCallback(() => debounced(() => { haptic.tick(); livekit.toggleMute(); }), [haptic, livekit, debounced]);
   const handleToggleSpeaker = useCallback(() => debounced(() => { haptic.tick(); livekit.toggleSpeaker(); }), [haptic, livekit, debounced]);
@@ -384,8 +400,8 @@ export default function CallScreen() {
     livekit.sendDataMessage('reactions', { emoji });
     const rid = Date.now();
     setReactions(prev => [...prev, { emoji, id: rid }]);
-    setTimeout(() => setReactions(prev => prev.filter(r => r.id !== rid)), 3000);
-  }, [haptic, livekit]);
+    setTrackedTimeout(() => setReactions(prev => prev.filter(r => r.id !== rid)), 3000);
+  }, [haptic, livekit, setTrackedTimeout]);
   const handleAnswer = useCallback(() => { haptic.success(); setIncomingAnswered(true); }, [haptic]);
   // [F5] Decline notifies the server (was previously a silent navigate-away)
   const handleDecline = useCallback(() => {

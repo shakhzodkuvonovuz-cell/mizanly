@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, FlatList, Dimensions,
-  ScrollView, TextInput, Alert,
+  View, Text, StyleSheet, Pressable, FlatList,
+  ScrollView, TextInput, Alert, useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
@@ -33,25 +33,21 @@ import { showToast } from '@/components/ui/Toast';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import type { AudioTrack } from '@/types';
 
-// Use dynamic dimensions for responsive support (foldables, split-screen)
-let SCREEN_W = Dimensions.get('window').width;
-let IMAGE_SIZE = SCREEN_W - spacing.base * 2;
-Dimensions.addEventListener('change', ({ window }) => {
-  SCREEN_W = window.width;
-  IMAGE_SIZE = SCREEN_W - spacing.base * 2;
-});
 const MAX_IMAGES = 10;
 const MAX_CAPTION = 500;
 const DURATION_OPTIONS = [2, 3, 5, 7];
 
 function PhotoMusicScreen() {
   const tc = useThemeColors();
-  const styles = useMemo(() => createStyles(tc), [tc]);
+  const styles = useMemo(() => createStyles(tc, IMAGE_SIZE), [tc, IMAGE_SIZE]);
   const router = useRouter();
   const { t, isRTL } = useTranslation();
   const haptic = useContextualHaptic();
   const flatListRef = useRef<FlatList>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
+  // Use hook-based dimensions — previous module-level Dimensions.addEventListener leaked
+  const { width: SCREEN_W } = useWindowDimensions();
+  const IMAGE_SIZE = SCREEN_W - spacing.base * 2;
 
   // ── State ──
   const [images, setImages] = useState<{ uri: string }[]>([]);
@@ -542,7 +538,7 @@ export default function PhotoMusicScreenWrapper() {
   );
 }
 
-const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>, IMAGE_SIZE: number) => StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: tc.bg,

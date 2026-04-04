@@ -325,10 +325,12 @@ export default function CreateReelScreen() {
   const countdownOpacity = useSharedValue(1);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Clean up countdown interval on unmount
+  const countdownDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Clean up countdown interval + delay timer on unmount
   useEffect(() => {
     return () => {
       if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+      if (countdownDelayRef.current) clearTimeout(countdownDelayRef.current);
     };
   }, []);
 
@@ -377,6 +379,7 @@ export default function CreateReelScreen() {
   const startCountdown = (onComplete: () => void) => {
     // Clear any existing countdown
     if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+    if (countdownDelayRef.current) clearTimeout(countdownDelayRef.current);
     setCountdown(3);
     countdownIntervalRef.current = setInterval(() => {
       setCountdown((prev) => {
@@ -385,7 +388,8 @@ export default function CreateReelScreen() {
             clearInterval(countdownIntervalRef.current);
             countdownIntervalRef.current = null;
           }
-          setTimeout(() => {
+          countdownDelayRef.current = setTimeout(() => {
+            countdownDelayRef.current = null;
             setCountdown(null);
             onComplete();
           }, 500);

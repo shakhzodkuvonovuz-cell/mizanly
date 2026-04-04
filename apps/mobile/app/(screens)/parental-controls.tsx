@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList,
 } from 'react-native';
@@ -459,6 +459,10 @@ export default function ParentalControlsScreen() {
   const [unlinkPinSheet, setUnlinkPinSheet] = useState(false);
   const [pinAttempts, setPinAttempts] = useState(0);
   const [pinError, setPinError] = useState(false);
+  const pinErrorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    return () => { if (pinErrorTimerRef.current) clearTimeout(pinErrorTimerRef.current); };
+  }, []);
 
   const childrenQuery = useQuery({
     queryKey: ['parental-children'],
@@ -538,13 +542,15 @@ export default function ParentalControlsScreen() {
         haptic.error();
         setPinAttempts(prev => prev + 1);
         setPinError(true);
-        setTimeout(() => setPinError(false), 2000);
+        if (pinErrorTimerRef.current) clearTimeout(pinErrorTimerRef.current);
+        pinErrorTimerRef.current = setTimeout(() => { pinErrorTimerRef.current = null; setPinError(false); }, 2000);
       }
     } catch {
       haptic.error();
       setPinAttempts(prev => prev + 1);
       setPinError(true);
-      setTimeout(() => setPinError(false), 2000);
+      if (pinErrorTimerRef.current) clearTimeout(pinErrorTimerRef.current);
+      pinErrorTimerRef.current = setTimeout(() => { pinErrorTimerRef.current = null; setPinError(false); }, 2000);
     }
   }, [hasControls, firstChildId, haptic, pinAttempts]);
 
