@@ -64,6 +64,12 @@ import type { PreKeySignalMessage } from '@/services/signal/types';
 import type { Message, Conversation, ConversationMember } from '@/types';
 import { rtlFlexRow, rtlTextAlign, rtlArrow, rtlMargin, rtlBorderStart } from '@/utils/rtl';
 import { useSocket } from '@/providers/SocketProvider';
+import {
+  enqueueMessage as enqueueOfflineMessage,
+  dequeueMessage as dequeueOfflineMessage,
+  getRetryableMessages,
+  processQueue,
+} from '@/services/offlineMessageQueue';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { RichText } from '@/components/ui/RichText';
@@ -766,7 +772,7 @@ function PendingMessageRow({ pending }: { pending: PendingMessage }) {
   return (
     <View style={[styles.pendingRow, { backgroundColor: tc.bgCard }]}>
       <Text style={[styles.pendingText, { color: tc.text.secondary }]}>{pending.content}</Text>
-      <Skeleton.Circle size={16} />
+      <Icon name="clock" size={14} color={tc.text.tertiary} />
     </View>
   );
 }
@@ -803,6 +809,32 @@ export default function ConversationScreen() {
   useEffect(() => {
     pendingMessagesRef.current = pendingMessages;
   }, [pendingMessages]);
+
+  // Load persisted offline queue messages into React state on mount.
+  // This ensures messages survive app crash / kill and are displayed immediately.
+  useEffect(() => {
+    const queued = getRetryableMessages(id);
+    if (queued.length > 0) {
+      const restored: PendingMessage[] = queued.map(q => ({
+        id: q.id,
+        content: q.content,
+        createdAt: new Date(q.createdAt).toISOString(),
+        status: 'pending' as const,
+        replyToId: q.replyToId,
+        e2ePayload: q.e2ePayload,
+        sealedEnvelope: q.sealedEnvelope,
+      }));
+      setPendingMessages(prev => {
+        // Avoid duplicates: only add messages not already in state
+        const existingIds = new Set(prev.map(p => p.id));
+        const newMsgs = restored.filter(r => !existingIds.has(r.id));
+        return newMsgs.length > 0 ? [...prev, ...newMsgs] : prev;
+      });
+    }
+  // Only run on mount (id is stable for this screen instance)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
   const [isTyping, setIsTyping] = useState(false);
   const [otherTyping, setOtherTyping] = useState(false);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
@@ -1120,10 +1152,26 @@ export default function ConversationScreen() {
       socket.emit('join_conversation', { conversationId: id });
       // Refetch messages to catch any missed during disconnection
       queryClient.invalidateQueries({ queryKey: ['messages', id] });
-      // Codex-V7-F1 FIX: Retry pending messages using the ENCRYPTED payload only.
-      // Previously sent raw p.content in plaintext — complete E2E bypass on reconnect.
-      // Now: only retry messages that have e2ePayload (already encrypted before disconnect).
-      // Messages without e2ePayload are dropped — they were never encrypted and MUST NOT be sent.
+      // Process persistent offline queue — messages survive app crash.
+      // Only retries messages with e2ePayload (already encrypted before disconnect).
+      // Codex-V7-F1 FIX: Never sends plaintext on reconnect.
+      processQueue(async (queuedMsg) => {
+        if (!queuedMsg.e2ePayload) return false; // Never send unencrypted
+        const result = await emitEncryptedMessage({
+          e2ePayload: queuedMsg.e2ePayload,
+          replyToId: queuedMsg.replyToId,
+          sealedEnvelope: queuedMsg.sealedEnvelope,
+        });
+        return result !== null; // null = still offline
+      }, id).then(({ sent }) => {
+        if (sent > 0) {
+          // Remove successfully sent messages from React state
+          const retryable = new Set(getRetryableMessages(id).map(m => m.id));
+          setPendingMessages(prev => prev.filter(p => retryable.has(p.id)));
+          queryClient.invalidateQueries({ queryKey: ['messages', id] });
+        }
+      });
+      // Also retry React-state-only pending messages (sent in current session, not yet in MMKV)
       const pending = pendingMessagesRef.current.filter(p => p.status === 'pending' && p.e2ePayload);
       pending.forEach(p => {
         if (p.e2ePayload) {
@@ -1146,6 +1194,11 @@ export default function ConversationScreen() {
         (p.content === msg.content && Date.now() - new Date(p.createdAt).getTime() < 30000)
       );
       if (matchedIndex >= 0) {
+        // Also remove from persistent MMKV queue if it was a crash-survived message
+        const matchedMsg = pending[matchedIndex];
+        if (matchedMsg.id.startsWith('q_')) {
+          dequeueOfflineMessage(matchedMsg.id);
+        }
         setPendingMessages(prev => prev.filter((_, i) => i !== matchedIndex));
       }
       queryClient.setQueryData<{ pages: { data: Message[]; meta: { cursor: string | null; hasMore: boolean } }[]; pageParams: (string | undefined)[] }>(['messages', id], (old) => {
@@ -1614,6 +1667,18 @@ export default function ConversationScreen() {
         isSpoiler: savedSpoiler || undefined,
         isViewOnce: savedViewOnce || undefined,
       }).then((serverMessageId) => {
+        if (serverMessageId === null) {
+          // Offline or socket disconnected — persist to MMKV so message survives app crash.
+          // The message is already in React state (pendingMessages) for immediate display.
+          enqueueOfflineMessage({
+            conversationId: id,
+            content: messageContent,
+            e2ePayload,
+            sealedEnvelope: sealedEnvelopeForEmit,
+            replyToId: savedReplyToId,
+          });
+          return;
+        }
         // Start 5-second undo window AFTER emit (message is already in transit)
         const timer = setTimeout(() => {
           setUndoPending(null);
@@ -1629,16 +1694,35 @@ export default function ConversationScreen() {
     setSendAsViewOnce(false);
   }, [text, replyTo, id, isSending, haptic, isOffline, editingMsg, queryClient, convoQuery.data, user?.id, undoPending, emitEncryptedMessage]);
 
-  // Retry pending messages when network comes back online
+  // Retry pending messages when network comes back online — process persistent MMKV queue.
   useEffect(() => {
     if (isOffline || !socketRef.current?.connected) return;
-    // Filter pending messages that haven't been sent yet
+    // Process the persistent queue (MMKV) — handles crash-survived messages
+    processQueue(async (queuedMsg) => {
+      if (!queuedMsg.e2ePayload) return false;
+      const result = await emitEncryptedMessage({
+        e2ePayload: queuedMsg.e2ePayload,
+        replyToId: queuedMsg.replyToId,
+        sealedEnvelope: queuedMsg.sealedEnvelope,
+      });
+      return result !== null;
+    }, id).then(({ sent }) => {
+      if (sent > 0) {
+        // Remove sent messages from React state
+        const retryable = new Set(getRetryableMessages(id).map(m => m.id));
+        setPendingMessages(prev => prev.filter(p => retryable.has(p.id)));
+        queryClient.invalidateQueries({ queryKey: ['messages', id] });
+      }
+    });
+    // Also retry React-state-only pending messages (current session, not in MMKV)
     const toRetry = pendingMessages.filter(p => p.status === 'pending' && p.e2ePayload);
     toRetry.forEach(pending => {
       if (pending.e2ePayload) {
-        emitEncryptedMessage({ e2ePayload: pending.e2ePayload, replyToId: pending.replyToId }).then(() => {
-          setPendingMessages(prev => prev.filter(p => p.id !== pending.id));
-          queryClient.invalidateQueries({ queryKey: ['messages', id] });
+        emitEncryptedMessage({ e2ePayload: pending.e2ePayload, replyToId: pending.replyToId }).then((result) => {
+          if (result !== null) {
+            setPendingMessages(prev => prev.filter(p => p.id !== pending.id));
+            queryClient.invalidateQueries({ queryKey: ['messages', id] });
+          }
         });
       }
     });
