@@ -503,11 +503,13 @@ export class PaymentsService {
         await this.handleTipPaymentSucceeded(paymentIntent);
         return;
       default:
-        // Unknown payment type — log and skip. Don't silently route to tip handler.
-        this.logger.warn(`Unknown payment type in metadata: ${paymentType} for PI ${paymentIntent.id}`);
         // Legacy tip payments without metadata.type: check if we have a mapping
         if (!paymentType) {
+          this.logger.warn(`Payment intent ${paymentIntent.id} has no type in metadata — routing to legacy tip handler`);
           await this.handleTipPaymentSucceeded(paymentIntent);
+        } else {
+          // Unknown payment type — CRITICAL: money was charged but we don't know what for
+          this.logger.error(`CRITICAL RECONCILIATION: Unknown payment type "${paymentType}" for PI ${paymentIntent.id}, amount=${paymentIntent.amount}. Money charged but no handler matched — requires manual investigation.`);
         }
         return;
     }
@@ -515,25 +517,42 @@ export class PaymentsService {
 
   /**
    * Bug 3 fix: Credit coins to user after successful Stripe payment
+   * Finding #55: Added PaymentMapping idempotency + reconciliation verification
    */
   private async handleCoinPurchaseSucceeded(paymentIntent: Stripe.PaymentIntent) {
     const userId = paymentIntent.metadata?.userId;
     const coinAmount = parseInt(paymentIntent.metadata?.coinAmount || '0', 10);
 
     if (!userId || !coinAmount) {
-      this.logger.warn(`Coin purchase webhook missing metadata: userId=${userId}, coinAmount=${coinAmount}, pi=${paymentIntent.id}`);
+      this.logger.error(`CRITICAL RECONCILIATION: Coin purchase webhook missing metadata: userId=${userId}, coinAmount=${coinAmount}, pi=${paymentIntent.id}`);
       return;
     }
 
-    // PI-based idempotency: check if coins were already credited for this PaymentIntent
+    // PI-based idempotency: check PaymentMapping first (durable, exact match), then CoinTransaction (legacy fallback)
+    const existingMapping = await this.prisma.paymentMapping.findUnique({
+      where: { stripeId: paymentIntent.id },
+    });
+    if (existingMapping) {
+      this.logger.log(`Coin purchase already processed for PI ${paymentIntent.id} — skipping (idempotent via PaymentMapping)`);
+      return;
+    }
+
+    // Legacy fallback: check CoinTransaction description (for pre-mapping records)
     const alreadyCredited = await this.prisma.coinTransaction.findFirst({
       where: {
         userId,
-        description: { contains: paymentIntent.id },
+        type: 'PURCHASE',
+        description: { equals: `Coin purchase completed (${coinAmount} coins) — Stripe PI: ${paymentIntent.id}` },
       },
     });
     if (alreadyCredited) {
-      this.logger.log(`Coin purchase already credited for PI ${paymentIntent.id} — skipping (idempotent)`);
+      this.logger.log(`Coin purchase already credited for PI ${paymentIntent.id} — skipping (idempotent via CoinTransaction)`);
+      // Backfill PaymentMapping for future lookups
+      await this.prisma.paymentMapping.upsert({
+        where: { stripeId: paymentIntent.id },
+        create: { stripeId: paymentIntent.id, internalId: alreadyCredited.id, type: 'coin_purchase' },
+        update: {},
+      }).catch((e: Error) => this.logger.debug('Backfill PaymentMapping failed (non-critical)', e.message));
       return;
     }
 
@@ -569,13 +588,30 @@ export class PaymentsService {
           },
         });
       }
+
+      // Store PaymentMapping for idempotency (inside transaction for atomicity)
+      await tx.paymentMapping.upsert({
+        where: { stripeId: paymentIntent.id },
+        create: { stripeId: paymentIntent.id, internalId: userId, type: 'coin_purchase' },
+        update: {},
+      });
     });
+
+    // Reconciliation: verify coins were actually credited
+    const balance = await this.prisma.coinBalance.findUnique({
+      where: { userId },
+      select: { coins: true },
+    });
+    if (!balance || balance.coins < coinAmount) {
+      this.logger.error(`CRITICAL RECONCILIATION MISMATCH: Coin purchase transaction committed but balance check failed. userId=${userId}, expectedAtLeast=${coinAmount}, actual=${balance?.coins ?? 'null'}, pi=${paymentIntent.id}`);
+    }
 
     this.logger.log(`Credited ${coinAmount} coins to user ${userId} via PI ${paymentIntent.id}`);
   }
 
   /**
    * Bug 15 fix: Update marketplace order status after payment
+   * Finding #55: Added idempotency check + reconciliation verification
    */
   private async handleMarketplaceOrderSucceeded(paymentIntent: Stripe.PaymentIntent) {
     let orderId = paymentIntent.metadata?.orderId;
@@ -585,13 +621,32 @@ export class PaymentsService {
     if (!orderId || orderId === 'pending') {
       const order = await this.prisma.order.findFirst({
         where: { stripePaymentId: paymentIntent.id },
-        select: { id: true },
+        select: { id: true, status: true },
       });
       if (!order) {
-        this.logger.warn(`Marketplace order webhook: no order found for pi=${paymentIntent.id}`);
+        this.logger.error(`CRITICAL RECONCILIATION: Marketplace order webhook — no order found for pi=${paymentIntent.id}`);
+        return;
+      }
+      // Idempotency: already marked PAID
+      if (order.status === 'PAID') {
+        this.logger.log(`Marketplace order ${order.id} already PAID for PI ${paymentIntent.id} — skipping (idempotent)`);
         return;
       }
       orderId = order.id;
+    }
+
+    // Idempotency: check current status before updating
+    const existingOrder = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      select: { id: true, status: true },
+    });
+    if (!existingOrder) {
+      this.logger.error(`CRITICAL RECONCILIATION: Order ${orderId} not found in DB for PI ${paymentIntent.id}`);
+      return;
+    }
+    if (existingOrder.status === 'PAID') {
+      this.logger.log(`Marketplace order ${orderId} already PAID for PI ${paymentIntent.id} — skipping (idempotent)`);
+      return;
     }
 
     await this.prisma.order.update({
@@ -602,7 +657,16 @@ export class PaymentsService {
       },
     });
 
-    // Notify seller about the paid order
+    // Reconciliation: verify the update applied
+    const verifiedOrder = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      select: { status: true, stripePaymentId: true },
+    });
+    if (verifiedOrder?.status !== 'PAID' || verifiedOrder?.stripePaymentId !== paymentIntent.id) {
+      this.logger.error(`CRITICAL RECONCILIATION MISMATCH: Order ${orderId} update failed verification. status=${verifiedOrder?.status}, stripePaymentId=${verifiedOrder?.stripePaymentId}, expectedPI=${paymentIntent.id}`);
+    }
+
+    // Best-effort notification — don't fail the webhook if notification fails
     if (sellerId) {
       try {
         const order = await this.prisma.order.findUnique({
@@ -610,32 +674,46 @@ export class PaymentsService {
           select: { product: { select: { title: true } }, buyerId: true },
         });
         if (order) {
-          // Best-effort notification — don't fail the webhook if notification fails
-          this.logger.log(`Marketplace order ${orderId} paid — seller ${sellerId} notified`);
+          this.logger.log(`Marketplace order ${orderId} paid — notifying seller ${sellerId}`);
+          await this.notifications.create({
+            userId: sellerId,
+            actorId: order.buyerId,
+            type: 'SYSTEM',
+            title: 'Order paid!',
+            body: `Payment confirmed for "${order.product.title}"`,
+          }).catch((err: Error) => this.logger.warn('Marketplace order notification failed (non-critical)', err.message));
         }
-      } catch {
+      } catch (notifyErr: unknown) {
         // Non-critical: notification failure shouldn't block webhook
+        this.logger.warn('Marketplace order notification lookup failed (non-critical)', notifyErr instanceof Error ? notifyErr.message : String(notifyErr));
       }
     }
   }
 
   /**
    * Bug 14 fix: Activate premium after payment confirmation
+   * Finding #55: Added idempotency guard — duplicate webhook won't extend endDate twice
    */
   private async handlePremiumPaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
     const userId = paymentIntent.metadata?.userId;
     const plan = paymentIntent.metadata?.plan || 'MONTHLY';
 
     if (!userId) {
-      this.logger.warn(`Premium payment webhook missing userId, pi=${paymentIntent.id}`);
+      this.logger.error(`CRITICAL RECONCILIATION: Premium payment webhook missing userId, pi=${paymentIntent.id}`);
+      return;
+    }
+
+    // Idempotency: check if this exact PaymentIntent already activated premium
+    const existing = await this.prisma.premiumSubscription.findUnique({
+      where: { userId },
+      select: { endDate: true, stripePaymentIntentId: true, status: true },
+    });
+    if (existing?.stripePaymentIntentId === paymentIntent.id) {
+      this.logger.log(`Premium already activated for PI ${paymentIntent.id} — skipping (idempotent)`);
       return;
     }
 
     // Extend from current endDate if still in the future (don't lose remaining days on early renewal)
-    const existing = await this.prisma.premiumSubscription.findUnique({
-      where: { userId },
-      select: { endDate: true },
-    });
     const baseDate = existing?.endDate && new Date(existing.endDate) > new Date()
       ? new Date(existing.endDate)
       : new Date();
@@ -649,6 +727,13 @@ export class PaymentsService {
       update: { status: 'ACTIVE', endDate, stripePaymentIntentId: paymentIntent.id },
     });
 
+    // Store PaymentMapping for cross-reference reconciliation
+    await this.prisma.paymentMapping.upsert({
+      where: { stripeId: paymentIntent.id },
+      create: { stripeId: paymentIntent.id, internalId: userId, type: 'premium' },
+      update: {},
+    }).catch((e: Error) => this.logger.warn('Premium PaymentMapping store failed (non-critical)', e.message));
+
     this.logger.log(`Premium activated for user ${userId} (${plan}) via PI ${paymentIntent.id}`);
   }
 
@@ -658,20 +743,31 @@ export class PaymentsService {
   private async handleTipPaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
     let tipId = await this.redis.get(`payment_intent:${paymentIntent.id}`);
     if (!tipId) {
-      // Redis mapping expired or lost — try DB fallback by stripePaymentId first (durable)
-      const tipByPI = await this.prisma.tip.findFirst({
-        where: { stripePaymentId: paymentIntent.id },
-        select: { id: true, status: true },
+      // Layer 1: PaymentMapping table (durable, exact match by stripeId)
+      const mapping = await this.prisma.paymentMapping.findUnique({
+        where: { stripeId: paymentIntent.id },
+        select: { internalId: true },
       });
-      if (tipByPI) {
-        if (tipByPI.status === 'completed') {
-          this.logger.log(`Tip already completed for PI ${paymentIntent.id} — skipping (idempotent)`);
-          return;
-        }
-        tipId = tipByPI.id;
+      if (mapping) {
+        tipId = mapping.internalId;
       }
 
-      // Fallback: try matching by senderId + receiverId + amount from metadata (all required to avoid ambiguous match)
+      // Layer 2: Tip.stripePaymentId (set during completion — catches already-completed tips)
+      if (!tipId) {
+        const tipByPI = await this.prisma.tip.findFirst({
+          where: { stripePaymentId: paymentIntent.id },
+          select: { id: true, status: true },
+        });
+        if (tipByPI) {
+          if (tipByPI.status === 'completed') {
+            this.logger.log(`Tip already completed for PI ${paymentIntent.id} — skipping (idempotent)`);
+            return;
+          }
+          tipId = tipByPI.id;
+        }
+      }
+
+      // Layer 3: Metadata-based lookup (all three fields required to avoid ambiguous match)
       if (!tipId) {
         const senderId = paymentIntent.metadata?.senderId;
         const receiverId = paymentIntent.metadata?.receiverId;
@@ -694,7 +790,7 @@ export class PaymentsService {
       }
 
       if (!tipId) {
-        this.logger.warn(`No tip found for payment intent ${paymentIntent.id} (Redis + DB fallback failed)`);
+        this.logger.error(`CRITICAL RECONCILIATION: No tip found for payment intent ${paymentIntent.id} (Redis + PaymentMapping + Tip.stripePaymentId + metadata fallback all failed). Amount=${paymentIntent.amount}`);
         return;
       }
     }
@@ -747,18 +843,23 @@ export class PaymentsService {
       return tip;
     });
 
-    // Notify receiver they received a tip (use returned tip from $transaction)
+    // Best-effort notification — tip payment is already committed; notification failure is non-critical
     if (completedTip?.receiverId) {
-      const sender = completedTip.senderId
-        ? await this.prisma.user.findUnique({ where: { id: completedTip.senderId }, select: { username: true } })
-        : null;
-      this.notifications.create({
-        userId: completedTip.receiverId,
-        actorId: completedTip.senderId ?? null,
-        type: 'SYSTEM',
-        title: 'Tip received!',
-        body: `${sender?.username ? `@${sender.username}` : 'Someone'} sent you a $${Number(completedTip.amount).toFixed(2)} tip.`,
-      }).catch(err => this.logger.warn('Failed to create tip notification', err instanceof Error ? err.message : err));
+      try {
+        const sender = completedTip.senderId
+          ? await this.prisma.user.findUnique({ where: { id: completedTip.senderId }, select: { username: true } })
+          : null;
+        await this.notifications.create({
+          userId: completedTip.receiverId,
+          actorId: completedTip.senderId ?? null,
+          type: 'SYSTEM',
+          title: 'Tip received!',
+          body: `${sender?.username ? `@${sender.username}` : 'Someone'} sent you a $${Number(completedTip.amount).toFixed(2)} tip.`,
+        });
+      } catch (notifyErr: unknown) {
+        // Non-critical: tip payment already committed, notification is best-effort
+        this.logger.warn('Tip notification failed (non-critical — payment already committed)', notifyErr instanceof Error ? notifyErr.message : String(notifyErr));
+      }
     }
 
     // Clean up Redis mapping
