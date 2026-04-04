@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { BadRequestException } from '@nestjs/common';
 import { FeatureFlagsService } from './feature-flags.service';
 import { PrismaService } from '../../config/prisma.service';
 
@@ -266,6 +267,129 @@ describe('FeatureFlagsService', () => {
 
       const result = await service.isEnabled('anything');
       expect(result).toBe(false);
+    });
+  });
+
+  // ── setFlag validation ──
+
+  describe('setFlag — name validation', () => {
+    it('should reject empty flag name', async () => {
+      await expect(service.setFlag('', 'true')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject flag name longer than 50 chars', async () => {
+      const longName = 'a'.repeat(51);
+      await expect(service.setFlag(longName, 'true')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject flag name starting with a digit', async () => {
+      await expect(service.setFlag('123flag', 'true')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject flag name with special characters', async () => {
+      await expect(service.setFlag('flag@name', 'true')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should accept valid flag names with underscores and hyphens', async () => {
+      await expect(service.setFlag('my_flag-v2', 'true')).resolves.not.toThrow();
+    });
+  });
+
+  describe('setFlag — value validation', () => {
+    it('should accept boolean values', async () => {
+      await expect(service.setFlag('flag_a', 'true')).resolves.not.toThrow();
+      await expect(service.setFlag('flag_b', 'false')).resolves.not.toThrow();
+    });
+
+    it('should accept percentage values 0-100', async () => {
+      await expect(service.setFlag('flag_c', '0')).resolves.not.toThrow();
+      await expect(service.setFlag('flag_d', '50')).resolves.not.toThrow();
+      await expect(service.setFlag('flag_e', '100')).resolves.not.toThrow();
+    });
+
+    it('should reject percentage over 100', async () => {
+      await expect(service.setFlag('flag_f', '101')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should accept valid JSON values', async () => {
+      await expect(service.setFlag('flag_g', '{"variant":"A"}')).resolves.not.toThrow();
+      await expect(service.setFlag('flag_h', '[1,2,3]')).resolves.not.toThrow();
+    });
+
+    it('should reject invalid JSON', async () => {
+      await expect(service.setFlag('flag_i', '{broken')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject JSON over 1024 chars', async () => {
+      const longJson = JSON.stringify({ data: 'x'.repeat(1100) });
+      await expect(service.setFlag('flag_j', longJson)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject empty value', async () => {
+      await expect(service.setFlag('flag_k', '')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject string over 200 chars', async () => {
+      await expect(service.setFlag('flag_l', 'x'.repeat(201))).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject value with control characters', async () => {
+      await expect(service.setFlag('flag_m', 'hello\x00world')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should accept regular string values', async () => {
+      await expect(service.setFlag('flag_n', 'variant-A')).resolves.not.toThrow();
+    });
+  });
+
+  // ── parseFlagValue (static) ──
+
+  describe('parseFlagValue', () => {
+    it('should return null for null input', () => {
+      expect(FeatureFlagsService.parseFlagValue(null)).toBeNull();
+    });
+
+    it('should parse boolean true', () => {
+      const result = FeatureFlagsService.parseFlagValue('true');
+      expect(result).toEqual({ raw: 'true', type: 'boolean', booleanValue: true });
+    });
+
+    it('should parse boolean false', () => {
+      const result = FeatureFlagsService.parseFlagValue('false');
+      expect(result).toEqual({ raw: 'false', type: 'boolean', booleanValue: false });
+    });
+
+    it('should parse percentage value', () => {
+      const result = FeatureFlagsService.parseFlagValue('50');
+      expect(result).toEqual({ raw: '50', type: 'percentage', numberValue: 50 });
+    });
+
+    it('should parse JSON object', () => {
+      const result = FeatureFlagsService.parseFlagValue('{"key":"value"}');
+      expect(result).toEqual({
+        raw: '{"key":"value"}',
+        type: 'json',
+        jsonValue: { key: 'value' },
+      });
+    });
+
+    it('should parse JSON array', () => {
+      const result = FeatureFlagsService.parseFlagValue('[1,2,3]');
+      expect(result).toEqual({
+        raw: '[1,2,3]',
+        type: 'json',
+        jsonValue: [1, 2, 3],
+      });
+    });
+
+    it('should parse plain string', () => {
+      const result = FeatureFlagsService.parseFlagValue('variant-A');
+      expect(result).toEqual({ raw: 'variant-A', type: 'string' });
+    });
+
+    it('should treat invalid JSON as string', () => {
+      const result = FeatureFlagsService.parseFlagValue('{broken');
+      expect(result).toEqual({ raw: '{broken', type: 'string' });
     });
   });
 });

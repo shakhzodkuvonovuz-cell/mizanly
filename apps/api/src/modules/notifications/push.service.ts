@@ -73,9 +73,9 @@ export class PushService {
     private circuitBreaker: CircuitBreakerService,
     private config: ConfigService,
   ) {
-    this.expoAccessToken = this.config.get<string>('this.expoAccessToken', '');
+    this.expoAccessToken = this.config.get<string>('EXPO_ACCESS_TOKEN', '');
     if (!this.expoAccessToken) {
-      this.logger.warn('this.expoAccessToken not set — push notifications will use unauthenticated mode (higher rate limits from Expo)');
+      this.logger.warn('EXPO_ACCESS_TOKEN not set — push notifications will use unauthenticated mode (higher rate limits from Expo)');
     }
   }
 

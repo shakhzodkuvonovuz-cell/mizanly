@@ -11,10 +11,11 @@ describe('StickersService', () => {
 
   beforeEach(async () => {
     prisma = {
-      stickerPack: { findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), create: jest.fn(), delete: jest.fn() },
-      sticker: { findMany: jest.fn().mockResolvedValue([]) },
+      stickerPack: { findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), create: jest.fn(), delete: jest.fn(), update: jest.fn() },
+      sticker: { findMany: jest.fn().mockResolvedValue([]), count: jest.fn().mockResolvedValue(0), create: jest.fn(), findFirst: jest.fn(), delete: jest.fn() },
       userStickerPack: { findMany: jest.fn().mockResolvedValue([]), upsert: jest.fn(), delete: jest.fn() },
       user: { findUnique: jest.fn() },
+      $transaction: jest.fn().mockImplementation(async (fn: (tx: Record<string, unknown>) => Promise<unknown>) => fn(prisma)),
     };
     const module = await Test.createTestingModule({
       providers: [...globalMockProviders, StickersService, { provide: PrismaService, useValue: prisma }],
@@ -281,7 +282,6 @@ describe('StickersService', () => {
       const dirty = '<svg><foreignObject><body xmlns="http://www.w3.org/1999/xhtml"><script>alert(1)</script></body></foreignObject></svg>';
       const result = (service as any).sanitizeSvg(dirty);
       expect(result).not.toContain('foreignObject');
-<<<<<<< HEAD
     });
   });
 
@@ -304,6 +304,89 @@ describe('StickersService', () => {
     it('should throw NotFoundException when pack does not exist', async () => {
       prisma.stickerPack.findUnique.mockResolvedValue(null);
       await expect(service.deletePack('nonexistent', 'u1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ── Atomic sticker count operations (#61) ──
+
+  describe('addStickerToPack', () => {
+    it('should add sticker and increment count atomically', async () => {
+      prisma.stickerPack.findUnique.mockResolvedValue({ ownerId: 'u1' });
+      const txSticker = { count: jest.fn().mockResolvedValue(3), create: jest.fn().mockResolvedValue({ id: 's-new', url: 'new.png', position: 3 }) };
+      const txPack = { update: jest.fn().mockResolvedValue({}) };
+      prisma.$transaction = jest.fn().mockImplementation(async (fn: (tx: Record<string, unknown>) => Promise<unknown>) => {
+        return fn({ sticker: txSticker, stickerPack: txPack });
+      });
+
+      const result = await service.addStickerToPack('pack1', { url: 'new.png' }, 'u1');
+      expect(result).toEqual(expect.objectContaining({ id: 's-new' }));
+      expect(txPack.update).toHaveBeenCalledWith({
+        where: { id: 'pack1' },
+        data: { stickersCount: { increment: 1 } },
+      });
+    });
+
+    it('should throw NotFoundException for missing pack', async () => {
+      prisma.stickerPack.findUnique.mockResolvedValue(null);
+      await expect(service.addStickerToPack('bad', { url: 'x.png' }, 'u1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException when not owner', async () => {
+      prisma.stickerPack.findUnique.mockResolvedValue({ ownerId: 'other-user' });
+      await expect(service.addStickerToPack('pack1', { url: 'x.png' }, 'u1')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('removeStickerFromPack', () => {
+    it('should remove sticker and decrement count atomically', async () => {
+      prisma.stickerPack.findUnique.mockResolvedValue({ ownerId: 'u1' });
+      const txSticker = {
+        findFirst: jest.fn().mockResolvedValue({ id: 's1', packId: 'pack1' }),
+        delete: jest.fn().mockResolvedValue({}),
+      };
+      const txPack = { update: jest.fn().mockResolvedValue({}) };
+      prisma.$transaction = jest.fn().mockImplementation(async (fn: (tx: Record<string, unknown>) => Promise<unknown>) => {
+        return fn({ sticker: txSticker, stickerPack: txPack });
+      });
+
+      const result = await service.removeStickerFromPack('pack1', 's1', 'u1');
+      expect(result).toEqual({ removed: true });
+      expect(txPack.update).toHaveBeenCalledWith({
+        where: { id: 'pack1' },
+        data: { stickersCount: { decrement: 1 } },
+      });
+    });
+
+    it('should throw NotFoundException for missing pack', async () => {
+      prisma.stickerPack.findUnique.mockResolvedValue(null);
+      await expect(service.removeStickerFromPack('bad', 's1', 'u1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException when not owner', async () => {
+      prisma.stickerPack.findUnique.mockResolvedValue({ ownerId: 'other-user' });
+      await expect(service.removeStickerFromPack('pack1', 's1', 'u1')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw NotFoundException when sticker not in pack', async () => {
+      prisma.stickerPack.findUnique.mockResolvedValue({ ownerId: 'u1' });
+      const txSticker = { findFirst: jest.fn().mockResolvedValue(null), delete: jest.fn() };
+      const txPack = { update: jest.fn() };
+      prisma.$transaction = jest.fn().mockImplementation(async (fn: (tx: Record<string, unknown>) => Promise<unknown>) => {
+        return fn({ sticker: txSticker, stickerPack: txPack });
+      });
+
+      await expect(service.removeStickerFromPack('pack1', 'nonexistent', 'u1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ── createPack uses transaction (#61) ──
+
+  describe('createPack — atomic transaction', () => {
+    it('should call $transaction for pack creation', async () => {
+      prisma.$transaction = jest.fn().mockResolvedValue({ id: 'pack1', name: 'Test', stickersCount: 2, stickers: [] });
+      const result = await service.createPack({ name: 'Test', stickers: [{ url: 'a.png' }, { url: 'b.png' }] }, 'user-1');
+      expect(prisma.$transaction).toHaveBeenCalled();
+      expect(result.stickersCount).toBe(2);
     });
   });
 });

@@ -11,7 +11,6 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
-  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
@@ -119,13 +118,7 @@ export class AdminController {
   @ApiOperation({ summary: 'Set a feature flag (admin only)' })
   async setFlag(@CurrentUser('id') adminId: string, @Param('name') name: string, @Body('value') value: string) {
     await this.adminService.verifyAdmin(adminId);
-    // A15-#8 FIX: Validate name length and fix regex to actually match 0-100
-    if (!name || name.length > 50) {
-      throw new BadRequestException('Flag name must be 1-50 characters');
-    }
-    if (!value || !/^(true|false|[0-9]{1,2}|100)$/.test(value)) {
-      throw new BadRequestException('Flag value must be "true", "false", or a number 0-100');
-    }
+    // Validation is handled by FeatureFlagsService.setFlag (name + value checks)
     return this.featureFlags.setFlag(name, value);
   }
 

@@ -26,20 +26,24 @@ export class StickersService {
   ) {}
 
   async createPack(data: { name: string; coverUrl?: string; isFree?: boolean; stickers: { url: string; name?: string }[] }, userId: string) {
-    return this.prisma.stickerPack.create({
-      data: {
-        name: data.name,
-        coverUrl: data.coverUrl,
-        isFree: data.isFree ?? true,
-        stickersCount: data.stickers.length,
-        ownerId: userId,
-        stickers: {
-          createMany: {
-            data: data.stickers.map((s, i) => ({ url: s.url, name: s.name, position: i })),
+    // Use transaction to ensure stickersCount matches actual sticker count atomically
+    return this.prisma.$transaction(async (tx) => {
+      const pack = await tx.stickerPack.create({
+        data: {
+          name: data.name,
+          coverUrl: data.coverUrl,
+          isFree: data.isFree ?? true,
+          stickersCount: data.stickers.length,
+          ownerId: userId,
+          stickers: {
+            createMany: {
+              data: data.stickers.map((s, i) => ({ url: s.url, name: s.name, position: i })),
+            },
           },
         },
-      },
-      include: { stickers: { orderBy: { position: 'asc' } } },
+        include: { stickers: { orderBy: { position: 'asc' } } },
+      });
+      return pack;
     });
   }
 
@@ -128,6 +132,68 @@ export class StickersService {
       where: { isFree: true },
       orderBy: { stickersCount: 'desc' },
       take: 10,
+    });
+  }
+
+  /**
+   * Add a sticker to an existing pack with atomic count increment.
+   * Uses $transaction to ensure stickersCount stays consistent.
+   */
+  async addStickerToPack(packId: string, stickerData: { url: string; name?: string }, userId: string) {
+    const pack = await this.prisma.stickerPack.findUnique({
+      where: { id: packId },
+      select: { ownerId: true },
+    });
+    if (!pack) throw new NotFoundException('Sticker pack not found');
+    if (pack.ownerId !== userId) {
+      throw new BadRequestException('Not authorized to modify this pack');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const position = await tx.sticker.count({ where: { packId } });
+      const sticker = await tx.sticker.create({
+        data: {
+          packId,
+          url: stickerData.url,
+          name: stickerData.name,
+          position,
+        },
+      });
+      await tx.stickerPack.update({
+        where: { id: packId },
+        data: { stickersCount: { increment: 1 } },
+      });
+      return sticker;
+    });
+  }
+
+  /**
+   * Remove a sticker from a pack with atomic count decrement.
+   * Uses $transaction to ensure stickersCount stays consistent.
+   */
+  async removeStickerFromPack(packId: string, stickerId: string, userId: string) {
+    const pack = await this.prisma.stickerPack.findUnique({
+      where: { id: packId },
+      select: { ownerId: true },
+    });
+    if (!pack) throw new NotFoundException('Sticker pack not found');
+    if (pack.ownerId !== userId) {
+      throw new BadRequestException('Not authorized to modify this pack');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      // Verify sticker exists in this pack
+      const sticker = await tx.sticker.findFirst({
+        where: { id: stickerId, packId },
+      });
+      if (!sticker) throw new NotFoundException('Sticker not found in this pack');
+
+      await tx.sticker.delete({ where: { id: stickerId } });
+      await tx.stickerPack.update({
+        where: { id: packId },
+        data: { stickersCount: { decrement: 1 } },
+      });
+      return { removed: true };
     });
   }
 

@@ -38,7 +38,14 @@ describe('AdminController', () => {
           provide: FeatureFlagsService,
           useValue: {
             getAllFlags: jest.fn(),
-            setFlag: jest.fn(),
+            setFlag: jest.fn().mockImplementation(async (name: string, value: string) => {
+              // Replicate service-level validation for controller integration test
+              const { BadRequestException } = require('@nestjs/common');
+              if (!name || name.length > 50 || !/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(name)) {
+                throw new BadRequestException('Flag name validation failed');
+              }
+              FeatureFlagsService.validateFlagValue(value);
+            }),
             deleteFlag: jest.fn(),
           },
         },
@@ -221,10 +228,10 @@ describe('AdminController', () => {
 
   // ── T12 gap: setFlag validation ──
   describe('setFlag validation', () => {
-    it('should reject invalid flag value', async () => {
+    it('should reject value with control characters', async () => {
       const { BadRequestException } = require('@nestjs/common');
 
-      await expect(controller.setFlag(adminId, 'dark_mode', 'invalid')).rejects.toThrow(BadRequestException);
+      await expect(controller.setFlag(adminId, 'dark_mode', 'value\x00')).rejects.toThrow(BadRequestException);
     });
 
     it('should reject flag name longer than 50 chars', async () => {
@@ -240,18 +247,36 @@ describe('AdminController', () => {
       await expect(controller.setFlag(adminId, 'flag', '')).rejects.toThrow(BadRequestException);
     });
 
-    it('should accept valid percentage value (50)', async () => {
-      featureFlags.setFlag.mockResolvedValue(undefined as any);
+    it('should accept valid string flag value', async () => {
+      await controller.setFlag(adminId, 'variant_flag', 'variant-A');
+      expect(featureFlags.setFlag).toHaveBeenCalledWith('variant_flag', 'variant-A');
+    });
 
+    it('should accept valid percentage value (50)', async () => {
       await controller.setFlag(adminId, 'rollout', '50');
       expect(featureFlags.setFlag).toHaveBeenCalledWith('rollout', '50');
     });
 
     it('should accept "100" as valid value', async () => {
-      featureFlags.setFlag.mockResolvedValue(undefined as any);
-
       await controller.setFlag(adminId, 'full', '100');
       expect(featureFlags.setFlag).toHaveBeenCalledWith('full', '100');
+    });
+
+    it('should accept valid JSON flag value', async () => {
+      await controller.setFlag(adminId, 'config_flag', '{"variant":"B"}');
+      expect(featureFlags.setFlag).toHaveBeenCalledWith('config_flag', '{"variant":"B"}');
+    });
+
+    it('should reject percentage over 100', async () => {
+      const { BadRequestException } = require('@nestjs/common');
+
+      await expect(controller.setFlag(adminId, 'bad_pct', '101')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject invalid JSON', async () => {
+      const { BadRequestException } = require('@nestjs/common');
+
+      await expect(controller.setFlag(adminId, 'bad_json', '{broken')).rejects.toThrow(BadRequestException);
     });
   });
 

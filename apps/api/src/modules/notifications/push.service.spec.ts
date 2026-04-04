@@ -159,8 +159,6 @@ describe('PushService', () => {
 
   describe('EXPO_ACCESS_TOKEN', () => {
     it('should include Authorization header when EXPO_ACCESS_TOKEN is set', async () => {
-      // Set the env variable before importing — module already loaded so we test indirectly
-      // The token is read at module load time. For this test we verify the header structure.
       prisma.device.findMany.mockResolvedValue([{ pushToken: 'ExponentPushToken[xxx]' }]);
       await service.sendToUser('user-1', { title: 'Test', body: 'Body' });
       expect(mockFetch).toHaveBeenCalledWith(
@@ -169,9 +167,20 @@ describe('PushService', () => {
           headers: expect.objectContaining({
             'Content-Type': 'application/json',
             'Accept': 'application/json',
+            'Authorization': 'Bearer test-token',
           }),
         }),
       );
+    });
+
+    it('should read EXPO_ACCESS_TOKEN config key (not literal string)', () => {
+      // Verify the constructor reads the correct env var key
+      const configGet = jest.fn().mockImplementation((key: string) => {
+        if (key === 'EXPO_ACCESS_TOKEN') return 'my-real-token';
+        return '';
+      });
+      // Access the private field via reflection to verify it was set from config
+      expect((service as any).expoAccessToken).toBe('test-token');
     });
   });
 
@@ -299,7 +308,7 @@ describe('PushService', () => {
     it('should format poll vote notification', () => {
       const n = service.buildPollVoteNotification('Voter', 'p1');
       expect(n.body).toBe('Voter voted on your poll');
-      expect(n.data.postId).toBe('p1');
+      expect(n.data.targetId).toBe('p1');
     });
   });
 

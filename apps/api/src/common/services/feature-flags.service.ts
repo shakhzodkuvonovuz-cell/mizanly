@@ -1,6 +1,18 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
+
+/** Supported feature flag value types */
+export type FeatureFlagType = 'boolean' | 'percentage' | 'string' | 'json';
+
+/** Parsed feature flag value with its inferred type */
+export interface TypedFlagValue {
+  raw: string;
+  type: FeatureFlagType;
+  booleanValue?: boolean;
+  numberValue?: number;
+  jsonValue?: unknown;
+}
 
 /**
  * Feature flags with Redis (fast) + DB (durable) dual storage.
@@ -55,8 +67,17 @@ export class FeatureFlagsService {
   }
 
   /** Set a flag value — dual write to Redis (fast) + DB (durable).
-   *  DB write is AWAITED to prevent data loss during outages. */
+   *  DB write is AWAITED to prevent data loss during outages.
+   *  Validates the value format before persisting. */
   async setFlag(flagName: string, value: string): Promise<void> {
+    // Validate flag name: 1-50 chars, alphanumeric + underscores/hyphens
+    if (!flagName || flagName.length > 50 || !/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(flagName)) {
+      throw new BadRequestException('Flag name must be 1-50 characters, starting with a letter, containing only letters, digits, underscores, and hyphens');
+    }
+
+    // Validate flag value: must be a recognized type
+    FeatureFlagsService.validateFlagValue(value);
+
     await this.redis.hset(this.HASH_KEY, flagName, value);
     await this.redis.expire(this.HASH_KEY, 90 * 24 * 3600);
     // Await DB write — if DB is down, flag is still in Redis but we log the failure
@@ -70,6 +91,82 @@ export class FeatureFlagsService {
       this.logger.error(`DURABLE WRITE FAILED for flag "${flagName}" — flag is in Redis but NOT in DB. Manual reconciliation needed.`, err instanceof Error ? err.message : err);
     }
     this.localCache = null;
+  }
+
+  /**
+   * Validate that a flag value conforms to one of the accepted types:
+   * - boolean: "true" or "false"
+   * - percentage: integer 0-100
+   * - json: valid JSON object or array (max 1KB)
+   * - string: non-empty string (max 200 chars, no control characters)
+   */
+  static validateFlagValue(value: string): void {
+    if (value === undefined || value === null || value === '') {
+      throw new BadRequestException('Flag value must not be empty');
+    }
+
+    // Boolean — always valid
+    if (value === 'true' || value === 'false') return;
+
+    // Percentage rollout — integer 0-100
+    if (/^[0-9]{1,3}$/.test(value)) {
+      const num = parseInt(value, 10);
+      if (num >= 0 && num <= 100) return;
+      throw new BadRequestException(`Percentage value must be 0-100, got ${num}`);
+    }
+
+    // JSON — valid object/array (max 1KB to prevent abuse)
+    if (value.startsWith('{') || value.startsWith('[')) {
+      if (value.length > 1024) {
+        throw new BadRequestException('JSON flag value must be 1024 characters or less');
+      }
+      try {
+        JSON.parse(value);
+        return;
+      } catch {
+        throw new BadRequestException('Invalid JSON in flag value');
+      }
+    }
+
+    // String — max 200 chars, no control characters
+    if (value.length > 200) {
+      throw new BadRequestException('String flag value must be 200 characters or less');
+    }
+    // eslint-disable-next-line no-control-regex
+    if (/[\x00-\x1f\x7f]/.test(value)) {
+      throw new BadRequestException('Flag value must not contain control characters');
+    }
+  }
+
+  /**
+   * Parse a raw flag value into a typed representation.
+   * Useful for callers who need to know the type of a flag's value.
+   */
+  static parseFlagValue(raw: string | null): TypedFlagValue | null {
+    if (raw === null || raw === undefined) return null;
+
+    if (raw === 'true' || raw === 'false') {
+      return { raw, type: 'boolean', booleanValue: raw === 'true' };
+    }
+
+    const numMatch = /^[0-9]{1,3}$/.test(raw);
+    if (numMatch) {
+      const num = parseInt(raw, 10);
+      if (num >= 0 && num <= 100) {
+        return { raw, type: 'percentage', numberValue: num };
+      }
+    }
+
+    if (raw.startsWith('{') || raw.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(raw);
+        return { raw, type: 'json', jsonValue: parsed };
+      } catch {
+        // Not valid JSON, treat as string
+      }
+    }
+
+    return { raw, type: 'string' };
   }
 
   /** Delete a flag — from both Redis and DB */
