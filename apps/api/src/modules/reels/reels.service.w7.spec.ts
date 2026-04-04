@@ -2,9 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, ForbiddenException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { ReelsService } from './reels.service';
-import { NotificationsService } from '../notifications/notifications.service';
 import { StreamService } from '../stream/stream.service';
-import { GamificationService } from '../gamification/gamification.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
 /**
@@ -58,9 +56,7 @@ describe('ReelsService — W7 T03 gaps', () => {
             }),
           },
         },
-        { provide: NotificationsService, useValue: { create: jest.fn().mockResolvedValue({ id: 'n1' }) } },
         { provide: StreamService, useValue: { uploadFromUrl: jest.fn().mockResolvedValue('stream-1'), deleteVideo: jest.fn() } },
-        { provide: GamificationService, useValue: { awardXP: jest.fn() } },
         { provide: 'REDIS', useValue: { get: jest.fn().mockResolvedValue(null), set: jest.fn().mockResolvedValue('OK'), setex: jest.fn(), del: jest.fn(), zadd: jest.fn(), zrangebyscore: jest.fn().mockResolvedValue([]), zremrangebyscore: jest.fn(), expire: jest.fn() } },
       ],
     }).compile();

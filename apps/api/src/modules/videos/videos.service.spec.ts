@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
-import { NotificationsService } from '../notifications/notifications.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { VideosService } from './videos.service';
 import { StreamService } from '../stream/stream.service';
 import { VideoStatus, VideoCategory } from '@prisma/client';
@@ -12,7 +12,7 @@ describe('VideosService', () => {
   let service: VideosService;
   let prisma: any;
   let redis: any;
-  let notifications: any;
+  let eventEmitter: any;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -45,7 +45,7 @@ describe('VideosService', () => {
               findMany: jest.fn().mockResolvedValue([]),
             },
             subscription: {
-              findMany: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
               findUnique: jest.fn(),
             },
             videoReaction: {
@@ -98,12 +98,6 @@ describe('VideosService', () => {
           },
         },
         {
-          provide: NotificationsService,
-          useValue: {
-            create: jest.fn().mockResolvedValue({}),
-          },
-        },
-        {
           provide: StreamService,
           useValue: {
             uploadFromUrl: jest.fn().mockResolvedValue('mock-stream-id'),
@@ -131,7 +125,9 @@ describe('VideosService', () => {
     service = module.get<VideosService>(VideosService);
     prisma = module.get(PrismaService) as any;
     redis = module.get('REDIS');
-    notifications = module.get(NotificationsService);
+    eventEmitter = module.get(EventEmitter2);
+    // Clear shared mock call history between tests
+    (eventEmitter.emit as jest.Mock).mockClear();
   });
 
   describe('create', () => {
@@ -451,20 +447,21 @@ describe('VideosService', () => {
       prisma.video.findUnique.mockResolvedValue(video as any);
       prisma.videoReaction.findUnique.mockResolvedValue(null);
       prisma.$transaction.mockImplementation((callback: any) => callback(prisma));
-      notifications.create.mockResolvedValue(undefined);
-
       const result = await service.like(videoId, userId);
 
       expect(prisma.videoReaction.create).toHaveBeenCalledWith({
         data: { userId, videoId, isLike: true },
       });
       expect(prisma.$executeRaw).toHaveBeenCalled();
-      expect(notifications.create).toHaveBeenCalledWith({
-        userId: video.userId,
-        actorId: userId,
-        type: 'VIDEO_LIKE',
-        videoId,
-      });
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        'notification.requested',
+        expect.objectContaining({
+          userId: video.userId,
+          actorId: userId,
+          type: 'VIDEO_LIKE',
+          videoId,
+        }),
+      );
       expect(result).toEqual({ liked: true });
     });
 
@@ -476,8 +473,6 @@ describe('VideosService', () => {
       prisma.video.findUnique.mockResolvedValue(video as any);
       prisma.videoReaction.findUnique.mockResolvedValue(existingReaction);
       prisma.$transaction.mockImplementation((callback: any) => callback(prisma));
-      notifications.create.mockResolvedValue(undefined);
-
       await service.like(videoId, userId);
 
       expect(prisma.videoReaction.update).toHaveBeenCalledWith({
@@ -586,8 +581,6 @@ describe('VideosService', () => {
       prisma.video.findUnique.mockResolvedValue(video as any);
       prisma.$transaction.mockResolvedValue([mockComment, undefined]);
       prisma.videoComment.create.mockResolvedValue(mockComment);
-      notifications.create.mockResolvedValue(undefined);
-
       const result = await service.comment(videoId, userId, content);
 
       expect(prisma.videoComment.create).toHaveBeenCalledWith({
@@ -598,13 +591,16 @@ describe('VideosService', () => {
         where: { id: videoId },
         data: { commentsCount: { increment: 1 } },
       });
-      expect(notifications.create).toHaveBeenCalledWith({
-        userId: video.userId,
-        actorId: userId,
-        type: 'VIDEO_COMMENT',
-        videoId,
-        body: content.substring(0, 100),
-      });
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        'notification.requested',
+        expect.objectContaining({
+          userId: video.userId,
+          actorId: userId,
+          type: 'VIDEO_COMMENT',
+          videoId,
+          body: content.substring(0, 100),
+        }),
+      );
       expect(result).toEqual(mockComment);
     });
 
@@ -618,7 +614,11 @@ describe('VideosService', () => {
 
       await service.comment(videoId, userId, 'test');
 
-      expect(notifications.create).not.toHaveBeenCalled();
+      // Self-comments should not trigger notification events
+      const emitCalls = eventEmitter.emit.mock.calls.filter(
+        (call: unknown[]) => call[0] === 'notification.requested',
+      );
+      expect(emitCalls.length).toBe(0);
     });
 
     it('should throw NotFoundException if video not found', async () => {

@@ -3,7 +3,6 @@ import { NotFoundException, ForbiddenException, ConflictException, BadRequestExc
 import { PrismaService } from '../../config/prisma.service';
 import { ThreadsService } from './threads.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
-import { NotificationsService } from '../notifications/notifications.service';
 
 describe('ThreadsService — edge cases', () => {
   let service: ThreadsService;
@@ -101,10 +100,6 @@ describe('ThreadsService — edge cases', () => {
             $transaction: jest.fn(),
             $executeRaw: jest.fn(),
           },
-        },
-        {
-          provide: NotificationsService,
-          useValue: { create: jest.fn().mockResolvedValue({ id: 'notif-1' }) },
         },
         {
           provide: 'REDIS',

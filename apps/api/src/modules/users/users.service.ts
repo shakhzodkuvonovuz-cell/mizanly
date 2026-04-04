@@ -6,13 +6,13 @@ import {
   ConflictException,
   BadRequestException,
   Logger,
-  Optional,
 } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import * as Sentry from '@sentry/node';
 import { PrismaService } from '../../config/prisma.service';
 import { PrivacyService } from '../privacy/privacy.service';
-import { NotificationsService } from '../notifications/notifications.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NOTIFICATION_REQUESTED, NotificationRequestedEvent } from '../../common/events/notification.events';
 import Redis from 'ioredis';
 import { createHash } from 'crypto';
 import { acquireCronLock } from '../../common/utils/cron-lock';
@@ -73,7 +73,7 @@ export class UsersService {
     private prisma: PrismaService,
     private privacyService: PrivacyService,
     @Inject('REDIS') private redis: Redis,
-    private notificationsService: NotificationsService,
+    private readonly eventEmitter: EventEmitter2,
     private publishWorkflow: PublishWorkflowService,
     private queueService: QueueService,
     private contentSafety: ContentSafetyService,
@@ -830,46 +830,20 @@ export class UsersService {
         take: 10000,
       });
 
-      // Route through NotificationsService for push delivery + dedup, with batched fallback
-      const BATCH_SIZE = 500;
+      // Emit notification events — listener handles DB creation + push delivery
       let created = 0;
-
-      if (this.notificationsService) {
-        for (const s of usersWithLimits) {
-          await this.notificationsService.create({
+      for (const s of usersWithLimits) {
+        try {
+          this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
             userId: s.userId,
             actorId: null,
             type: 'SYSTEM',
             title: 'Weekly Screen Time Summary',
             body: `Your daily limit is ${s.dailyTimeLimit} minutes. Check your wellbeing settings for this week's usage.`,
-          }).catch((err) => this.logger.warn('Screen time digest notification failed', err instanceof Error ? err.message : err));
+          }));
           created++;
-        }
-      } else {
-        const digestTitle = 'Weekly Screen Time Summary';
-        for (let i = 0; i < usersWithLimits.length; i += BATCH_SIZE) {
-          const batch = usersWithLimits.slice(i, i + BATCH_SIZE);
-          const batchIds = batch.map(s => s.userId);
-          const result = await this.prisma.notification.createMany({
-            data: batch.map(s => ({
-              userId: s.userId,
-              type: 'SYSTEM' as const,
-              title: digestTitle,
-              body: `Your daily limit is ${s.dailyTimeLimit} minutes. Check your wellbeing settings for this week's usage.`,
-            })),
-            skipDuplicates: true,
-          });
-          created += result.count;
-
-          // Queue push delivery for batch
-          const recentNotifs = await this.prisma.notification.findMany({
-            where: { userId: { in: batchIds }, type: 'SYSTEM', title: digestTitle, createdAt: { gte: new Date(Date.now() - 60000) } },
-            select: { id: true },
-            take: BATCH_SIZE,
-          });
-          for (const n of recentNotifs) {
-            this.queueService.addPushNotificationJob({ notificationId: n.id }).catch((err) => this.logger.warn('Push notification job queue failed', err instanceof Error ? err.message : err));
-          }
+        } catch (err) {
+          this.logger.warn('Screen time digest notification failed', err instanceof Error ? err.message : err);
         }
       }
 

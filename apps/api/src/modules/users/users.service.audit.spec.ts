@@ -3,7 +3,7 @@ import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { PrismaService } from '../../config/prisma.service';
 import { PrivacyService } from '../privacy/privacy.service';
-import { NotificationsService } from '../notifications/notifications.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PublishWorkflowService } from '../../common/services/publish-workflow.service';
 import { QueueService } from '../../common/queue/queue.service';
 import { ContentSafetyService } from '../moderation/content-safety.service';
@@ -40,7 +40,7 @@ describe('UsersService — audit fixes', () => {
         UsersService,
         { provide: PrismaService, useValue: prisma },
         { provide: PrivacyService, useValue: {} },
-        { provide: NotificationsService, useValue: { create: jest.fn() } },
+        { provide: EventEmitter2, useValue: { emit: jest.fn().mockReturnValue(true), on: jest.fn(), once: jest.fn(), removeListener: jest.fn() } },
         { provide: PublishWorkflowService, useValue: { onPublish: jest.fn().mockResolvedValue(undefined) } },
         { provide: QueueService, useValue: { addSearchIndexJob: jest.fn().mockResolvedValue(undefined) } },
         { provide: 'REDIS', useValue: redis },

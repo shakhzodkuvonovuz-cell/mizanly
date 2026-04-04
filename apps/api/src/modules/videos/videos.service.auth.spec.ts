@@ -3,7 +3,6 @@ import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { VideosService } from './videos.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
-import { NotificationsService } from '../notifications/notifications.service';
 import { StreamService } from '../stream/stream.service';
 
 describe('VideosService — authorization matrix', () => {
@@ -43,7 +42,6 @@ describe('VideosService — authorization matrix', () => {
             $executeRaw: jest.fn(),
           },
         },
-        { provide: NotificationsService, useValue: { create: jest.fn().mockResolvedValue({ id: 'n-1' }) } },
         { provide: StreamService, useValue: { uploadFromUrl: jest.fn(), deleteVideo: jest.fn() } },
         { provide: 'REDIS', useValue: { get: jest.fn().mockResolvedValue(null), setex: jest.fn(), del: jest.fn() } },
       ],

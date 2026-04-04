@@ -14,10 +14,10 @@ import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
 import { Prisma, VideoStatus, VideoCategory, ReportReason } from '@prisma/client';
 import Redis from 'ioredis';
-import { NotificationsService } from '../notifications/notifications.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NOTIFICATION_REQUESTED, NotificationRequestedEvent } from '../../common/events/notification.events';
 import { StreamService } from '../stream/stream.service';
 import { sanitizeText } from '@/common/utils/sanitize';
-import { GamificationService } from '../gamification/gamification.service';
 import { ContentSafetyService } from '../moderation/content-safety.service';
 import { AiService } from '../ai/ai.service';
 import { QueueService } from '../../common/queue/queue.service';
@@ -80,9 +80,8 @@ export class VideosService {
   constructor(
     private prisma: PrismaService,
     @Inject('REDIS') private redis: Redis,
-    private notifications: NotificationsService,
+    private readonly eventEmitter: EventEmitter2,
     private stream: StreamService,
-    private gamification: GamificationService,
     private contentSafety: ContentSafetyService,
     private ai: AiService,
     private queueService: QueueService,
@@ -225,14 +224,18 @@ export class VideosService {
     }).then((subscribers: Array<{ userId: string }>) => {
       for (const sub of subscribers) {
         if (sub.userId !== userId) {
-          this.notifications.create({
-            userId: sub.userId,
-            actorId: userId,
-            type: 'VIDEO_PUBLISHED',
-            videoId: video[0].id,
-            title: dto.title,
-            body: `New video on ${channel.name}: ${dto.title}`,
-          }).catch((e: unknown) => this.logger.warn(`Video published notification failed: ${e instanceof Error ? e.message : e}`));
+          try {
+            this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
+              userId: sub.userId,
+              actorId: userId,
+              type: 'VIDEO_PUBLISHED',
+              videoId: video[0].id,
+              title: dto.title,
+              body: `New video on ${channel.name}: ${dto.title}`,
+            }));
+          } catch (e) {
+            this.logger.warn(`Video published notification failed: ${e instanceof Error ? e.message : e}`);
+          }
         }
       }
     }).catch((e: unknown) => this.logger.warn(`Failed to fetch subscribers for video notification: ${e instanceof Error ? e.message : e}`));
@@ -578,12 +581,16 @@ export class VideosService {
 
       // Notify video owner (not self)
       if (video.userId && video.userId !== userId) {
-        this.notifications.create({
-          userId: video.userId,
-          actorId: userId,
-          type: 'VIDEO_LIKE',
-          videoId,
-        }).catch((err) => this.logger.error('Failed to create notification', err));
+        try {
+          this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
+            userId: video.userId,
+            actorId: userId,
+            type: 'VIDEO_LIKE',
+            videoId,
+          }));
+        } catch (err) {
+          this.logger.error('Failed to create notification', err instanceof Error ? err.message : err);
+        }
       }
     } catch (err: unknown) {
       if (err instanceof Error && 'code' in err && (err as { code: string }).code === 'P2002') {
@@ -711,13 +718,17 @@ export class VideosService {
 
     // Notify video owner (if not own comment)
     if (video.userId && video.userId !== userId) {
-      this.notifications.create({
-        userId: video.userId,
-        actorId: userId,
-        type: 'VIDEO_COMMENT',
-        videoId,
-        body: content.substring(0, 100),
-      }).catch((err) => this.logger.error('Failed to create notification', err));
+      try {
+        this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
+          userId: video.userId,
+          actorId: userId,
+          type: 'VIDEO_COMMENT',
+          videoId,
+          body: content.substring(0, 100),
+        }));
+      } catch (err) {
+        this.logger.error('Failed to create notification', err instanceof Error ? err.message : err);
+      }
     }
 
     return comment;

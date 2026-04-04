@@ -17,7 +17,6 @@ import { NOTIFICATION_REQUESTED, NotificationRequestedEvent } from '../../common
 import { StreamService } from '../stream/stream.service';
 import { sanitizeText } from '@/common/utils/sanitize';
 import { extractHashtags } from '@/common/utils/hashtag';
-import { GamificationService } from '../gamification/gamification.service';
 import { AiService } from '../ai/ai.service';
 import { QueueService } from '../../common/queue/queue.service';
 import { ContentSafetyService } from '../moderation/content-safety.service';
@@ -86,7 +85,6 @@ export class ReelsService {
     @Inject('REDIS') private redis: Redis,
     private eventEmitter: EventEmitter2,
     private stream: StreamService,
-    private gamification: GamificationService,
     private ai: AiService,
     private queueService: QueueService,
     private contentSafety: ContentSafetyService,

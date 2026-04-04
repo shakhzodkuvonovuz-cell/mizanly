@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { ThreadsService } from './threads.service';
 import { PrismaService } from '../../config/prisma.service';
-import { globalMockProviders, mockRedis, mockNotificationsService, mockGamificationService, mockAiService, mockConfigService, mockContentSafetyService, mockPublishWorkflowService } from '../../common/test/mock-providers';
+import { globalMockProviders, mockRedis, mockEventEmitter, mockAiService, mockConfigService, mockContentSafetyService, mockPublishWorkflowService } from '../../common/test/mock-providers';
 import { QueueService } from '../../common/queue/queue.service';
 
 const mockPrisma = {
@@ -86,8 +86,7 @@ describe('ThreadsService — Thread Unroll & Analytics', () => {
         ThreadsService,
         mockPrisma,
         mockRedis,
-        mockNotificationsService,
-        mockGamificationService,
+        mockEventEmitter,
         mockAiService,
         mockConfigService,
         mockContentSafetyService,

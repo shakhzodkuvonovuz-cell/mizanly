@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../../config/prisma.service';
-import { NotificationsService } from '../notifications/notifications.service';
 import { ReelsService } from './reels.service';
 import { StreamService } from '../stream/stream.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
@@ -71,10 +70,6 @@ describe('ReelsService — Photo Carousel', () => {
             $transaction: jest.fn(),
             $executeRaw: jest.fn(),
           },
-        },
-        {
-          provide: NotificationsService,
-          useValue: { create: jest.fn().mockResolvedValue({ id: 'n1' }) },
         },
         {
           provide: StreamService,

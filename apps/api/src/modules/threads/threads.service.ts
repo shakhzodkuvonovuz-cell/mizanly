@@ -12,11 +12,11 @@ import Redis from 'ioredis';
 import { TIME_WINDOWS } from '../../common/constants/feed-scoring';
 import { ReplyPermission } from '@prisma/client';
 import { CreateThreadDto } from './dto/create-thread.dto';
-import { NotificationsService } from '../notifications/notifications.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NOTIFICATION_REQUESTED, NotificationRequestedEvent } from '../../common/events/notification.events';
 import { sanitizeText } from '@/common/utils/sanitize';
 import { extractHashtags } from '@/common/utils/hashtag';
 import { Prisma, ThreadVisibility, ReportReason } from '@prisma/client';
-import { GamificationService } from '../gamification/gamification.service';
 import { AiService } from '../ai/ai.service';
 import { ContentSafetyService } from '../moderation/content-safety.service';
 import { QueueService } from '../../common/queue/queue.service';
@@ -106,8 +106,7 @@ export class ThreadsService {
   constructor(
     private prisma: PrismaService,
     @Inject('REDIS') private redis: Redis,
-    private notifications: NotificationsService,
-    private gamification: GamificationService,
+    private readonly eventEmitter: EventEmitter2,
     private ai: AiService,
     private queueService: QueueService,
     private contentSafety: ContentSafetyService,
@@ -439,14 +438,18 @@ export class ThreadsService {
         ]);
         for (const mentioned of mentionedUsers) {
           if (mentioned.id !== userId) {
-            this.notifications.create({
-              userId: mentioned.id,
-              actorId: userId,
-              type: 'MENTION',
-              threadId: thread.id,
-              title: 'Mentioned you',
-              body: `@${actor?.username ?? 'Someone'} mentioned you in a thread`,
-            }).catch((err) => this.logger.error('Failed to create mention notification', err));
+            try {
+              this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
+                userId: mentioned.id,
+                actorId: userId,
+                type: 'MENTION',
+                threadId: thread.id,
+                title: 'Mentioned you',
+                body: `@${actor?.username ?? 'Someone'} mentioned you in a thread`,
+              }));
+            } catch (err) {
+              this.logger.error('Failed to create mention notification', err instanceof Error ? err.message : err);
+            }
           }
         }
       }
@@ -706,10 +709,14 @@ export class ThreadsService {
       ]);
       // Notify thread owner (skip self-notification)
       if (thread.userId && thread.userId !== userId) {
-        this.notifications.create({
-          userId: thread.userId, actorId: userId,
-          type: 'LIKE', threadId,
-        }).catch((err) => this.logger.error('Failed to create notification', err));
+        try {
+          this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
+            userId: thread.userId, actorId: userId,
+            type: 'LIKE', threadId,
+          }));
+        } catch (err) {
+          this.logger.error('Failed to create notification', err instanceof Error ? err.message : err);
+        }
       }
     } catch (err: unknown) {
       if (err instanceof Error && 'code' in err && (err as Prisma.PrismaClientKnownRequestError).code === 'P2002') {
@@ -772,10 +779,14 @@ export class ThreadsService {
     ]);
     // Notify thread owner (always different user due to self-repost guard above)
     if (original.userId) {
-      this.notifications.create({
-        userId: original.userId, actorId: userId,
-        type: 'REPOST', threadId,
-      }).catch((err) => this.logger.error('Failed to create notification', err));
+      try {
+        this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
+          userId: original.userId, actorId: userId,
+          type: 'REPOST', threadId,
+        }));
+      } catch (err) {
+        this.logger.error('Failed to create notification', err instanceof Error ? err.message : err);
+      }
     }
     return repost;
   }
@@ -965,11 +976,15 @@ export class ThreadsService {
 
     // Notify thread owner (skip self-notification)
     if (thread.userId && thread.userId !== userId) {
-      this.notifications.create({
-        userId: thread.userId, actorId: userId,
-        type: 'THREAD_REPLY', threadId,
-        body: content.substring(0, 100),
-      }).catch((err) => this.logger.error('Failed to create notification', err));
+      try {
+        this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
+          userId: thread.userId, actorId: userId,
+          type: 'THREAD_REPLY', threadId,
+          body: content.substring(0, 100),
+        }));
+      } catch (err) {
+        this.logger.error('Failed to create notification', err instanceof Error ? err.message : err);
+      }
     }
     return reply;
   }

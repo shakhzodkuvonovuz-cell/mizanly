@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../../config/prisma.service';
 import { ReelsService } from './reels.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
-import { NotificationsService } from '../notifications/notifications.service';
 import { StreamService } from '../stream/stream.service';
 
 describe('ReelsService — concurrency (Task 92)', () => {
@@ -32,7 +31,6 @@ describe('ReelsService — concurrency (Task 92)', () => {
             $executeRaw: jest.fn(),
           },
         },
-        { provide: NotificationsService, useValue: { create: jest.fn().mockResolvedValue({ id: 'n-1' }) } },
         { provide: StreamService, useValue: { uploadFromUrl: jest.fn(), deleteVideo: jest.fn() } },
         { provide: 'REDIS', useValue: { get: jest.fn().mockResolvedValue(null), set: jest.fn().mockResolvedValue('OK'), setex: jest.fn(), del: jest.fn(), zcard: jest.fn().mockResolvedValue(0), zadd: jest.fn().mockResolvedValue(0), zrevrange: jest.fn().mockResolvedValue([]), expire: jest.fn().mockResolvedValue(1), pipeline: jest.fn().mockReturnValue({ del: jest.fn().mockReturnThis(), zadd: jest.fn().mockReturnThis(), expire: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([]) }) } },
       ],

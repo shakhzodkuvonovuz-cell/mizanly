@@ -3,7 +3,6 @@ import { NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { ReelsService } from './reels.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
-import { NotificationsService } from '../notifications/notifications.service';
 import { StreamService } from '../stream/stream.service';
 
 describe('ReelsService — edge cases', () => {
@@ -89,10 +88,6 @@ describe('ReelsService — edge cases', () => {
             $transaction: jest.fn(),
             $executeRaw: jest.fn(),
           },
-        },
-        {
-          provide: NotificationsService,
-          useValue: { create: jest.fn().mockResolvedValue({ id: 'notif-1' }) },
         },
         {
           provide: StreamService,

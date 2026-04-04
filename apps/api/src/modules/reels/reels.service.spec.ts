@@ -2,10 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, ForbiddenException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
-import { NotificationsService } from '../notifications/notifications.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ReelsService } from './reels.service';
 import { StreamService } from '../stream/stream.service';
-import { GamificationService } from '../gamification/gamification.service';
 import { Prisma, ReelStatus, ReportReason, ReactionType } from '@prisma/client';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
@@ -43,7 +42,7 @@ describe('ReelsService', () => {
   let service: ReelsService;
   let prisma: any;
   let redis: any;
-  let notifications: any;
+  let eventEmitter: any;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -114,12 +113,6 @@ describe('ReelsService', () => {
           },
         },
         {
-          provide: NotificationsService,
-          useValue: {
-            create: jest.fn(),
-          },
-        },
-        {
           provide: StreamService,
           useValue: {
             uploadFromUrl: jest.fn().mockResolvedValue('mock-stream-id'),
@@ -182,20 +175,13 @@ describe('ReelsService', () => {
             return redisMock;
           })(),
         },
-        {
-          provide: GamificationService,
-          useValue: {
-            awardXP: jest.fn().mockResolvedValue(undefined),
-            updateStreak: jest.fn().mockResolvedValue(undefined),
-          },
-        },
       ],
     }).compile();
 
     service = module.get<ReelsService>(ReelsService);
     prisma = module.get(PrismaService) as any;
     redis = module.get('REDIS');
-    notifications = module.get(NotificationsService);
+    eventEmitter = module.get(EventEmitter2);
   });
 
 
@@ -404,19 +390,20 @@ describe('ReelsService', () => {
 
       prisma.reel.findUnique.mockResolvedValue(mockReel);
       prisma.$transaction.mockResolvedValue([{}, {}, {}]);
-      notifications.create.mockResolvedValue(undefined);
-
       const result = await service.like(reelId, userId);
 
       expect(prisma.reel.findUnique).toHaveBeenCalledWith({ where: { id: reelId } });
       expect(prisma.$transaction).toHaveBeenCalled();
-      // Notify reel owner (not self)
-      expect(notifications.create).toHaveBeenCalledWith({
-        userId: mockReel.userId,
-        actorId: userId,
-        type: 'REEL_LIKE',
-        reelId,
-      });
+      // Notify reel owner via event (not self)
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        'notification.requested',
+        expect.objectContaining({
+          userId: mockReel.userId,
+          actorId: userId,
+          type: 'REEL_LIKE',
+          reelId,
+        }),
+      );
       expect(result).toEqual({ liked: true });
     });
 

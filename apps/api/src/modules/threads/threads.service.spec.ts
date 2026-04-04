@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, ForbiddenException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
-import { NotificationsService } from '../notifications/notifications.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ThreadsService } from './threads.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
@@ -10,7 +10,7 @@ describe('ThreadsService', () => {
   let service: ThreadsService;
   let prisma: any;
   let redis: any;
-  let notifications: any;
+  let eventEmitter: any;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -97,12 +97,6 @@ describe('ThreadsService', () => {
           },
         },
         {
-          provide: NotificationsService,
-          useValue: {
-            create: jest.fn().mockResolvedValue({ id: 'notif-1' }),
-          },
-        },
-        {
           provide: 'REDIS',
           useValue: (() => {
             const sortedSets = new Map<string, { score: number; member: string }[]>();
@@ -157,7 +151,7 @@ describe('ThreadsService', () => {
     service = module.get<ThreadsService>(ThreadsService);
     prisma = module.get(PrismaService) as any;
     redis = module.get('REDIS');
-    notifications = module.get(NotificationsService);
+    eventEmitter = module.get(EventEmitter2);
   });
 
   describe('createThread', () => {
@@ -490,8 +484,6 @@ describe('ThreadsService', () => {
       prisma.$transaction.mockResolvedValue([mockReply, {}]);
       prisma.threadReply.create.mockResolvedValue(mockReply);
       prisma.thread.update.mockResolvedValue({} as any);
-      notifications.create.mockResolvedValue(undefined);
-
       const result = await service.addReply(threadId, userId, content);
 
       expect(prisma.thread.findUnique).toHaveBeenCalledWith({ where: { id: threadId } });
@@ -503,7 +495,7 @@ describe('ThreadsService', () => {
         where: { id: threadId },
         data: { repliesCount: { increment: 1 } },
       });
-      expect(notifications.create).toHaveBeenCalled();
+      expect(eventEmitter.emit).toHaveBeenCalled();
       expect(result).toEqual(mockReply);
     });
   });
