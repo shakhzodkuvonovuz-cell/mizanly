@@ -1100,7 +1100,19 @@
     "adhanNotification": "إشعار {{prayer}}",
     "deviceHeading": "اتجاه الجهاز",
     "nextPrayerIn": "التالي: {{prayer}} في",
-    "audioRecitationComingSoon": "التلاوة الصوتية قريباً"
+    "audioRecitationComingSoon": "التلاوة الصوتية قريباً",
+    "currentPrayer": "الصلاة الحالية",
+    "now": "الآن",
+    "next": "التالية",
+    "todaysPrayerTimes": "مواقيت صلاة اليوم",
+    "locationCoords": "{{lat}}، {{lng}}",
+    "detectingLocation": "جارٍ تحديد الموقع...",
+    "errors": {
+      "locationPermission": "يجب السماح بالوصول إلى الموقع لعرض أوقات الصلاة",
+      "failedToLoad": "فشل تحميل مواقيت الصلاة",
+      "noPrayerTimes": "لا توجد مواقيت صلاة متاحة",
+      "couldNotLoad": "تعذر تحميل مواقيت الصلاة لموقعك"
+    }
   },
   "prayerNotifications": {
     "settings": "إعدادات الصلاة",

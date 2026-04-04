@@ -390,12 +390,12 @@
     "ruku": "Ruku",
     "manzil": "Manzil",
     "prayer": "Prayer",
-    "fajr": "Fajr",
-    "sunrise": "Sunrise",
-    "dhuhr": "Dhuhr",
-    "asr": "Asr",
+    "fajr": "Subuh",
+    "sunrise": "Terbit",
+    "dhuhr": "Dzuhur",
+    "asr": "Ashar",
     "maghrib": "Maghrib",
-    "isha": "Isha",
+    "isha": "Isya",
     "qibla": "Qibla",
     "qiblaDirection": "Qibla Direction",
     "qiblaCompass": "Qibla Compass",
@@ -411,7 +411,19 @@
     "adhanNotification": "{{prayer}} notification",
     "deviceHeading": "Arah perangkat",
     "nextPrayerIn": "Selanjutnya: {{prayer}} dalam",
-    "audioRecitationComingSoon": "Audio recitation coming soon"
+    "audioRecitationComingSoon": "Audio recitation coming soon",
+    "currentPrayer": "Shalat Saat Ini",
+    "now": "SAAT INI",
+    "next": "BERIKUT",
+    "todaysPrayerTimes": "Jadwal Shalat Hari Ini",
+    "locationCoords": "{{lat}}, {{lng}}",
+    "detectingLocation": "Mendeteksi lokasi...",
+    "errors": {
+      "locationPermission": "Izin lokasi diperlukan untuk menampilkan jadwal shalat",
+      "failedToLoad": "Gagal memuat jadwal shalat",
+      "noPrayerTimes": "Jadwal shalat tidak tersedia",
+      "couldNotLoad": "Tidak dapat memuat jadwal shalat untuk lokasi Anda"
+    }
   },
   "auth": {
     "signIn": "Sign In",

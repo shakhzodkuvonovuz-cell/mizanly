@@ -1107,7 +1107,19 @@
     "adhanNotification": "{{prayer}} notification",
     "deviceHeading": "Device heading",
     "nextPrayerIn": "Next: {{prayer}} in",
-    "audioRecitationComingSoon": "Audio recitation coming soon"
+    "audioRecitationComingSoon": "Audio recitation coming soon",
+    "currentPrayer": "Current Prayer",
+    "now": "NOW",
+    "next": "NEXT",
+    "todaysPrayerTimes": "Today's Prayer Times",
+    "locationCoords": "{{lat}}, {{lng}}",
+    "detectingLocation": "Detecting location...",
+    "errors": {
+      "locationPermission": "Location permission is required to show prayer times",
+      "failedToLoad": "Failed to load prayer times",
+      "noPrayerTimes": "No prayer times available",
+      "couldNotLoad": "Could not load prayer times for your location"
+    }
   },
   "prayerNotifications": {
     "settings": "Prayer Settings",

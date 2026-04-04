@@ -1079,8 +1079,8 @@
     "ruku": "Rükû",
     "manzil": "Menzil",
     "prayer": "Namaz",
-    "fajr": "Fecr",
-    "sunrise": "Güneş Doğuşu",
+    "fajr": "İmsak",
+    "sunrise": "Güneş",
     "dhuhr": "Öğle",
     "asr": "İkindi",
     "maghrib": "Akşam",
@@ -1100,7 +1100,19 @@
     "adhanNotification": "{{prayer}} bildirimi",
     "deviceHeading": "Cihaz yönü",
     "nextPrayerIn": "Sonraki: {{prayer}}",
-    "audioRecitationComingSoon": "Audio recitation coming soon"
+    "audioRecitationComingSoon": "Audio recitation coming soon",
+    "currentPrayer": "Mevcut Namaz",
+    "now": "ŞUAN",
+    "next": "SIRADA",
+    "todaysPrayerTimes": "Bugünün Namaz Vakitleri",
+    "locationCoords": "{{lat}}, {{lng}}",
+    "detectingLocation": "Konum tespit ediliyor...",
+    "errors": {
+      "locationPermission": "Namaz vakitlerini göstermek için konum izni gereklidir",
+      "failedToLoad": "Namaz vakitleri yüklenemedi",
+      "noPrayerTimes": "Namaz vakitleri mevcut değil",
+      "couldNotLoad": "Konumunuz için namaz vakitleri yüklenemedi"
+    }
   },
   "prayerNotifications": {
     "settings": "Namaz Bildirimleri Ayarları",

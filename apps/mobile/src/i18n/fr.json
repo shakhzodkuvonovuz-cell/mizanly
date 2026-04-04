@@ -391,7 +391,7 @@
     "manzil": "Manzil",
     "prayer": "Prayer",
     "fajr": "Fajr",
-    "sunrise": "Sunrise",
+    "sunrise": "Lever",
     "dhuhr": "Dhuhr",
     "asr": "Asr",
     "maghrib": "Maghrib",
@@ -411,7 +411,19 @@
     "adhanNotification": "{{prayer}} notification",
     "deviceHeading": "Direction de l'appareil",
     "nextPrayerIn": "Suivant: {{prayer}} dans",
-    "audioRecitationComingSoon": "Audio recitation coming soon"
+    "audioRecitationComingSoon": "Audio recitation coming soon",
+    "currentPrayer": "Prière Actuelle",
+    "now": "MAINT.",
+    "next": "SUIV.",
+    "todaysPrayerTimes": "Horaires de prière d'aujourd'hui",
+    "locationCoords": "{{lat}}, {{lng}}",
+    "detectingLocation": "Détection de la position...",
+    "errors": {
+      "locationPermission": "L'autorisation de localisation est requise pour afficher les heures de prière",
+      "failedToLoad": "Échec du chargement des heures de prière",
+      "noPrayerTimes": "Aucun horaire de prière disponible",
+      "couldNotLoad": "Impossible de charger les heures de prière pour votre position"
+    }
   },
   "auth": {
     "signIn": "Sign In",

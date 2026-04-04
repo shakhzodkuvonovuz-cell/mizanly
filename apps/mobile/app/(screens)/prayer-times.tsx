@@ -33,13 +33,21 @@ import { rtlFlexRow } from '@/utils/rtl';
 
 const { width: screenWidth } = Dimensions.get('window');
 
-const PRAYER_NAMES = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
-const PRAYER_ARABIC = ['الفجر', 'الشروق', 'الظهر', 'العصر', 'المغرب', 'العشاء'];
+/** i18n keys for each prayer — resolved via t() at render time */
+const PRAYER_KEYS = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
+/** Arabic script names — always displayed as subtitle (sacred calligraphy, not locale-dependent) */
+const PRAYER_ARABIC: Record<typeof PRAYER_KEYS[number], string> = {
+  fajr: '\u0627\u0644\u0641\u062C\u0631',
+  sunrise: '\u0627\u0644\u0634\u0631\u0648\u0642',
+  dhuhr: '\u0627\u0644\u0638\u0647\u0631',
+  asr: '\u0627\u0644\u0639\u0635\u0631',
+  maghrib: '\u0627\u0644\u0645\u063A\u0631\u0628',
+  isha: '\u0627\u0644\u0639\u0634\u0627\u0621',
+};
 const PRAYER_ICONS: readonly IconName[] = ['moon', 'sun', 'sun', 'sun', 'sun', 'moon'];
 
 interface Prayer {
-  name: string;
-  arabic: string;
+  key: typeof PRAYER_KEYS[number];
   icon: IconName;
   time: string;
 }
@@ -54,10 +62,9 @@ function timeStringToDate(timeStr: string): Date {
 }
 
 function getPrayerList(pt: ApiPrayerTimes): Prayer[] {
-  return PRAYER_NAMES.map((name, index) => {
-    const key = name.toLowerCase() as keyof ApiPrayerTimes;
-    const time = typeof pt[key] === 'string' ? pt[key] as string : '--:--';
-    return { name, arabic: PRAYER_ARABIC[index], icon: PRAYER_ICONS[index], time };
+  return PRAYER_KEYS.map((prayerKey, index) => {
+    const time = typeof pt[prayerKey] === 'string' ? pt[prayerKey] as string : '--:--';
+    return { key: prayerKey, icon: PRAYER_ICONS[index], time };
   });
 }
 
@@ -134,12 +141,14 @@ function PrayerCard({
   const pulseAnim = useSharedValue(1);
   const [notifyEnabled, setNotifyEnabled] = useState(true);
 
-  // Load saved adhan notification preference for this prayer
+  const prayerDisplayName = t(`islamic.${prayer.key}`);
+
+  // Load saved adhan notification preference for this prayer (keyed by stable key, not display name)
   useEffect(() => {
-    AsyncStorage.getItem(`adhan-notify-${prayer.name}`).then((val) => {
+    AsyncStorage.getItem(`adhan-notify-${prayer.key}`).then((val) => {
       if (val !== null) setNotifyEnabled(JSON.parse(val));
     });
-  }, [prayer.name]);
+  }, [prayer.key]);
 
   useEffect(() => {
     if (isCurrent) {
@@ -164,8 +173,8 @@ function PrayerCard({
     const next = !notifyEnabled;
     setNotifyEnabled(next);
     haptic.tick();
-    AsyncStorage.setItem(`adhan-notify-${prayer.name}`, JSON.stringify(next));
-  }, [notifyEnabled, haptic, prayer.name]);
+    AsyncStorage.setItem(`adhan-notify-${prayer.key}`, JSON.stringify(next));
+  }, [notifyEnabled, haptic, prayer.key]);
 
   return (
     <Animated.View
@@ -205,9 +214,10 @@ function PrayerCard({
 
           <View style={styles.prayerInfo}>
             <Text style={[styles.prayerName, isCurrent && styles.prayerNameCurrent]}>
-              {prayer.name}
+              {prayerDisplayName}
             </Text>
-            <Text style={styles.prayerArabic}>{prayer.arabic}</Text>
+            {/* Always show Arabic script name as subtitle (sacred calligraphy) */}
+            <Text style={styles.prayerArabic}>{PRAYER_ARABIC[prayer.key]}</Text>
           </View>
 
           <View style={styles.prayerTimeContainer}>
@@ -232,7 +242,7 @@ function PrayerCard({
             hitSlop={8}
             accessibilityRole="switch"
             accessibilityState={{ checked: notifyEnabled }}
-            accessibilityLabel={t('islamic.adhanNotification', { prayer: prayer.name })}
+            accessibilityLabel={t('islamic.adhanNotification', { prayer: prayerDisplayName })}
             style={styles.bellToggle}
           >
             <Icon
@@ -560,10 +570,10 @@ export default function PrayerTimesScreen() {
               <View style={styles.currentPrayerContent}>
                 <Text style={styles.currentPrayerLabel}>{t('islamic.currentPrayer')}</Text>
                 <Text style={styles.currentPrayerName}>
-                  {prayerList[currentPrayerIndex]?.name || ''}
+                  {prayerList[currentPrayerIndex]?.key ? t(`islamic.${prayerList[currentPrayerIndex].key}`) : ''}
                 </Text>
                 <Text style={styles.currentPrayerArabic}>
-                  {prayerList[currentPrayerIndex]?.arabic || ''}
+                  {prayerList[currentPrayerIndex]?.key ? PRAYER_ARABIC[prayerList[currentPrayerIndex].key] : ''}
                 </Text>
 
                 <View style={[styles.currentPrayerTimeRow, { flexDirection: rtlFlexRow(isRTL) }]}>
@@ -576,7 +586,7 @@ export default function PrayerTimesScreen() {
                 <View style={styles.countdownContainer}>
                   <CountdownTimer
                     targetTime={prayerList[nextPrayerIndex]?.time || '00:00'}
-                    nextPrayerName={prayerList[nextPrayerIndex]?.name || ''}
+                    nextPrayerName={prayerList[nextPrayerIndex]?.key ? t(`islamic.${prayerList[nextPrayerIndex].key}`) : ''}
                   />
                 </View>
               </View>
@@ -642,7 +652,7 @@ export default function PrayerTimesScreen() {
 
             {prayerList.map((prayer, index) => (
               <PrayerCard
-                key={prayer.name}
+                key={prayer.key}
                 prayer={prayer}
                 isCurrent={index === currentPrayerIndex}
                 isNext={index === nextPrayerIndex}
@@ -675,10 +685,10 @@ export default function PrayerTimesScreen() {
           {/* Date Info */}
           <View style={styles.dateInfo}>
             <Text style={styles.dateText}>
-              {formatHijriDate(new Date(), 'en')}
+              {formatHijriDate(new Date(), isRTL ? 'ar' : 'en')}
             </Text>
             <Text style={styles.dateSubtext}>
-              {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              {new Date().toLocaleDateString(isRTL ? 'ar' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </Text>
           </View>
         </ScrollView>
