@@ -189,6 +189,23 @@ export default function NamesOfAllahScreen() {
     Share.share({ message: text }).catch(() => {});
   }, []);
 
+  const renderNameItem = useCallback(
+    ({ item, index }: { item: NameOfAllah; index: number }) => (
+      <Animated.View entering={FadeInUp.delay(Math.min(index, 25) * 30).duration(350).springify()}>
+      <NameCard
+        name={item}
+        isLearned={learnedSet.has(item.number)}
+        onToggleLearned={() => toggleLearned(item.number)}
+        onShare={() => handleShare(item)}
+        onPlayAudio={handlePlayAudio}
+        expanded={expandedId === item.number}
+        onToggleExpand={() => setExpandedId(expandedId === item.number ? null : item.number)}
+      />
+      </Animated.View>
+    ),
+    [learnedSet, toggleLearned, handleShare, handlePlayAudio, expandedId],
+  );
+
   const handleRefresh = useCallback(() => {
     namesQuery.refetch();
     dailyQuery.refetch();
@@ -244,19 +261,7 @@ export default function NamesOfAllahScreen() {
         <FlatList
           data={names}
           keyExtractor={(item) => String(item.number)}
-          renderItem={({ item, index }) => (
-            <Animated.View entering={FadeInUp.delay(Math.min(index, 25) * 30).duration(350).springify()}>
-            <NameCard
-              name={item}
-              isLearned={learnedSet.has(item.number)}
-              onToggleLearned={() => toggleLearned(item.number)}
-              onShare={() => handleShare(item)}
-              onPlayAudio={handlePlayAudio}
-              expanded={expandedId === item.number}
-              onToggleExpand={() => setExpandedId(expandedId === item.number ? null : item.number)}
-            />
-            </Animated.View>
-          )}
+          renderItem={renderNameItem}
           ListHeaderComponent={listHeader}
           ListEmptyComponent={
             namesQuery.isLoading ? null : (

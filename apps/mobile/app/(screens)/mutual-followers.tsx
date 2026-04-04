@@ -234,6 +234,21 @@ export default function MutualFollowersScreen() {
     ) : null
   , [mutualFollowersQuery.isFetchingNextPage]);
 
+  const renderMutualFollowerItem = useCallback(
+    ({ item, index }: { item: User; index: number }) => (
+      <UserRow
+        user={item}
+        isMe={currentUserId === item.id}
+        isFollowing={item.isFollowing ?? false}
+        onToggleFollow={handleToggleFollow}
+        onPress={() => router.push(`/(screens)/profile/${item.username}`)}
+        index={index}
+        isToggling={followMutation.isPending || unfollowMutation.isPending}
+      />
+    ),
+    [currentUserId, handleToggleFollow, router, followMutation.isPending, unfollowMutation.isPending],
+  );
+
   if (mutualFollowersQuery.isLoading && !mutualFollowersQuery.data) {
     return (
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
@@ -270,17 +285,7 @@ export default function MutualFollowersScreen() {
           contentContainerStyle={{ paddingTop: headerHeight }}
           data={mutualFollowers}
           keyExtractor={(item) => item.id}
-          renderItem={({ item, index }) => (
-            <UserRow
-              user={item}
-              isMe={currentUserId === item.id}
-              isFollowing={item.isFollowing ?? false}
-              onToggleFollow={handleToggleFollow}
-              onPress={() => router.push(`/(screens)/profile/${item.username}`)}
-              index={index}
-              isToggling={followMutation.isPending || unfollowMutation.isPending}
-            />
-          )}
+          renderItem={renderMutualFollowerItem}
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.4}
           refreshControl={

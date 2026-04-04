@@ -469,6 +469,13 @@ export default function NotificationsScreen() {
     query.isFetchingNextPage ? <Skeleton.Rect width="100%" height={60} /> : null
   , [query.isFetchingNextPage]);
 
+  const renderNotificationItem = useCallback(
+    ({ item, index }: { item: AggregatedNotification; index: number }) => (
+      <NotificationRow notification={item} index={index} />
+    ),
+    [],
+  );
+
   return (
     <ScreenErrorBoundary>
       <View style={styles.container}>
@@ -503,7 +510,7 @@ export default function NotificationsScreen() {
         <SectionList
           sections={sections}
           keyExtractor={(item) => item.id}
-          renderItem={({ item, index }) => <NotificationRow notification={item} index={index} />}
+          renderItem={renderNotificationItem}
           renderSectionHeader={({ section }) => (
             <Text style={[styles.sectionHeader, { textAlign: rtlTextAlign(isRTL) }]}>{section.title}</Text>
           )}

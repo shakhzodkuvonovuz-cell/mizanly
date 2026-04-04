@@ -579,6 +579,17 @@ export default function ParentalControlsScreen() {
     childrenQuery.refetch();
   }, [childrenQuery]);
 
+  const renderChildItem = useCallback(
+    ({ item }: { item: ParentalControl }) => (
+      <ChildCard
+        control={item}
+        onUnlink={handleUnlink}
+        onChangePin={handleChangePin}
+      />
+    ),
+    [handleUnlink, handleChangePin],
+  );
+
   // Auto-verify when no controls exist (must be before early returns per Rules of Hooks)
   useEffect(() => {
     if (!pinVerified && !hasControls && !hasControlsQuery.isLoading) setPinVerified(true);
@@ -668,13 +679,7 @@ export default function ParentalControlsScreen() {
               </View>
             </Animated.View>
           }
-          renderItem={({ item }) => (
-            <ChildCard
-              control={item}
-              onUnlink={handleUnlink}
-              onChangePin={handleChangePin}
-            />
-          )}
+          renderItem={renderChildItem}
           ListEmptyComponent={
             childrenQuery.isLoading ? (
               <View style={{ gap: spacing.md }}>

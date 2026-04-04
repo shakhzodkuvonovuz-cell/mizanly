@@ -179,7 +179,7 @@ export default function NewConversationScreen() {
     return result;
   }, [isSearching, filteredRecentContacts, filteredSuggestions, t]);
 
-  const renderUserRow = (item: User | RecentContact, index: number) => {
+  const renderUserRow = useCallback((item: User | RecentContact, index: number) => {
     const isRecent = 'conversationId' in item;
     return (
       <Animated.View entering={FadeInUp.delay(Math.min(index, 10) * 60).duration(400)}>
@@ -222,7 +222,12 @@ export default function NewConversationScreen() {
         </Pressable>
       </Animated.View>
     );
-  };
+  }, [isRTL, haptic, handleContactPress, dmMutation, t]);
+
+  const renderUserRowItem = useCallback(
+    ({ item, index }: { item: User | RecentContact; index: number }) => renderUserRow(item, index),
+    [renderUserRow],
+  );
 
   const searchListEmpty = useMemo(() => (
     <EmptyState
@@ -320,7 +325,7 @@ export default function NewConversationScreen() {
                 onRefresh={() => searchQuery.refetch()}
               />
             }
-            renderItem={({ item, index }) => renderUserRow(item, index)}
+            renderItem={renderUserRowItem}
             ListEmptyComponent={searchListEmpty}
           />
         ) : (
@@ -340,7 +345,7 @@ export default function NewConversationScreen() {
             renderSectionHeader={({ section }) => (
               <Text style={styles.sectionLabel}>{section.title}</Text>
             )}
-            renderItem={({ item, index }) => renderUserRow(item, index)}
+            renderItem={renderUserRowItem}
             stickySectionHeadersEnabled={false}
             ListEmptyComponent={sectionListEmpty}
           />
