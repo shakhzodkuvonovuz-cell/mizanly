@@ -9,6 +9,7 @@ import { PrismaService } from '../../config/prisma.service';
 import { Prisma, ReportReason, ReportStatus, ModerationAction, UserRole } from '@prisma/client';
 import { checkText, TextCheckResult } from './word-filter';
 import { AiService } from '../ai/ai.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { IsString, IsOptional, IsIn, IsUrl, MaxLength, IsBoolean, IsNotEmpty } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -60,6 +61,7 @@ export class ModerationService {
   constructor(
     private prisma: PrismaService,
     private aiService: AiService,
+    private notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -344,6 +346,19 @@ export class ModerationService {
         });
       }
     });
+
+    // #27 FIX: Send notification after transaction succeeds for WARNING action.
+    // Matches reports.service.ts and admin.service.ts behavior — all three resolution
+    // paths now consistently notify warned users.
+    if (actionTaken === ModerationAction.WARNING && report.reportedUserId) {
+      this.notificationsService.create({
+        userId: report.reportedUserId,
+        actorId: null,
+        type: 'SYSTEM',
+        title: 'Content Warning',
+        body: `Your content was flagged for ${report.reason}. Repeated violations may result in account restrictions.`,
+      }).catch(err => this.logger.warn('Failed to send warning notification', err instanceof Error ? err.message : err));
+    }
   }
 
   async getStats(adminId: string) {

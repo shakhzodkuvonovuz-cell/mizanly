@@ -2321,6 +2321,14 @@ model Report {
   @@map("reports")
 }
 
+// #28 Architecture: Appeals live as typed fields on ModerationLog (not a separate model).
+// Rationale: an appeal is a 1:1 lifecycle extension of a moderation action — never exists
+// independently. Separate Appeal model would add a JOIN on every queue query, complicate
+// the reversal transaction (resolveAppeal must atomically update both the action and its
+// appeal status), and double the admin UI data fetching. The tradeoff: appealText stores
+// a JSON-stringified {reason, details} instead of separate columns — acceptable because
+// appeal text is only read during admin review, never queried/filtered by content.
+// Full workflow: submitAppeal, getMyAppeals, getPendingAppeals, resolveAppeal in ModerationService.
 model ModerationLog {
   id              String           @id @default(cuid())
   moderatorId     String?
@@ -2332,10 +2340,10 @@ model ModerationLog {
   reason          String
   explanation     String
   reportId        String?
-  isAppealed      Boolean          @default(false)
-  appealText      String?
-  appealResolved  Boolean?
-  appealResult    String?
+  isAppealed      Boolean          @default(false)  // User submitted an appeal
+  appealText      String?                            // JSON: {reason: enum, details: string}
+  appealResolved  Boolean?                           // Admin resolved the appeal
+  appealResult    String?                            // Admin's resolution explanation
   isAutoFlagged   Boolean          @default(false) // B11-#15: auto-moderation tracking
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt // B11-#22: mutation tracking

@@ -1,12 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { ModerationService } from './moderation.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('ModerationService', () => {
   let service: ModerationService;
   let prisma: any;
+  let notificationsService: { create: jest.Mock };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -25,6 +27,10 @@ describe('ModerationService', () => {
               report: { update: jest.fn() },
               post: { update: jest.fn() },
               comment: { update: jest.fn() },
+              message: { update: jest.fn() },
+              thread: { update: jest.fn() },
+              reel: { update: jest.fn() },
+              video: { update: jest.fn() },
               moderationLog: { create: jest.fn() },
             })),
           },
@@ -33,6 +39,7 @@ describe('ModerationService', () => {
     }).compile();
     service = module.get(ModerationService);
     prisma = module.get(PrismaService) as any;
+    notificationsService = module.get(NotificationsService) as any;
   });
 
   describe('checkText', () => {
@@ -92,6 +99,67 @@ describe('ModerationService', () => {
     it('should throw BadRequestException for already reviewed report', async () => {
       prisma.report.findUnique.mockResolvedValue({ id: 'r1', status: 'RESOLVED' });
       await expect(service.review('admin-1', 'r1', 'approve')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should send notification to warned user (#27)', async () => {
+      prisma.report.findUnique.mockResolvedValue({
+        id: 'r1',
+        status: 'PENDING',
+        reason: 'HARASSMENT',
+        reportedUserId: 'warned-user',
+        reportedPostId: null,
+        reportedCommentId: null,
+        reportedMessageId: null,
+      });
+      await service.review('admin-1', 'r1', 'warn');
+      expect(notificationsService.create).toHaveBeenCalledWith({
+        userId: 'warned-user',
+        actorId: null,
+        type: 'SYSTEM',
+        title: 'Content Warning',
+        body: expect.stringContaining('HARASSMENT'),
+      });
+    });
+
+    it('should NOT send notification on approve action', async () => {
+      notificationsService.create.mockClear();
+      prisma.report.findUnique.mockResolvedValue({
+        id: 'r1',
+        status: 'PENDING',
+        reason: 'SPAM',
+        reportedUserId: 'some-user',
+      });
+      await service.review('admin-1', 'r1', 'approve');
+      expect(notificationsService.create).not.toHaveBeenCalled();
+    });
+
+    it('should NOT send notification on remove action', async () => {
+      notificationsService.create.mockClear();
+      prisma.report.findUnique.mockResolvedValue({
+        id: 'r1',
+        status: 'PENDING',
+        reason: 'SPAM',
+        reportedUserId: 'some-user',
+        reportedPostId: 'post-1',
+        reportedCommentId: null,
+        reportedMessageId: null,
+        reportedThreadId: null,
+        reportedReelId: null,
+        reportedVideoId: null,
+      });
+      await service.review('admin-1', 'r1', 'remove');
+      expect(notificationsService.create).not.toHaveBeenCalled();
+    });
+
+    it('should accept REVIEWING status (B11-#8)', async () => {
+      prisma.report.findUnique.mockResolvedValue({
+        id: 'r1',
+        status: 'REVIEWING',
+        reason: 'HARASSMENT',
+        reportedUserId: 'user1',
+      });
+      await service.review('admin-1', 'r1', 'warn');
+      expect(prisma.$transaction).toHaveBeenCalled();
     });
   });
 

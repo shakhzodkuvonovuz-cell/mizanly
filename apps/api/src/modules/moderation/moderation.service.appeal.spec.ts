@@ -3,6 +3,7 @@ import { NotFoundException, BadRequestException, ForbiddenException } from '@nes
 import { ModerationService } from './moderation.service';
 import { PrismaService } from '../../config/prisma.service';
 import { AiService } from '../ai/ai.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 describe('ModerationService — appeal resolution', () => {
   let service: ModerationService;
@@ -43,6 +44,7 @@ describe('ModerationService — appeal resolution', () => {
         ModerationService,
         { provide: PrismaService, useValue: prisma },
         { provide: AiService, useValue: { moderateImage: jest.fn() } },
+        { provide: NotificationsService, useValue: { create: jest.fn().mockResolvedValue({ id: 'notif-1' }) } },
       ],
     }).compile();
 
