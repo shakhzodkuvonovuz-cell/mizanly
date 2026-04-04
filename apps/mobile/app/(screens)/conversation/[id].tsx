@@ -333,6 +333,25 @@ function GifPicker({ visible, onClose, onSelect }: {
     }
   }, [visible, fetchGifs]);
 
+  const renderGifItem = useCallback(
+    ({ item }: { item: TenorGifResult }) => (
+      <Pressable
+        style={[styles.gifItem, { backgroundColor: tc.bgElevated }]}
+        onPress={() => onSelect(item.media_formats.gif.url)}
+        accessibilityRole="button"
+        accessibilityLabel={t('gif.selectGif')}
+      >
+        <ProgressiveImage
+          uri={item.media_formats.gif.url}
+          width="100%"
+          height={150}
+          blurhash={null}
+        />
+      </Pressable>
+    ),
+    [onSelect, tc.bgElevated, t],
+  );
+
   const handleSearch = useCallback(() => {
     fetchGifs(search);
   }, [search, fetchGifs]);
@@ -370,21 +389,7 @@ function GifPicker({ visible, onClose, onSelect }: {
             keyExtractor={(item) => item.id}
             numColumns={2}
             contentContainerStyle={styles.gifGrid}
-            renderItem={({ item }) => (
-              <Pressable
-                style={[styles.gifItem, { backgroundColor: tc.bgElevated }]}
-                onPress={() => onSelect(item.media_formats.gif.url)}
-                accessibilityRole="button"
-                accessibilityLabel={t('gif.selectGif')}
-              >
-                <ProgressiveImage
-                  uri={item.media_formats.gif.url}
-                  width="100%"
-                  height={150}
-                  blurhash={null}
-                />
-              </Pressable>
-            )}
+            renderItem={renderGifItem}
           />
         )}
       </View>

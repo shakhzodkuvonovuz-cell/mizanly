@@ -214,6 +214,18 @@ export default function ContactSyncScreen() {
     [followMutation],
   );
 
+  const renderContactItem = useCallback(
+    ({ item, index }: { item: ContactUser; index: number }) => (
+      <ContactRow
+        user={item}
+        index={index}
+        followLoading={followMutation.isPending && pendingFollowId === item.id}
+        onToggleFollow={() => handleToggleFollow(item)}
+      />
+    ),
+    [followMutation.isPending, pendingFollowId, handleToggleFollow],
+  );
+
   if (permissionDenied) {
     return (
       <ScreenErrorBoundary>
@@ -297,14 +309,7 @@ export default function ContactSyncScreen() {
                 </Text>
               ) : null
             }
-            renderItem={({ item, index }) => (
-              <ContactRow
-                user={item}
-                index={index}
-                followLoading={followMutation.isPending && pendingFollowId === item.id}
-                onToggleFollow={() => handleToggleFollow(item)}
-              />
-            )}
+            renderItem={renderContactItem}
             ListEmptyComponent={
               hasLoaded ? (
                 <EmptyState

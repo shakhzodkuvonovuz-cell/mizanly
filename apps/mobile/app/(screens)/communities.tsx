@@ -267,6 +267,18 @@ export default function CommunitiesScreen() {
     setShowCreateModal(true);
   }, []);
 
+  const renderCommunityItem = useCallback(
+    ({ item, index }: { item: Community; index: number }) => (
+      <CommunityCard
+        community={item}
+        index={index}
+        onJoin={handleJoin}
+        onPress={handleCommunityPress}
+      />
+    ),
+    [handleJoin, handleCommunityPress],
+  );
+
   return (
     <ScreenErrorBoundary>
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
@@ -360,14 +372,7 @@ export default function CommunitiesScreen() {
           data={filteredCommunities}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
-          renderItem={({ item, index }) => (
-            <CommunityCard
-              community={item}
-              index={index}
-              onJoin={handleJoin}
-              onPress={handleCommunityPress}
-            />
-          )}
+          renderItem={renderCommunityItem}
           ListEmptyComponent={loading ? (
             <View style={styles.skeletonContainer}>
               {[...Array(3)].map((_, i) => (

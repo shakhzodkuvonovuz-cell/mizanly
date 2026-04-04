@@ -170,6 +170,51 @@ export default function CirclesScreen() {
     />
   ), [t]);
 
+  const renderCircleItem = useCallback(
+    ({ item, index }: { item: Circle; index: number }) => (
+      <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+        <Pressable style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
+        <LinearGradient
+          colors={colors.gradient.cardDark}
+          style={styles.circleCard}
+        >
+          <View style={styles.circleIcon}>
+            <LinearGradient
+              colors={['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)']}
+              style={styles.circleIconGradient}
+            >
+              <Text style={styles.circleEmoji}>{item.emoji ?? '⭕'}</Text>
+            </LinearGradient>
+          </View>
+          <View style={styles.circleInfo}>
+            <Text style={[styles.circleName, { color: tc.text.primary }]}>{item.name}</Text>
+            <View style={styles.memberBadge}>
+              <Icon name="users" size="xs" color={tc.text.tertiary} />
+              <Text style={[styles.circleMemberCount, { color: tc.text.tertiary }]}>
+                {t('screens.circles.memberCount', { count: item._count?.members ?? 0 })}
+              </Text>
+            </View>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={() => handleDelete(item)}
+            style={styles.deleteBtn}
+          >
+            <LinearGradient
+              colors={['rgba(248,81,73,0.1)', 'transparent']}
+              style={styles.deleteBtnGradient}
+            >
+              <Icon name="trash" size="sm" color={colors.error} />
+            </LinearGradient>
+          </Pressable>
+        </LinearGradient>
+        </Pressable>
+      </Animated.View>
+    ),
+    [handleDelete, tc.text.primary, tc.text.tertiary, t],
+  );
+
   if (circlesQuery.isError) {
     return (
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
@@ -222,47 +267,7 @@ export default function CirclesScreen() {
             refreshControl={
               <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
-            renderItem={({ item, index }) => (
-              <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
-                <Pressable style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
-                <LinearGradient
-                  colors={colors.gradient.cardDark}
-                  style={styles.circleCard}
-                >
-                  <View style={styles.circleIcon}>
-                    <LinearGradient
-                      colors={['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)']}
-                      style={styles.circleIconGradient}
-                    >
-                      <Text style={styles.circleEmoji}>{item.emoji ?? '⭕'}</Text>
-                    </LinearGradient>
-                  </View>
-                  <View style={styles.circleInfo}>
-                    <Text style={[styles.circleName, { color: tc.text.primary }]}>{item.name}</Text>
-                    <View style={styles.memberBadge}>
-                      <Icon name="users" size="xs" color={tc.text.tertiary} />
-                      <Text style={[styles.circleMemberCount, { color: tc.text.tertiary }]}>
-                        {t('screens.circles.memberCount', { count: item._count?.members ?? 0 })}
-                      </Text>
-                    </View>
-                  </View>
-                  <Pressable
-                    accessibilityRole="button"
-                    hitSlop={8}
-                    onPress={() => handleDelete(item)}
-                    style={styles.deleteBtn}
-                  >
-                    <LinearGradient
-                      colors={['rgba(248,81,73,0.1)', 'transparent']}
-                      style={styles.deleteBtnGradient}
-                    >
-                      <Icon name="trash" size="sm" color={colors.error} />
-                    </LinearGradient>
-                  </Pressable>
-                </LinearGradient>
-                </Pressable>
-              </Animated.View>
-            )}
+            renderItem={renderCircleItem}
             ListEmptyComponent={listEmpty}
           />
         )}

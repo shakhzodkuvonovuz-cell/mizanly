@@ -106,6 +106,41 @@ export default function BlockedScreen() {
     />
   ), [t]);
 
+  const renderBlockedItem = useCallback(
+    ({ item, index }: { item: BlockedUser; index: number }) => {
+      const u = item.blocked;
+      return (
+          <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 30).duration(300)}>
+            <LinearGradient
+              colors={['rgba(248,81,73,0.08)', 'rgba(248,81,73,0.02)']}
+              style={styles.row}
+            >
+              <Avatar uri={u.avatarUrl} name={u.displayName} size="md" showRing ringColor={colors.error} />
+              <View style={styles.info}>
+                <Text style={[styles.name, { color: tc.text.primary }]}>{u.displayName}</Text>
+                <View style={styles.blockedBadge}>
+                  <Icon name="slash" size={10} color={colors.error} />
+                  <Text style={[styles.username, { color: tc.text.secondary }]}>@{u.username}</Text>
+                </View>
+              </View>
+              <GradientButton
+                label={t('screens.blocked.unblockButton')}
+                variant="primary"
+                size="sm"
+                onPress={() => confirmUnblock(item)}
+                loading={unblockMutation.isPending && unblockMutation.variables === u.id}
+                disabled={isOffline || (unblockMutation.isPending && unblockMutation.variables === u.id)}
+                accessibilityLabel={t('screens.blocked.unblockUser', { name: u.displayName })}
+                accessibilityRole="button"
+              />
+            </LinearGradient>
+          </Animated.View>
+
+      );
+    },
+    [confirmUnblock, unblockMutation.isPending, unblockMutation.variables, isOffline, tc.text.primary, tc.text.secondary, t],
+  );
+
   if (query.isError) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
@@ -157,37 +192,7 @@ export default function BlockedScreen() {
           refreshControl={
             <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
-          renderItem={({ item, index }) => {
-            const u = item.blocked;
-            return (
-                <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 30).duration(300)}>
-                  <LinearGradient
-                    colors={['rgba(248,81,73,0.08)', 'rgba(248,81,73,0.02)']}
-                    style={styles.row}
-                  >
-                    <Avatar uri={u.avatarUrl} name={u.displayName} size="md" showRing ringColor={colors.error} />
-                    <View style={styles.info}>
-                      <Text style={[styles.name, { color: tc.text.primary }]}>{u.displayName}</Text>
-                      <View style={styles.blockedBadge}>
-                        <Icon name="slash" size={10} color={colors.error} />
-                        <Text style={[styles.username, { color: tc.text.secondary }]}>@{u.username}</Text>
-                      </View>
-                    </View>
-                    <GradientButton
-                      label={t('screens.blocked.unblockButton')}
-                      variant="primary"
-                      size="sm"
-                      onPress={() => confirmUnblock(item)}
-                      loading={unblockMutation.isPending && unblockMutation.variables === u.id}
-                      disabled={isOffline || (unblockMutation.isPending && unblockMutation.variables === u.id)}
-                      accessibilityLabel={t('screens.blocked.unblockUser', { name: u.displayName })}
-                      accessibilityRole="button"
-                    />
-                  </LinearGradient>
-                </Animated.View>
-            
-            );
-          }}
+          renderItem={renderBlockedItem}
           ListFooterComponent={listFooter}
           ListEmptyComponent={listEmpty}
         />

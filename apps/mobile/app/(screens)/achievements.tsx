@@ -231,6 +231,38 @@ function AchievementsScreen() {
 
   const keyExtractor = useCallback((item: Achievement) => item.id, []);
 
+  const renderCategoryChip = useCallback(
+    ({ item: cat }: { item: { key: AchievementCategory; label: string } }) => (
+      <Pressable
+        onPress={() => handleCategoryChange(cat.key)}
+        style={({ pressed }) => pressed && { opacity: 0.7 }}
+        accessibilityRole="tab"
+        accessibilityState={{ selected: selectedCategory === cat.key }}
+        accessibilityLabel={cat.label}
+      >
+        <LinearGradient
+          colors={
+            selectedCategory === cat.key
+              ? [colors.emeraldLight, colors.emerald]
+              : colors.gradient.cardDark
+          }
+          style={styles.chip}
+        >
+          <Text
+            style={[
+              styles.chipText,
+              { color: tc.text.secondary },
+              selectedCategory === cat.key && styles.chipTextActive,
+            ]}
+          >
+            {cat.label}
+          </Text>
+        </LinearGradient>
+      </Pressable>
+    ),
+    [handleCategoryChange, selectedCategory, tc.text.secondary],
+  );
+
   const ListHeader = (
     <>
       {/* Category chips */}
@@ -241,34 +273,7 @@ function AchievementsScreen() {
         keyExtractor={(item) => item.key}
         contentContainerStyle={styles.chipRow}
         inverted={isRTL}
-        renderItem={({ item: cat }) => (
-          <Pressable
-            onPress={() => handleCategoryChange(cat.key)}
-            style={({ pressed }) => pressed && { opacity: 0.7 }}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: selectedCategory === cat.key }}
-            accessibilityLabel={cat.label}
-          >
-            <LinearGradient
-              colors={
-                selectedCategory === cat.key
-                  ? [colors.emeraldLight, colors.emerald]
-                  : colors.gradient.cardDark
-              }
-              style={styles.chip}
-            >
-              <Text
-                style={[
-                  styles.chipText,
-                  { color: tc.text.secondary },
-                  selectedCategory === cat.key && styles.chipTextActive,
-                ]}
-              >
-                {cat.label}
-              </Text>
-            </LinearGradient>
-          </Pressable>
-        )}
+        renderItem={renderCategoryChip}
       />
 
       {/* Progress counter */}

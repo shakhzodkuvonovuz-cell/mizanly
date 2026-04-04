@@ -87,6 +87,41 @@ export default function BlockedKeywordsScreen() {
     );
   }, [deleteMutation, haptic]);
 
+  const renderKeywordItem = useCallback(
+    ({ item, index }: { item: BlockedKeyword; index: number }) => (
+      <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+        <LinearGradient
+          colors={colors.gradient.cardDark}
+          style={styles.keywordRow}
+        >
+          <LinearGradient
+            colors={['rgba(248,81,73,0.1)', 'rgba(248,81,73,0.05)']}
+            style={styles.keywordIconBg}
+          >
+            <Icon name="slash" size="xs" color={colors.error} />
+          </LinearGradient>
+          <Text style={[styles.keywordText, { color: tc.text.primary }]}>{item.word}</Text>
+          <Pressable
+            onPress={() => handleDelete(item.id, item.word)}
+            hitSlop={8}
+            disabled={deleteMutation.isPending}
+            style={({ pressed }) => [pressed && { opacity: 0.7 }]}
+            accessibilityLabel={t('screens.blockedKeywords.removeKeywordLabel')}
+            accessibilityRole="button"
+          >
+            <LinearGradient
+              colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
+              style={styles.deleteBtnBg}
+            >
+              <Icon name="x" size="sm" color={colors.error} />
+            </LinearGradient>
+          </Pressable>
+        </LinearGradient>
+      </Animated.View>
+    ),
+    [handleDelete, deleteMutation.isPending, tc.text.primary, t],
+  );
+
   if (isError) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
@@ -178,37 +213,7 @@ export default function BlockedKeywordsScreen() {
               refreshControl={
                 <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
               }
-              renderItem={({ item, index }) => (
-                <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
-                  <LinearGradient
-                    colors={colors.gradient.cardDark}
-                    style={styles.keywordRow}
-                  >
-                    <LinearGradient
-                      colors={['rgba(248,81,73,0.1)', 'rgba(248,81,73,0.05)']}
-                      style={styles.keywordIconBg}
-                    >
-                      <Icon name="slash" size="xs" color={colors.error} />
-                    </LinearGradient>
-                    <Text style={[styles.keywordText, { color: tc.text.primary }]}>{item.word}</Text>
-                    <Pressable
-                      onPress={() => handleDelete(item.id, item.word)}
-                      hitSlop={8}
-                      disabled={deleteMutation.isPending}
-                      style={({ pressed }) => [pressed && { opacity: 0.7 }]}
-                      accessibilityLabel={t('screens.blockedKeywords.removeKeywordLabel')}
-                      accessibilityRole="button"
-                    >
-                      <LinearGradient
-                        colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
-                        style={styles.deleteBtnBg}
-                      >
-                        <Icon name="x" size="sm" color={colors.error} />
-                      </LinearGradient>
-                    </Pressable>
-                  </LinearGradient>
-                </Animated.View>
-              )}
+              renderItem={renderKeywordItem}
               ItemSeparatorComponent={() => <View style={styles.divider} />}
               ListEmptyComponent={
                 <EmptyState

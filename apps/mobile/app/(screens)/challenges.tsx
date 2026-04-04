@@ -305,6 +305,44 @@ function ChallengesScreen() {
 
   const keyExtractor = useCallback((item: Challenge) => item.id, []);
 
+  const renderCategoryChip = useCallback(
+    ({ item: cat }: { item: { key: string; labelKey: string; icon: IconName } }) => (
+      <Pressable
+        onPress={() => {
+          haptic.tick();
+          setSelectedCategory(cat.key);
+        }}
+        accessibilityRole="tab"
+        accessibilityState={{ selected: selectedCategory === cat.key }}
+        style={({ pressed }) => pressed ? { opacity: 0.7 } : undefined}
+      >
+        <View
+          style={[
+            styles.categoryChip,
+            { backgroundColor: tc.bgCard, borderColor: tc.borderLight },
+            selectedCategory === cat.key && styles.categoryChipActive,
+          ]}
+        >
+          <Icon
+            name={cat.icon}
+            size="xs"
+            color={selectedCategory === cat.key ? colors.emerald : tc.text.tertiary}
+          />
+          <Text
+            style={[
+              styles.categoryChipText,
+              { color: tc.text.secondary },
+              selectedCategory === cat.key && styles.categoryChipTextActive,
+            ]}
+          >
+            {t(cat.labelKey)}
+          </Text>
+        </View>
+      </Pressable>
+    ),
+    [haptic, selectedCategory, tc.bgCard, tc.borderLight, tc.text.tertiary, tc.text.secondary, t],
+  );
+
   const ListHeader = (
     <>
       {/* Tabs */}
@@ -347,40 +385,7 @@ function ChallengesScreen() {
           keyExtractor={(c) => c.key}
           inverted={isRTL}
           contentContainerStyle={styles.chipScrollRow}
-          renderItem={({ item: cat }) => (
-            <Pressable
-              onPress={() => {
-                haptic.tick();
-                setSelectedCategory(cat.key);
-              }}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: selectedCategory === cat.key }}
-              style={({ pressed }) => pressed ? { opacity: 0.7 } : undefined}
-            >
-              <View
-                style={[
-                  styles.categoryChip,
-                  { backgroundColor: tc.bgCard, borderColor: tc.borderLight },
-                  selectedCategory === cat.key && styles.categoryChipActive,
-                ]}
-              >
-                <Icon
-                  name={cat.icon}
-                  size="xs"
-                  color={selectedCategory === cat.key ? colors.emerald : tc.text.tertiary}
-                />
-                <Text
-                  style={[
-                    styles.categoryChipText,
-                    { color: tc.text.secondary },
-                    selectedCategory === cat.key && styles.categoryChipTextActive,
-                  ]}
-                >
-                  {t(cat.labelKey)}
-                </Text>
-              </View>
-            </Pressable>
-          )}
+          renderItem={renderCategoryChip}
         />
       )}
     </>

@@ -273,6 +273,21 @@ export default function AudioLibraryScreen() {
     showToast({ message: t('audioLibrary.favoriteToggled'), variant: 'success' });
   }, [haptic, t]);
 
+  const renderAudioItem = useCallback(
+    ({ item, index }: { item: AudioTrackDisplay; index: number }) => (
+      <AudioCard
+        track={item}
+        isPlaying={isPlaying}
+        isCurrentTrack={currentTrackId === item.id}
+        onPlay={() => handlePlay(item.id)}
+        onSelect={() => handleSelect(item)}
+        onToggleFavorite={() => toggleFavorite(item.id)}
+        index={index}
+      />
+    ),
+    [isPlaying, currentTrackId, handlePlay, handleSelect, toggleFavorite],
+  );
+
   return (
     <ScreenErrorBoundary>
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
@@ -337,17 +352,7 @@ export default function AudioLibraryScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={[styles.audioList, currentTrackId ? { paddingBottom: 120 } : undefined]}
           refreshControl={<BrandedRefreshControl refreshing={isRefetching} onRefresh={() => refetch()} />}
-          renderItem={({ item, index }) => (
-            <AudioCard
-              track={item}
-              isPlaying={isPlaying}
-              isCurrentTrack={currentTrackId === item.id}
-              onPlay={() => handlePlay(item.id)}
-              onSelect={() => handleSelect(item)}
-              onToggleFavorite={() => toggleFavorite(item.id)}
-              index={index}
-            />
-          )}
+          renderItem={renderAudioItem}
           ListEmptyComponent={
             isLoading ? (
               <View style={{ padding: spacing.base, gap: spacing.md }}>

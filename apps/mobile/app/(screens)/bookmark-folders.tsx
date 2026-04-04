@@ -153,6 +153,19 @@ export default function BookmarkFoldersScreen() {
     />
   ), [t]);
 
+  const renderFolderItem = useCallback(
+    ({ item, index }: { item: Folder; index: number }) => (
+      <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
+        <FolderCard
+          folder={item}
+          onPress={() => handleFolderPress(item.id)}
+          onLongPress={() => handleDeleteFolder(item.name)}
+        />
+      </Animated.View>
+    ),
+    [handleFolderPress, handleDeleteFolder],
+  );
+
   if (collectionsQuery.isError) {
     return (
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
@@ -197,15 +210,7 @@ export default function BookmarkFoldersScreen() {
           refreshControl={
             <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
-          renderItem={({ item, index }) => (
-            <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
-              <FolderCard
-                folder={item}
-                onPress={() => handleFolderPress(item.id)}
-                onLongPress={() => handleDeleteFolder(item.name)}
-              />
-            </Animated.View>
-          )}
+          renderItem={renderFolderItem}
           ListEmptyComponent={listEmpty}
           contentContainerStyle={[styles.gridContainer, { paddingTop: insets.top + 52 }]}
         />

@@ -298,7 +298,54 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
     });
   };
 
-  const renderVideoItem = ({ item }: { item: Video }) => <VideoCard video={item} />;
+  const renderVideoOrPlaylistItem = useCallback(
+    ({ item }: { item: Video | Playlist }) => {
+      if (activeTab === 'videos') return <VideoCard video={item as Video} />;
+      if (activeTab === 'playlists') return <PlaylistCard playlist={item as Playlist} />;
+      return null;
+    },
+    [activeTab],
+  );
+
+  const renderTrailerPickerItem = useCallback(
+    ({ item }: { item: Video }) => {
+      const isCurrentTrailer = channel?.trailerVideoId === item.id;
+      const mins = Math.floor(item.duration / 60);
+      const secs = Math.floor(item.duration % 60);
+      return (
+        <Pressable
+          accessibilityRole="button"
+          style={[styles.trailerPickerItem, isCurrentTrailer && styles.trailerPickerItemActive]}
+
+          onPress={() => {
+            haptic.tick();
+            setTrailerMutation.mutate(item.id);
+          }}
+          disabled={setTrailerMutation.isPending}
+        >
+          <View style={[styles.trailerPickerThumbWrap, { backgroundColor: tc.bgCard }]}>
+            {item.thumbnailUrl ? (
+              <ProgressiveImage uri={item.thumbnailUrl} width={100} height={56} contentFit="cover" />
+            ) : (
+              <View style={[styles.trailerPickerThumb, styles.trailerThumbnailPlaceholder, { backgroundColor: tc.bgCard }]}>
+                <Icon name="video" size="sm" color={tc.text.tertiary} />
+              </View>
+            )}
+          </View>
+          <View style={styles.trailerPickerInfo}>
+            <Text style={[styles.trailerPickerTitle, { color: tc.text.primary }]} numberOfLines={2}>{item.title}</Text>
+            <Text style={[styles.trailerPickerMeta, { color: tc.text.tertiary }]}>
+              {mins}:{secs.toString().padStart(2, '0')}
+            </Text>
+          </View>
+          {isCurrentTrailer && (
+            <Icon name="check-circle" size="sm" color={colors.emerald} />
+          )}
+        </Pressable>
+      );
+    },
+    [channel?.trailerVideoId, haptic, setTrailerMutation, tc.bgCard, tc.text.primary, tc.text.tertiary],
+  );
 
   const featuredVideo = videos.length > 0 ? videos[0] : null;
   const regularVideos = videos.slice(1);
@@ -542,11 +589,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
           data={activeTab === 'videos' ? regularVideos : activeTab === 'playlists' ? playlists : []}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingBottom: spacing['3xl'] }}
-          renderItem={({ item }) => {
-            if (activeTab === 'videos') return <VideoCard video={item as Video} />;
-            if (activeTab === 'playlists') return <PlaylistCard playlist={item as Playlist} />;
-            return null;
-          }}
+          renderItem={renderVideoOrPlaylistItem}
           ListHeaderComponent={
             <>
               {ListHeader}
@@ -728,42 +771,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
           <FlatList
             data={videos}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => {
-              const isCurrentTrailer = channel?.trailerVideoId === item.id;
-              const mins = Math.floor(item.duration / 60);
-              const secs = Math.floor(item.duration % 60);
-              return (
-                <Pressable
-                  accessibilityRole="button"
-                  style={[styles.trailerPickerItem, isCurrentTrailer && styles.trailerPickerItemActive]}
-                 
-                  onPress={() => {
-                    haptic.tick();
-                    setTrailerMutation.mutate(item.id);
-                  }}
-                  disabled={setTrailerMutation.isPending}
-                >
-                  <View style={[styles.trailerPickerThumbWrap, { backgroundColor: tc.bgCard }]}>
-                    {item.thumbnailUrl ? (
-                      <ProgressiveImage uri={item.thumbnailUrl} width={100} height={56} contentFit="cover" />
-                    ) : (
-                      <View style={[styles.trailerPickerThumb, styles.trailerThumbnailPlaceholder, { backgroundColor: tc.bgCard }]}>
-                        <Icon name="video" size="sm" color={tc.text.tertiary} />
-                      </View>
-                    )}
-                  </View>
-                  <View style={styles.trailerPickerInfo}>
-                    <Text style={[styles.trailerPickerTitle, { color: tc.text.primary }]} numberOfLines={2}>{item.title}</Text>
-                    <Text style={[styles.trailerPickerMeta, { color: tc.text.tertiary }]}>
-                      {mins}:{secs.toString().padStart(2, '0')}
-                    </Text>
-                  </View>
-                  {isCurrentTrailer && (
-                    <Icon name="check-circle" size="sm" color={colors.emerald} />
-                  )}
-                </Pressable>
-              );
-            }}
+            renderItem={renderTrailerPickerItem}
             ListEmptyComponent={
               <EmptyState
                 icon="video"

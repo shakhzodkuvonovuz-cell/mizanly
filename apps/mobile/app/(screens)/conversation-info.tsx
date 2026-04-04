@@ -267,6 +267,28 @@ export default function ConversationInfoScreen() {
     )
   , [debouncedSearchQuery, tc.text.secondary, tc.text.tertiary, t]);
 
+  const renderSearchResultItem = useCallback(
+    ({ item }: { item: User }) => (
+      <Pressable
+        accessibilityRole="button"
+        style={[styles.userRow, { borderBottomColor: tc.border }]}
+        onPress={() => setSelectedNewMembers(prev => [...prev, item])}
+        disabled={addMembersMutation.isPending}
+      >
+        <Avatar uri={item.avatarUrl} name={item.displayName} size="md" />
+        <View style={styles.userInfo}>
+          <View style={styles.nameRow}>
+            <Text style={[styles.name, { color: tc.text.primary }]}>{item.displayName}</Text>
+            {item.isVerified && <VerifiedBadge size={13} />}
+          </View>
+          <Text style={[styles.handle, { color: tc.text.secondary }]}>@{item.username}</Text>
+        </View>
+        <Icon name="plus" size="sm" color={colors.emerald} />
+      </Pressable>
+    ),
+    [tc.border, tc.text.primary, tc.text.secondary, addMembersMutation.isPending],
+  );
+
   return (
     <ScreenErrorBoundary>
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
@@ -756,25 +778,7 @@ export default function ConversationInfoScreen() {
                 keyExtractor={(item) => item.id}
                 removeClippedSubviews={true}
                 refreshControl={<BrandedRefreshControl refreshing={memberSearchQuery.isFetching} onRefresh={() => memberSearchQuery.refetch()} />}
-                renderItem={({ item }) => (
-                  <Pressable
-                    accessibilityRole="button"
-                    style={[styles.userRow, { borderBottomColor: tc.border }]}
-                    onPress={() => setSelectedNewMembers(prev => [...prev, item])}
-                    disabled={addMembersMutation.isPending}
-                   
-                  >
-                    <Avatar uri={item.avatarUrl} name={item.displayName} size="md" />
-                    <View style={styles.userInfo}>
-                      <View style={styles.nameRow}>
-                        <Text style={[styles.name, { color: tc.text.primary }]}>{item.displayName}</Text>
-                        {item.isVerified && <VerifiedBadge size={13} />}
-                      </View>
-                      <Text style={[styles.handle, { color: tc.text.secondary }]}>@{item.username}</Text>
-                    </View>
-                    <Icon name="plus" size="sm" color={colors.emerald} />
-                  </Pressable>
-                )}
+                renderItem={renderSearchResultItem}
                 ListEmptyComponent={memberSearchEmpty}
               />
             )}

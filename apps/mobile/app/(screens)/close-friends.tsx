@@ -266,6 +266,21 @@ export default function CloseFriendsScreen() {
     ) : null
   , [followersQuery.isFetchingNextPage]);
 
+  const renderFollowerItem = useCallback(
+    ({ item, index }: { item: User; index: number }) => (
+      <UserRow
+        user={item}
+        isMe={currentUserId === item.id}
+        isCloseFriend={memberIds.includes(item.id)}
+        onToggle={toggleCloseFriend}
+        onPress={() => router.push(`/(screens)/profile/${item.username}`)}
+        disabled={!isReady || toggleMemberMutation.isPending}
+        index={index}
+      />
+    ),
+    [currentUserId, memberIds, toggleCloseFriend, router, isReady, toggleMemberMutation.isPending],
+  );
+
   if (followersQuery.isError) {
     return (
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
@@ -381,17 +396,7 @@ export default function CloseFriendsScreen() {
             removeClippedSubviews={true}
           data={filteredFollowers}
           keyExtractor={(item) => item.id}
-          renderItem={({ item, index }) => (
-            <UserRow
-              user={item}
-              isMe={currentUserId === item.id}
-              isCloseFriend={memberIds.includes(item.id)}
-              onToggle={toggleCloseFriend}
-              onPress={() => router.push(`/(screens)/profile/${item.username}`)}
-              disabled={!isReady || toggleMemberMutation.isPending}
-              index={index}
-            />
-          )}
+          renderItem={renderFollowerItem}
           onEndReached={onEndReached}
           onEndReachedThreshold={0.4}
           refreshControl={
