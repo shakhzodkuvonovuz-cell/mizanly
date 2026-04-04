@@ -516,7 +516,6 @@ function PollResultBar({ text, pct, isSelected }: { text: string; pct: number; i
 const styles = StyleSheet.create({
   card: {
     borderBottomWidth: 0.5,
-    borderBottomColor: colors.dark.border,
   },
   repostHeader: {
     flexDirection: 'row',
@@ -603,7 +602,6 @@ const styles = StyleSheet.create({
   },
   repostOf: {
     borderWidth: 1,
-    borderColor: colors.dark.borderLight,
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
@@ -613,7 +611,6 @@ const styles = StyleSheet.create({
   repostOfContent: { color: colors.text.primary, fontSize: fontSize.sm },
   pollWrap: {
     borderWidth: 1,
-    borderColor: colors.dark.border,
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
@@ -638,7 +635,6 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: radius.sm,
     overflow: 'hidden',
-    backgroundColor: colors.dark.bgElevated,
     marginBottom: spacing.xs,
     justifyContent: 'center',
   },
