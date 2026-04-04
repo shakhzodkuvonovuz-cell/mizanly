@@ -289,9 +289,13 @@ export class FeedService {
   }
 
   /**
-   * Trending feed — posts from last 7 days scored by engagement rate.
-   * Uses cursor-based pagination with (score, id) keyset to avoid refetching rows.
-   * Works without auth (for anonymous browsing + new user cold start).
+   * Trending feed — posts scored by engagement rate directly in SQL.
+   * Uses SQL-computed score: (likes + comments*2 + shares*3 + saves*2) / GREATEST(ageHours, 1)
+   * with keyset cursor pagination (score:id:ts) for consistent page-to-page ordering.
+   *
+   * Previous approach fetched 500 candidates into JS, scored and sorted in memory.
+   * This version computes the score in PostgreSQL ORDER BY, fetching only limit+1 rows.
+   * Multi-tier window expansion (24h → 48h → 7d) ensures enough candidates.
    */
   async getTrendingFeed(cursor?: string, limit = 20, userId?: string) {
     // Redis cache for unauthenticated trending feed (personalized feeds bypass cache)
@@ -308,8 +312,8 @@ export class FeedService {
     }
 
     // Build block/mute filter + content filter + dismissed IDs when authenticated
-    let userFilter = {};
-    let contentFilter = {};
+    let excludedUserIds: string[] = [];
+    let contentFilter: Record<string, unknown> = {};
     let dismissedIds: string[] = [];
     if (userId) {
       const [excludedIds, dismissed, cf] = await Promise.all([
@@ -317,9 +321,7 @@ export class FeedService {
         this.getDismissedIds(userId, 'post' as FeedContentType),
         this.buildContentFilterWhere(userId),
       ]);
-      if (excludedIds.length > 0) {
-        userFilter = { id: { notIn: excludedIds } };
-      }
+      excludedUserIds = excludedIds;
       dismissedIds = dismissed;
       contentFilter = cf as Record<string, unknown>;
     }
@@ -344,80 +346,113 @@ export class FeedService {
       }
     }
 
-    // Adaptive multi-tier candidate fetch: start with tight window, expand if too few candidates.
-    // Phase 1: 24h window, ordered by engagement (uses composite index on isRemoved+visibility+likesCount).
-    // Phase 2: If < 100 results, expand to 48h then 7d.
-    // This ensures trending surfaces the most ENGAGED content, not just the most RECENT.
-    const baseWhere = {
-      isRemoved: false,
-      visibility: PostVisibility.PUBLIC,
-      OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-      user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false, ...userFilter },
-      ...(dismissedIds.length > 0 ? { id: { notIn: dismissedIds } } : {}),
-      ...contentFilter,
-    };
+    // Reference timestamp for scoring — fixed across pages via cursor
+    const refTimestamp = new Date(scoreTimestamp);
+    const take = limit + 1;
 
+    // Multi-tier window expansion: 24h → 48h → 7d
     const tiers = [
       TIME_WINDOWS.TRENDING_HOURS,    // 24h — tight trending window
       TIME_WINDOWS.FORYOU_HOURS,      // 48h — expanded if sparse
       TIME_WINDOWS.FALLBACK_HOURS,    // 7d — last resort
     ];
 
-    let posts: Prisma.PostGetPayload<{ select: typeof FEED_POST_SELECT }>[] = [];
+    // SQL-scored trending: compute engagement score in PostgreSQL, ORDER BY it,
+    // and use keyset pagination so only limit+1 rows are fetched per page.
+    // Score formula: (likesCount + commentsCount*2 + sharesCount*3 + savesCount*2)
+    //               / GREATEST(EXTRACT(EPOCH FROM (refTs - createdAt)) / 3600, 1)
+    let scoredIds: Array<{ id: string; score: number }> = [];
+
     for (const windowHours of tiers) {
       const cutoff = new Date(Date.now() - windowHours * 3600000);
-      posts = await this.prisma.post.findMany({
-        where: { ...baseWhere, createdAt: { gte: cutoff } },
+
+      // Build dynamic WHERE fragments for optional filters
+      const excludeUserClause = excludedUserIds.length > 0
+        ? Prisma.sql`AND u."id" NOT IN (${Prisma.join(excludedUserIds)})`
+        : Prisma.empty;
+      const excludeDismissedClause = dismissedIds.length > 0
+        ? Prisma.sql`AND p."id" NOT IN (${Prisma.join(dismissedIds)})`
+        : Prisma.empty;
+      const contentFilterClauses: Prisma.Sql[] = [];
+      if (contentFilter.audioTrackId === null) {
+        contentFilterClauses.push(Prisma.sql`AND p."audioTrackId" IS NULL`);
+      }
+      if (contentFilter.contentWarning === null) {
+        contentFilterClauses.push(Prisma.sql`AND p."contentWarning" IS NULL`);
+      }
+      const contentFilterSql = contentFilterClauses.length > 0
+        ? Prisma.join(contentFilterClauses, ' ')
+        : Prisma.empty;
+
+      // Keyset cursor clause: skip rows at or above cursor position
+      const cursorClause = cursorScore !== null && cursorId !== null
+        ? Prisma.sql`AND (
+            ("likesCount" + "commentsCount" * 2 + "sharesCount" * 3 + "savesCount" * 2)::float
+            / GREATEST(EXTRACT(EPOCH FROM (${refTimestamp}::timestamptz - p."createdAt")) / 3600.0, 1.0)
+            < ${cursorScore}
+            OR (
+              ABS(
+                ("likesCount" + "commentsCount" * 2 + "sharesCount" * 3 + "savesCount" * 2)::float
+                / GREATEST(EXTRACT(EPOCH FROM (${refTimestamp}::timestamptz - p."createdAt")) / 3600.0, 1.0)
+                - ${cursorScore}
+              ) < 1e-9
+              AND p."id" > ${cursorId}
+            )
+          )`
+        : Prisma.empty;
+
+      scoredIds = await this.prisma.$queryRaw<Array<{ id: string; score: number }>>`
+        SELECT
+          p."id",
+          ("likesCount" + "commentsCount" * 2 + "sharesCount" * 3 + "savesCount" * 2)::float
+          / GREATEST(EXTRACT(EPOCH FROM (${refTimestamp}::timestamptz - p."createdAt")) / 3600.0, 1.0)
+          AS score
+        FROM "posts" p
+        INNER JOIN "users" u ON u."id" = p."userId"
+        WHERE p."isRemoved" = false
+          AND p."visibility" = 'PUBLIC'
+          AND (p."scheduledAt" IS NULL OR p."scheduledAt" <= NOW())
+          AND p."createdAt" >= ${cutoff}
+          AND u."isDeactivated" = false
+          AND u."isBanned" = false
+          AND u."isDeleted" = false
+          AND u."isPrivate" = false
+          ${excludeUserClause}
+          ${excludeDismissedClause}
+          ${contentFilterSql}
+          ${cursorClause}
+        ORDER BY score DESC, p."id" ASC
+        LIMIT ${take}
+      `;
+
+      // For first-page requests, check if we have enough candidates (expand window if not)
+      if (cursorScore === null && scoredIds.length < Math.min(take, 100)) {
+        continue; // Try wider window
+      }
+      break;
+    }
+
+    const hasMore = scoredIds.length > limit;
+    const pageIds = hasMore ? scoredIds.slice(0, limit) : scoredIds;
+
+    // Hydrate with Prisma to get full post data + relations (user, circle)
+    let data: Prisma.PostGetPayload<{ select: typeof FEED_POST_SELECT }>[] = [];
+    if (pageIds.length > 0) {
+      const idList = pageIds.map(r => r.id);
+      const hydrated = await this.prisma.post.findMany({
+        where: { id: { in: idList } },
         select: FEED_POST_SELECT,
-        // Order by likesCount DESC to get the most engaged content first (uses composite index).
-        // This is better than createdAt DESC because it surfaces viral older content.
-        orderBy: [{ likesCount: 'desc' }, { createdAt: 'desc' }],
-        take: CANDIDATE_POOL_SIZE.MAIN_FEED,
       });
-      if (posts.length >= 100) break; // Enough candidates — don't expand further
+      // Restore score-based order (findMany doesn't preserve IN-list order)
+      const orderMap = new Map(idList.map((id, idx) => [id, idx]));
+      hydrated.sort((a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0));
+      data = hydrated;
     }
 
-    // Scoring formula: engagementRate = engagementTotal / ageHours
-    // where engagementTotal = likes*1 + comments*2 + shares*3 + saves*2
-    // This is a simple time-decay engagement rate that favors fresh viral content.
-    const scored = posts.map((post) => {
-      const ageHours = Math.max(1, (scoreTimestamp - post.createdAt.getTime()) / 3600000);
-      const engagementTotal =
-        post.likesCount +
-        post.commentsCount * 2 +
-        post.sharesCount * 3 +
-        post.savesCount * 2;
-      const engagementRate = engagementTotal / ageHours;
-      return { ...post, _score: engagementRate };
-    });
-
-    scored.sort((a, b) => b._score - a._score || a.id.localeCompare(b.id));
-
-    // Cursor-based keyset filtering: skip items at or above the cursor position.
-    // Uses epsilon tolerance (1e-9) for float comparison since scores involve division
-    // and Date.now() shifts between page requests cause minor score drift.
-    let filtered = scored;
-    if (cursorScore !== null && cursorId !== null) {
-      const eps = 1e-9;
-      const startIdx = scored.findIndex(
-        (item) =>
-          item._score < cursorScore! - eps ||
-          (Math.abs(item._score - cursorScore!) < eps && item.id > cursorId!),
-      );
-      filtered = startIdx >= 0 ? scored.slice(startIdx) : [];
-    }
-
-    const page = filtered.slice(0, limit + 1);
-    const hasMore = page.length > limit;
-    const pageItems = hasMore ? page.slice(0, limit) : page;
-
-    const data = pageItems.map(({ _score, ...post }) => post);
-
-    // Build keyset cursor from last item's score + id + timestamp
-    // Timestamp ensures consistent scoring across page requests
-    const lastItem = pageItems[pageItems.length - 1];
-    const nextCursor = hasMore && lastItem
-      ? `${lastItem._score}:${lastItem.id}:${scoreTimestamp}`
+    // Build keyset cursor from last scored item
+    const lastScored = pageIds[pageIds.length - 1];
+    const nextCursor = hasMore && lastScored
+      ? `${lastScored.score}:${lastScored.id}:${scoreTimestamp}`
       : undefined;
 
     const result = {
