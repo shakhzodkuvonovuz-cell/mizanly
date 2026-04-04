@@ -58,7 +58,7 @@ func main() {
 
 	// --- PostgreSQL ---
 	ctx := context.Background()
-	db, err := store.New(ctx, cfg.DatabaseURL, cfg.TransparencySigningKey)
+	db, err := store.New(ctx, cfg.DatabaseURL, cfg.TransparencySigningKey, cfg.DBMaxConns)
 	if err != nil {
 		logger.Error("database connection failed", "error", err)
 		os.Exit(1)

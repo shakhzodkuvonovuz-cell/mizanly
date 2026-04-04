@@ -21,13 +21,20 @@ import (
 // --- Fixtures ---
 
 var testCfg = &config.Config{
-	LiveKitAPIKey:      "APItest1234567",
-	LiveKitAPISecret:   "secrettest1234567890123456789012",
-	LiveKitHost:        "wss://test.livekit.cloud",
-	Port:               "8081",
-	R2Bucket:           "test-bucket",
-	R2Endpoint:         "https://test.r2.dev",
-	InternalServiceKey: "test-internal-key",
+	LiveKitAPIKey:        "APItest1234567",
+	LiveKitAPISecret:     "secrettest1234567890123456789012",
+	LiveKitHost:          "wss://test.livekit.cloud",
+	Port:                 "8081",
+	R2Bucket:             "test-bucket",
+	R2Endpoint:           "https://test.r2.dev",
+	InternalServiceKey:   "test-internal-key",
+	DBMaxConns:           10,
+	TokenTTL:             2 * time.Hour,
+	MaxGroupParticipants: 100,
+	MaxBroadcastViewers:  10000,
+	RoomEmptyTimeout:     300,
+	CleanupIntervalSecs:  30,
+	StaleRingTimeoutSecs: 60,
 }
 
 func newTestHandler() (*Handler, *mockStore) {
@@ -102,7 +109,7 @@ func TestCreateToken_NonParticipantRejected(t *testing.T) {
 	h, ms := newTestHandler()
 	// Create a session first
 	ms.addUser("outsider")
-	ms.CreateCallSession(context.Background(), "VOICE", "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	body := strings.NewReader(`{"roomName":"room-1"}`)
 	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/token", body), "outsider")
@@ -115,7 +122,7 @@ func TestCreateToken_NonParticipantRejected(t *testing.T) {
 
 func TestCreateToken_ParticipantGetsToken(t *testing.T) {
 	h, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	body := strings.NewReader(`{"roomName":"room-1"}`)
 	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/token", body), "callee-1")
@@ -141,7 +148,7 @@ func TestCreateToken_ParticipantGetsToken(t *testing.T) {
 // [F1 fix validation] Verify E2EE material is wiped after session ends
 func TestE2EEMaterial_WipedAfterEnd(t *testing.T) {
 	_, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-wipe", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-wipe", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	// Material should exist for RINGING session
 	material, err := ms.GetSessionE2EEMaterial(context.Background(), "room-wipe")
@@ -189,7 +196,7 @@ func TestGetActiveCall_NoCall(t *testing.T) {
 
 func TestGetActiveCall_WithCall(t *testing.T) {
 	h, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	r := withAuth(httptest.NewRequest("GET", "/api/v1/calls/active", nil), "caller-1")
 	w := httptest.NewRecorder()
@@ -209,7 +216,7 @@ func TestGetActiveCall_WithCall(t *testing.T) {
 func TestDeleteRoom_NonParticipantRejected(t *testing.T) {
 	h, ms := newTestHandler()
 	ms.addUser("outsider")
-	ms.CreateCallSession(context.Background(), "VOICE", "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	r := withAuth(httptest.NewRequest("DELETE", "/api/v1/calls/rooms/room-1", nil), "outsider")
 	r.SetPathValue("id", "room-1")
@@ -222,7 +229,7 @@ func TestDeleteRoom_NonParticipantRejected(t *testing.T) {
 
 func TestDeleteRoom_ParticipantAllowed(t *testing.T) {
 	_, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	// Test authorization only — verify the session gets marked ENDED in DB
 	// (LiveKit SDK calls would panic since roomClient is nil, so we verify DB state)
@@ -246,7 +253,7 @@ func TestDeleteRoom_ParticipantAllowed(t *testing.T) {
 
 func TestDeleteRoom_NonCallerGroupCallRejected(t *testing.T) {
 	h, ms := newTestHandler()
-	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-grp", "caller-1", []string{"caller-1", "callee-1", "callee-2"}, 3)
+	session, _ := ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-grp", "caller-1", []string{"caller-1", "callee-1", "callee-2"}, 3)
 	// Mark session ACTIVE so all 3 participants are there
 	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
 
@@ -262,7 +269,7 @@ func TestDeleteRoom_NonCallerGroupCallRejected(t *testing.T) {
 
 func TestDeleteRoom_CallerAllowedInGroupCall(t *testing.T) {
 	_, ms := newTestHandler()
-	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-grp2", "caller-1", []string{"caller-1", "callee-1", "callee-2"}, 3)
+	session, _ := ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-grp2", "caller-1", []string{"caller-1", "callee-1", "callee-2"}, 3)
 
 	// Caller should be allowed to delete group call (verified via auth helper)
 	if !isCaller(session, "caller-1") {
@@ -272,7 +279,7 @@ func TestDeleteRoom_CallerAllowedInGroupCall(t *testing.T) {
 
 func TestDeleteRoom_NonCallerAllowedIn1to1(t *testing.T) {
 	_, ms := newTestHandler()
-	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-1v1", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	session, _ := ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-1v1", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	// In 1:1 calls, callee can delete (only 2 participants)
 	if !isCallerOrParticipant(session, "callee-1") {
@@ -287,7 +294,7 @@ func TestDeleteRoom_NonCallerAllowedIn1to1(t *testing.T) {
 func TestLeaveRoom_NonParticipantRejected(t *testing.T) {
 	h, ms := newTestHandler()
 	ms.addUser("outsider")
-	ms.CreateCallSession(context.Background(), "VOICE", "room-leave", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-leave", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/rooms/room-leave/leave", nil), "outsider")
 	r.SetPathValue("id", "room-leave")
@@ -300,7 +307,7 @@ func TestLeaveRoom_NonParticipantRejected(t *testing.T) {
 
 func TestLeaveRoom_GroupCallDeclineDoesNotKillForOthers(t *testing.T) {
 	h, ms := newTestHandler()
-	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-grp-decline", "caller-1",
+	session, _ := ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-grp-decline", "caller-1",
 		[]string{"caller-1", "callee-1", "callee-2", "callee-3"}, 4)
 
 	// callee-1 declines — session should NOT end because callee-2 and callee-3 are still ringing
@@ -348,7 +355,7 @@ func TestLeaveRoom_GroupCallDeclineDoesNotKillForOthers(t *testing.T) {
 
 func TestLeaveRoom_1to1DeclineEndsSession(t *testing.T) {
 	h, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-1v1-decline", "caller-1",
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-1v1-decline", "caller-1",
 		[]string{"caller-1", "callee-1"}, 2)
 
 	// Callee declines 1:1 call — session should end (no remaining callees)
@@ -368,7 +375,7 @@ func TestLeaveRoom_1to1DeclineEndsSession(t *testing.T) {
 
 func TestLeaveRoom_EndedSessionRejected(t *testing.T) {
 	h, ms := newTestHandler()
-	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-leave-end", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	session, _ := ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-leave-end", "caller-1", []string{"caller-1", "callee-1"}, 2)
 	ms.UpdateSessionStatus(context.Background(), session.ID, "ENDED")
 
 	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/rooms/room-leave-end/leave", nil), "callee-1")
@@ -384,7 +391,7 @@ func TestLeaveRoom_EndedSessionRejected(t *testing.T) {
 
 func TestStartEgress_NonCallerRejected(t *testing.T) {
 	h, ms := newTestHandler()
-	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-rec-auth", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	session, _ := ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-rec-auth", "caller-1", []string{"caller-1", "callee-1"}, 2)
 	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
 
 	body := strings.NewReader(`{"roomName":"room-rec-auth"}`)
@@ -401,7 +408,7 @@ func TestStartEgress_NonCallerRejected(t *testing.T) {
 func TestKickParticipant_NonParticipantTargetRejected(t *testing.T) {
 	h, ms := newTestHandler()
 	ms.addUser("outsider")
-	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-kick", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	session, _ := ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-kick", "caller-1", []string{"caller-1", "callee-1"}, 2)
 	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
 
 	// Caller tries to kick someone not in the call
@@ -417,7 +424,7 @@ func TestKickParticipant_NonParticipantTargetRejected(t *testing.T) {
 
 func TestKickParticipant_CannotKickSelf(t *testing.T) {
 	h, ms := newTestHandler()
-	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-kickself", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	session, _ := ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-kickself", "caller-1", []string{"caller-1", "callee-1"}, 2)
 	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
 
 	r := withAuth(httptest.NewRequest("DELETE", "/api/v1/calls/rooms/room-kickself/participants/caller-1", nil), "caller-1")
@@ -432,7 +439,7 @@ func TestKickParticipant_CannotKickSelf(t *testing.T) {
 
 func TestKickParticipant_OnlyCallerCanKick(t *testing.T) {
 	h, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	// Callee tries to kick — should be rejected
 	r := withAuth(httptest.NewRequest("DELETE", "/api/v1/calls/rooms/room-1/participants/caller-1", nil), "callee-1")
@@ -447,7 +454,7 @@ func TestKickParticipant_OnlyCallerCanKick(t *testing.T) {
 
 func TestMuteParticipant_OnlyCallerCanMute(t *testing.T) {
 	h, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	body := strings.NewReader(`{"identity":"callee-1","trackSid":"TR_123","muted":true}`)
 	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/rooms/room-1/mute", body), "callee-1")
@@ -462,7 +469,7 @@ func TestMuteParticipant_OnlyCallerCanMute(t *testing.T) {
 // [N2 fix validation] Mute target must be a participant
 func TestMuteParticipant_NonParticipantTargetRejected(t *testing.T) {
 	h, ms := newTestHandler()
-	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-mute-target", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	session, _ := ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-mute-target", "caller-1", []string{"caller-1", "callee-1"}, 2)
 	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
 
 	body := strings.NewReader(`{"identity":"outsider","trackSid":"TR_123","muted":true}`)
@@ -646,7 +653,7 @@ func TestDecodeBody_Valid(t *testing.T) {
 	if err := decodeBody(r, &req); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if req.CallType != "VOICE" {
+	if req.CallType != model.CallTypeVoice {
 		t.Errorf("expected VOICE, got %s", req.CallType)
 	}
 }
@@ -711,8 +718,8 @@ func TestConstants(t *testing.T) {
 	if maxBodySize != 64*1024 {
 		t.Errorf("maxBodySize: expected 65536, got %d", maxBodySize)
 	}
-	if tokenTTL != 2*time.Hour {
-		t.Errorf("tokenTTL: expected 2h, got %v", tokenTTL)
+	if testCfg.TokenTTL != 2*time.Hour {
+		t.Errorf("tokenTTL: expected 2h, got %v", testCfg.TokenTTL)
 	}
 	if sdkTimeout != 10*time.Second {
 		t.Errorf("sdkTimeout: expected 10s, got %v", sdkTimeout)
@@ -809,7 +816,7 @@ func TestCreateRoom_BlockedUserRejected(t *testing.T) {
 func TestCreateRoom_UserInCallConflict(t *testing.T) {
 	h, ms := newTestHandler()
 	// Create first call
-	ms.CreateCallSession(context.Background(), "VOICE", "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	// Try to create second call with same participant
 	body := strings.NewReader(`{"targetUserId":"callee-2","callType":"VOICE"}`)
@@ -912,11 +919,11 @@ func TestCreateRoom_DeleteEndToEnd(t *testing.T) {
 func TestCreateRoom_BroadcastCreatesSession(t *testing.T) {
 	// Test that a BROADCAST call creates a session in the DB
 	_, ms := newTestHandler()
-	session, err := ms.CreateCallSession(context.Background(), "BROADCAST", "bcast-room", "caller-1", []string{"caller-1"}, 10000)
+	session, err := ms.CreateCallSession(context.Background(), model.CallTypeBroadcast, "bcast-room", "caller-1", []string{"caller-1"}, 10000)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if session.CallType != "BROADCAST" {
+	if session.CallType != model.CallTypeBroadcast {
 		t.Errorf("expected BROADCAST, got %s", session.CallType)
 	}
 	if session.MaxParticipants != 10000 {
@@ -929,11 +936,11 @@ func TestCreateRoom_BroadcastCreatesSession(t *testing.T) {
 
 func TestCreateRoom_VoiceCreatesSession(t *testing.T) {
 	_, ms := newTestHandler()
-	session, err := ms.CreateCallSession(context.Background(), "VOICE", "voice-room", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	session, err := ms.CreateCallSession(context.Background(), model.CallTypeVoice, "voice-room", "caller-1", []string{"caller-1", "callee-1"}, 2)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if session.CallType != "VOICE" {
+	if session.CallType != model.CallTypeVoice {
 		t.Errorf("expected VOICE, got %s", session.CallType)
 	}
 	if len(session.Participants) != 2 {
@@ -952,11 +959,11 @@ func TestCreateRoom_VoiceCreatesSession(t *testing.T) {
 
 func TestCreateRoom_VideoCreatesSession(t *testing.T) {
 	_, ms := newTestHandler()
-	session, err := ms.CreateCallSession(context.Background(), "VIDEO", "video-room", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	session, err := ms.CreateCallSession(context.Background(), model.CallTypeVideo, "video-room", "caller-1", []string{"caller-1", "callee-1"}, 2)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if session.CallType != "VIDEO" {
+	if session.CallType != model.CallTypeVideo {
 		t.Errorf("expected VIDEO, got %s", session.CallType)
 	}
 }
@@ -965,7 +972,7 @@ func TestCreateRoom_VideoCreatesSession(t *testing.T) {
 
 func TestCreateToken_EndedSessionRejected(t *testing.T) {
 	h, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-ended", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-ended", "caller-1", []string{"caller-1", "callee-1"}, 2)
 	// End the session
 	session, _ := ms.GetSessionByRoomName(context.Background(), "room-ended")
 	ms.UpdateSessionStatus(context.Background(), session.ID, "ENDED")
@@ -981,7 +988,7 @@ func TestCreateToken_EndedSessionRejected(t *testing.T) {
 
 func TestCreateToken_MissedSessionRejected(t *testing.T) {
 	h, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-missed", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-missed", "caller-1", []string{"caller-1", "callee-1"}, 2)
 	session, _ := ms.GetSessionByRoomName(context.Background(), "room-missed")
 	ms.UpdateSessionStatus(context.Background(), session.ID, "MISSED")
 
@@ -996,7 +1003,7 @@ func TestCreateToken_MissedSessionRejected(t *testing.T) {
 
 func TestCreateToken_RingingSessionAllowed(t *testing.T) {
 	h, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-ringing", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-ringing", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	body := strings.NewReader(`{"roomName":"room-ringing"}`)
 	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/token", body), "callee-1")
@@ -1009,7 +1016,7 @@ func TestCreateToken_RingingSessionAllowed(t *testing.T) {
 
 func TestCreateToken_ActiveSessionAllowed(t *testing.T) {
 	h, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-active", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-active", "caller-1", []string{"caller-1", "callee-1"}, 2)
 	session, _ := ms.GetSessionByRoomName(context.Background(), "room-active")
 	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
 
@@ -1024,7 +1031,7 @@ func TestCreateToken_ActiveSessionAllowed(t *testing.T) {
 
 func TestCreateToken_BroadcastViewerGetNoPublish(t *testing.T) {
 	h, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "BROADCAST", "room-bcast", "caller-1", []string{"caller-1"}, 10000)
+	ms.CreateCallSession(context.Background(), model.CallTypeBroadcast, "room-bcast", "caller-1", []string{"caller-1"}, 10000)
 
 	// Viewer (not caller) requests token — should get it but canPublish=false
 	body := strings.NewReader(`{"roomName":"room-bcast"}`)
@@ -1041,7 +1048,7 @@ func TestCreateToken_BroadcastViewerGetNoPublish(t *testing.T) {
 
 func TestDeleteRoom_EndedSessionRejected(t *testing.T) {
 	h, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-ended", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-ended", "caller-1", []string{"caller-1", "callee-1"}, 2)
 	session, _ := ms.GetSessionByRoomName(context.Background(), "room-ended")
 	ms.UpdateSessionStatus(context.Background(), session.ID, "ENDED")
 
@@ -1069,7 +1076,7 @@ func TestDeleteRoom_NonExistentRoom(t *testing.T) {
 
 func TestKickParticipant_NotActiveRejected(t *testing.T) {
 	h, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
 	// Session is RINGING, not ACTIVE — kick should fail
 	r := withAuth(httptest.NewRequest("DELETE", "/api/v1/calls/rooms/room-1/participants/callee-1", nil), "caller-1")
 	r.SetPathValue("roomId", "room-1")
@@ -1097,7 +1104,7 @@ func TestKickParticipant_NonExistentRoom(t *testing.T) {
 
 func TestMuteParticipant_NotActiveRejected(t *testing.T) {
 	h, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	body := strings.NewReader(`{"identity":"callee-1","trackSid":"TR_123","muted":true}`)
 	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/rooms/room-1/mute", body), "caller-1")
@@ -1111,7 +1118,7 @@ func TestMuteParticipant_NotActiveRejected(t *testing.T) {
 
 func TestMuteParticipant_MalformedBody(t *testing.T) {
 	h, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
 	session, _ := ms.GetSessionByRoomName(context.Background(), "room-1")
 	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
 
@@ -1160,7 +1167,7 @@ func TestGetHistory_WithCursor(t *testing.T) {
 
 func TestGetSession_ReturnsSession(t *testing.T) {
 	h, ms := newTestHandler()
-	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-gs", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	session, _ := ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-gs", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	r := withAuth(httptest.NewRequest("GET", "/api/v1/calls/sessions/"+session.ID, nil), "callee-1")
 	r.SetPathValue("id", session.ID)
@@ -1179,7 +1186,7 @@ func TestGetSession_ReturnsSession(t *testing.T) {
 func TestGetSession_NonParticipantRejected(t *testing.T) {
 	h, ms := newTestHandler()
 	ms.addUser("outsider")
-	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-gs2", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	session, _ := ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-gs2", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	r := withAuth(httptest.NewRequest("GET", "/api/v1/calls/sessions/"+session.ID, nil), "outsider")
 	r.SetPathValue("id", session.ID)
@@ -1279,7 +1286,7 @@ func TestSplitCursor_InvalidTimestamp(t *testing.T) {
 func TestListParticipants_NonParticipantRejected(t *testing.T) {
 	h, ms := newTestHandler()
 	ms.addUser("outsider")
-	ms.CreateCallSession(context.Background(), "VOICE", "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	r := withAuth(httptest.NewRequest("GET", "/api/v1/calls/rooms/room-1/participants", nil), "outsider")
 	r.SetPathValue("id", "room-1")
@@ -1317,7 +1324,7 @@ func TestStartEgress_MissingRoomName(t *testing.T) {
 func TestStartEgress_NonParticipantRejected(t *testing.T) {
 	h, ms := newTestHandler()
 	ms.addUser("outsider")
-	ms.CreateCallSession(context.Background(), "VOICE", "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
 	session, _ := ms.GetSessionByRoomName(context.Background(), "room-1")
 	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
 
@@ -1332,7 +1339,7 @@ func TestStartEgress_NonParticipantRejected(t *testing.T) {
 
 func TestStartEgress_RingingSessionRejected(t *testing.T) {
 	h, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	body := strings.NewReader(`{"roomName":"room-1","sessionId":"s1"}`)
 	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/egress/start", body), "caller-1")
@@ -1346,7 +1353,7 @@ func TestStartEgress_RingingSessionRejected(t *testing.T) {
 func TestStopEgress_NonParticipantRejected(t *testing.T) {
 	h, ms := newTestHandler()
 	ms.addUser("outsider")
-	ms.CreateCallSession(context.Background(), "VOICE", "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-1", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	body := strings.NewReader(`{"egressId":"eg_123","roomName":"room-1"}`)
 	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/egress/stop", body), "outsider")
@@ -1361,7 +1368,7 @@ func TestStopEgress_NonParticipantRejected(t *testing.T) {
 
 func TestCreateIngress_NonCallerRejected(t *testing.T) {
 	h, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "BROADCAST", "room-bcast", "caller-1", []string{"caller-1"}, 10000)
+	ms.CreateCallSession(context.Background(), model.CallTypeBroadcast, "room-bcast", "caller-1", []string{"caller-1"}, 10000)
 
 	body := strings.NewReader(`{"roomName":"room-bcast","inputType":"rtmp"}`)
 	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/ingress/create", body), "callee-1")
@@ -1385,7 +1392,7 @@ func TestCreateIngress_MissingRoomName(t *testing.T) {
 
 func TestDeleteIngress_NonCallerRejected(t *testing.T) {
 	h, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "BROADCAST", "room-bcast", "caller-1", []string{"caller-1"}, 10000)
+	ms.CreateCallSession(context.Background(), model.CallTypeBroadcast, "room-bcast", "caller-1", []string{"caller-1"}, 10000)
 
 	r := withAuth(httptest.NewRequest("DELETE", "/api/v1/calls/ingress/ig_123?roomName=room-bcast", nil), "callee-1")
 	r.SetPathValue("id", "ig_123")
@@ -1400,7 +1407,7 @@ func TestDeleteIngress_NonCallerRejected(t *testing.T) {
 
 func TestE2EEKey_ReturnedOnTokenRequest(t *testing.T) {
 	h, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-e2ee", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-e2ee", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	body := strings.NewReader(`{"roomName":"room-e2ee"}`)
 	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/token", body), "callee-1")
@@ -1417,7 +1424,7 @@ func TestE2EEKey_ReturnedOnTokenRequest(t *testing.T) {
 
 func TestE2EEKey_WipedAfterSessionEnds(t *testing.T) {
 	_, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-wipe", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-wipe", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	// Verify material exists
 	material, _ := ms.GetSessionE2EEMaterial(context.Background(), "room-wipe")
@@ -1438,7 +1445,7 @@ func TestE2EEKey_WipedAfterSessionEnds(t *testing.T) {
 
 func TestE2EEKey_NotReturnedForEndedSession(t *testing.T) {
 	h, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-ended-e2ee", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-ended-e2ee", "caller-1", []string{"caller-1", "callee-1"}, 2)
 	session, _ := ms.GetSessionByRoomName(context.Background(), "room-ended-e2ee")
 	ms.UpdateSessionStatus(context.Background(), session.ID, "ENDED")
 	ms.WipeE2EEKey(context.Background(), session.ID)
@@ -1457,7 +1464,7 @@ func TestE2EEKey_NotReturnedForEndedSession(t *testing.T) {
 
 func TestWebhookProcessing_ParticipantJoinedActivatesSession(t *testing.T) {
 	_, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-wh", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-wh", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	session, _ := ms.GetSessionByRoomName(context.Background(), "room-wh")
 	if session.Status != "RINGING" {
@@ -1491,7 +1498,7 @@ func TestWebhookProcessing_ParticipantJoinedActivatesSession(t *testing.T) {
 
 func TestWebhookProcessing_ParticipantLeftUpdatesState(t *testing.T) {
 	_, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-leave", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-leave", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	// Callee leaves
 	session, _ := ms.GetSessionByRoomName(context.Background(), "room-leave")
@@ -1512,7 +1519,7 @@ func TestWebhookProcessing_ParticipantLeftUpdatesState(t *testing.T) {
 
 func TestWebhookProcessing_RoomFinishedEndsDuration(t *testing.T) {
 	_, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-fin", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-fin", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	session, _ := ms.GetSessionByRoomName(context.Background(), "room-fin")
 	now := time.Now()
@@ -1551,7 +1558,7 @@ func TestWebhookProcessing_RoomFinishedEndsDuration(t *testing.T) {
 
 func TestWebhookProcessing_RecordingURLUpdated(t *testing.T) {
 	_, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-rec", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-rec", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	ms.UpdateSessionRecordingURL(context.Background(), "room-rec", "recordings/room-rec/2026.mp4")
 
@@ -1563,7 +1570,7 @@ func TestWebhookProcessing_RecordingURLUpdated(t *testing.T) {
 
 func TestWebhookProcessing_LivekitSidUpdated(t *testing.T) {
 	_, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-sid", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-sid", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	ms.UpdateSessionLivekitSid(context.Background(), "room-sid", "RM_abcdef123456")
 
@@ -1577,7 +1584,7 @@ func TestWebhookProcessing_LivekitSidUpdated(t *testing.T) {
 
 func TestMockStore_CleanupStaleRingingSessions(t *testing.T) {
 	_, ms := newTestHandler()
-	count, err := ms.CleanupStaleRingingSessions(context.Background())
+	count, err := ms.CleanupStaleRingingSessions(context.Background(), 60)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -1588,7 +1595,7 @@ func TestMockStore_CleanupStaleRingingSessions(t *testing.T) {
 
 func TestMockStore_GetSessionByID(t *testing.T) {
 	_, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-byid", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-byid", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	session, _ := ms.GetSessionByRoomName(context.Background(), "room-byid")
 	byID, _ := ms.GetSessionByID(context.Background(), session.ID)
@@ -1610,7 +1617,7 @@ func TestMockStore_GetSessionByID_NotFound(t *testing.T) {
 
 func TestMockStore_GetSessionWithParticipants_FiltersLeft(t *testing.T) {
 	_, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-filter", "caller-1", []string{"caller-1", "callee-1", "callee-2"}, 3)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-filter", "caller-1", []string{"caller-1", "callee-1", "callee-2"}, 3)
 
 	// Mark one participant as left
 	session, _ := ms.GetSessionByRoomName(context.Background(), "room-filter")
@@ -1650,7 +1657,7 @@ func TestGetUserDisplayName_NotFound(t *testing.T) {
 func TestCreateRoom_CalleeIDsExcludeCaller(t *testing.T) {
 	// Verify that calleeIDs list excludes the caller (used for push notifications)
 	_, ms := newTestHandler()
-	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-push", "caller-1", []string{"caller-1", "callee-1", "callee-2"}, 3)
+	session, _ := ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-push", "caller-1", []string{"caller-1", "callee-1", "callee-2"}, 3)
 
 	calleeIDs := make([]string, 0)
 	for _, p := range session.Participants {
@@ -1671,7 +1678,7 @@ func TestCreateRoom_CalleeIDsExcludeCaller(t *testing.T) {
 func TestWebhookProcessing_MissedCallHasParticipants(t *testing.T) {
 	// Verify that room_finished with no startedAt has participant data for push
 	_, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-missed-push", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-missed-push", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	session, _ := ms.GetSessionWithParticipantsByRoomName(context.Background(), "room-missed-push")
 	if session == nil {
@@ -1757,7 +1764,7 @@ func TestCreateRoom_GroupCall_HandlerEndToEnd(t *testing.T) {
 
 func TestLeaveRoom_ActiveCall_EndsWhenLastParticipant(t *testing.T) {
 	h, ms := newTestHandler()
-	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-leave-last", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	session, _ := ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-leave-last", "caller-1", []string{"caller-1", "callee-1"}, 2)
 	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
 	// Mark caller's livekitJoinedAt so they count as active
 	ms.MarkParticipantLivekitJoined(context.Background(), "room-leave-last", "caller-1")
@@ -1781,7 +1788,7 @@ func TestLeaveRoom_ActiveCall_EndsWhenLastParticipant(t *testing.T) {
 
 func TestGetSession_ReturnsCorrectStatus(t *testing.T) {
 	h, ms := newTestHandler()
-	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-status", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	session, _ := ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-status", "caller-1", []string{"caller-1", "callee-1"}, 2)
 	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
 
 	r := withAuth(httptest.NewRequest("GET", "/api/v1/calls/sessions/"+session.ID, nil), "caller-1")
@@ -1849,7 +1856,7 @@ func TestDeleteRoom_HandlerEndToEnd_VerifiesCleanup(t *testing.T) {
 
 func TestMuteParticipant_ValidTargetSucceeds(t *testing.T) {
 	h, ms := newTestHandler()
-	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-mute-ok", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	session, _ := ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-mute-ok", "caller-1", []string{"caller-1", "callee-1"}, 2)
 	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
 
 	body := strings.NewReader(`{"identity":"callee-1","trackSid":"TR_123","muted":true}`)
@@ -1864,7 +1871,7 @@ func TestMuteParticipant_ValidTargetSucceeds(t *testing.T) {
 
 func TestStopEgress_CallerAllowed(t *testing.T) {
 	h, ms := newTestHandler()
-	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-stop-eg", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	session, _ := ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-stop-eg", "caller-1", []string{"caller-1", "callee-1"}, 2)
 	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
 
 	body := strings.NewReader(`{"egressId":"eg_123","roomName":"room-stop-eg"}`)
@@ -1879,7 +1886,7 @@ func TestStopEgress_CallerAllowed(t *testing.T) {
 
 func TestStartEgress_CallerAllowed(t *testing.T) {
 	h, ms := newTestHandler()
-	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-start-eg", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	session, _ := ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-start-eg", "caller-1", []string{"caller-1", "callee-1"}, 2)
 	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
 
 	body := strings.NewReader(`{"roomName":"room-start-eg"}`)
@@ -1894,7 +1901,7 @@ func TestStartEgress_CallerAllowed(t *testing.T) {
 
 func TestCreateIngress_CallerAllowed(t *testing.T) {
 	h, ms := newTestHandler()
-	session, _ := ms.CreateCallSession(context.Background(), "BROADCAST", "room-ingress", "caller-1", []string{"caller-1"}, 10000)
+	session, _ := ms.CreateCallSession(context.Background(), model.CallTypeBroadcast, "room-ingress", "caller-1", []string{"caller-1"}, 10000)
 	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
 
 	body := strings.NewReader(`{"roomName":"room-ingress","inputType":"rtmp"}`)
@@ -1908,7 +1915,7 @@ func TestCreateIngress_CallerAllowed(t *testing.T) {
 
 func TestDeleteIngress_CallerAllowed(t *testing.T) {
 	h, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "BROADCAST", "room-del-ingress", "caller-1", []string{"caller-1"}, 10000)
+	ms.CreateCallSession(context.Background(), model.CallTypeBroadcast, "room-del-ingress", "caller-1", []string{"caller-1"}, 10000)
 
 	r := withAuth(httptest.NewRequest("DELETE", "/api/v1/calls/ingress/ig_123?roomName=room-del-ingress", nil), "caller-1")
 	r.SetPathValue("id", "ig_123")
@@ -1988,7 +1995,7 @@ func TestMuteParticipant_EmptyRoomID(t *testing.T) {
 // G04-#7: identity validation in MuteParticipant
 func TestMuteParticipant_EmptyIdentity(t *testing.T) {
 	h, ms := newTestHandler()
-	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-mute-val", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	session, _ := ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-mute-val", "caller-1", []string{"caller-1", "callee-1"}, 2)
 	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
 
 	body := strings.NewReader(`{"identity":"","trackSid":"TR_123","muted":true}`)
@@ -2004,7 +2011,7 @@ func TestMuteParticipant_EmptyIdentity(t *testing.T) {
 // G04-#7: trackSid validation in MuteParticipant
 func TestMuteParticipant_EmptyTrackSid(t *testing.T) {
 	h, ms := newTestHandler()
-	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-mute-ts", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	session, _ := ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-mute-ts", "caller-1", []string{"caller-1", "callee-1"}, 2)
 	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
 
 	body := strings.NewReader(`{"identity":"callee-1","trackSid":"","muted":true}`)
@@ -2020,7 +2027,7 @@ func TestMuteParticipant_EmptyTrackSid(t *testing.T) {
 // G04-#7: identity too long in MuteParticipant
 func TestMuteParticipant_IdentityTooLong(t *testing.T) {
 	h, ms := newTestHandler()
-	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-mute-long", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	session, _ := ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-mute-long", "caller-1", []string{"caller-1", "callee-1"}, 2)
 	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
 
 	longIdentity := strings.Repeat("x", 257)
@@ -2060,7 +2067,7 @@ func TestFilterAndDedup_Keeps64CharIDs(t *testing.T) {
 // G05-#1: StopEgress rejects non-caller participant
 func TestStopEgress_NonCallerParticipantRejected(t *testing.T) {
 	h, ms := newTestHandler()
-	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-stop-auth", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	session, _ := ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-stop-auth", "caller-1", []string{"caller-1", "callee-1"}, 2)
 	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
 
 	body := strings.NewReader(`{"egressId":"eg_123","roomName":"room-stop-auth"}`)
@@ -2075,7 +2082,7 @@ func TestStopEgress_NonCallerParticipantRejected(t *testing.T) {
 // G05-#2: CreateIngress rejects non-active session
 func TestCreateIngress_RingingSessionRejected(t *testing.T) {
 	h, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "BROADCAST", "room-ingress-ring", "caller-1", []string{"caller-1"}, 10000)
+	ms.CreateCallSession(context.Background(), model.CallTypeBroadcast, "room-ingress-ring", "caller-1", []string{"caller-1"}, 10000)
 	// Session is RINGING (not ACTIVE)
 
 	body := strings.NewReader(`{"roomName":"room-ingress-ring","inputType":"rtmp"}`)
@@ -2090,7 +2097,7 @@ func TestCreateIngress_RingingSessionRejected(t *testing.T) {
 // G05-#2: CreateIngress rejects ended session
 func TestCreateIngress_EndedSessionRejected(t *testing.T) {
 	h, ms := newTestHandler()
-	session, _ := ms.CreateCallSession(context.Background(), "BROADCAST", "room-ingress-end", "caller-1", []string{"caller-1"}, 10000)
+	session, _ := ms.CreateCallSession(context.Background(), model.CallTypeBroadcast, "room-ingress-end", "caller-1", []string{"caller-1"}, 10000)
 	ms.UpdateSessionStatus(context.Background(), session.ID, "ENDED")
 
 	body := strings.NewReader(`{"roomName":"room-ingress-end","inputType":"rtmp"}`)
@@ -2257,7 +2264,7 @@ func TestCreateRoom_ResponseHasNoCacheHeader(t *testing.T) {
 // #521: Response for token has Cache-Control: no-store
 func TestCreateToken_ResponseHasNoCacheHeader(t *testing.T) {
 	h, ms := newTestHandler()
-	ms.CreateCallSession(context.Background(), "VOICE", "room-cache", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.CreateCallSession(context.Background(), model.CallTypeVoice, "room-cache", "caller-1", []string{"caller-1", "callee-1"}, 2)
 
 	body := strings.NewReader(`{"roomName":"room-cache"}`)
 	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/token", body), "callee-1")

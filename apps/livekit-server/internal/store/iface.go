@@ -18,7 +18,7 @@ type Querier interface {
 	UserExists(ctx context.Context, userID string) (bool, error)
 
 	// Session CRUD — CreateCallSession is atomic: checks active call + inserts in one transaction (C2 fix)
-	CreateCallSession(ctx context.Context, callType, livekitRoomName, callerID string, participantIDs []string, maxParticipants int) (*model.CallSession, error)
+	CreateCallSession(ctx context.Context, callType model.CallType, livekitRoomName, callerID string, participantIDs []string, maxParticipants int) (*model.CallSession, error)
 	UpdateSessionStatus(ctx context.Context, sessionID, status string) error
 	UpdateSessionDuration(ctx context.Context, sessionID string, duration int) error
 	UpdateSessionLivekitSid(ctx context.Context, roomName, roomSid string) error
@@ -44,5 +44,5 @@ type Querier interface {
 	GetUserDisplayName(ctx context.Context, userID string) (string, error)
 
 	// Cleanup
-	CleanupStaleRingingSessions(ctx context.Context) (int64, error)
+	CleanupStaleRingingSessions(ctx context.Context, staleAfterSecs int) (int64, error)
 }

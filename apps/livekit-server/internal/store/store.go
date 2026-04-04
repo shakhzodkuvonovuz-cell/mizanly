@@ -24,7 +24,9 @@ type Store struct {
 	pool *pgxpool.Pool
 }
 
-func New(ctx context.Context, databaseURL string) (*Store, error) {
+// New creates a store with the given maxConns pool size.
+// Pass 0 to use the default (10).
+func New(ctx context.Context, databaseURL string, maxConns int32) (*Store, error) {
 	if databaseURL == "" {
 		return nil, errors.New("DATABASE_URL is required")
 	}
@@ -33,7 +35,11 @@ func New(ctx context.Context, databaseURL string) (*Store, error) {
 		return nil, fmt.Errorf("parse database url: %w", err)
 	}
 	cfg.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
-	cfg.MaxConns = 10
+	if maxConns > 0 {
+		cfg.MaxConns = maxConns
+	} else {
+		cfg.MaxConns = 10
+	}
 	cfg.MinConns = 1
 	cfg.MaxConnLifetime = 30 * time.Minute
 	cfg.MaxConnIdleTime = 5 * time.Minute
@@ -97,7 +103,7 @@ func (s *Store) UserExists(ctx context.Context, userID string) (bool, error) {
 // CreateCallSession atomically checks no active call + creates session + inserts participants.
 // [C1] Generates a random 32-byte E2EE key per session (forward secrecy).
 // [C2/H1 fix] Advisory locks sorted by user ID to prevent AB-BA deadlock.
-func (s *Store) CreateCallSession(ctx context.Context, callType, livekitRoomName, callerID string, participantIDs []string, maxParticipants int) (*model.CallSession, error) {
+func (s *Store) CreateCallSession(ctx context.Context, callType model.CallType, livekitRoomName, callerID string, participantIDs []string, maxParticipants int) (*model.CallSession, error) {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("begin transaction: %w", err)
@@ -579,13 +585,17 @@ func (s *Store) GetUserDisplayName(ctx context.Context, userID string) (string, 
 
 // --- Cleanup ---
 
-// CleanupStaleRingingSessions marks RINGING sessions older than 60s as MISSED
+// CleanupStaleRingingSessions marks RINGING sessions older than staleAfterSecs as MISSED
 // and marks their participants as left. [H4 fix] Atomic via CTE.
-func (s *Store) CleanupStaleRingingSessions(ctx context.Context) (int64, error) {
+func (s *Store) CleanupStaleRingingSessions(ctx context.Context, staleAfterSecs int) (int64, error) {
+	if staleAfterSecs <= 0 {
+		staleAfterSecs = 60
+	}
+	interval := fmt.Sprintf("%d seconds", staleAfterSecs)
 	result, err := s.pool.Exec(ctx,
 		`WITH stale AS (
 			SELECT id FROM call_sessions
-			WHERE status = 'RINGING' AND "createdAt" < NOW() - INTERVAL '60 seconds'
+			WHERE status = 'RINGING' AND "createdAt" < NOW() - CAST($1 AS INTERVAL)
 		), updated_participants AS (
 			UPDATE call_participants SET "leftAt" = NOW()
 			WHERE "leftAt" IS NULL AND "sessionId" IN (SELECT id FROM stale)
@@ -593,6 +603,7 @@ func (s *Store) CleanupStaleRingingSessions(ctx context.Context) (int64, error) 
 		UPDATE call_sessions
 		SET status = 'MISSED', "endedAt" = NOW(), "updatedAt" = NOW(), "e2eeKey" = NULL, "e2eeSalt" = NULL
 		WHERE id IN (SELECT id FROM stale)`,
+		interval,
 	)
 	if err != nil {
 		return 0, err

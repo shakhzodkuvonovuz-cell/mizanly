@@ -70,7 +70,7 @@ func (m *mockStore) UserExists(_ context.Context, userID string) (bool, error) {
 	return m.users[userID], nil
 }
 
-func (m *mockStore) CreateCallSession(_ context.Context, callType, livekitRoomName, callerID string, participantIDs []string, maxParticipants int) (*model.CallSession, error) {
+func (m *mockStore) CreateCallSession(_ context.Context, callType model.CallType, livekitRoomName, callerID string, participantIDs []string, maxParticipants int) (*model.CallSession, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -315,7 +315,7 @@ func (m *mockStore) GetUserDisplayName(_ context.Context, userID string) (string
 	return "", fmt.Errorf("user not found")
 }
 
-func (m *mockStore) CleanupStaleRingingSessions(_ context.Context) (int64, error) {
+func (m *mockStore) CleanupStaleRingingSessions(_ context.Context, _ int) (int64, error) {
 	return 0, nil
 }
 

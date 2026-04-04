@@ -41,9 +41,8 @@ import (
 )
 
 const (
-	maxBodySize = 64 * 1024
-	tokenTTL    = 2 * time.Hour
-	sdkTimeout  = 10 * time.Second
+	maxBodySize     = 64 * 1024
+	sdkTimeout      = 10 * time.Second
 	webhookDedupTTL = 5 * time.Minute // [C5] dedup window for webhook events
 )
 
@@ -111,14 +110,14 @@ func (h *Handler) HandleCreateRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.CallType != "VOICE" && req.CallType != "VIDEO" && req.CallType != "BROADCAST" {
+	if !req.CallType.Valid() {
 		writeError(w, http.StatusBadRequest, "callType must be VOICE, VIDEO, or BROADCAST")
 		return
 	}
 
 	var allParticipants []string
 	switch {
-	case req.CallType == "BROADCAST":
+	case req.CallType == model.CallTypeBroadcast:
 		allParticipants = []string{userID}
 	case len(req.ParticipantIDs) > 0:
 		allParticipants = filterAndDedup(append([]string{userID}, req.ParticipantIDs...))
@@ -168,10 +167,10 @@ func (h *Handler) HandleCreateRoom(w http.ResponseWriter, r *http.Request) {
 	idHash := sha256.Sum256([]byte(userID))
 	roomNameBase := fmt.Sprintf("%x_%d", idHash[:16], time.Now().UnixMilli())
 	maxParticipants := uint32(len(allParticipants))
-	if req.CallType == "BROADCAST" {
-		maxParticipants = 10000
+	if req.CallType == model.CallTypeBroadcast {
+		maxParticipants = uint32(h.cfg.MaxBroadcastViewers)
 	} else if len(allParticipants) > 2 {
-		maxParticipants = 100
+		maxParticipants = uint32(h.cfg.MaxGroupParticipants)
 	}
 
 	// CreateCallSession generates the final room name with crypto suffix
@@ -204,7 +203,7 @@ func (h *Handler) HandleCreateRoom(w http.ResponseWriter, r *http.Request) {
 		var err2 error
 		room, err2 = h.roomClient.CreateRoom(sdkCtx, &livekit.CreateRoomRequest{
 			Name:            actualRoomName,
-			EmptyTimeout:    5 * 60,
+			EmptyTimeout:    h.cfg.RoomEmptyTimeout,
 			MaxParticipants: maxParticipants,
 		})
 		if err2 != nil {
@@ -301,7 +300,7 @@ func (h *Handler) HandleCreateToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isBroadcast := session.CallType == "BROADCAST"
+	isBroadcast := session.CallType == model.CallTypeBroadcast
 	canPublish := true
 
 	if isBroadcast {
@@ -1003,13 +1002,13 @@ func (h *Handler) createToken(roomName, identity string, canPublish bool) (strin
 	grant := &lkauth.VideoGrant{
 		RoomJoin: true, Room: roomName, CanPublish: &canPublish, CanSubscribe: &canSub,
 	}
-	at.SetVideoGrant(grant).SetIdentity(identity).SetValidFor(tokenTTL)
+	at.SetVideoGrant(grant).SetIdentity(identity).SetValidFor(h.cfg.TokenTTL)
 	return at.ToJWT()
 }
 
 // sendCallPush sends push notifications to callees via the NestJS API (server-to-server).
 // Runs in a goroutine — errors are logged, not returned to the caller.
-func (h *Handler) sendCallPush(calleeIDs []string, roomName, sessionID, callType, callerUserID string) {
+func (h *Handler) sendCallPush(calleeIDs []string, roomName, sessionID string, callType model.CallType, callerUserID string) {
 	// [G04-#3 fix] Recover from panics in goroutine
 	defer func() {
 		if r := recover(); r != nil {
@@ -1040,7 +1039,7 @@ func (h *Handler) sendCallPush(calleeIDs []string, roomName, sessionID, callType
 			"type":       "incoming_call",
 			"roomName":   roomName,
 			"sessionId":  sessionID,
-			"callType":   callType,
+			"callType":   string(callType),
 			"callerName": callerName,
 		},
 	}
@@ -1058,7 +1057,7 @@ func (h *Handler) sendCallPush(calleeIDs []string, roomName, sessionID, callType
 }
 
 // sendMissedCallPush notifies callees about a missed call.
-func (h *Handler) sendMissedCallPush(calleeIDs []string, sessionID, callType string) {
+func (h *Handler) sendMissedCallPush(calleeIDs []string, sessionID string, callType model.CallType) {
 	// [G04-#3 fix] Recover from panics in goroutine
 	defer func() {
 		if r := recover(); r != nil {
@@ -1073,7 +1072,7 @@ func (h *Handler) sendMissedCallPush(calleeIDs []string, sessionID, callType str
 		"data": map[string]string{
 			"type":      "missed_call",
 			"sessionId": sessionID,
-			"callType":  callType,
+			"callType":  string(callType),
 		},
 	}
 	bodyBytes, err := json.Marshal(pushBody)

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 )
 
 // Config holds all required and optional environment variables.
@@ -24,6 +25,15 @@ type Config struct {
 	NestJSBaseURL      string // NestJS API URL for server-to-server push notifications
 	InternalServiceKey string // Shared key for Go → NestJS internal auth
 	Port               string
+
+	// Tunable operational parameters (env var overrides with sane defaults)
+	DBMaxConns           int32         // DB_MAX_CONNS — max pool connections (default 10)
+	TokenTTL             time.Duration // TOKEN_TTL_SECONDS — LiveKit token lifetime (default 7200 = 2h)
+	MaxGroupParticipants int           // MAX_GROUP_PARTICIPANTS — group call cap (default 100)
+	MaxBroadcastViewers  int           // MAX_BROADCAST_VIEWERS — broadcast cap (default 10000)
+	RoomEmptyTimeout     uint32        // ROOM_EMPTY_TIMEOUT_SECONDS — LiveKit room auto-close (default 300)
+	CleanupIntervalSecs  int           // CLEANUP_INTERVAL_SECONDS — stale ringing check interval (default 30)
+	StaleRingTimeoutSecs int           // STALE_RING_TIMEOUT_SECONDS — ringing→MISSED after N seconds (default 60)
 }
 
 // Load reads config from environment variables and validates required fields.
@@ -43,6 +53,15 @@ func Load() (*Config, error) {
 		NestJSBaseURL:      envOrDefault("NESTJS_BASE_URL", "http://localhost:3000/api/v1"),
 		InternalServiceKey: os.Getenv("INTERNAL_SERVICE_KEY"),
 		Port:               envOrDefault("PORT", "8081"),
+
+		// Defaults for tunable parameters
+		DBMaxConns:           int32(envOrDefaultInt("DB_MAX_CONNS", 10)),
+		TokenTTL:             time.Duration(envOrDefaultInt("TOKEN_TTL_SECONDS", 7200)) * time.Second,
+		MaxGroupParticipants: envOrDefaultInt("MAX_GROUP_PARTICIPANTS", 100),
+		MaxBroadcastViewers:  envOrDefaultInt("MAX_BROADCAST_VIEWERS", 10000),
+		RoomEmptyTimeout:     uint32(envOrDefaultInt("ROOM_EMPTY_TIMEOUT_SECONDS", 300)),
+		CleanupIntervalSecs:  envOrDefaultInt("CLEANUP_INTERVAL_SECONDS", 30),
+		StaleRingTimeoutSecs: envOrDefaultInt("STALE_RING_TIMEOUT_SECONDS", 60),
 	}
 
 	if cfg.LiveKitAPIKey == "" {
@@ -78,6 +97,26 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("PORT must be between 1 and 65535, got %d", portNum)
 	}
 
+	// Validate tunable parameters
+	if cfg.DBMaxConns < 1 || cfg.DBMaxConns > 1000 {
+		return nil, fmt.Errorf("DB_MAX_CONNS must be between 1 and 1000, got %d", cfg.DBMaxConns)
+	}
+	if cfg.TokenTTL < 1*time.Minute || cfg.TokenTTL > 24*time.Hour {
+		return nil, fmt.Errorf("TOKEN_TTL_SECONDS must be between 60 and 86400, got %v", cfg.TokenTTL)
+	}
+	if cfg.MaxGroupParticipants < 2 || cfg.MaxGroupParticipants > 10000 {
+		return nil, fmt.Errorf("MAX_GROUP_PARTICIPANTS must be between 2 and 10000, got %d", cfg.MaxGroupParticipants)
+	}
+	if cfg.MaxBroadcastViewers < 2 || cfg.MaxBroadcastViewers > 1000000 {
+		return nil, fmt.Errorf("MAX_BROADCAST_VIEWERS must be between 2 and 1000000, got %d", cfg.MaxBroadcastViewers)
+	}
+	if cfg.CleanupIntervalSecs < 5 || cfg.CleanupIntervalSecs > 600 {
+		return nil, fmt.Errorf("CLEANUP_INTERVAL_SECONDS must be between 5 and 600, got %d", cfg.CleanupIntervalSecs)
+	}
+	if cfg.StaleRingTimeoutSecs < 10 || cfg.StaleRingTimeoutSecs > 600 {
+		return nil, fmt.Errorf("STALE_RING_TIMEOUT_SECONDS must be between 10 and 600, got %d", cfg.StaleRingTimeoutSecs)
+	}
+
 	return cfg, nil
 }
 
@@ -86,4 +125,17 @@ func envOrDefault(key, def string) string {
 		return v
 	}
 	return def
+}
+
+// envOrDefaultInt reads an env var as int, returning def if unset or unparseable.
+func envOrDefaultInt(key string, def int) int {
+	v := os.Getenv(key)
+	if v == "" {
+		return def
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil {
+		return def
+	}
+	return n
 }

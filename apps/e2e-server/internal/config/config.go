@@ -3,7 +3,9 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"os"
+	"strconv"
 )
 
 // Config holds all required and optional environment variables.
@@ -17,6 +19,9 @@ type Config struct {
 	NestJSInternalURL      string
 	InternalWebhookSecret  string
 	TransparencySigningKey string
+
+	// Tunable operational parameters (env var overrides with sane defaults)
+	DBMaxConns int32 // DB_MAX_CONNS — max pool connections (default 10)
 }
 
 // Load reads config from environment variables and validates required fields.
@@ -31,6 +36,8 @@ func Load() (*Config, error) {
 		NestJSInternalURL:      os.Getenv("NESTJS_INTERNAL_URL"),
 		InternalWebhookSecret:  os.Getenv("INTERNAL_WEBHOOK_SECRET"),
 		TransparencySigningKey: os.Getenv("TRANSPARENCY_SIGNING_KEY"),
+
+		DBMaxConns: int32(envOrDefaultInt("DB_MAX_CONNS", 10)),
 	}
 
 	if cfg.DatabaseURL == "" {
@@ -43,6 +50,20 @@ func Load() (*Config, error) {
 		return nil, errors.New("REDIS_URL is required")
 	}
 
+	// Validate port is numeric and in valid range 1-65535
+	portNum, err := strconv.Atoi(cfg.Port)
+	if err != nil {
+		return nil, fmt.Errorf("PORT must be numeric: %w", err)
+	}
+	if portNum < 1 || portNum > 65535 {
+		return nil, fmt.Errorf("PORT must be between 1 and 65535, got %d", portNum)
+	}
+
+	// Validate tunable parameters
+	if cfg.DBMaxConns < 1 || cfg.DBMaxConns > 1000 {
+		return nil, fmt.Errorf("DB_MAX_CONNS must be between 1 and 1000, got %d", cfg.DBMaxConns)
+	}
+
 	return cfg, nil
 }
 
@@ -51,4 +72,17 @@ func envOrDefault(key, def string) string {
 		return v
 	}
 	return def
+}
+
+// envOrDefaultInt reads an env var as int, returning def if unset or unparseable.
+func envOrDefaultInt(key string, def int) int {
+	v := os.Getenv(key)
+	if v == "" {
+		return def
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil {
+		return def
+	}
+	return n
 }

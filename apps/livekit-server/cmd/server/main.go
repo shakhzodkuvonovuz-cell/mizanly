@@ -57,7 +57,7 @@ func main() {
 
 	// PostgreSQL
 	ctx := context.Background()
-	db, err := store.New(ctx, cfg.DatabaseURL)
+	db, err := store.New(ctx, cfg.DatabaseURL, cfg.DBMaxConns)
 	if err != nil {
 		logger.Error("database connection failed", "error", err)
 		os.Exit(1)
@@ -179,15 +179,15 @@ func main() {
 		MaxHeaderBytes:    1 << 16,
 	}
 
-	// [H7 fix] Ringing timeout ticker — mark stale RINGING sessions as MISSED every 30s
+	// [H7 fix] Ringing timeout ticker — mark stale RINGING sessions as MISSED
 	cleanupCtx, cleanupCancel := context.WithCancel(context.Background())
 	go func() {
-		ticker := time.NewTicker(30 * time.Second)
+		ticker := time.NewTicker(time.Duration(cfg.CleanupIntervalSecs) * time.Second)
 		defer ticker.Stop()
 		for {
 			select {
 			case <-ticker.C:
-				if count, err := db.CleanupStaleRingingSessions(cleanupCtx); err != nil {
+				if count, err := db.CleanupStaleRingingSessions(cleanupCtx, cfg.StaleRingTimeoutSecs); err != nil {
 					logger.Error("ringing cleanup failed", "error", err)
 				} else if count > 0 {
 					logger.Info("cleaned up stale ringing sessions", "count", count)

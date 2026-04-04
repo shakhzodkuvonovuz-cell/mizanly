@@ -43,7 +43,8 @@ type Store struct {
 
 // New creates a new Store with a connection pool configured for Neon.
 // G03-#2/G03-#8: Accepts explicit parameters instead of reading os.Getenv.
-func New(ctx context.Context, dbURL, transparencySigningKeyB64 string) (*Store, error) {
+// Pass maxConns <= 0 to use the default (10).
+func New(ctx context.Context, dbURL, transparencySigningKeyB64 string, maxConns int32) (*Store, error) {
 	if dbURL == "" {
 		return nil, errors.New("DATABASE_URL is required")
 	}
@@ -55,7 +56,11 @@ func New(ctx context.Context, dbURL, transparencySigningKeyB64 string) (*Store, 
 
 	// REQUIRED for Neon pooler: avoid prepared statements
 	config.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
-	config.MaxConns = 10
+	if maxConns > 0 {
+		config.MaxConns = maxConns
+	} else {
+		config.MaxConns = 10
+	}
 	config.MinConns = 1
 	config.MaxConnLifetime = 30 * time.Minute
 	config.MaxConnIdleTime = 5 * time.Minute

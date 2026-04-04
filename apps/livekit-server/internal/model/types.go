@@ -3,10 +3,31 @@ package model
 
 import "time"
 
+// CallType is a typed string for call types — prevents typo bugs from bare string comparisons.
+type CallType string
+
+const (
+	CallTypeVoice     CallType = "VOICE"
+	CallTypeVideo     CallType = "VIDEO"
+	CallTypeBroadcast CallType = "BROADCAST"
+)
+
+// Valid returns true if ct is a recognized call type.
+func (ct CallType) Valid() bool {
+	switch ct {
+	case CallTypeVoice, CallTypeVideo, CallTypeBroadcast:
+		return true
+	}
+	return false
+}
+
+// String returns the string representation.
+func (ct CallType) String() string { return string(ct) }
+
 // CallSession represents a call session in the database.
 type CallSession struct {
 	ID                string            `json:"id"`
-	CallType          string            `json:"callType"`
+	CallType          CallType          `json:"callType"`
 	Status            string            `json:"status"`
 	StartedAt         *time.Time        `json:"startedAt"`
 	EndedAt           *time.Time        `json:"endedAt"`
@@ -54,7 +75,7 @@ type UserBrief struct {
 type CreateRoomRequest struct {
 	TargetUserID   string   `json:"targetUserId"`
 	ParticipantIDs []string `json:"participantIds"`
-	CallType       string   `json:"callType"`
+	CallType       CallType `json:"callType"`
 	ConversationID string   `json:"conversationId"`
 }
 
