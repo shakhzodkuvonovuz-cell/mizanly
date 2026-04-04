@@ -200,6 +200,38 @@ describe('WebhooksController', () => {
       // Should not throw — just logs and returns
     });
 
+    it('should handle session.ended without error (T01 #14)', async () => {
+      const eventData = { type: 'session.ended', data: { id: 'sess_3', user_id: 'clerk_user_3' } };
+      mockVerify.mockReturnValue(eventData);
+
+      const result = await controller.handleClerkWebhook(makeReq(eventData) as any, 'id-14', 'ts', 'sig');
+
+      expect(result).toEqual({ received: true });
+    });
+
+    it('should handle session.removed same as session.revoked (T01 #15)', async () => {
+      const eventData = { type: 'session.removed', data: { id: 'sess_4', user_id: 'clerk_user_4' } };
+      mockVerify.mockReturnValue(eventData);
+      (authService as any).findByClerkId = jest.fn().mockResolvedValue({ id: 'internal-user-4' });
+      const mockPublish = jest.fn().mockResolvedValue(1);
+      (authService as any).getRedis = jest.fn().mockReturnValue({ publish: mockPublish });
+
+      const result = await controller.handleClerkWebhook(makeReq(eventData) as any, 'id-15', 'ts', 'sig');
+
+      expect((authService as any).findByClerkId).toHaveBeenCalledWith('clerk_user_4');
+      expect(mockPublish).toHaveBeenCalledWith('user:session_revoked', JSON.stringify({ userId: 'internal-user-4' }));
+      expect(result).toEqual({ received: true });
+    });
+
+    it('should acknowledge organization events without error (T01 #16)', async () => {
+      const eventData = { type: 'organization.membership.deleted', data: { id: 'org_mem_1' } };
+      mockVerify.mockReturnValue(eventData);
+
+      const result = await controller.handleClerkWebhook(makeReq(eventData) as any, 'id-16', 'ts', 'sig');
+
+      expect(result).toEqual({ received: true });
+    });
+
     it('should sync username on user.updated with username change (T01 #13)', async () => {
       const eventData = {
         type: 'user.updated',

@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Inject,
   Logger,
   ForbiddenException,
   NotFoundException,
@@ -13,6 +14,7 @@ import { createClerkClient } from '@clerk/backend';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PublishWorkflowService } from '../../common/services/publish-workflow.service';
 import { QueueService } from '../../common/queue/queue.service';
+import Redis from 'ioredis';
 
 @Injectable()
 export class AdminService {
@@ -25,6 +27,7 @@ export class AdminService {
     private notificationsService: NotificationsService,
     private publishWorkflow: PublishWorkflowService,
     @Optional() private queueService: QueueService | null,
+    @Inject('REDIS') private redis: Redis,
   ) {
     this.clerk = createClerkClient({
       secretKey: this.config.get('CLERK_SECRET_KEY'),
@@ -300,6 +303,13 @@ export class AdminService {
         this.logger.warn(`Failed to revoke Clerk session for banned user ${targetId}: ${msg}`);
       }
     }
+
+    // #73 FIX: Force-disconnect any active WebSocket connections immediately.
+    // Clerk ban revokes sessions for future requests, but existing WebSocket
+    // connections stay alive until the next auth check. Publishing to user:banned
+    // triggers chat.gateway.ts to force-disconnect all sockets for this user.
+    this.redis.publish('user:banned', JSON.stringify({ userId: targetId }))
+      .catch(err => this.logger.warn(`Failed to publish ban disconnect for ${targetId}`, err instanceof Error ? err.message : err));
 
     // Remove banned user AND their content from search index (X04-#9)
     this.publishWorkflow.onUnpublish({

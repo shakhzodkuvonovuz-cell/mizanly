@@ -40,17 +40,20 @@ const HANDLED_EVENTS = new Set([
   'user.created',
   'user.updated',
   'user.deleted',
+  'session.created',
+  'session.ended',
+  'session.revoked',
+  'session.removed',
 ]);
 
 const ACKNOWLEDGED_EVENTS = new Set([
-  'session.created',
-  'session.ended',
-  'session.removed',
-  'session.revoked',
   'email.created',
   'organization.created',
   'organization.updated',
   'organization.deleted',
+  'organization.membership.created',
+  'organization.membership.updated',
+  'organization.membership.deleted',
 ]);
 
 @ApiTags('Webhooks')

@@ -763,6 +763,47 @@ describe('AdminService', () => {
     });
   });
 
+  describe('banUser publishes user:banned to Redis (#73)', () => {
+    it('should publish user:banned event to Redis for WebSocket force-disconnect', async () => {
+      prisma.user.findUnique
+        .mockResolvedValueOnce({ role: 'ADMIN' })
+        .mockResolvedValueOnce({ id: 'user-1', role: 'USER', clerkId: 'clerk-user-1' });
+      prisma.user.update.mockResolvedValue({ id: 'user-1', username: 'u1', displayName: 'U1', isBanned: true, banExpiresAt: null, banReason: 'Spam' });
+      prisma.post.findMany = jest.fn().mockResolvedValue([]);
+      prisma.thread.findMany = jest.fn().mockResolvedValue([]);
+      prisma.reel.findMany = jest.fn().mockResolvedValue([]);
+      prisma.video.findMany = jest.fn().mockResolvedValue([]);
+
+      const redis = (service as any).redis;
+      redis.publish.mockClear();
+
+      await service.banUser('admin-id', 'user-1', 'Spam');
+
+      expect(redis.publish).toHaveBeenCalledWith(
+        'user:banned',
+        JSON.stringify({ userId: 'user-1' }),
+      );
+    });
+
+    it('should still succeed if Redis publish fails', async () => {
+      prisma.user.findUnique
+        .mockResolvedValueOnce({ role: 'ADMIN' })
+        .mockResolvedValueOnce({ id: 'user-1', role: 'USER', clerkId: null });
+      prisma.user.update.mockResolvedValue({ id: 'user-1', username: 'u1', displayName: 'U1', isBanned: true, banExpiresAt: null, banReason: 'Spam' });
+      prisma.post.findMany = jest.fn().mockResolvedValue([]);
+      prisma.thread.findMany = jest.fn().mockResolvedValue([]);
+      prisma.reel.findMany = jest.fn().mockResolvedValue([]);
+      prisma.video.findMany = jest.fn().mockResolvedValue([]);
+
+      const redis = (service as any).redis;
+      redis.publish.mockRejectedValueOnce(new Error('Redis down'));
+
+      // Should not throw — Redis publish failure is non-fatal
+      const result = await service.banUser('admin-id', 'user-1', 'Spam');
+      expect(result.isBanned).toBe(true);
+    });
+  });
+
   describe('unbanUser', () => {
     it('should reactivate user and lift Clerk ban', async () => {
       prisma.user.findUnique
