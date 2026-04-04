@@ -1,9 +1,10 @@
-import { Body, Controller, Post, Get, UseGuards, Query, Param, Delete, Patch } from '@nestjs/common';
+import { Body, Controller, Post, Get, UseGuards, Query, Param, Delete, Patch, Optional } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { QueueService } from '../../common/queue/queue.service';
 import { ReelsService } from './reels.service';
 import { CreateReelDto } from './dto/create-reel.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
@@ -14,7 +15,10 @@ import { UpdateReelDto } from './dto/update-reel.dto';
 @ApiBearerAuth()
 @Controller('reels')
 export class ReelsController {
-  constructor(private readonly reelsService: ReelsService) {}
+  constructor(
+    private readonly reelsService: ReelsService,
+    @Optional() private queueService: QueueService | null,
+  ) {}
 
   @Post()
   @UseGuards(ClerkAuthGuard)
@@ -112,11 +116,20 @@ export class ReelsController {
   @Get(':id')
   @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Get reel by ID' })
-  getById(
+  async getById(
     @Param('id') id: string,
     @CurrentUser('id') userId?: string,
   ) {
     this.reelsService.recordView(id);
+    // Fire-and-forget engagement tracking for analytics pipeline
+    if (userId && this.queueService) {
+      this.queueService.addEngagementTrackingJob({
+        type: 'view',
+        userId,
+        contentType: 'reel',
+        contentId: id,
+      }).catch(() => { /* non-critical analytics */ });
+    }
     return this.reelsService.getById(id, userId);
   }
 

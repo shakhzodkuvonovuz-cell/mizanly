@@ -112,6 +112,74 @@ describe('QueueService', () => {
     });
   });
 
+  describe('addBulkPushJob', () => {
+    it('should enqueue bulk-push job to notifications queue', async () => {
+      const jobId = await service.addBulkPushJob({
+        userIds: ['u1', 'u2', 'u3'],
+        title: 'System Announcement',
+        body: 'Check out the new feature!',
+        pushData: { screen: 'settings' },
+      });
+      expect(jobId).toBe('job-1');
+      expect(notificationsQueue.add).toHaveBeenCalledWith(
+        'bulk-push',
+        expect.objectContaining({
+          userIds: ['u1', 'u2', 'u3'],
+          title: 'System Announcement',
+          body: 'Check out the new feature!',
+          pushData: { screen: 'settings' },
+        }),
+        expect.objectContaining({ attempts: 3 }),
+      );
+    });
+
+    it('should use circuit breaker for Redis', async () => {
+      await service.addBulkPushJob({ userIds: ['u1'], title: 'T', body: 'B' });
+      expect(circuitBreaker.exec).toHaveBeenCalledWith('redis', expect.any(Function));
+    });
+  });
+
+  describe('addEngagementTrackingJob', () => {
+    it('should enqueue track-engagement job to analytics queue', async () => {
+      const jobId = await service.addEngagementTrackingJob({
+        type: 'view',
+        userId: 'u1',
+        contentType: 'post',
+        contentId: 'p1',
+      });
+      expect(jobId).toBe('job-1');
+      expect(analyticsQueue.add).toHaveBeenCalledWith(
+        'track-engagement',
+        expect.objectContaining({
+          type: 'view',
+          userId: 'u1',
+          contentType: 'post',
+          contentId: 'p1',
+        }),
+        expect.objectContaining({ attempts: 2 }),
+      );
+    });
+
+    it('should use circuit breaker for Redis', async () => {
+      await service.addEngagementTrackingJob({ type: 'like', userId: 'u1', contentType: 'reel', contentId: 'r1' });
+      expect(circuitBreaker.exec).toHaveBeenCalledWith('redis', expect.any(Function));
+    });
+
+    it('should accept all engagement types', async () => {
+      const types = ['view', 'like', 'comment', 'share'] as const;
+      for (const type of types) {
+        jest.clearAllMocks();
+        circuitBreaker.exec.mockImplementation((_name: string, fn: () => Promise<unknown>) => fn());
+        await service.addEngagementTrackingJob({ type, userId: 'u1', contentType: 'post', contentId: 'p1' });
+        expect(analyticsQueue.add).toHaveBeenCalledWith(
+          'track-engagement',
+          expect.objectContaining({ type }),
+          expect.any(Object),
+        );
+      }
+    });
+  });
+
   describe('addSearchIndexJob', () => {
     it('should enqueue search index job with action as job name', async () => {
       await service.addSearchIndexJob({ action: 'index', indexName: 'posts', documentId: 'p1', document: { title: 'Test' } });

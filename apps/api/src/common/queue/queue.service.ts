@@ -112,6 +112,28 @@ export class QueueService implements OnModuleDestroy {
     return resizeJob.id!;
   }
 
+  /**
+   * Enqueue a bulk push notification job.
+   * Used for mass notifications: admin announcements, broadcast channel messages,
+   * or any scenario where 100+ users need the same push notification.
+   * The processor persists DB notification records before sending push.
+   */
+  async addBulkPushJob(data: {
+    userIds: string[];
+    title: string;
+    body: string;
+    pushData?: Record<string, string>;
+  }): Promise<string> {
+    const job = await this.circuitBreaker.exec('redis', () =>
+      this.notificationsQueue.add('bulk-push', this.withCorrelation(data), {
+        attempts: 3,
+        backoff: { type: 'custom' },
+      }),
+    );
+    this.logger.debug(`Enqueued bulk-push job ${job.id} for ${data.userIds.length} users`);
+    return job.id!;
+  }
+
   // ── Analytics Jobs ────────────────────────────────────────
 
   async addGamificationJob(data: {
@@ -121,6 +143,26 @@ export class QueueService implements OnModuleDestroy {
   }): Promise<string> {
     const job = await this.circuitBreaker.exec('redis', () =>
       this.analyticsQueue.add(data.type, this.withCorrelation(data), {
+        attempts: 2,
+        backoff: { type: 'exponential', delay: 1000 },
+      }),
+    );
+    return job.id!;
+  }
+
+  /**
+   * Enqueue an engagement tracking job for durable batch analytics.
+   * Fire-and-forget from caller's perspective — used when users view/interact with content.
+   * The processor logs the event for future data warehouse / cohort analysis.
+   */
+  async addEngagementTrackingJob(data: {
+    type: 'view' | 'like' | 'comment' | 'share';
+    userId: string;
+    contentType: string;
+    contentId: string;
+  }): Promise<string> {
+    const job = await this.circuitBreaker.exec('redis', () =>
+      this.analyticsQueue.add('track-engagement', this.withCorrelation(data), {
         attempts: 2,
         backoff: { type: 'exponential', delay: 1000 },
       }),

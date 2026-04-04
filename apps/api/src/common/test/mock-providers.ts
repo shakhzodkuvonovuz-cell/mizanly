@@ -128,10 +128,13 @@ export const mockQueueService = {
   provide: QueueService,
   useValue: {
     addPushNotificationJob: jest.fn().mockResolvedValue('job-1'),
+    addBulkPushJob: jest.fn().mockResolvedValue('job-2'),
     addGamificationJob: jest.fn().mockResolvedValue('job-4'),
+    addEngagementTrackingJob: jest.fn().mockResolvedValue('job-5'),
     addWebhookDeliveryJob: jest.fn().mockResolvedValue('job-6'),
     addSearchIndexJob: jest.fn().mockResolvedValue('job-7'),
     addModerationJob: jest.fn().mockResolvedValue('job-8'),
+    addMediaProcessingJob: jest.fn().mockResolvedValue('job-9'),
     getStats: jest.fn().mockResolvedValue({}),
     moveToDlq: jest.fn().mockResolvedValue(undefined),
   },

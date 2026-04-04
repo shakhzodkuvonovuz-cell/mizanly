@@ -17,63 +17,59 @@ export function rtlTextAlign(isRTL: boolean): 'left' | 'right' {
 }
 
 /**
- * Returns margin style swapping left/right based on RTL.
- * @param isRTL Whether the layout is RTL.
+ * Returns margin style using RTL-aware properties.
+ * @param _isRTL Whether the layout is RTL (ignored — marginStart/End auto-flip).
  * @param start Margin value for start (left in LTR, right in RTL).
  * @param end Margin value for end (right in LTR, left in RTL).
- * @returns Object with marginLeft/marginRight properties.
+ * @returns Object with marginStart/marginEnd properties.
  */
 export function rtlMargin(
-  isRTL: boolean,
+  _isRTL: boolean,
   start: number,
   end: number,
-): { marginLeft: number; marginRight: number } {
-  return isRTL
-    ? { marginLeft: end, marginRight: start }
-    : { marginLeft: start, marginRight: end };
+): { marginStart: number; marginEnd: number } {
+  return { marginStart: start, marginEnd: end };
 }
 
 /**
- * Returns the correct directional border style for RTL (e.g., unread accent bars).
- * @param isRTL Whether the layout is RTL.
+ * Returns the correct directional border style using RTL-aware properties.
+ * @param _isRTL Whether the layout is RTL (ignored — borderStartWidth/Color auto-flip).
  * @param width Border width.
  * @param color Border color.
- * @returns Object with borderLeftWidth/Color or borderRightWidth/Color.
+ * @returns Object with borderStartWidth/Color.
  */
 export function rtlBorderStart(
-  isRTL: boolean,
+  _isRTL: boolean,
   width: number,
   color: string,
-): Record<string, number | string> {
-  return isRTL
-    ? { borderRightWidth: width, borderRightColor: color }
-    : { borderLeftWidth: width, borderLeftColor: color };
+): { borderStartWidth: number; borderStartColor: string } {
+  return { borderStartWidth: width, borderStartColor: color };
 }
 
 /**
- * Returns absolute positioning swapping left/right for RTL.
- * @param isRTL Whether the layout is RTL.
+ * Returns absolute positioning using RTL-aware 'start' property.
+ * @param _isRTL Whether the layout is RTL (ignored — start auto-flips).
  * @param value Position value.
- * @returns Object with { left: value } for LTR, { right: value } for RTL.
+ * @returns Object with { start: value }.
  */
 export function rtlAbsoluteStart(
-  isRTL: boolean,
+  _isRTL: boolean,
   value: number,
-): { left?: number; right?: number } {
-  return isRTL ? { right: value } : { left: value };
+): { start: number } {
+  return { start: value };
 }
 
 /**
- * Returns absolute positioning swapping right/left for RTL.
- * @param isRTL Whether the layout is RTL.
+ * Returns absolute positioning using RTL-aware 'end' property.
+ * @param _isRTL Whether the layout is RTL (ignored — end auto-flips).
  * @param value Position value.
- * @returns Object with { right: value } for LTR, { left: value } for RTL.
+ * @returns Object with { end: value }.
  */
 export function rtlAbsoluteEnd(
-  isRTL: boolean,
+  _isRTL: boolean,
   value: number,
-): { left?: number; right?: number } {
-  return isRTL ? { left: value } : { right: value };
+): { end: number } {
+  return { end: value };
 }
 
 /**

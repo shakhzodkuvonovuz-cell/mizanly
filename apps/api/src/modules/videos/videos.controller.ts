@@ -16,6 +16,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { QueueService } from '../../common/queue/queue.service';
 import { VideosService } from './videos.service';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
@@ -24,11 +25,15 @@ import { ReportDto } from './dto/report.dto';
 import { VideoProgressDto } from './dto/video-progress.dto';
 import { SetEndScreensDto } from './dto/end-screen.dto';
 import { CreatePremiereDto } from './dto/premiere.dto';
+import { Optional } from '@nestjs/common';
 
 @ApiTags('Videos (Minbar)')
 @Controller('videos')
 export class VideosController {
-  constructor(private readonly videosService: VideosService) {}
+  constructor(
+    private readonly videosService: VideosService,
+    @Optional() private queueService: QueueService | null,
+  ) {}
 
   @Post()
   @UseGuards(ClerkAuthGuard)
@@ -72,6 +77,15 @@ export class VideosController {
     @Param('id') id: string,
     @CurrentUser('id') userId?: string,
   ) {
+    // Fire-and-forget engagement tracking for analytics pipeline
+    if (userId && this.queueService) {
+      this.queueService.addEngagementTrackingJob({
+        type: 'view',
+        userId,
+        contentType: 'video',
+        contentId: id,
+      }).catch(() => { /* non-critical analytics */ });
+    }
     return this.videosService.getById(id, userId);
   }
 

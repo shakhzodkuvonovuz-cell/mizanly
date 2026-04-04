@@ -28,11 +28,16 @@ import { UpdatePostDto } from './dto/update-post.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { QueueService } from '../../common/queue/queue.service';
+import { Optional } from '@nestjs/common';
 
 @ApiTags('Posts (Saf)')
 @Controller('posts')
 export class PostsController {
-  constructor(private postsService: PostsService) {}
+  constructor(
+    private postsService: PostsService,
+    @Optional() private queueService: QueueService | null,
+  ) {}
 
   @Get('feed')
   @UseGuards(OptionalClerkAuthGuard)
@@ -104,6 +109,15 @@ export class PostsController {
     const post = await this.postsService.getById(id, viewerId);
     // Fire-and-forget view count increment
     this.postsService.recordView(id);
+    // Fire-and-forget engagement tracking for analytics pipeline
+    if (viewerId && this.queueService) {
+      this.queueService.addEngagementTrackingJob({
+        type: 'view',
+        userId: viewerId,
+        contentType: 'post',
+        contentId: id,
+      }).catch(() => { /* non-critical analytics */ });
+    }
     return post;
   }
 

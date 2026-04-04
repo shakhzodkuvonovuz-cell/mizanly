@@ -22,6 +22,8 @@ import { StickerResponseType } from '@prisma/client';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { QueueService } from '../../common/queue/queue.service';
+import { Optional } from '@nestjs/common';
 
 class StoryReplyDto {
   @IsString() @MaxLength(2000) content: string;
@@ -39,7 +41,10 @@ class ReportStoryDto {
 @ApiTags('Stories (Saf)')
 @Controller('stories')
 export class StoriesController {
-  constructor(private storiesService: StoriesService) {}
+  constructor(
+    private storiesService: StoriesService,
+    @Optional() private queueService: QueueService | null,
+  ) {}
 
   @Get('feed')
   @UseGuards(ClerkAuthGuard)
@@ -104,6 +109,15 @@ export class StoriesController {
   @Throttle({ default: { ttl: 60000, limit: 10 } })
   @ApiOperation({ summary: 'Mark story as viewed' })
   markViewed(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    // Fire-and-forget engagement tracking for analytics pipeline
+    if (this.queueService) {
+      this.queueService.addEngagementTrackingJob({
+        type: 'view',
+        userId,
+        contentType: 'story',
+        contentId: id,
+      }).catch(() => { /* non-critical analytics */ });
+    }
     return this.storiesService.markViewed(id, userId);
   }
 

@@ -17,6 +17,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { ResolveReportDto } from './dto/resolve-report.dto';
 import { BanUserDto } from './dto/ban-user.dto';
+import { SendAnnouncementDto } from './dto/send-announcement.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { FeatureFlagsService } from '../../common/services/feature-flags.service';
@@ -90,6 +91,19 @@ export class AdminController {
     @Param('id') targetId: string,
   ) {
     return this.adminService.unbanUser(adminId, targetId);
+  }
+
+  // ── Announcements ──────────────────────────────────────
+
+  @Post('announcements')
+  @Throttle({ default: { limit: 2, ttl: 300000 } }) // 2 per 5 min — prevent spam
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Send system-wide announcement to all active users (admin only)' })
+  async sendAnnouncement(
+    @CurrentUser('id') adminId: string,
+    @Body() dto: SendAnnouncementDto,
+  ) {
+    return this.adminService.sendAnnouncement(adminId, dto);
   }
 
   // ── Feature Flags ───────────────────────────────────────

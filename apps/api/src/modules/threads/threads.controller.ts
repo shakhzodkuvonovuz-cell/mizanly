@@ -24,12 +24,17 @@ import { CreateContinuationDto } from './dto/create-continuation.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { QueueService } from '../../common/queue/queue.service';
+import { Optional } from '@nestjs/common';
 
 
 @ApiTags('Threads (Majlis)')
 @Controller('threads')
 export class ThreadsController {
-  constructor(private threadsService: ThreadsService) {}
+  constructor(
+    private threadsService: ThreadsService,
+    @Optional() private queueService: QueueService | null,
+  ) {}
 
   // --- Static routes MUST be above :id param routes ---
 
@@ -98,6 +103,15 @@ export class ThreadsController {
     const thread = await this.threadsService.getById(id, viewerId);
     // Fire-and-forget view count increment
     this.threadsService.recordView(id);
+    // Fire-and-forget engagement tracking for analytics pipeline
+    if (viewerId && this.queueService) {
+      this.queueService.addEngagementTrackingJob({
+        type: 'view',
+        userId: viewerId,
+        contentType: 'thread',
+        contentId: id,
+      }).catch(() => { /* non-critical analytics */ });
+    }
     return thread;
   }
 

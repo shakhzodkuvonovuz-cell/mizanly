@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   NotFoundException,
   BadRequestException,
+  Optional,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
@@ -11,6 +12,7 @@ import { ReportStatus, ModerationAction } from '@prisma/client';
 import { createClerkClient } from '@clerk/backend';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PublishWorkflowService } from '../../common/services/publish-workflow.service';
+import { QueueService } from '../../common/queue/queue.service';
 
 @Injectable()
 export class AdminService {
@@ -22,6 +24,7 @@ export class AdminService {
     private config: ConfigService,
     private notificationsService: NotificationsService,
     private publishWorkflow: PublishWorkflowService,
+    @Optional() private queueService: QueueService | null,
   ) {
     this.clerk = createClerkClient({
       secretKey: this.config.get('CLERK_SECRET_KEY'),
@@ -412,5 +415,65 @@ export class AdminService {
     }
 
     this.logger.log(`Removed ${totalRemoved} content items from search for banned user ${userId}`);
+  }
+
+  /**
+   * Send a system-wide announcement to all active users via bulk-push queue.
+   * Admin only. Uses cursor-paginated user fetch to handle large user bases
+   * without loading all user IDs into memory at once.
+   */
+  async sendAnnouncement(adminId: string, data: { title: string; body: string; pushData?: Record<string, string> }): Promise<{ sent: boolean; userCount: number }> {
+    await this.verifyAdmin(adminId);
+
+    if (!data.title?.trim() || !data.body?.trim()) {
+      throw new BadRequestException('Announcement title and body are required');
+    }
+    if (data.title.length > 100) {
+      throw new BadRequestException('Announcement title must be 100 characters or less');
+    }
+    if (data.body.length > 500) {
+      throw new BadRequestException('Announcement body must be 500 characters or less');
+    }
+
+    if (!this.queueService) {
+      throw new BadRequestException('Queue service unavailable — cannot send bulk notifications');
+    }
+
+    // Cursor-paginated fetch of active, non-banned users
+    let totalUsers = 0;
+    let cursor: string | undefined;
+    const BATCH = 500;
+
+    while (true) {
+      const users = await this.prisma.user.findMany({
+        where: { isDeactivated: false, isDeleted: false, isBanned: false },
+        select: { id: true },
+        take: BATCH,
+        orderBy: { id: 'asc' },
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      });
+
+      if (users.length === 0) break;
+
+      const userIds = users.map(u => u.id);
+      await this.queueService.addBulkPushJob({
+        userIds,
+        title: data.title,
+        body: data.body,
+        pushData: data.pushData,
+      });
+
+      totalUsers += users.length;
+      cursor = users[users.length - 1].id;
+      if (users.length < BATCH) break;
+    }
+
+    // Audit log
+    await this.prisma.adminAuditLog.create({
+      data: { adminId, action: 'SEND_ANNOUNCEMENT', targetType: 'system', targetId: 'all-users', details: { title: data.title, userCount: totalUsers } },
+    }).catch(err => this.logger.error('Audit log write failed for announcement', err instanceof Error ? err.message : err));
+
+    this.logger.log(`Admin ${adminId} sent announcement "${data.title}" to ${totalUsers} users`);
+    return { sent: true, userCount: totalUsers };
   }
 }

@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException, ConflictException, BadRequestException, Inject, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, ConflictException, BadRequestException, Inject, Logger, Optional } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../config/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { QueueService } from '../../common/queue/queue.service';
 import { ChannelRole, ChannelType, MessageType } from '@prisma/client';
 import Redis from 'ioredis';
 
@@ -12,6 +13,7 @@ export class BroadcastService {
   constructor(
     private prisma: PrismaService,
     private notifications: NotificationsService,
+    @Optional() private queueService: QueueService | null,
     @Inject('REDIS') private redis: Redis,
   ) {}
 
@@ -158,26 +160,45 @@ export class BroadcastService {
     });
     await this.prisma.$executeRaw`UPDATE broadcast_channels SET "postsCount" = "postsCount" + 1 WHERE id = ${channelId}`;
 
-    // A16-#5 FIX: Reduce take to 1000 and log errors instead of swallowing
+    // Use bulk-push queue for subscriber notifications (durable, retried, batched)
     this.prisma.channelMember.findMany({
-      where: { channelId, userId: { not: userId } },
+      where: { channelId, userId: { not: userId }, isMuted: false },
       select: { userId: true },
-      take: 1000,
+      take: 10000,
     }).then(async (subscribers) => {
       if (subscribers.length > 0) {
-        const BATCH = 500;
-        for (let i = 0; i < subscribers.length; i += BATCH) {
-          const batch = subscribers.slice(i, i + BATCH);
-          await this.prisma.notification.createMany({
-            data: batch.map(s => ({
-              userId: s.userId,
-              actorId: userId,
-              type: 'SYSTEM' as const,
-              title: 'New broadcast',
-              body: data.content?.slice(0, 100) || 'New message in channel',
-            })),
-            skipDuplicates: true,
-          }).catch(err => this.logger.warn(`Broadcast notification batch failed: ${err instanceof Error ? err.message : err}`));
+        const userIds = subscribers.map(s => s.userId);
+        const title = 'New broadcast';
+        const body = data.content?.slice(0, 100) || 'New message in channel';
+
+        if (this.queueService) {
+          // Route through bulk-push queue for durable delivery with retry
+          const BATCH = 500;
+          for (let i = 0; i < userIds.length; i += BATCH) {
+            const batch = userIds.slice(i, i + BATCH);
+            this.queueService.addBulkPushJob({
+              userIds: batch,
+              title,
+              body,
+              pushData: { screen: 'broadcast', channelId },
+            }).catch(err => this.logger.warn(`Bulk-push queue job failed: ${err instanceof Error ? err.message : err}`));
+          }
+        } else {
+          // Fallback: inline notification creation when queue is unavailable
+          const BATCH = 500;
+          for (let i = 0; i < userIds.length; i += BATCH) {
+            const batch = userIds.slice(i, i + BATCH);
+            await this.prisma.notification.createMany({
+              data: batch.map(uid => ({
+                userId: uid,
+                actorId: userId,
+                type: 'SYSTEM' as const,
+                title,
+                body,
+              })),
+              skipDuplicates: true,
+            }).catch(err => this.logger.warn(`Broadcast notification batch failed: ${err instanceof Error ? err.message : err}`));
+          }
         }
       }
       // Emit socket event for real-time update
