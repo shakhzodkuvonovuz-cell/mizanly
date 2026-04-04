@@ -6,7 +6,8 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
-import { NotificationsService } from '../notifications/notifications.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NOTIFICATION_REQUESTED, NotificationRequestedEvent } from '../../common/events/notification.events';
 import { CoinTransactionType, FeedContentType } from '@prisma/client';
 
 export interface GiftCatalogItem {
@@ -52,7 +53,7 @@ export class GiftsService {
 
   constructor(
     private prisma: PrismaService,
-    private notifications: NotificationsService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   async getBalance(userId: string) {
@@ -183,13 +184,13 @@ export class GiftsService {
     });
 
     // Notify receiver they received a gift
-    this.notifications.create({
+    this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
       userId: receiverId,
       actorId: senderId,
       type: 'SYSTEM',
       title: 'Gift received!',
       body: `Someone sent you a ${catalogItem.name}! (+${diamondsEarned} diamonds)`,
-    }).catch(err => this.logger.warn('Failed to create gift notification', err instanceof Error ? err.message : err));
+    }));
 
     return {
       gift: giftRecord,

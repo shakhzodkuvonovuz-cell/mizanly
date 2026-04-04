@@ -1,7 +1,8 @@
 import { Injectable, Logger, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { StreakType, ChallengeType, ChallengeCategory, SeriesCategory, ProfileLayout, ProfileBioFont, XPReason } from '@prisma/client';
-import { NotificationsService } from '../notifications/notifications.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NOTIFICATION_REQUESTED, NotificationRequestedEvent } from '../../common/events/notification.events';
 
 // XP rewards for different actions
 const XP_REWARDS: Record<string, number> = {
@@ -46,7 +47,7 @@ export class GamificationService {
   private readonly logger = new Logger(GamificationService.name);
   constructor(
     private prisma: PrismaService,
-    private readonly notificationsService: NotificationsService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   // ── Streaks ─────────────────────────────────────────────
@@ -353,13 +354,13 @@ export class GamificationService {
 
     // Notify challenge creator that someone joined
     if (challenge.createdById !== userId) {
-      this.notificationsService.create({
+      this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
         userId: challenge.createdById,
         actorId: userId,
         type: 'SYSTEM',
         title: 'New challenger',
         body: `Someone joined your challenge "${challenge.title}"`,
-      }).catch(err => this.logger.warn('Challenge join notification failed', err.message));
+      }));
     }
 
     return { success: true };
@@ -412,13 +413,13 @@ export class GamificationService {
 
       // Notify the challenge creator that someone completed their challenge
       if (participant.challenge.createdById !== userId) {
-        this.notificationsService.create({
+        this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
           userId: participant.challenge.createdById,
           actorId: userId,
           type: 'SYSTEM',
           title: 'Challenge completed',
           body: `Someone completed your challenge "${participant.challenge.title}"`,
-        }).catch(err => this.logger.warn('Challenge completion notification failed', err.message));
+        }));
       }
     }
 
@@ -459,7 +460,7 @@ export class GamificationService {
       ]);
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'code' in err && err.code === 'P2025') {
-        return { success: true };
+        return; // Already left — idempotent
       }
       throw err;
     }
@@ -468,7 +469,7 @@ export class GamificationService {
       where: { id: challengeId, participantCount: { lt: 0 } },
       data: { participantCount: 0 },
     });
-    return { success: true };
+    return;
   }
 
   // ── Series (Micro-drama) ────────────────────────────────
@@ -538,7 +539,7 @@ export class GamificationService {
       this.prisma.$executeRaw`UPDATE "Series" SET "episodeCount" = GREATEST("episodeCount" - 1, 0) WHERE id = ${seriesId}`,
     ]);
 
-    return { success: true };
+    return;
   }
 
   async followSeries(userId: string, seriesId: string) {
@@ -556,7 +557,7 @@ export class GamificationService {
       }
       throw err;
     }
-    return { success: true };
+    return;
   }
 
   async unfollowSeries(userId: string, seriesId: string) {
@@ -569,11 +570,11 @@ export class GamificationService {
       ]);
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'code' in err && err.code === 'P2025') {
-        return { success: true }; // Already unfollowed — idempotent
+        return; // Already unfollowed — idempotent
       }
       throw err;
     }
-    return { success: true };
+    return;
   }
 
   async getDiscoverSeries(cursor?: string, limit = 20, category?: string) {

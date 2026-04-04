@@ -7,8 +7,9 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
-import { NotificationsService } from '../notifications/notifications.service';
-import { Prisma, Notification } from '@prisma/client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NOTIFICATION_REQUESTED, NotificationRequestedEvent } from '../../common/events/notification.events';
+import { Prisma } from '@prisma/client';
 import { QueueService } from '../../common/queue/queue.service';
 import { AnalyticsService } from '../../common/services/analytics.service';
 import Redis from 'ioredis';
@@ -19,7 +20,7 @@ export class FollowsService {
   constructor(
     private prisma: PrismaService,
     @Inject('REDIS') private redis: Redis,
-    private notifications: NotificationsService,
+    private eventEmitter: EventEmitter2,
     private queueService: QueueService,
     private analytics: AnalyticsService,
   ) {}
@@ -84,16 +85,10 @@ export class FollowsService {
           data: { senderId: currentUserId, receiverId: targetUserId },
         });
         // Notify target of incoming follow request
-        this.notifications.create({
+        this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
           userId: targetUserId, actorId: currentUserId,
           type: 'FOLLOW_REQUEST', followRequestId: request.id,
-        })
-          .then((notification: Notification | null) => {
-            if (notification) {
-              // Push delivery owned by NotificationsService.create() — no duplicate enqueue
-            }
-          })
-          .catch((err) => this.logger.error('Failed to create notification', err));
+        }));
         return { type: 'request', request };
       } catch (err) {
         if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
@@ -122,16 +117,10 @@ export class FollowsService {
         }),
       ]);
       // Notify target of new follower
-      this.notifications.create({
+      this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
         userId: targetUserId, actorId: currentUserId,
         type: 'FOLLOW',
-      })
-        .then((notification: Notification | null) => {
-          if (notification) {
-            // Push delivery owned by NotificationsService.create() — no duplicate enqueue
-          }
-        })
-        .catch((err) => this.logger.error('Failed to create notification', err));
+      }));
 
       this.analytics.track('user_followed', currentUserId, { targetUserId });
       this.analytics.increment('follows:daily');
@@ -146,12 +135,12 @@ export class FollowsService {
       this.prisma.user.findUnique({ where: { id: targetUserId }, select: { followersCount: true } })
         .then(u => {
           if (u && u.followersCount === 1) {
-            this.notifications.create({
+            this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
               userId: targetUserId, actorId: currentUserId,
               type: 'SYSTEM',
               title: '🎉 Your first follower!',
               body: 'Congratulations! Someone is interested in your content. Keep posting!',
-            }).catch((err) => this.logger.warn('First follower notification failed', err?.message));
+            }));
           }
         })
         .catch((err) => this.logger.debug('First follower check failed', err?.message));
@@ -410,16 +399,10 @@ export class FollowsService {
       throw err;
     }
     // Notify requester that their request was accepted
-    this.notifications.create({
+    this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
       userId: request.senderId, actorId: request.receiverId,
       type: 'FOLLOW_REQUEST_ACCEPTED',
-    })
-      .then((notification: Notification | null) => {
-        if (notification) {
-          // Push delivery owned by NotificationsService.create() — no duplicate enqueue
-        }
-      })
-      .catch((err) => this.logger.error('Failed to create notification', err));
+    }));
 
     return { message: 'Follow request accepted' };
   }

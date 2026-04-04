@@ -1,14 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../config/prisma.service';
-import { NotificationsService } from '../notifications/notifications.service';
+import { NOTIFICATION_REQUESTED } from '../../common/events/notification.events';
 import { FollowsService } from './follows.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('FollowsService', () => {
   let service: FollowsService;
   let prisma: any;
-  let notifications: any;
+  let eventEmitter: any;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -49,18 +50,12 @@ describe('FollowsService', () => {
             $executeRaw: jest.fn(),
           },
         },
-        {
-          provide: NotificationsService,
-          useValue: {
-            create: jest.fn().mockResolvedValue({ id: 'notif-1' }),
-          },
-        },
       ],
     }).compile();
 
     service = module.get<FollowsService>(FollowsService);
     prisma = module.get(PrismaService) as any;
-    notifications = module.get(NotificationsService) as any;
+    eventEmitter = module.get(EventEmitter2) as any;
   });
 
   describe('follow', () => {
@@ -84,7 +79,6 @@ describe('FollowsService', () => {
       };
       prisma.follow.create.mockResolvedValue(mockFollow);
       prisma.user.update.mockResolvedValue({}); // mock user update
-      notifications.create.mockResolvedValue(undefined);
       prisma.$transaction.mockImplementation(async (queries: any[]) => {
         const results = [];
         for (const query of queries) {
@@ -120,11 +114,14 @@ describe('FollowsService', () => {
         data: { followerId: currentUserId, followingId: targetUserId },
       });
       expect(prisma.user.update).toHaveBeenCalledTimes(2);
-      expect(notifications.create).toHaveBeenCalledWith({
-        userId: targetUserId,
-        actorId: currentUserId,
-        type: 'FOLLOW',
-      });
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        NOTIFICATION_REQUESTED,
+        expect.objectContaining({
+          userId: targetUserId,
+          actorId: currentUserId,
+          type: 'FOLLOW',
+        }),
+      );
       expect(result).toEqual({ type: 'follow', follow: mockFollow });
     });
 
@@ -192,19 +189,20 @@ describe('FollowsService', () => {
         createdAt: new Date(),
       };
       prisma.followRequest.create.mockResolvedValue(mockRequest);
-      notifications.create.mockResolvedValue(undefined);
-
       const result = await service.follow(currentUserId, targetUserId);
 
       expect(prisma.followRequest.create).toHaveBeenCalledWith({
         data: { senderId: currentUserId, receiverId: targetUserId },
       });
-      expect(notifications.create).toHaveBeenCalledWith({
-        userId: targetUserId,
-        actorId: currentUserId,
-        type: 'FOLLOW_REQUEST',
-        followRequestId: mockRequest.id,
-      });
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        NOTIFICATION_REQUESTED,
+        expect.objectContaining({
+          userId: targetUserId,
+          actorId: currentUserId,
+          type: 'FOLLOW_REQUEST',
+          followRequestId: mockRequest.id,
+        }),
+      );
       expect(result).toEqual({ type: 'request', request: mockRequest });
     });
   });

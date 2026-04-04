@@ -1,7 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException, NotImplementedException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../config/prisma.service';
 import { GiftsService } from './gifts.service';
+import { NOTIFICATION_REQUESTED } from '../../common/events/notification.events';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('GiftsService', () => {
@@ -195,10 +197,11 @@ describe('GiftsService', () => {
       prisma.coinBalance.upsert.mockResolvedValue({});
       prisma.coinTransaction.create.mockResolvedValue({});
 
-      const notifSvc = (service as any).notifications;
+      const emitter = (service as any).eventEmitter;
 
       await service.sendGift('sender', { receiverId: 'receiver', giftType: 'rose' });
-      expect(notifSvc.create).toHaveBeenCalledWith(
+      expect(emitter.emit).toHaveBeenCalledWith(
+        NOTIFICATION_REQUESTED,
         expect.objectContaining({
           body: expect.stringContaining('Someone'),
         }),

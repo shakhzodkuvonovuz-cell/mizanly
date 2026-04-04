@@ -1,9 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException, NotImplementedException, ConflictException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { IslamicService } from './islamic.service';
 import { PrismaService } from '../../config/prisma.service';
-import { NotificationsService } from '../notifications/notifications.service';
+import { NOTIFICATION_REQUESTED } from '../../common/events/notification.events';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
 
@@ -58,7 +59,7 @@ global.fetch = mockFetch as any;
 describe('IslamicService', () => {
   let service: IslamicService;
   let prisma: Record<string, any>;
-  let notificationsService: any;
+  let eventEmitter: any;
 
   beforeEach(async () => {
     prisma = {
@@ -97,7 +98,7 @@ describe('IslamicService', () => {
     }).compile();
 
     service = module.get<IslamicService>(IslamicService);
-    notificationsService = module.get(NotificationsService);
+    eventEmitter = module.get(EventEmitter2);
     jest.clearAllMocks();
     // Re-set fetch mock after clearAllMocks
     mockFetch.mockRejectedValue(new Error('Network disabled in tests'));
@@ -1366,8 +1367,9 @@ describe('IslamicService', () => {
 
       const result = await service.updateReadingPlan('user-1', 'plan-1', { isComplete: true } as any);
       expect(result.isComplete).toBe(true);
-      // Khatm celebration notification should be sent via NotificationsService
-      expect(notificationsService.create).toHaveBeenCalledWith(
+      // Khatm celebration notification should be emitted via EventEmitter2
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        NOTIFICATION_REQUESTED,
         expect.objectContaining({ title: expect.stringContaining('Khatm') }),
       );
     });

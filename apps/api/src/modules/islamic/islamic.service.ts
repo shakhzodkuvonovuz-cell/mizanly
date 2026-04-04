@@ -7,7 +7,8 @@ import { Prisma, QuranPlanType } from '@prisma/client';
 import Redis from 'ioredis';
 import { acquireCronLock } from '../../common/utils/cron-lock';
 import { PrismaService } from '../../config/prisma.service';
-import { NotificationsService } from '../notifications/notifications.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NOTIFICATION_REQUESTED, NotificationRequestedEvent } from '../../common/events/notification.events';
 import { QueueService } from '../../common/queue/queue.service';
 import { FastingType, HifzStatus, DailyTaskType, AdhanStyle, ContentStrictnessLevel, MadhhabType as MType } from '@prisma/client';
 import { UpdatePrayerNotificationDto } from './dto/prayer-notification.dto';
@@ -162,7 +163,7 @@ export class IslamicService {
     private readonly prisma: PrismaService,
     @Inject('REDIS') private readonly redis: Redis,
     private readonly config: ConfigService,
-    private readonly notificationsService: NotificationsService,
+    private readonly eventEmitter: EventEmitter2,
     private readonly queueService: QueueService,
   ) {}
 
@@ -624,13 +625,13 @@ export class IslamicService {
 
     // Finding #214: Khatm celebration — when plan is completed, send celebration notification
     if (dto.isComplete && !plan.isComplete) {
-      await this.notificationsService.create({
+      this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
         userId,
         actorId: null,
         type: 'SYSTEM',
         title: '🎉 Khatm al-Quran!',
         body: 'Masha Allah! You have completed reading the entire Quran. May Allah accept your effort and reward you abundantly.',
-      }).catch((err: unknown) => this.logger.warn('Failed to send Khatm notification', err instanceof Error ? err.message : err));
+      }));
     }
 
     return updated;
