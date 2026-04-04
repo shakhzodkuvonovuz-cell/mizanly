@@ -263,13 +263,12 @@ export class CommunityService {
     return rep;
   }
 
-  // DEFERRED (B09-#13): _reason is accepted but NOT stored — UserReputation model has no reason field.
-  // Requires Prisma schema change to add a reason/audit log field to UserReputation or a separate ReputationLog table.
-  async updateReputation(userId: string, delta: number, _reason: string) {
+  // B09-#13: reason is now stored on UserReputation for audit trail.
+  async updateReputation(userId: string, delta: number, reason: string) {
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const rep = await tx.userReputation.upsert({
         where: { userId },
-        create: { userId, score: Math.max(0, delta) },
+        create: { userId, score: Math.max(0, delta), reason },
         update: { score: { increment: delta } },
       });
       const score = Math.max(0, rep.score);
@@ -278,7 +277,7 @@ export class CommunityService {
       else if (score >= 500) tier = 'GUARDIAN' as ReputationTier;
       else if (score >= 200) tier = 'TRUSTED' as ReputationTier;
       else if (score >= 50) tier = 'MEMBER' as ReputationTier;
-      return tx.userReputation.update({ where: { userId }, data: { score, tier } });
+      return tx.userReputation.update({ where: { userId }, data: { score, tier, reason } });
     });
   }
 

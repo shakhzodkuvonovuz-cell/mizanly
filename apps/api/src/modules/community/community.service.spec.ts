@@ -97,6 +97,23 @@ describe('CommunityService', () => {
       const result = await service.updateReputation('user-1', 50, 'helpful_comment');
       expect(result.tier).toBe('TRUSTED');
     });
+
+    it('should store reason on upsert create and update', async () => {
+      prisma.userReputation.upsert.mockResolvedValue({ score: 10 });
+      prisma.userReputation.update.mockResolvedValue({ score: 10, tier: 'NEWCOMER', reason: 'first_contribution' });
+
+      await service.updateReputation('user-new', 10, 'first_contribution');
+      expect(prisma.userReputation.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          create: expect.objectContaining({ reason: 'first_contribution' }),
+        }),
+      );
+      expect(prisma.userReputation.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ reason: 'first_contribution' }),
+        }),
+      );
+    });
   });
 
   describe('checkKindness', () => {
@@ -365,7 +382,7 @@ describe('CommunityService', () => {
       const result = await service.updateReputation('u1', 30, 'helpful');
       expect(prisma.userReputation.update).toHaveBeenCalledWith({
         where: { userId: 'u1' },
-        data: { score: 30, tier: 'NEWCOMER' },
+        data: { score: 30, tier: 'NEWCOMER', reason: 'helpful' },
       });
       expect(result.tier).toBe('NEWCOMER');
     });
@@ -404,7 +421,7 @@ describe('CommunityService', () => {
       const result = await service.updateReputation('u1', -100, 'penalty');
       expect(prisma.userReputation.update).toHaveBeenCalledWith({
         where: { userId: 'u1' },
-        data: { score: 0, tier: 'NEWCOMER' },
+        data: { score: 0, tier: 'NEWCOMER', reason: 'penalty' },
       });
       expect(result.score).toBe(0);
     });

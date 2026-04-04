@@ -1259,7 +1259,7 @@ model Post {
 
   editedAt          DateTime?
   editHistory       Json?
-  hiddenFromUserIds String[]          @default([])
+  hiddenFromUserIds String[]          @default([]) // Dangling FK: stores User IDs without relation. Low-volume feature (manual hide per post). Join table deferred.
   expiresAt         DateTime?
   contentHash       String?           @db.VarChar(64)
   isRemoved         Boolean           @default(false)
@@ -4441,6 +4441,7 @@ model UserReputation {
   reportedCount Int            @default(0)
   warningCount  Int            @default(0)
   tier          ReputationTier @default(NEWCOMER)
+  reason        String?        @db.VarChar(200) // B09-#13: audit trail for reputation changes
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -4558,7 +4559,7 @@ model ChatFolder {
   icon            String? // emoji or icon name
   position        Int                  @default(0)
   filterType      ChatFolderFilterType @default(INCLUDE)
-  conversationIds String[] // array of conversation IDs
+  conversationIds String[] // Dangling FK: stores Conversation IDs without relation. Validated at service level (telegram-features.service.ts). Join table deferred — low-volume feature, cascade risk is low.
   includeGroups   Boolean              @default(false)
   includeChannels Boolean              @default(false)
   includeBots     Boolean              @default(false)
@@ -4703,7 +4704,7 @@ model StageSession {
   title         String             @db.VarChar(200)
   hostId        String
   status        StageSessionStatus @default(STAGE_SCHEDULED)
-  speakerIds    String[]
+  speakerIds    String[] // Dangling FK: stores User IDs without relation. Validated at service level (discord-features.service.ts). Join table deferred — ephemeral session data, cleaned up on session end.
   audienceCount Int                @default(0)
   scheduledAt   DateTime?
   startedAt     DateTime?
