@@ -23,6 +23,7 @@ export class ChecklistsService {
     if (userId) {
       const member = await this.prisma.conversationMember.findUnique({
         where: { conversationId_userId: { conversationId, userId } },
+        select: { userId: true },
       });
       if (!member) throw new ForbiddenException('Not a member of this conversation');
     }
@@ -35,7 +36,10 @@ export class ChecklistsService {
   }
 
   async addItem(userId: string, checklistId: string, text: string) {
-    const checklist = await this.prisma.messageChecklist.findUnique({ where: { id: checklistId } });
+    const checklist = await this.prisma.messageChecklist.findUnique({
+      where: { id: checklistId },
+      select: { id: true },
+    });
     if (!checklist) throw new NotFoundException('Checklist not found');
 
     return this.prisma.messageChecklistItem.create({
@@ -44,7 +48,10 @@ export class ChecklistsService {
   }
 
   async toggleItem(userId: string, itemId: string) {
-    const item = await this.prisma.messageChecklistItem.findUnique({ where: { id: itemId } });
+    const item = await this.prisma.messageChecklistItem.findUnique({
+      where: { id: itemId },
+      select: { id: true, isCompleted: true },
+    });
     if (!item) throw new NotFoundException('Item not found');
 
     return this.prisma.messageChecklistItem.update({
@@ -59,7 +66,7 @@ export class ChecklistsService {
   async deleteItem(userId: string, itemId: string) {
     const item = await this.prisma.messageChecklistItem.findUnique({
       where: { id: itemId },
-      include: { checklist: true },
+      select: { id: true },
     });
     if (!item) throw new NotFoundException('Item not found');
 
@@ -68,7 +75,10 @@ export class ChecklistsService {
   }
 
   async deleteChecklist(userId: string, checklistId: string) {
-    const checklist = await this.prisma.messageChecklist.findUnique({ where: { id: checklistId } });
+    const checklist = await this.prisma.messageChecklist.findUnique({
+      where: { id: checklistId },
+      select: { id: true, createdById: true },
+    });
     if (!checklist) throw new NotFoundException('Checklist not found');
     if (checklist.createdById !== userId) throw new ForbiddenException('Only the creator can delete this checklist');
 

@@ -90,16 +90,14 @@ export class ReelTemplatesService {
     return template;
   }
 
-  async markUsed(id: string, userId: string) {
+  // A03-#13: userId parameter reserved for future per-user usage tracking.
+  // Auth guard already ensures userId is present — removed redundant check.
+  async markUsed(id: string, _userId: string) {
     const template = await this.prisma.reelTemplate.findUnique({
       where: { id },
     });
     if (!template) {
       throw new NotFoundException('Reel template not found');
-    }
-
-    if (!userId) {
-      throw new BadRequestException('User authentication required to mark template as used');
     }
 
     return this.prisma.reelTemplate.update({

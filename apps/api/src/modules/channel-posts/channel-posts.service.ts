@@ -123,12 +123,13 @@ export class ChannelPostsService {
   }
 
   async like(postId: string, userId: string) {
-    const post = await this.prisma.channelPost.findUnique({ where: { id: postId } });
+    const post = await this.prisma.channelPost.findUnique({ where: { id: postId }, select: { id: true } });
     if (!post) throw new NotFoundException('Community post not found');
 
     // Dedup: check if already liked via ChannelPostLike junction table
     const existing = await this.prisma.channelPostLike.findUnique({
       where: { userId_postId: { userId, postId } },
+      select: { userId: true },
     });
     if (existing) throw new ConflictException('Already liked');
 
@@ -140,12 +141,13 @@ export class ChannelPostsService {
   }
 
   async unlike(postId: string, userId: string) {
-    const post = await this.prisma.channelPost.findUnique({ where: { id: postId } });
+    const post = await this.prisma.channelPost.findUnique({ where: { id: postId }, select: { id: true } });
     if (!post) throw new NotFoundException('Community post not found');
 
     // Check if the user has actually liked the post
     const existing = await this.prisma.channelPostLike.findUnique({
       where: { userId_postId: { userId, postId } },
+      select: { userId: true },
     });
     if (!existing) throw new NotFoundException('Like not found');
 

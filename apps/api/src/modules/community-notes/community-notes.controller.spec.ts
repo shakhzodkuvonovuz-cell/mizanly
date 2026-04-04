@@ -4,6 +4,7 @@ import { CommunityNotesService } from './community-notes.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { globalMockProviders } from '../../common/test/mock-providers';
+import { EmbeddingContentType, NoteRating } from '@prisma/client';
 
 describe('CommunityNotesController', () => {
   let controller: CommunityNotesController;
@@ -37,14 +38,23 @@ describe('CommunityNotesController', () => {
   afterEach(() => jest.clearAllMocks());
 
   describe('createNote', () => {
-    it('should call communityNotesService.createNote with all params', async () => {
-      const dto = { contentType: 'post', contentId: 'post-1', note: 'This is misleading' };
+    it('should call communityNotesService.createNote with typed enum params', async () => {
+      const dto = { contentType: EmbeddingContentType.POST, contentId: 'post-1', note: 'This is misleading' };
       service.createNote.mockResolvedValue({ id: 'note-1', ...dto } as any);
 
       const result = await controller.createNote(userId, dto as any);
 
-      expect(service.createNote).toHaveBeenCalledWith(userId, 'post', 'post-1', 'This is misleading');
+      expect(service.createNote).toHaveBeenCalledWith(userId, EmbeddingContentType.POST, 'post-1', 'This is misleading');
       expect(result).toEqual(expect.objectContaining({ id: 'note-1' }));
+    });
+
+    it('should pass VIDEO content type', async () => {
+      const dto = { contentType: EmbeddingContentType.VIDEO, contentId: 'video-1', note: 'Missing context' };
+      service.createNote.mockResolvedValue({ id: 'note-2', ...dto } as any);
+
+      await controller.createNote(userId, dto as any);
+
+      expect(service.createNote).toHaveBeenCalledWith(userId, EmbeddingContentType.VIDEO, 'video-1', 'Missing context');
     });
   });
 
@@ -53,9 +63,9 @@ describe('CommunityNotesController', () => {
       const mockNotes = [{ id: 'note-1', note: 'Context needed' }];
       service.getNotesForContent.mockResolvedValue(mockNotes as any);
 
-      const result = await controller.getNotesForContent('post', 'post-1');
+      const result = await controller.getNotesForContent('POST', 'post-1');
 
-      expect(service.getNotesForContent).toHaveBeenCalledWith('post', 'post-1');
+      expect(service.getNotesForContent).toHaveBeenCalledWith('POST', 'post-1');
       expect(result).toEqual(mockNotes);
     });
   });
@@ -64,20 +74,20 @@ describe('CommunityNotesController', () => {
     it('should call communityNotesService.getHelpfulNotes with contentType and contentId', async () => {
       service.getHelpfulNotes.mockResolvedValue([{ id: 'note-1', status: 'HELPFUL' }] as any);
 
-      const result = await controller.getHelpfulNotes('thread', 'thread-1');
+      const result = await controller.getHelpfulNotes('THREAD', 'thread-1');
 
-      expect(service.getHelpfulNotes).toHaveBeenCalledWith('thread', 'thread-1');
+      expect(service.getHelpfulNotes).toHaveBeenCalledWith('THREAD', 'thread-1');
       expect(result).toHaveLength(1);
     });
   });
 
   describe('rateNote', () => {
-    it('should call communityNotesService.rateNote with userId, noteId, and rating', async () => {
+    it('should call communityNotesService.rateNote with typed enum rating', async () => {
       service.rateNote.mockResolvedValue({ rated: true } as any);
 
-      const result = await controller.rateNote(userId, 'note-1', { rating: 'helpful' } as any);
+      const result = await controller.rateNote(userId, 'note-1', { rating: NoteRating.NOTE_HELPFUL } as any);
 
-      expect(service.rateNote).toHaveBeenCalledWith(userId, 'note-1', 'helpful');
+      expect(service.rateNote).toHaveBeenCalledWith(userId, 'note-1', NoteRating.NOTE_HELPFUL);
       expect(result).toEqual({ rated: true });
     });
   });

@@ -249,11 +249,15 @@ Respond as JSON: {"safe": boolean, "flags": ["hate"|"islamophobia"|"sectarian"|"
         contentOwnerId = item.userId;
       }
 
-      // ModerationLog has targetPostId, targetCommentId, targetMessageId.
-      // Reels and threads don't have dedicated FK columns — store in reason/explanation instead.
-      const targetField = contentType === 'post' ? 'targetPostId'
-        : contentType === 'comment' ? 'targetCommentId'
-        : null; // reel/thread have no FK column in ModerationLog
+      // X08-#8: All content types now have dedicated FK columns in ModerationLog
+      const targetFieldMap: Record<string, string> = {
+        post: 'targetPostId',
+        comment: 'targetCommentId',
+        thread: 'targetThreadId',
+        reel: 'targetReelId',
+        video: 'targetVideoId',
+      };
+      const targetField = targetFieldMap[contentType] ?? null;
 
       await tx.moderationLog.create({
         data: {
@@ -261,8 +265,9 @@ Respond as JSON: {"safe": boolean, "flags": ["hate"|"islamophobia"|"sectarian"|"
           targetUserId: contentOwnerId,
           ...(targetField ? { [targetField]: contentId } : {}),
           action: 'CONTENT_REMOVED',
-          reason: targetField ? reason : `[${contentType}:${contentId}] ${reason}`,
+          reason,
           explanation: `[SYSTEM AUTO-REMOVAL] ${flags.join(', ')}`,
+          isAutoFlagged: true,
         },
       });
 

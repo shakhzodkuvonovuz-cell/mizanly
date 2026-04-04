@@ -328,7 +328,10 @@ export class CommerceService {
 
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
-      include: { product: { select: { id: true, sellerId: true } } },
+      select: {
+        id: true, status: true, buyerId: true, productId: true, quantity: true,
+        product: { select: { id: true, sellerId: true } },
+      },
     });
     if (!order) throw new NotFoundException();
     if (order.product.sellerId !== sellerId) throw new ForbiddenException();

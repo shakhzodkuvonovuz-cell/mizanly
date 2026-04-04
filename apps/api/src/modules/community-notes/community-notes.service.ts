@@ -6,46 +6,36 @@ import { PrismaService } from '../../config/prisma.service';
 export class CommunityNotesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createNote(authorId: string, contentType: string, contentId: string, note: string) {
-    const validTypes = ['post', 'thread', 'reel'];
-    if (!validTypes.includes(contentType)) {
-      throw new BadRequestException(`contentType must be one of: ${validTypes.join(', ')}`);
-    }
-
+  async createNote(authorId: string, contentType: EmbeddingContentType, contentId: string, note: string) {
     // Verify content exists and is not removed
     let contentExists = false;
-    if (contentType === 'post') {
+    if (contentType === EmbeddingContentType.POST) {
       contentExists = !!(await this.prisma.post.findFirst({ where: { id: contentId, isRemoved: false }, select: { id: true } }));
-    } else if (contentType === 'thread') {
+    } else if (contentType === EmbeddingContentType.THREAD) {
       contentExists = !!(await this.prisma.thread.findFirst({ where: { id: contentId, isRemoved: false }, select: { id: true } }));
-    } else if (contentType === 'reel') {
+    } else if (contentType === EmbeddingContentType.REEL) {
       contentExists = !!(await this.prisma.reel.findFirst({ where: { id: contentId, isRemoved: false }, select: { id: true } }));
+    } else if (contentType === EmbeddingContentType.VIDEO) {
+      contentExists = !!(await this.prisma.video.findFirst({ where: { id: contentId, isRemoved: false }, select: { id: true } }));
     }
     if (!contentExists) throw new NotFoundException('Content not found');
 
     return this.prisma.communityNote.create({
-      data: { contentType: contentType as EmbeddingContentType, contentId, authorId, note },
+      data: { contentType, contentId, authorId, note },
     });
   }
 
   async getNotesForContent(contentType: string, contentId: string) {
-    const validTypes = ['post', 'thread', 'reel'];
-    if (!validTypes.includes(contentType)) {
-      throw new BadRequestException(`contentType must be one of: ${validTypes.join(', ')}`);
-    }
+    // Validate and convert contentType from URL param to enum
+    const enumType = this.parseContentType(contentType);
     return this.prisma.communityNote.findMany({
-      where: { contentType: contentType as EmbeddingContentType, contentId, status: { in: [CommunityNoteStatus.HELPFUL, CommunityNoteStatus.PROPOSED] } },
+      where: { contentType: enumType, contentId, status: { in: [CommunityNoteStatus.HELPFUL, CommunityNoteStatus.PROPOSED] } },
       orderBy: { helpfulVotes: 'desc' },
       take: 10,
     });
   }
 
-  async rateNote(userId: string, noteId: string, rating: string) {
-    const validRatings = ['NOTE_HELPFUL', 'NOTE_SOMEWHAT_HELPFUL', 'NOTE_NOT_HELPFUL'];
-    if (!validRatings.includes(rating)) {
-      throw new BadRequestException(`Rating must be one of: ${validRatings.join(', ')}`);
-    }
-
+  async rateNote(userId: string, noteId: string, rating: NoteRating) {
     const note = await this.prisma.communityNote.findUnique({ where: { id: noteId } });
     if (!note) throw new NotFoundException('Note not found');
 
@@ -59,13 +49,13 @@ export class CommunityNotesService {
     if (existing) throw new ConflictException('Already rated this note');
 
     // Use $transaction to atomically create rating + update vote counts + auto-promote
-    const updated = await this.prisma.$transaction(async (tx) => {
+    await this.prisma.$transaction(async (tx) => {
       await tx.communityNoteRating.create({
-        data: { noteId, userId, rating: rating as NoteRating },
+        data: { noteId, userId, rating },
       });
 
       // Only fully 'helpful' ratings count toward helpfulVotes; 'somewhat_helpful' is neutral
-      const incrementField = rating === 'NOTE_HELPFUL' ? 'helpfulVotes' : rating === 'NOTE_NOT_HELPFUL' ? 'notHelpfulVotes' : null;
+      const incrementField = rating === NoteRating.NOTE_HELPFUL ? 'helpfulVotes' : rating === NoteRating.NOTE_NOT_HELPFUL ? 'notHelpfulVotes' : null;
       const noteData = incrementField
         ? await tx.communityNote.update({
             where: { id: noteId },
@@ -93,14 +83,23 @@ export class CommunityNotesService {
   }
 
   async getHelpfulNotes(contentType: string, contentId: string) {
-    const validTypes = ['post', 'thread', 'reel'];
-    if (!validTypes.includes(contentType)) {
-      throw new BadRequestException(`contentType must be one of: ${validTypes.join(', ')}`);
-    }
+    const enumType = this.parseContentType(contentType);
     return this.prisma.communityNote.findMany({
-      where: { contentType: contentType as EmbeddingContentType, contentId, status: CommunityNoteStatus.HELPFUL },
+      where: { contentType: enumType, contentId, status: CommunityNoteStatus.HELPFUL },
       orderBy: { helpfulVotes: 'desc' },
       take: 3,
     });
+  }
+
+  /**
+   * Parse URL path param to EmbeddingContentType enum.
+   * Accepts both lowercase (URL-friendly) and uppercase (enum) forms.
+   */
+  private parseContentType(raw: string): EmbeddingContentType {
+    const upper = raw.toUpperCase();
+    if (upper in EmbeddingContentType) {
+      return upper as EmbeddingContentType;
+    }
+    throw new BadRequestException(`contentType must be one of: ${Object.values(EmbeddingContentType).join(', ')}`);
   }
 }
