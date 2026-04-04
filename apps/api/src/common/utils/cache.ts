@@ -34,12 +34,14 @@ export async function cacheAside<T>(
     }
   }
 
-  // 3. Another caller has the lock — wait briefly then check cache again
-  await new Promise(resolve => setTimeout(resolve, 100));
-  const retryCache = await redis.get(key);
-  if (retryCache) return JSON.parse(retryCache) as T;
+  // 3. Another caller has the lock — wait and retry (3 attempts, 100ms apart)
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const retryCache = await redis.get(key);
+    if (retryCache) return JSON.parse(retryCache) as T;
+  }
 
-  // 4. Still no cache (lock holder might have failed) — fetch directly
+  // 4. Still no cache after 3 retries (lock holder failed) — fetch directly
   return fetcher();
 }
 

@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { NotFoundException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { PollsService } from './polls.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
-describe('PollsService — edge cases', () => {
+describe('PollsService -- edge cases', () => {
   let service: PollsService;
   let prisma: any;
   const userId = 'user-edge-1';
@@ -55,18 +55,18 @@ describe('PollsService — edge cases', () => {
   it('should return poll with Arabic question text', async () => {
     const arabicPoll = {
       id: 'poll-1',
-      question: 'هل تصوم يوم الاثنين؟',
+      question: '\u0647\u0644 \u062A\u0635\u0648\u0645 \u064A\u0648\u0645 \u0627\u0644\u0627\u062B\u0646\u064A\u0646\u061F',
       endsAt: new Date(Date.now() + 86400000),
       totalVotes: 0,
       allowMultiple: false,
       options: [
-        { id: 'opt-1', text: 'نعم', position: 0, votesCount: 0, _count: { votes: 0 } },
-        { id: 'opt-2', text: 'لا', position: 1, votesCount: 0, _count: { votes: 0 } },
+        { id: 'opt-1', text: '\u0646\u0639\u0645', position: 0, votesCount: 0, _count: { votes: 0 } },
+        { id: 'opt-2', text: '\u0644\u0627', position: 1, votesCount: 0, _count: { votes: 0 } },
       ],
     };
     prisma.poll.findUnique.mockResolvedValue(arabicPoll);
     const result = await service.getPoll('poll-1');
-    expect(result.question).toBe('هل تصوم يوم الاثنين؟');
+    expect(result.question).toBe('\u0647\u0644 \u062A\u0635\u0648\u0645 \u064A\u0648\u0645 \u0627\u0644\u0627\u062B\u0646\u064A\u0646\u061F');
   });
 
   it('should throw BadRequestException when retracting non-existent vote', async () => {
@@ -79,13 +79,24 @@ describe('PollsService — edge cases', () => {
       .rejects.toThrow(BadRequestException);
   });
 
-  it('should return voters list (empty for 0 votes)', async () => {
+  it('should return voters list (empty) when called by poll creator', async () => {
     prisma.poll.findUnique.mockResolvedValue({
       id: 'poll-1',
       options: [{ id: 'opt-1', text: 'Yes', votesCount: 0 }],
+      thread: { userId },
     });
     prisma.pollVote.findMany.mockResolvedValue([]);
-    const result = await service.getVoters('poll-1', 'opt-1');
+    const result = await service.getVoters('poll-1', 'opt-1', userId);
     expect(result.data).toEqual([]);
+  });
+
+  it('should throw ForbiddenException when non-creator calls getVoters', async () => {
+    prisma.poll.findUnique.mockResolvedValue({
+      id: 'poll-1',
+      options: [{ id: 'opt-1', text: 'Yes', votesCount: 0 }],
+      thread: { userId: 'other-user' },
+    });
+    await expect(service.getVoters('poll-1', 'opt-1', userId))
+      .rejects.toThrow(ForbiddenException);
   });
 });

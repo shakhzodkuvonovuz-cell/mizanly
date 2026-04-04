@@ -618,7 +618,7 @@ export default function BakraScreen() {
     } : undefined,
   });
 
-  const reels: Reel[] = feedQuery.data?.pages.flatMap((p) => p?.data ?? []) ?? [];
+  const reels: Reel[] = useMemo(() => feedQuery.data?.pages.flatMap((p) => p?.data ?? []) ?? [], [feedQuery.data]);
   useEffect(() => { reelsRef.current = reels; }, [reels]);
 
   const onRefresh = useCallback(async () => {

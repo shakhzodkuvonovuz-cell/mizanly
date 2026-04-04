@@ -212,19 +212,28 @@ export class PollsService {
     return;
   }
 
-  async getVoters(pollId: string, optionId: string, cursor?: string) {
-    // Validate poll and option exist
+  async getVoters(pollId: string, optionId: string, userId: string, cursor?: string) {
+    // Validate poll and option exist, include thread to check ownership
     const poll = await this.prisma.poll.findUnique({
       where: { id: pollId },
       include: {
         options: {
           where: { id: optionId },
         },
+        thread: {
+          select: { userId: true },
+        },
       },
     });
 
     if (!poll || poll.options.length === 0) {
       throw new NotFoundException('Poll or option not found');
+    }
+
+    // Privacy: only the poll creator can see individual voter identities.
+    // All other users see aggregated vote counts (via getPoll) but not WHO voted.
+    if (poll.thread?.userId !== userId) {
+      throw new ForbiddenException('Only the poll creator can view individual voters');
     }
 
     const limit = 20;

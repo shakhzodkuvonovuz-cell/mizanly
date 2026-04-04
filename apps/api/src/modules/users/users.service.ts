@@ -1135,44 +1135,81 @@ export class UsersService {
   }
 
   /**
-   * Contact sync — matches phone numbers against registered users.
-   * Phone numbers are normalized and hashed (SHA-256) server-side before comparison
-   * to avoid storing raw contact data in memory longer than necessary.
-   * The actual DB query still uses normalized numbers since phone is stored in plaintext.
+   * Contact sync -- matches phone numbers against registered users.
+   * Mobile sends SHA-256 hashes of phone numbers (privacy-preserving).
+   * Server hashes stored phone numbers and compares against client hashes.
+   *
+   * Batched: processes DB users in pages of 1000 to avoid O(N) memory spike.
+   * FUTURE: Add a phoneHash indexed column to eliminate full-table scan entirely.
    */
   async findByPhoneNumbers(userId: string, phoneHashes: string[]) {
-    // Mobile sends SHA-256 hashes of phone numbers (privacy-preserving).
-    // We hash stored phone numbers server-side and compare against client hashes.
     if (phoneHashes.length === 0) return [];
 
-    const uniqueHashes = [...new Set(phoneHashes)];
+    const uniqueHashes = new Set(phoneHashes);
+    const remainingHashes = new Set(uniqueHashes);
+    const matchedUsers: Array<{
+      id: string;
+      username: string;
+      displayName: string | null;
+      avatarUrl: string | null;
+      isVerified: boolean;
+    }> = [];
 
-    // Fetch all users with non-null phone (limited to reasonable set)
-    const usersWithPhone = await this.prisma.user.findMany({
-      where: { phone: { not: null }, id: { not: userId }, isDeleted: false, isBanned: false, isDeactivated: false },
-      select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true, phone: true },
-      take: 10000,
-    });
+    const BATCH_SIZE = 1000;
+    let cursor: string | undefined;
 
-    // Hash each user's phone server-side and match against client hashes
-    const crypto = await import('crypto');
-    const hashSet = new Set(uniqueHashes);
-    const users = usersWithPhone.filter(u => {
-      if (!u.phone) return false;
-      const normalized = u.phone.replace(/\D/g, '');
-      const hash = crypto.createHash('sha256').update(normalized).digest('hex');
-      return hashSet.has(hash);
-    }).map(({ phone: _phone, ...rest }) => rest); // strip phone from response
+    // Batch through DB users to avoid loading 10K+ records at once
+    while (remainingHashes.size > 0) {
+      const batch = await this.prisma.user.findMany({
+        where: {
+          phone: { not: null },
+          id: { not: userId },
+          isDeleted: false,
+          isBanned: false,
+          isDeactivated: false,
+        },
+        select: {
+          id: true,
+          username: true,
+          displayName: true,
+          avatarUrl: true,
+          isVerified: true,
+          phone: true,
+        },
+        take: BATCH_SIZE + 1,
+        orderBy: { id: 'asc' },
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      });
 
-    if (users.length === 0) return [];
+      if (batch.length === 0) break;
+
+      const hasMore = batch.length > BATCH_SIZE;
+      const page = hasMore ? batch.slice(0, BATCH_SIZE) : batch;
+
+      for (const u of page) {
+        if (!u.phone) continue;
+        const normalized = u.phone.replace(/\D/g, '');
+        const hash = createHash('sha256').update(normalized).digest('hex');
+        if (remainingHashes.has(hash)) {
+          remainingHashes.delete(hash);
+          const { phone: _phone, ...rest } = u;
+          matchedUsers.push(rest);
+        }
+      }
+
+      if (!hasMore) break;
+      cursor = page[page.length - 1].id;
+    }
+
+    if (matchedUsers.length === 0) return [];
 
     // Check follows and blocks in parallel
-    const matchedIds = users.map(u => u.id);
+    const matchedIds = matchedUsers.map(u => u.id);
     const [follows, blocks] = await Promise.all([
       this.prisma.follow.findMany({
         where: { followerId: userId, followingId: { in: matchedIds } },
         select: { followingId: true },
-        take: matchedIds.length, // Cap at matched contacts count (already bounded)
+        take: matchedIds.length,
       }),
       this.prisma.block.findMany({
         where: {
@@ -1182,7 +1219,7 @@ export class UsersService {
           ],
         },
         select: { blockerId: true, blockedId: true },
-        take: matchedIds.length * 2, // Both directions
+        take: matchedIds.length * 2,
       }),
     ]);
 
@@ -1193,8 +1230,7 @@ export class UsersService {
       else blockedSet.add(b.blockerId);
     }
 
-    // Filter out blocked users from results
-    return users
+    return matchedUsers
       .filter(u => !blockedSet.has(u.id))
       .map(u => ({ ...u, isFollowing: followedSet.has(u.id) }));
   }

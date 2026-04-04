@@ -229,11 +229,14 @@ export default function MajlisScreen() {
     enabled: hasScrolledDown && !newPostsAvailable,
   });
 
-  const allThreads: Thread[] = feedQuery.data?.pages.flatMap((p) => p?.data ?? []) ?? [];
+  const allThreads: Thread[] = useMemo(() => feedQuery.data?.pages.flatMap((p) => p?.data ?? []) ?? [], [feedQuery.data]);
   // Video tab: client-side safety filter (API should already return video-only when type='video')
-  const threads = feedType === 'video'
-    ? allThreads.filter((t) => t.mediaTypes?.some((mt: string) => mt.startsWith('video')))
-    : allThreads;
+  const threads = useMemo(
+    () => feedType === 'video'
+      ? allThreads.filter((t) => t.mediaTypes?.some((mt: string) => mt.startsWith('video')))
+      : allThreads,
+    [allThreads, feedType],
+  );
 
   // Perform deferred scroll when feed data is available (after tab switch)
   useEffect(() => {

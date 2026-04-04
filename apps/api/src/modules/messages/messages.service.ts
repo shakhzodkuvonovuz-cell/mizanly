@@ -1807,12 +1807,16 @@ export class MessagesService {
 
   // Finding #364: Group topics — Telegram-style discussion threads within groups
   async createGroupTopic(conversationId: string, userId: string, name: string, iconEmoji?: string) {
-    const conv = await this.prisma.conversation.findUnique({ where: { id: conversationId } });
+    const conv = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      select: { id: true, isGroup: true, createdById: true },
+    });
     if (!conv || !conv.isGroup) throw new NotFoundException('Group not found');
 
     // Only admin or creator can create topics
     const member = await this.prisma.conversationMember.findUnique({
       where: { conversationId_userId: { conversationId, userId } },
+      select: { role: true },
     });
     if (!member) throw new ForbiddenException('Not a member');
     if (member.role !== 'admin' && member.role !== 'owner' && conv.createdById !== userId) {
@@ -1870,11 +1874,15 @@ export class MessagesService {
 
   // Finding #378: Content expiry — auto-delete messages after N days
   async setMessageExpiry(conversationId: string, userId: string, expiryDays: number) {
-    const conv = await this.prisma.conversation.findUnique({ where: { id: conversationId } });
+    const conv = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      select: { id: true, isGroup: true, createdById: true },
+    });
     if (!conv) throw new NotFoundException('Conversation not found');
 
     const member = await this.prisma.conversationMember.findUnique({
       where: { conversationId_userId: { conversationId, userId } },
+      select: { role: true },
     });
     if (!member) throw new ForbiddenException('Not a member');
     if (conv.isGroup && member.role !== 'admin' && member.role !== 'owner' && conv.createdById !== userId) {

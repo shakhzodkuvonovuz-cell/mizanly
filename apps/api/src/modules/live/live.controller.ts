@@ -31,6 +31,10 @@ class CreateGroupCallDto {
   @IsArray() @IsString({ each: true }) @ArrayMaxSize(7) participantIds: string[];
 }
 
+class SendChatDto {
+  @IsString() @MaxLength(500) message: string;
+}
+
 @ApiTags('Live Sessions')
 @Throttle({ default: { limit: 30, ttl: 60000 } })
 @Controller('live')
@@ -169,6 +173,25 @@ export class LiveController {
   @ApiOperation({ summary: 'Set recording URL' })
   async setRecording(@Param('id') id: string, @CurrentUser('id') userId: string, @Body() dto: SetRecordingDto) {
     return this.live.updateRecording(id, userId, dto.recordingUrl);
+  }
+
+  // ── Live Chat (ephemeral, Redis-backed) ────────────
+
+  @Post(':id/chat')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Send a chat message in live session' })
+  async sendChat(@Param('id') id: string, @CurrentUser('id') userId: string, @Body() dto: SendChatDto) {
+    return this.live.sendChat(id, userId, dto.message);
+  }
+
+  @Get(':id/chat')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get recent chat messages' })
+  async getChatMessages(@Param('id') id: string, @Query('limit') limit?: string) {
+    return this.live.getChatMessages(id, limit ? Math.min(parseInt(limit, 10) || 50, 100) : 50);
   }
 
   // ── Multi-guest endpoints ──────────────────────────

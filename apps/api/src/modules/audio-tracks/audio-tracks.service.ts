@@ -51,8 +51,8 @@ export class AudioTracksService {
   }
 
   async getReelsUsingTrack(trackId: string, cursor?: string, limit = 20) {
-    // Verify track exists
-    const track = await this.prisma.audioTrack.findUnique({ where: { id: trackId } });
+    // Verify track exists (select only id — existence check)
+    const track = await this.prisma.audioTrack.findUnique({ where: { id: trackId }, select: { id: true } });
     if (!track) throw new NotFoundException('Audio track not found');
 
     const where: Prisma.ReelWhereInput = {

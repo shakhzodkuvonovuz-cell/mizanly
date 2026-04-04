@@ -1,4 +1,4 @@
-import { Module, Global, Logger } from '@nestjs/common';
+import { Module, Global, Logger, Inject, OnModuleDestroy } from '@nestjs/common';
 import Redis from 'ioredis';
 
 const redisLogger = new Logger('Redis');
@@ -93,26 +93,22 @@ const REDIS_PROVIDER = {
   },
 };
 
-const REDIS_SHUTDOWN = {
-  provide: 'REDIS_SHUTDOWN',
-  useFactory: (redis: Redis) => ({
-    onModuleDestroy: async () => {
-      try {
-        if (redis.status === 'ready') {
-          await redis.quit();
-          redisLogger.log('Redis connection closed gracefully');
-        }
-      } catch {
-        // Already disconnected
-      }
-    },
-  }),
-  inject: ['REDIS'],
-};
-
 @Global()
 @Module({
-  providers: [REDIS_PROVIDER, REDIS_SHUTDOWN],
+  providers: [REDIS_PROVIDER],
   exports: [REDIS_PROVIDER],
 })
-export class RedisModule {}
+export class RedisModule implements OnModuleDestroy {
+  constructor(@Inject('REDIS') private readonly redis: Redis) {}
+
+  async onModuleDestroy(): Promise<void> {
+    try {
+      if (this.redis.status === 'ready') {
+        await this.redis.quit();
+        redisLogger.log('Redis connection closed gracefully');
+      }
+    } catch {
+      // Already disconnected
+    }
+  }
+}

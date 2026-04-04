@@ -2423,6 +2423,8 @@ model Hashtag {
 
   // @@index([name]) — redundant: name is @unique
   @@index([postsCount(sort: Desc)])
+  @@index([reelsCount(sort: Desc)]) // J02-L33: trending hashtags by reel count
+  @@index([threadsCount(sort: Desc)]) // J02-L33: trending hashtags by thread count
   @@map("hashtags")
 }
 
@@ -2986,6 +2988,7 @@ model ChannelPost {
   likes         ChannelPostLike[]
 
   @@index([channelId, createdAt(sort: Desc)])
+  @@index([channelId, isPinned]) // J02-L31: pinned channel posts lookup
   @@index([userId])
   @@map("channel_posts")
 }
@@ -3167,6 +3170,7 @@ model AudioRoom {
 
   @@index([hostId])
   @@index([status])
+  @@index([status, scheduledAt]) // J02-L32: upcoming audio rooms lookup
   @@map("audio_rooms")
 }
 
@@ -3780,6 +3784,7 @@ model PremiereReminder {
   premiere   VideoPremiere @relation(fields: [premiereId], references: [id], onDelete: Cascade)
 
   @@id([premiereId, userId])
+  @@index([userId]) // J02-L37: user's premiere reminders lookup
   @@map("premiere_reminders")
 }
 
@@ -3836,6 +3841,7 @@ model PlaylistCollaborator {
   user       User               @relation("PlaylistCollaborators", fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([playlistId, userId])
+  @@index([userId]) // J02-L38: user's playlist collaborations lookup
   @@map("playlist_collaborators")
 }
 
@@ -4008,6 +4014,7 @@ model ChallengeParticipant {
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([challengeId, userId])
+  @@index([userId]) // J02-L39: user's challenge participations lookup
   @@map("challenge_participants")
 }
 
@@ -4664,6 +4671,7 @@ model CustomEmojiPack {
   creator      User          @relation("EmojiPackCreator", fields: [creatorId], references: [id], onDelete: Cascade)
   emojis       CustomEmoji[]
 
+  @@index([creatorId]) // J02-L35: user's emoji packs lookup
   @@map("custom_emoji_packs")
 }
 
@@ -4920,6 +4928,7 @@ model MosqueMembership {
   createdAt DateTime         @default(now())
 
   @@unique([mosqueId, userId])
+  @@index([userId]) // J02-L36: user's mosque memberships lookup
   @@map("mosque_memberships")
 }
 
@@ -5097,6 +5106,7 @@ model MessageChecklistItem {
   completedBy String?
   createdAt   DateTime         @default(now())
 
+  @@index([checklistId]) // J02-L34: checklist items by checklist
   @@map("message_checklist_items")
 }
 

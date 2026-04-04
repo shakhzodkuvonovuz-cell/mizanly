@@ -52,10 +52,10 @@ export class PersonalizedFeedService {
 
   private async getSession(userId: string): Promise<SessionData | null> {
     const key = this.sessionKey(userId);
-    const data = await this.redis.hgetall(key);
-    if (!data || !Object.keys(data).length) return null;
+    const data = await this.redis.get(key);
+    if (!data) return null;
     try {
-      return JSON.parse(data.json) as SessionData;
+      return JSON.parse(data) as SessionData;
     } catch {
       return null;
     }
@@ -63,8 +63,7 @@ export class PersonalizedFeedService {
 
   private async saveSession(userId: string, session: SessionData): Promise<void> {
     const key = this.sessionKey(userId);
-    await this.redis.hset(key, 'json', JSON.stringify(session));
-    await this.redis.expire(key, PersonalizedFeedService.SESSION_TTL);
+    await this.redis.setex(key, PersonalizedFeedService.SESSION_TTL, JSON.stringify(session));
   }
 
   /** Get user IDs to exclude from feeds (blocked in both directions + muted + restricted).

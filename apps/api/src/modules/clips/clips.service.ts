@@ -12,7 +12,10 @@ export class ClipsService {
   constructor(private prisma: PrismaService) {}
 
   async create(userId: string, videoId: string, dto: CreateClipDto) {
-    const video = await this.prisma.video.findUnique({ where: { id: videoId } });
+    const video = await this.prisma.video.findUnique({
+      where: { id: videoId },
+      select: { id: true, status: true, duration: true, title: true, hlsUrl: true, thumbnailUrl: true },
+    });
     if (!video) throw new NotFoundException('Video not found');
     if (video.status !== 'PUBLISHED') throw new ForbiddenException('Video not available');
     if (dto.endTime <= dto.startTime) throw new BadRequestException('End time must be after start time');
@@ -23,6 +26,9 @@ export class ClipsService {
 
     const duration = dto.endTime - dto.startTime;
 
+    // clipUrl: Clips reference the source video with time range metadata.
+    // Actual playback is handled client-side via source video URL + startTime/endTime.
+    // Server-side clip extraction (ffmpeg) would run asynchronously via a queue processor.
     return this.prisma.videoClip.create({
       data: {
         userId,
@@ -31,7 +37,7 @@ export class ClipsService {
         startTime: dto.startTime,
         endTime: dto.endTime,
         duration,
-        clipUrl: video.hlsUrl ? `${video.hlsUrl}?start=${dto.startTime}&end=${dto.endTime}` : null,
+        clipUrl: null, // Set by async clip processor when server-side extraction is implemented
         thumbnailUrl: video.thumbnailUrl,
       },
       include: {
@@ -88,13 +94,16 @@ export class ClipsService {
   }
 
   async delete(clipId: string, userId: string) {
-    const clip = await this.prisma.videoClip.findFirst({ where: { id: clipId, userId } });
+    const clip = await this.prisma.videoClip.findFirst({ where: { id: clipId, userId }, select: { id: true } });
     if (!clip) throw new NotFoundException('Clip not found');
     return this.prisma.videoClip.delete({ where: { id: clipId } });
   }
 
   async getShareLink(clipId: string) {
-    const clip = await this.prisma.videoClip.findUnique({ where: { id: clipId } });
+    const clip = await this.prisma.videoClip.findUnique({
+      where: { id: clipId },
+      select: { sourceVideoId: true, startTime: true },
+    });
     if (!clip) throw new NotFoundException();
     return { url: `https://mizanly.app/video/${clip.sourceVideoId}?t=${clip.startTime}` };
   }

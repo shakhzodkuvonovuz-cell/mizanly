@@ -283,13 +283,13 @@ export default function RisalahScreen() {
     setUnreadMessages(total);
   }, [all, setUnreadMessages]);
 
-  const filtered = all.filter((c) => {
+  const filtered = useMemo(() => all.filter((c) => {
     if (filterChip === 'groups') return c.isGroup;
     const tabMatch = activeTab === 'groups' ? c.isGroup : !c.isGroup;
     if (!tabMatch) return false;
     if (filterChip === 'unread') return (c.unreadCount ?? 0) > 0;
     return true;
-  });
+  }), [all, activeTab, filterChip]);
 
   const archivedCount = useStore((s) => s.archivedConversationsCount);
 

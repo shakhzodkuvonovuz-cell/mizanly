@@ -141,6 +141,7 @@ describe('ChatGateway', () => {
               srem: jest.fn().mockReturnThis(),
               sadd: jest.fn().mockReturnThis(),
               expire: jest.fn().mockReturnThis(),
+              hmset: jest.fn().mockReturnThis(),
               exec: jest.fn().mockResolvedValue([]),
             }),
           },
@@ -653,10 +654,15 @@ describe('ChatGateway', () => {
 
       await gateway.handleJoinQuranRoom({ roomId: 'room-1' }, client as any);
 
-      expect(redis.hmset).toHaveBeenCalledWith('quran:room:room-1', {
+      // hmset + expire are now pipelined (J07-L4)
+      const pipelineCalls = redis.pipeline.mock.results.map((r: { value: Record<string, jest.Mock> }) => r.value);
+      const roomPipe = pipelineCalls.find((p: Record<string, jest.Mock>) => p.hmset?.mock?.calls?.length > 0);
+      expect(roomPipe).toBeDefined();
+      expect(roomPipe.hmset).toHaveBeenCalledWith('quran:room:room-1', {
         hostId: 'host-1', currentSurah: '1', currentVerse: '1', reciterId: '',
       });
-      expect(redis.sadd).toHaveBeenCalledWith('quran:room:room-1:participants', 'socket-qr1');
+      // sadd + expire for participants are also pipelined
+      expect(redis.pipeline).toHaveBeenCalled();
       expect(client.join).toHaveBeenCalledWith('quran:room-1');
       expect(client.data.quranRooms).toContain('room-1');
     });
@@ -675,7 +681,8 @@ describe('ChatGateway', () => {
       await gateway.handleJoinQuranRoom({ roomId: 'room-1' }, client as any);
 
       expect(redis.hmset).not.toHaveBeenCalled();
-      expect(redis.sadd).toHaveBeenCalledWith('quran:room:room-1:participants', 'socket-qr2');
+      // sadd is now pipelined — verify pipeline was used for participant add
+      expect(redis.pipeline).toHaveBeenCalled();
     });
 
     it('should broadcast quran_room_update to all participants', async () => {

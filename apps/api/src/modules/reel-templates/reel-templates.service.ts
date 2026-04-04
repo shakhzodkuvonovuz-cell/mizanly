@@ -90,12 +90,16 @@ export class ReelTemplatesService {
     return template;
   }
 
-  async markUsed(id: string, _userId: string) {
+  async markUsed(id: string, userId: string) {
     const template = await this.prisma.reelTemplate.findUnique({
       where: { id },
     });
     if (!template) {
       throw new NotFoundException('Reel template not found');
+    }
+
+    if (!userId) {
+      throw new BadRequestException('User authentication required to mark template as used');
     }
 
     return this.prisma.reelTemplate.update({

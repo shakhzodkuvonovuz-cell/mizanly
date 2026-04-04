@@ -1,4 +1,4 @@
-import { memo, useEffect } from 'react';
+import { memo, useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -54,8 +54,13 @@ export const Avatar = memo(function Avatar({
   const reducedMotion = useReducedMotion();
   const dim = avatarSizes[size];
   const textSize = dim * 0.4;
-  // Use CDN-optimized image sized to the avatar dimension
-  const optimizedUri = uri ? imagePresets.avatar(uri, dim <= 64 ? 'sm' : dim <= 128 ? 'md' : 'lg') : undefined;
+  // Use CDN-optimized image sized to the avatar dimension, with fallback to raw URI on CDN error
+  const cdnUri = uri ? imagePresets.avatar(uri, dim <= 64 ? 'sm' : dim <= 128 ? 'md' : 'lg') : undefined;
+  const [cdnFailed, setCdnFailed] = useState(false);
+  const optimizedUri = cdnFailed ? uri : cdnUri;
+  const onImageError = useCallback(() => {
+    if (!cdnFailed && cdnUri !== uri) setCdnFailed(true);
+  }, [cdnFailed, cdnUri, uri]);
   const scale = useSharedValue(1);
 
   // Ring rotation for unseen stories (continuous, like Instagram)
@@ -127,6 +132,7 @@ export const Avatar = memo(function Avatar({
         contentFit="cover"
         placeholder={{ blurhash: blurhash ?? BLURHASH_AVATAR }}
         transition={300}
+        onError={onImageError}
       />
     ) : (
       <Text style={[styles.fallback, { fontSize: textSize, color: tc.text.primary }]}>
@@ -235,6 +241,7 @@ export const Avatar = memo(function Avatar({
                   },
                 ]}
                 contentFit="cover"
+                onError={onImageError}
               />
             ) : (
               <Text style={[styles.fallback, { fontSize: textSize, color: tc.text.primary }]}>

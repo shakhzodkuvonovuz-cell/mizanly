@@ -57,6 +57,22 @@ describe('MosquesController', () => {
 
       expect(service.findNearby).toHaveBeenCalledWith(24.7, 46.6, 5);
     });
+
+    it('should throw BadRequestException for invalid latitude', async () => {
+      const { BadRequestException } = await import('@nestjs/common');
+      await expect(controller.findNearby('999', '46.6')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for NaN coords', async () => {
+      const { BadRequestException } = await import('@nestjs/common');
+      await expect(controller.findNearby('abc', '46.6')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should clamp radius to max 100', async () => {
+      service.findNearby.mockResolvedValue([] as any);
+      await controller.findNearby('24.7', '46.6', '200');
+      expect(service.findNearby).toHaveBeenCalledWith(24.7, 46.6, 100);
+    });
   });
 
   describe('create', () => {

@@ -801,8 +801,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     const roomKey = this.quranRoomKey(roomId);
     const exists = await this.redis.exists(roomKey);
     if (!exists) {
-      await this.redis.hmset(roomKey, { hostId: userId, currentSurah: '1', currentVerse: '1', reciterId: '' });
-      await this.redis.expire(roomKey, this.QURAN_ROOM_TTL);
+      const pipe = this.redis.pipeline();
+      pipe.hmset(roomKey, { hostId: userId, currentSurah: '1', currentVerse: '1', reciterId: '' });
+      pipe.expire(roomKey, this.QURAN_ROOM_TTL);
+      await pipe.exec();
     }
 
     // Enforce participant cap
@@ -813,9 +815,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       return;
     }
 
-    // Add participant and track on socket for disconnect cleanup
-    await this.redis.sadd(partKey, client.id);
-    await this.redis.expire(partKey, this.QURAN_ROOM_TTL);
+    // Add participant and track on socket for disconnect cleanup (pipelined)
+    const partPipe = this.redis.pipeline();
+    partPipe.sadd(partKey, client.id);
+    partPipe.expire(partKey, this.QURAN_ROOM_TTL);
+    await partPipe.exec();
     client.join(`quran:${roomId}`);
     if (!client.data.quranRooms) client.data.quranRooms = [];
     if (!client.data.quranRooms.includes(roomId)) client.data.quranRooms.push(roomId);

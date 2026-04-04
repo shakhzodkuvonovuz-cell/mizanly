@@ -221,11 +221,11 @@ export default function ProfileScreen() {
   const haptic = useContextualHaptic();
   const isNavigatingRef = useRef(false);
   const { t, isRTL } = useTranslation();
-  const PROFILE_TABS = [
+  const PROFILE_TABS = useMemo(() => [
     { key: 'posts', label: t('profile.posts') },
     { key: 'threads', label: t('profile.threads') },
     { key: 'reels', label: t('profile.reels') },
-  ];
+  ], [t]);
   const [activeTab, setActiveTab] = useState<Tab>('posts');
   const [postViewMode, setPostViewMode] = useState<'grid' | 'list'>('grid');
   const isOwnProfile = clerkUser?.username === username;

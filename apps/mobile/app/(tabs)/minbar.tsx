@@ -274,7 +274,7 @@ export default function MinbarScreen() {
     } : undefined,
   });
 
-  const videos: Video[] = feedQuery.data?.pages.flatMap((p) => p.data) ?? [];
+  const videos: Video[] = useMemo(() => feedQuery.data?.pages.flatMap((p) => p.data) ?? [], [feedQuery.data]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

@@ -390,7 +390,7 @@ export default function SafScreen() {
     } : undefined,
   });
 
-  const rawPosts: Post[] = feedQuery.data?.pages.flatMap((p) => p?.data ?? []) ?? [];
+  const rawPosts: Post[] = useMemo(() => feedQuery.data?.pages.flatMap((p) => p?.data ?? []) ?? [], [feedQuery.data]);
 
   // Compare latest server post with current top of feed
   useEffect(() => {
@@ -523,7 +523,7 @@ export default function SafScreen() {
     });
   });
 
-  const storyGroups: StoryGroup[] = (storiesQuery.data) ?? [];
+  const storyGroups: StoryGroup[] = useMemo(() => storiesQuery.data ?? [], [storiesQuery.data]);
 
   // Feed type animation
   const feedTypeProgress = useSharedValue(0);

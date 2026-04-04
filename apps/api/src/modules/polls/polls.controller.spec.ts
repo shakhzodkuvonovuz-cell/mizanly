@@ -69,16 +69,16 @@ describe('PollsController', () => {
   });
 
   describe('getVoters', () => {
-    it('should call pollsService.getVoters with pollId, optionId, and cursor', async () => {
+    it('should call pollsService.getVoters with pollId, optionId, userId, and cursor', async () => {
       service.getVoters.mockResolvedValue({ data: [] } as any);
 
-      await controller.getVoters('poll-1', 'opt-1', 'cursor-1');
+      await controller.getVoters('poll-1', 'opt-1', userId, 'cursor-1');
 
-      expect(service.getVoters).toHaveBeenCalledWith('poll-1', 'opt-1', 'cursor-1');
+      expect(service.getVoters).toHaveBeenCalledWith('poll-1', 'opt-1', userId, 'cursor-1');
     });
 
     it('should throw BadRequestException when optionId is missing', async () => {
-      await expect(controller.getVoters('poll-1', '', undefined)).rejects.toThrow(BadRequestException);
+      await expect(controller.getVoters('poll-1', '', userId, undefined)).rejects.toThrow(BadRequestException);
     });
   });
 });

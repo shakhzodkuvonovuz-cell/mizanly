@@ -170,13 +170,25 @@ export class FeedTransparencyService {
     limit = 20,
     userId?: string,
   ): Promise<EnhancedSearchResult> {
-    const keywords = query
+    if (!query || query.trim().length === 0) {
+      return { data: [], meta: { cursor: null, hasMore: false } };
+    }
+
+    // Guard: cap query length to prevent expensive ILIKE scans
+    const safeQuery = query.slice(0, 200);
+
+    const keywords = safeQuery
       .toLowerCase()
       .split(/\s+/)
       .filter((w) => w.length > 1);
     if (keywords.length === 0) {
       return { data: [], meta: { cursor: null, hasMore: false } };
     }
+
+    // Cap keywords to prevent combinatorial explosion in AND/OR conditions.
+    // Each keyword generates an ILIKE '%kw%' — Postgres does a full table scan per keyword.
+    // PERFORMANCE: Deploy Meilisearch (set MEILISEARCH_HOST) for pre-indexed full-text search.
+    const cappedKeywords = keywords.slice(0, 5);
 
     // Use cached utility for block/mute/restrict exclusion
     const excludedUserIds = userId ? await getExcludedUserIds(this.prisma, this.redis, userId) : [];
@@ -187,7 +199,7 @@ export class FeedTransparencyService {
         isRemoved: false,
         visibility: 'PUBLIC',
         AND: [
-          { OR: keywords.map((kw) => ({
+          { OR: cappedKeywords.map((kw) => ({
             content: { contains: kw, mode: 'insensitive' as const },
           })) },
           { OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] },

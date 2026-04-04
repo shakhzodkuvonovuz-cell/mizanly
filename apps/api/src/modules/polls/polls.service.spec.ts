@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { NotFoundException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { PollsService } from './polls.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
@@ -220,51 +220,39 @@ describe('PollsService', () => {
   });
 
   describe('getVoters', () => {
-    it('should return paginated voters for an option', async () => {
+    const pollCreatorId = 'poll-owner';
+
+    it('should return paginated voters when called by poll creator', async () => {
       const pollId = 'poll-123';
       const optionId = 'opt1';
       const mockPoll = {
         id: pollId,
         options: [{ id: optionId }],
+        thread: { userId: pollCreatorId },
       };
       const mockVotes = [
         {
-          user: {
-            id: 'user-1',
-            username: 'user1',
-            displayName: 'User One',
-            avatarUrl: null,
-          },
+          user: { id: 'user-1', username: 'user1', displayName: 'User One', avatarUrl: null },
+          userId: 'user-1',
           createdAt: new Date(),
         },
         {
-          user: {
-            id: 'user-2',
-            username: 'user2',
-            displayName: 'User Two',
-            avatarUrl: null,
-          },
+          user: { id: 'user-2', username: 'user2', displayName: 'User Two', avatarUrl: null },
+          userId: 'user-2',
           createdAt: new Date(),
         },
       ];
       prisma.poll.findUnique.mockResolvedValue(mockPoll);
       prisma.pollVote.findMany.mockResolvedValue(mockVotes);
 
-      const result = await service.getVoters(pollId, optionId);
+      const result = await service.getVoters(pollId, optionId, pollCreatorId);
 
       expect(prisma.poll.findUnique).toHaveBeenCalledWith({
         where: { id: pollId },
-        include: { options: { where: { id: optionId } } },
-      });
-      expect(prisma.pollVote.findMany).toHaveBeenCalledWith({
-        where: { optionId, user: { isBanned: false, isDeactivated: false, isDeleted: false } },
         include: {
-          user: {
-            select: { id: true, username: true, displayName: true, avatarUrl: true },
-          },
+          options: { where: { id: optionId } },
+          thread: { select: { userId: true } },
         },
-        orderBy: { createdAt: 'desc' },
-        take: 21,
       });
       expect(result.data).toEqual([
         { id: 'user-1', username: 'user1', displayName: 'User One', avatarUrl: null },
@@ -273,12 +261,27 @@ describe('PollsService', () => {
       expect(result.meta.hasMore).toBe(false);
     });
 
+    it('should throw ForbiddenException when non-creator tries to view voters', async () => {
+      const pollId = 'poll-123';
+      const optionId = 'opt1';
+      const mockPoll = {
+        id: pollId,
+        options: [{ id: optionId }],
+        thread: { userId: pollCreatorId },
+      };
+      prisma.poll.findUnique.mockResolvedValue(mockPoll);
+
+      await expect(service.getVoters(pollId, optionId, 'some-other-user')).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
     it('should throw NotFoundException if poll or option does not exist', async () => {
       const pollId = 'poll-123';
       const optionId = 'opt1';
       prisma.poll.findUnique.mockResolvedValue(null);
 
-      await expect(service.getVoters(pollId, optionId)).rejects.toThrow(
+      await expect(service.getVoters(pollId, optionId, pollCreatorId)).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -290,11 +293,12 @@ describe('PollsService', () => {
       const mockPoll = {
         id: pollId,
         options: [{ id: optionId }],
+        thread: { userId: pollCreatorId },
       };
       prisma.poll.findUnique.mockResolvedValue(mockPoll);
       prisma.pollVote.findMany.mockResolvedValue([]);
 
-      await service.getVoters(pollId, optionId, cursor);
+      await service.getVoters(pollId, optionId, pollCreatorId, cursor);
 
       expect(prisma.pollVote.findMany).toHaveBeenCalledWith({
         where: { optionId, user: { isBanned: false, isDeactivated: false, isDeleted: false } },
@@ -325,7 +329,7 @@ describe('PollsService', () => {
     });
   });
 
-  // ── T02 gap: multi-choice vote (allowMultiple) ──
+  // -- T02 gap: multi-choice vote (allowMultiple) --
 
   describe('vote (multi-choice)', () => {
     it('should allow voting on a different option when allowMultiple=true', async () => {
@@ -358,7 +362,7 @@ describe('PollsService', () => {
     });
   });
 
-  // ── T02 gap: vote P2002 race condition ──
+  // -- T02 gap: vote P2002 race condition --
 
   describe('vote (P2002 race condition)', () => {
     it('should throw ConflictException on P2002 race', async () => {
@@ -377,7 +381,7 @@ describe('PollsService', () => {
     });
   });
 
-  // ── T02 gap: getPoll isExpired check ──
+  // -- T02 gap: getPoll isExpired check --
 
   describe('getPoll (isExpired)', () => {
     it('should return isExpired=true when poll has passed endsAt', async () => {
@@ -424,7 +428,7 @@ describe('PollsService', () => {
     });
   });
 
-  // ── T02 gap: retractVote poll not found ──
+  // -- T02 gap: retractVote poll not found --
 
   describe('retractVote (not found)', () => {
     it('should throw NotFoundException when poll does not exist', async () => {

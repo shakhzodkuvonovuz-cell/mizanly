@@ -1168,11 +1168,10 @@ export const liveApi = {
     api.get<LiveSession[]>('/live/my'),
   lowerHand: (id: string) =>
     api.post(`/live/${id}/lower-hand`),
-  // X10-#7: @dead-endpoint: no POST /live/:id/chat backend route exists
-  sendChat: (id: string, message: string) => {
-    console.warn('liveApi.sendChat: backend endpoint does not exist');
-    return api.post(`/live/${id}/chat`, { message });
-  },
+  sendChat: (id: string, message: string) =>
+    api.post(`/live/${id}/chat`, { message }),
+  getChatMessages: (id: string, limit?: number) =>
+    api.get(`/live/${id}/chat${qs({ limit })}`),
   // X10-#8: Fixed route — backend is POST /live/:id/guests/invite with body
   inviteSpeaker: (id: string, guestUserId: string) =>
     api.post(`/live/${id}/guests/invite`, { guestUserId }),

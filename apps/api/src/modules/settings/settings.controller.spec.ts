@@ -99,10 +99,85 @@ describe('SettingsController', () => {
   describe('getQuietMode', () => {
     it('should call settingsService.getQuietMode with userId', async () => {
       service.getQuietMode.mockResolvedValue({ enabled: false } as any);
-
       await controller.getQuietMode(userId);
-
       expect(service.getQuietMode).toHaveBeenCalledWith(userId);
+    });
+  });
+
+  describe('updateNotifications', () => {
+    it('delegates to settingsService.updateNotifications', async () => {
+      const dto = { pushEnabled: true };
+      service.updateNotifications.mockResolvedValue({ updated: true } as any);
+      await controller.updateNotifications(userId, dto as any);
+      expect(service.updateNotifications).toHaveBeenCalledWith(userId, dto);
+    });
+  });
+
+  describe('updateAccessibility', () => {
+    it('delegates to settingsService.updateAccessibility', async () => {
+      const dto = { fontSize: 'large' };
+      service.updateAccessibility.mockResolvedValue({ updated: true } as any);
+      await controller.updateAccessibility(userId, dto as any);
+      expect(service.updateAccessibility).toHaveBeenCalledWith(userId, dto);
+    });
+  });
+
+  describe('updateWellbeing', () => {
+    it('delegates to settingsService.updateWellbeing', async () => {
+      const dto = { hideLikeCounts: true };
+      service.updateWellbeing.mockResolvedValue({ updated: true } as any);
+      await controller.updateWellbeing(userId, dto as any);
+      expect(service.updateWellbeing).toHaveBeenCalledWith(userId, dto);
+    });
+  });
+
+  describe('getAutoPlay', () => {
+    it('delegates to settingsService.getAutoPlaySetting', async () => {
+      service.getAutoPlaySetting.mockResolvedValue({ autoPlaySetting: 'WIFI' } as any);
+      await controller.getAutoPlay(userId);
+      expect(service.getAutoPlaySetting).toHaveBeenCalledWith(userId);
+    });
+  });
+
+  describe('getBlockedKeywords', () => {
+    it('delegates to settingsService.getBlockedKeywords', async () => {
+      service.getBlockedKeywords.mockResolvedValue([{ id: 'kw-1', keyword: 'spam' }] as any);
+      const result = await controller.getBlockedKeywords(userId);
+      expect(service.getBlockedKeywords).toHaveBeenCalledWith(userId);
+      expect(result).toHaveLength(1);
+    });
+  });
+
+  describe('removeBlockedKeyword', () => {
+    it('delegates to settingsService.removeBlockedKeyword', async () => {
+      service.removeBlockedKeyword.mockResolvedValue({ removed: true } as any);
+      await controller.removeBlockedKeyword(userId, 'kw-1');
+      expect(service.removeBlockedKeyword).toHaveBeenCalledWith(userId, 'kw-1');
+    });
+  });
+
+  describe('getScreenTimeStats', () => {
+    it('delegates to settingsService.getScreenTimeStats', async () => {
+      service.getScreenTimeStats.mockResolvedValue({ weeklyTotal: 7200 } as any);
+      await controller.getScreenTimeStats(userId);
+      expect(service.getScreenTimeStats).toHaveBeenCalledWith(userId);
+    });
+  });
+
+  describe('setScreenTimeLimit', () => {
+    it('delegates to settingsService.setScreenTimeLimit', async () => {
+      service.setScreenTimeLimit.mockResolvedValue({ limitMinutes: 120 } as any);
+      await controller.setScreenTimeLimit(userId, { limitMinutes: 120 } as any);
+      expect(service.setScreenTimeLimit).toHaveBeenCalledWith(userId, 120);
+    });
+  });
+
+  describe('updateQuietMode', () => {
+    it('delegates to settingsService.updateQuietMode', async () => {
+      const dto = { enabled: true, startTime: '22:00', endTime: '07:00' };
+      service.updateQuietMode.mockResolvedValue({ updated: true } as any);
+      await controller.updateQuietMode(userId, dto as any);
+      expect(service.updateQuietMode).toHaveBeenCalledWith(userId, dto);
     });
   });
 });

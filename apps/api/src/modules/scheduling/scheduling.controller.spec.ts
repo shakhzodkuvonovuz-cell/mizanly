@@ -22,6 +22,7 @@ describe('SchedulingController', () => {
             updateSchedule: jest.fn(),
             cancelSchedule: jest.fn(),
             publishNow: jest.fn(),
+            publishOverdueContent: jest.fn(),
           },
         },
         { provide: ClerkAuthGuard, useValue: { canActivate: jest.fn(() => true) } },
@@ -72,6 +73,15 @@ describe('SchedulingController', () => {
       await controller.publishNow(userId, 'reel', 'reel-1');
 
       expect(service.publishNow).toHaveBeenCalledWith(userId, 'reel', 'reel-1');
+    });
+  });
+
+  describe('publishOverdue', () => {
+    it('should call schedulingService.publishOverdueContent', async () => {
+      (service as any).publishOverdueContent.mockResolvedValue({ published: 3 });
+      const result = await controller.publishOverdue();
+      expect((service as any).publishOverdueContent).toHaveBeenCalled();
+      expect(result).toEqual({ published: 3 });
     });
   });
 });

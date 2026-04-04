@@ -30,6 +30,7 @@ describe('GamificationController', () => {
             createChallenge: jest.fn(),
             joinChallenge: jest.fn(),
             updateChallengeProgress: jest.fn(),
+            leaveChallenge: jest.fn(),
             getMyChallenges: jest.fn(),
             createSeries: jest.fn(),
             getDiscoverSeries: jest.fn(),
@@ -160,11 +161,128 @@ describe('GamificationController', () => {
   describe('getProfileCustomization', () => {
     it('should call gamificationService.getProfileCustomization with userId', async () => {
       service.getProfileCustomization.mockResolvedValue({ theme: 'gold', badge: 'scholar' } as any);
-
       const result = await controller.getProfileCustomization(userId);
-
       expect(service.getProfileCustomization).toHaveBeenCalledWith(userId);
       expect(result).toEqual(expect.objectContaining({ theme: 'gold' }));
+    });
+  });
+
+  describe('getXPHistory', () => {
+    it('delegates with parsed limit', async () => {
+      service.getXPHistory.mockResolvedValue({ data: [] } as any);
+      await controller.getXPHistory(userId, 'cursor-1', '10');
+      expect(service.getXPHistory).toHaveBeenCalledWith(userId, 'cursor-1', 10);
+    });
+
+    it('defaults limit to 20', async () => {
+      service.getXPHistory.mockResolvedValue({ data: [] } as any);
+      await controller.getXPHistory(userId);
+      expect(service.getXPHistory).toHaveBeenCalledWith(userId, undefined, 20);
+    });
+
+    it('caps limit at 50', async () => {
+      service.getXPHistory.mockResolvedValue({ data: [] } as any);
+      await controller.getXPHistory(userId, undefined, '200');
+      expect(service.getXPHistory).toHaveBeenCalledWith(userId, undefined, 50);
+    });
+  });
+
+  describe('getChallenges', () => {
+    it('delegates with cursor, limit, and category', async () => {
+      service.getChallenges.mockResolvedValue({ data: [] } as any);
+      await controller.getChallenges('cursor-1', '10', 'quran');
+      expect(service.getChallenges).toHaveBeenCalledWith('cursor-1', 10, 'quran');
+    });
+  });
+
+  describe('createChallenge', () => {
+    it('delegates to service.createChallenge', async () => {
+      const dto = { title: '30 Day Quran' };
+      service.createChallenge.mockResolvedValue({ id: 'ch-1' } as any);
+      await controller.createChallenge(userId, dto as any);
+      expect(service.createChallenge).toHaveBeenCalledWith(userId, dto);
+    });
+  });
+
+  describe('updateProgress', () => {
+    it('delegates to service.updateChallengeProgress', async () => {
+      service.updateChallengeProgress.mockResolvedValue({ progress: 75 } as any);
+      await controller.updateProgress(userId, 'ch-1', { progress: 75 } as any);
+      expect(service.updateChallengeProgress).toHaveBeenCalledWith(userId, 'ch-1', 75);
+    });
+  });
+
+  describe('leaveChallenge', () => {
+    it('delegates to service.leaveChallenge', async () => {
+      service.leaveChallenge.mockResolvedValue({ left: true } as any);
+      await controller.leaveChallenge(userId, 'ch-1');
+      expect(service.leaveChallenge).toHaveBeenCalledWith(userId, 'ch-1');
+    });
+  });
+
+  describe('getMyChallenges', () => {
+    it('delegates to service.getMyChallenges', async () => {
+      service.getMyChallenges.mockResolvedValue([{ id: 'ch-1' }] as any);
+      await controller.getMyChallenges(userId);
+      expect(service.getMyChallenges).toHaveBeenCalledWith(userId);
+    });
+  });
+
+  describe('discoverSeries', () => {
+    it('delegates to service.getDiscoverSeries', async () => {
+      service.getDiscoverSeries.mockResolvedValue({ data: [] } as any);
+      await controller.discoverSeries('cursor-1', '10', 'education');
+      expect(service.getDiscoverSeries).toHaveBeenCalledWith('cursor-1', 10, 'education');
+    });
+  });
+
+  describe('getSeries', () => {
+    it('delegates to service.getSeries', async () => {
+      service.getSeries.mockResolvedValue({ id: 'series-1' } as any);
+      await controller.getSeries('series-1');
+      expect(service.getSeries).toHaveBeenCalledWith('series-1');
+    });
+  });
+
+  describe('addEpisode', () => {
+    it('delegates to service.addEpisode', async () => {
+      const dto = { title: 'Episode 1' };
+      service.addEpisode.mockResolvedValue({ id: 'ep-1' } as any);
+      await controller.addEpisode(userId, 'series-1', dto as any);
+      expect(service.addEpisode).toHaveBeenCalledWith(userId, 'series-1', dto);
+    });
+  });
+
+  describe('unfollowSeries', () => {
+    it('delegates to service.unfollowSeries', async () => {
+      service.unfollowSeries.mockResolvedValue({ unfollowed: true } as any);
+      await controller.unfollowSeries(userId, 'series-1');
+      expect(service.unfollowSeries).toHaveBeenCalledWith(userId, 'series-1');
+    });
+  });
+
+  describe('updateSeriesProgress', () => {
+    it('delegates to service.updateSeriesProgress', async () => {
+      service.updateSeriesProgress.mockResolvedValue({ updated: true } as any);
+      await controller.updateSeriesProgress(userId, 'series-1', { episodeNum: 3, timestamp: 120 } as any);
+      expect(service.updateSeriesProgress).toHaveBeenCalledWith(userId, 'series-1', 3, 120);
+    });
+  });
+
+  describe('getProgress', () => {
+    it('delegates to service.getSeriesProgress', async () => {
+      service.getSeriesProgress.mockResolvedValue({ episodeNum: 3 } as any);
+      await controller.getProgress(userId, 'series-1');
+      expect(service.getSeriesProgress).toHaveBeenCalledWith(userId, 'series-1');
+    });
+  });
+
+  describe('updateProfileCustomization', () => {
+    it('delegates to service.updateProfileCustomization', async () => {
+      const dto = { theme: 'emerald' };
+      service.updateProfileCustomization.mockResolvedValue({ updated: true } as any);
+      await controller.updateProfileCustomization(userId, dto as any);
+      expect(service.updateProfileCustomization).toHaveBeenCalledWith(userId, dto);
     });
   });
 });

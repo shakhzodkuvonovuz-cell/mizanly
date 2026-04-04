@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { StreamService } from '../stream/stream.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { LiveRole } from '@prisma/client';
 import { LiveStatus, LiveType, Prisma } from '@prisma/client';
 import { randomBytes } from 'crypto';
+import Redis from 'ioredis';
 
 /** Lightweight select for list views — excludes streamKey (credential), playbackUrl, streamId, recordingUrl */
 const LIVE_SESSION_LIST_SELECT = {
@@ -36,6 +37,7 @@ export class LiveService {
     private prisma: PrismaService,
     private stream: StreamService,
     private notifications: NotificationsService,
+    @Inject('REDIS') private redis: Redis,
   ) {}
 
   async create(userId: string, data: { title: string; description?: string; thumbnailUrl?: string; liveType: string; scheduledAt?: string; isRecorded?: boolean }) {
@@ -564,6 +566,59 @@ export class LiveService {
       data: { isSubscribersOnly: subscribersOnly },
       select: LIVE_SESSION_LIST_SELECT,
     });
+  }
+
+  // ── Live Chat (ephemeral, Redis-backed) ─────────────────
+
+  private chatKey(sessionId: string): string {
+    return `live:chat:${sessionId}`;
+  }
+
+  async sendChat(sessionId: string, userId: string, message: string) {
+    const session = await this.prisma.liveSession.findUnique({
+      where: { id: sessionId },
+      select: { id: true, status: true },
+    });
+    if (!session) throw new NotFoundException('Session not found');
+    if (session.status !== LiveStatus.LIVE) throw new BadRequestException('Session is not live');
+
+    // Resolve user display info
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, username: true, displayName: true, avatarUrl: true },
+    });
+
+    const chatMessage = {
+      id: randomBytes(8).toString('hex'),
+      userId,
+      username: user?.username ?? 'unknown',
+      displayName: user?.displayName ?? null,
+      avatarUrl: user?.avatarUrl ?? null,
+      message,
+      timestamp: new Date().toISOString(),
+    };
+
+    const key = this.chatKey(sessionId);
+    await this.redis.lpush(key, JSON.stringify(chatMessage));
+    // Keep max 500 messages and expire after 24h
+    await this.redis.ltrim(key, 0, 499);
+    await this.redis.expire(key, 86400);
+
+    // Publish for real-time delivery via socket
+    this.redis.publish('content:update', JSON.stringify({
+      event: 'live_chat',
+      data: { sessionId, message: chatMessage },
+    })).catch((err) => this.logger.warn('Live chat redis publish failed', err?.message));
+
+    return chatMessage;
+  }
+
+  async getChatMessages(sessionId: string, limit = 50) {
+    const key = this.chatKey(sessionId);
+    const raw = await this.redis.lrange(key, 0, limit - 1);
+    return raw.map((r) => {
+      try { return JSON.parse(r); } catch { return null; }
+    }).filter(Boolean);
   }
 
   private async requireHost(sessionId: string, userId: string) {

@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
 import { getResponsiveImageUrls } from '../../common/utils/image';
@@ -152,6 +152,27 @@ export class UploadService {
       throw new InternalServerErrorException('Failed to delete file');
     }
     return { deleted: true, key };
+  }
+
+  /**
+   * Generate a time-limited signed download URL for an R2 object.
+   * Extracts the key from the public URL and creates a presigned GET URL.
+   * Returns the original URL unchanged if R2 is not configured (dev environment).
+   */
+  async getSignedDownloadUrl(publicUrl: string, expiresIn = 3600): Promise<string> {
+    if (!this.configured) {
+      return publicUrl;
+    }
+
+    // Extract key from public URL (e.g. "https://media.mizanly.app/posts/abc.mp4" -> "posts/abc.mp4")
+    const key = publicUrl.replace(`${this.publicUrl}/`, '');
+    if (!key || key === publicUrl) {
+      // URL doesn't match our public URL pattern -- return as-is (external URL)
+      return publicUrl;
+    }
+
+    const command = new GetObjectCommand({ Bucket: this.bucket, Key: key });
+    return getSignedUrl(this.s3, command, { expiresIn });
   }
 
   private validateContentType(contentType: string) {

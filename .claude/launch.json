@@ -1,0 +1,35 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "api",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd mizanly/apps/api && npm run start:dev"],
+      "port": 3000
+    },
+    {
+      "name": "mobile",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd mizanly/apps/mobile && npx expo start"],
+      "port": 8081
+    },
+    {
+      "name": "e2e-server",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd mizanly/apps/e2e-server && go run ./cmd/server/"],
+      "port": 8080
+    },
+    {
+      "name": "livekit-server",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd mizanly/apps/livekit-server && PORT=8082 go run ./cmd/server/"],
+      "port": 8082
+    },
+    {
+      "name": "prisma-studio",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd mizanly/apps/api && npx prisma studio"],
+      "port": 5555
+    }
+  ]
+}

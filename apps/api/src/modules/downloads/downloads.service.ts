@@ -12,6 +12,7 @@ import { PrismaService } from '../../config/prisma.service';
 import { ThumbnailContentType, DownloadQuality } from '@prisma/client';
 import { CreateDownloadDto } from './dto/create-download.dto';
 import { acquireCronLock } from '../../common/utils/cron-lock';
+import { UploadService } from '../upload/upload.service';
 
 @Injectable()
 export class DownloadsService {
@@ -19,6 +20,7 @@ export class DownloadsService {
   constructor(
     private prisma: PrismaService,
     @Inject('REDIS') private redis: Redis,
+    private uploadService: UploadService,
   ) {}
 
   /** Upsert an OfflineDownload record; verify content exists and is downloadable */
@@ -76,7 +78,7 @@ export class DownloadsService {
     };
   }
 
-  /** Resolve the actual media URL for a download record */
+  /** Resolve a time-limited signed download URL (1 hour) instead of exposing raw R2 URLs */
   async getDownloadUrl(userId: string, downloadId: string) {
     const download = await this.prisma.offlineDownload.findUnique({
       where: { id: downloadId },
@@ -84,9 +86,11 @@ export class DownloadsService {
     if (!download) throw new NotFoundException('Download not found');
     if (download.userId !== userId) throw new ForbiddenException();
 
-    const url = await this.resolveMediaUrl(download.contentType, download.contentId);
-    if (!url) throw new NotFoundException('Content no longer available');
+    const rawUrl = await this.resolveMediaUrl(download.contentType, download.contentId);
+    if (!rawUrl) throw new NotFoundException('Content no longer available');
 
+    // Return signed URL (expires in 1 hour) to avoid exposing raw R2 bucket URLs
+    const url = await this.uploadService.getSignedDownloadUrl(rawUrl, 3600);
     return { url };
   }
 

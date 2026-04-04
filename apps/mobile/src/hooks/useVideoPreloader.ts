@@ -101,6 +101,15 @@ export function useVideoPreloader(poolSize = 3) {
         preloadedUrls.current.delete(url);
       });
     }
+
+    // Evict stale loadStates entries (J04-ML09: cap loadStates to match preloadedUrls bound)
+    setLoadStates(prev => {
+      if (prev.size <= 20) return prev;
+      const next = new Map(prev);
+      const keys = [...next.keys()];
+      keys.slice(0, keys.length - 15).forEach(k => next.delete(k));
+      return next;
+    });
   }, [preloadSingle]);
 
   /**

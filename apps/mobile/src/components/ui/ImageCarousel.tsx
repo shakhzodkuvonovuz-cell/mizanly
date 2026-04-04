@@ -12,6 +12,7 @@ import { Image } from 'expo-image';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ProgressiveImage } from './ProgressiveImage';
+import { imagePresets } from '@/utils/image';
 import Animated from 'react-native-reanimated';
 import { colors, spacing, radius, fonts, fontSize, fontSizeExt, glass } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -113,7 +114,7 @@ export const ImageCarousel = memo(function ImageCarousel({
       lastPrefetchRef.current = index;
       [index + 1, index + 2]
         .filter((i) => i < images.length && images[i]?.startsWith('http'))
-        .forEach((i) => { Image.prefetch(images[i]); });
+        .forEach((i) => { Image.prefetch(imagePresets.feedImage(images[i])); });
     }
   }, [screenWidth, images]);
 

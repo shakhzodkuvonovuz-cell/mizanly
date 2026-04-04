@@ -35,6 +35,11 @@ describe('DiscordFeaturesController', () => {
             endStageSession: jest.fn(),
             inviteSpeaker: jest.fn(),
             getActiveStageSessions: jest.fn(),
+            deleteForumThread: jest.fn(),
+            deleteForumReply: jest.fn(),
+            removeSpeaker: jest.fn(),
+            joinStageAsListener: jest.fn(),
+            leaveStageAsListener: jest.fn(),
           },
         },
         { provide: ClerkAuthGuard, useValue: { canActivate: jest.fn(() => true) } },
@@ -136,11 +141,105 @@ describe('DiscordFeaturesController', () => {
   describe('getActiveStageSessions', () => {
     it('should call service.getActiveStageSessions with circleId', async () => {
       service.getActiveStageSessions.mockResolvedValue([{ id: 'stage-1' }] as any);
-
       const result = await controller.getActiveStageSessions('circle-1');
-
       expect(service.getActiveStageSessions).toHaveBeenCalledWith('circle-1');
       expect(result).toHaveLength(1);
+    });
+  });
+
+  describe('getForumThread', () => {
+    it('delegates to service.getForumThread', async () => {
+      service.getForumThread.mockResolvedValue({ id: 'ft-1' } as any);
+      await controller.getForumThread('ft-1');
+      expect(service.getForumThread).toHaveBeenCalledWith('ft-1');
+    });
+  });
+
+  describe('getForumReplies', () => {
+    it('delegates to service.getForumReplies', async () => {
+      service.getForumReplies.mockResolvedValue({ data: [] } as any);
+      await controller.getForumReplies('ft-1', 'cursor-1');
+      expect(service.getForumReplies).toHaveBeenCalledWith('ft-1', 'cursor-1');
+    });
+  });
+
+  describe('lockForumThread', () => {
+    it('delegates to service.lockForumThread', async () => {
+      service.lockForumThread.mockResolvedValue({ locked: true } as any);
+      await controller.lockForumThread(userId, 'ft-1');
+      expect(service.lockForumThread).toHaveBeenCalledWith('ft-1', userId);
+    });
+  });
+
+  describe('pinForumThread', () => {
+    it('delegates to service.pinForumThread', async () => {
+      service.pinForumThread.mockResolvedValue({ pinned: true } as any);
+      await controller.pinForumThread(userId, 'ft-1');
+      expect(service.pinForumThread).toHaveBeenCalledWith('ft-1', userId);
+    });
+  });
+
+  describe('deleteForumThread', () => {
+    it('delegates to service.deleteForumThread', async () => {
+      service.deleteForumThread.mockResolvedValue({ deleted: true } as any);
+      await controller.deleteForumThread(userId, 'ft-1');
+      expect(service.deleteForumThread).toHaveBeenCalledWith('ft-1', userId);
+    });
+  });
+
+  describe('deleteForumReply', () => {
+    it('delegates to service.deleteForumReply', async () => {
+      service.deleteForumReply.mockResolvedValue({ deleted: true } as any);
+      await controller.deleteForumReply(userId, 'reply-1');
+      expect(service.deleteForumReply).toHaveBeenCalledWith('reply-1', userId);
+    });
+  });
+
+  describe('getWebhooks', () => {
+    it('delegates to service.getWebhooks', async () => {
+      service.getWebhooks.mockResolvedValue([{ id: 'wh-1' }] as any);
+      await controller.getWebhooks(userId, 'circle-1');
+      expect(service.getWebhooks).toHaveBeenCalledWith('circle-1', userId);
+    });
+  });
+
+  describe('startStage', () => {
+    it('delegates to service.startStageSession', async () => {
+      service.startStageSession.mockResolvedValue({ started: true } as any);
+      await controller.startStage(userId, 'stage-1');
+      expect(service.startStageSession).toHaveBeenCalledWith('stage-1', userId);
+    });
+  });
+
+  describe('endStage', () => {
+    it('delegates to service.endStageSession', async () => {
+      service.endStageSession.mockResolvedValue({ ended: true } as any);
+      await controller.endStage(userId, 'stage-1');
+      expect(service.endStageSession).toHaveBeenCalledWith('stage-1', userId);
+    });
+  });
+
+  describe('removeSpeaker', () => {
+    it('delegates to service.removeSpeaker', async () => {
+      service.removeSpeaker.mockResolvedValue({ removed: true } as any);
+      await controller.removeSpeaker(userId, 'stage-1', { speakerId: 'user-2' } as any);
+      expect(service.removeSpeaker).toHaveBeenCalledWith('stage-1', userId, 'user-2');
+    });
+  });
+
+  describe('joinStage', () => {
+    it('delegates to service.joinStageAsListener', async () => {
+      service.joinStageAsListener.mockResolvedValue({ joined: true } as any);
+      await controller.joinStage(userId, 'stage-1');
+      expect(service.joinStageAsListener).toHaveBeenCalledWith('stage-1', userId);
+    });
+  });
+
+  describe('leaveStage', () => {
+    it('delegates to service.leaveStageAsListener', async () => {
+      service.leaveStageAsListener.mockResolvedValue({ left: true } as any);
+      await controller.leaveStage(userId, 'stage-1');
+      expect(service.leaveStageAsListener).toHaveBeenCalledWith('stage-1', userId);
     });
   });
 });

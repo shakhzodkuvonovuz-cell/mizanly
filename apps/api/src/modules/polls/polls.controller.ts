@@ -75,17 +75,19 @@ export class PollsController {
   @Get(':id/voters')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'List voters for a poll option (authenticated only)' })
+  @ApiOperation({ summary: 'List voters for a poll option (poll creator only)' })
   @ApiResponse({ status: 200, description: 'Paginated list of voters' })
+  @ApiResponse({ status: 403, description: 'Only the poll creator can view voters' })
   @ApiResponse({ status: 404, description: 'Poll or option not found' })
   async getVoters(
     @Param('id') pollId: string,
     @Query('optionId') optionId: string,
+    @CurrentUser('id') userId: string,
     @Query('cursor') cursor?: string,
   ) {
     if (!optionId) {
       throw new BadRequestException('optionId query parameter is required');
     }
-    return this.pollsService.getVoters(pollId, optionId, cursor);
+    return this.pollsService.getVoters(pollId, optionId, userId, cursor);
   }
 }

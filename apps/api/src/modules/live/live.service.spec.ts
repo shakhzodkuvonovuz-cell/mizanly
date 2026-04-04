@@ -7,6 +7,7 @@ import { globalMockProviders } from '../../common/test/mock-providers';
 describe('LiveService', () => {
   let service: LiveService;
   let prisma: Record<string, any>;
+  let redis: Record<string, any>;
 
   beforeEach(async () => {
     prisma = {
@@ -22,12 +23,26 @@ describe('LiveService', () => {
         update: jest.fn(),
         updateMany: jest.fn(),
       },
+      user: {
+        findUnique: jest.fn(),
+      },
       $executeRaw: jest.fn().mockResolvedValue(1),
+    };
+
+    redis = {
+      lpush: jest.fn().mockResolvedValue(1),
+      ltrim: jest.fn().mockResolvedValue('OK'),
+      expire: jest.fn().mockResolvedValue(1),
+      lrange: jest.fn().mockResolvedValue([]),
+      publish: jest.fn().mockResolvedValue(1),
     };
 
     const module = await Test.createTestingModule({
       providers: [
-        ...globalMockProviders,LiveService, { provide: PrismaService, useValue: prisma }],
+        ...globalMockProviders,LiveService,
+        { provide: PrismaService, useValue: prisma },
+        { provide: 'REDIS', useValue: redis },
+      ],
     }).compile();
     service = module.get(LiveService);
   });
@@ -588,6 +603,57 @@ describe('LiveService', () => {
       prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', status: 'LIVE' });
       prisma.liveParticipant.findUnique.mockResolvedValue({ role: 'SPEAKER' });
       await expect(service.lowerHand('live1', 'u1')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('sendChat', () => {
+    it('stores chat message in Redis and returns it', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', status: 'LIVE' });
+      prisma.user.findUnique.mockResolvedValue({ id: 'u1', username: 'testuser', displayName: 'Test User', avatarUrl: null });
+
+      const result = await service.sendChat('live1', 'u1', 'Hello world');
+      expect(result.message).toBe('Hello world');
+      expect(result.username).toBe('testuser');
+      expect(result.userId).toBe('u1');
+      expect(redis.lpush).toHaveBeenCalled();
+      expect(redis.ltrim).toHaveBeenCalledWith(expect.any(String), 0, 499);
+      expect(redis.expire).toHaveBeenCalledWith(expect.any(String), 86400);
+    });
+
+    it('throws NotFoundException for non-existent session', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue(null);
+      await expect(service.sendChat('nonexistent', 'u1', 'Hello')).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws BadRequestException if session not live', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', status: 'ENDED' });
+      await expect(service.sendChat('live1', 'u1', 'Hello')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('getChatMessages', () => {
+    it('returns parsed chat messages from Redis', async () => {
+      const msg1 = JSON.stringify({ id: 'a', userId: 'u1', message: 'Hello', timestamp: '2026-04-01T00:00:00Z' });
+      const msg2 = JSON.stringify({ id: 'b', userId: 'u2', message: 'World', timestamp: '2026-04-01T00:00:01Z' });
+      redis.lrange.mockResolvedValue([msg1, msg2]);
+
+      const result = await service.getChatMessages('live1');
+      expect(result).toHaveLength(2);
+      expect(result[0].message).toBe('Hello');
+      expect(result[1].message).toBe('World');
+    });
+
+    it('returns empty array when no messages', async () => {
+      redis.lrange.mockResolvedValue([]);
+      const result = await service.getChatMessages('live1');
+      expect(result).toEqual([]);
+    });
+
+    it('filters out invalid JSON entries', async () => {
+      redis.lrange.mockResolvedValue(['invalid-json', JSON.stringify({ id: 'a', message: 'Valid' })]);
+      const result = await service.getChatMessages('live1');
+      expect(result).toHaveLength(1);
+      expect(result[0].message).toBe('Valid');
     });
   });
 });

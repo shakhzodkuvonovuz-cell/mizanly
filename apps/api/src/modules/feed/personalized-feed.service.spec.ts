@@ -16,18 +16,16 @@ describe('PersonalizedFeedService', () => {
     redisStore.clear();
 
     redis = {
-      hgetall: jest.fn().mockImplementation((key: string) => {
-        return Promise.resolve(redisStore.get(key) || {});
+      get: jest.fn().mockImplementation((key: string) => {
+        return Promise.resolve(redisStore.get(key) ?? null);
       }),
-      hset: jest.fn().mockImplementation((key: string, field: string, value: string) => {
-        if (!redisStore.has(key)) redisStore.set(key, {});
-        redisStore.get(key)![field] = value;
-        return Promise.resolve(1);
+      setex: jest.fn().mockImplementation((key: string, _ttl: number, value: string) => {
+        redisStore.set(key, value);
+        return Promise.resolve('OK');
       }),
-      expire: jest.fn().mockResolvedValue(1),
-      get: jest.fn().mockResolvedValue(null),
       set: jest.fn().mockResolvedValue('OK'),
       del: jest.fn().mockResolvedValue(1),
+      expire: jest.fn().mockResolvedValue(1),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -74,8 +72,8 @@ describe('PersonalizedFeedService', () => {
   // ── Helper: get session data from Redis store ─────────────────
   function getSessionFromStore(userId: string) {
     const stored = redisStore.get(`session:${userId}`);
-    if (!stored || !stored.json) return null;
-    return JSON.parse(stored.json);
+    if (!stored) return null;
+    return typeof stored === 'string' ? JSON.parse(stored) : null;
   }
 
   // ── getIslamicBoost ─────────────────────────────────────────
@@ -159,8 +157,7 @@ describe('PersonalizedFeedService', () => {
   describe('trackSessionSignal', () => {
     it('should create a session entry for a new user in Redis', async () => {
       await service.trackSessionSignal('user-1', { contentId: 'p1', action: 'view' });
-      expect(redis.hset).toHaveBeenCalledWith('session:user-1', 'json', expect.any(String));
-      expect(redis.expire).toHaveBeenCalledWith('session:user-1', 1800);
+      expect(redis.setex).toHaveBeenCalledWith('session:user-1', 1800, expect.any(String));
 
       const session = getSessionFromStore('user-1');
       expect(session).not.toBeNull();
@@ -196,10 +193,10 @@ describe('PersonalizedFeedService', () => {
     it('should start a new session after 30 min inactivity', async () => {
       await service.trackSessionSignal('user-1', { contentId: 'p1', action: 'like', hashtags: ['islam'] });
       // Artificially age the session in the Redis store
-      const stored = redisStore.get('session:user-1')!;
-      const sessionData = JSON.parse(stored.json);
+      const stored = redisStore.get('session:user-1') as string;
+      const sessionData = JSON.parse(stored);
       sessionData.sessionStart = Date.now() - 31 * 60 * 1000;
-      stored.json = JSON.stringify(sessionData);
+      redisStore.set('session:user-1', JSON.stringify(sessionData));
 
       await service.trackSessionSignal('user-1', { contentId: 'p2', action: 'view' });
       const session = getSessionFromStore('user-1');
@@ -241,7 +238,7 @@ describe('PersonalizedFeedService', () => {
 
     it('should set Redis TTL of 1800 seconds on each save', async () => {
       await service.trackSessionSignal('user-1', { contentId: 'p1', action: 'view' });
-      expect(redis.expire).toHaveBeenCalledWith('session:user-1', 1800);
+      expect(redis.setex).toHaveBeenCalledWith('session:user-1', 1800, expect.any(String));
     });
   });
 
@@ -521,12 +518,12 @@ describe('PersonalizedFeedService', () => {
       await service.getPersonalizedFeed('user-1', 'saf');
 
       // Should have queried Redis for session data
-      expect(redis.hgetall).toHaveBeenCalledWith('session:user-1');
+      expect(redis.get).toHaveBeenCalledWith('session:user-1');
     });
 
     it('should handle corrupted Redis session data gracefully', async () => {
-      // Store invalid JSON
-      redisStore.set('session:user-1', { json: 'not-valid-json{' });
+      // Store invalid JSON (raw string, not hash)
+      redisStore.set('session:user-1', 'not-valid-json{');
 
       await service.trackSessionSignal('user-1', { contentId: 'p1', action: 'view' });
       // Should create a fresh session despite corrupted data

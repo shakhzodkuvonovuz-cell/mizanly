@@ -5,9 +5,7 @@ import { SearchService } from './search.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-
-type SearchType = 'people' | 'threads' | 'posts' | 'tags' | 'reels' | 'videos' | 'channels';
-const VALID_TYPES: SearchType[] = ['people', 'threads', 'posts', 'tags', 'reels', 'videos', 'channels'];
+import { SearchQueryDto, SearchSuggestionsDto, HashtagSearchDto } from './dto/search-query.dto';
 
 @ApiTags('Search & Discover')
 @Controller('search')
@@ -19,15 +17,11 @@ export class SearchController {
   @Throttle({ default: { ttl: 60000, limit: 30 } })
   @ApiOperation({ summary: 'Universal search across all content types' })
   search(
-    @Query('q') query: string,
-    @Query('type') type?: string,
-    @Query('cursor') cursor?: string,
-    @Query('limit') limit?: string,
+    @Query() dto: SearchQueryDto,
     @CurrentUser('id') userId?: string,
   ) {
-    const safeType = type && VALID_TYPES.includes(type as SearchType) ? type as SearchType : undefined;
-    const safeLimit = Math.min(Math.max(1, limit ? parseInt(limit, 10) || 20 : 20), 50);
-    return this.searchService.search(query, safeType, cursor, safeLimit, userId);
+    const safeLimit = Math.min(Math.max(1, dto.limit ? parseInt(dto.limit, 10) || 20 : 20), 50);
+    return this.searchService.search(dto.q, dto.type, dto.cursor, safeLimit, userId);
   }
 
   @Get('trending')
@@ -42,10 +36,10 @@ export class SearchController {
   @ApiOperation({ summary: 'Get posts for a specific hashtag' })
   getHashtagPosts(
     @Param('tag') tag: string,
-    @Query('cursor') cursor?: string,
+    @Query() dto: HashtagSearchDto,
     @CurrentUser('id') userId?: string,
   ) {
-    return this.searchService.getHashtagPosts(tag, cursor, undefined, userId);
+    return this.searchService.getHashtagPosts(tag, dto.cursor, undefined, userId);
   }
 
   @Get('suggested-users')
@@ -58,13 +52,11 @@ export class SearchController {
   @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Search posts by query string' })
   searchPosts(
-    @Query('q') query: string,
-    @Query('cursor') cursor?: string,
-    @Query('limit') limit?: string,
+    @Query() dto: SearchQueryDto,
     @CurrentUser('id') userId?: string,
   ) {
-    const safeLimit = Math.min(Math.max(1, limit ? parseInt(limit, 10) || 20 : 20), 50);
-    return this.searchService.searchPosts(query, userId, cursor, safeLimit);
+    const safeLimit = Math.min(Math.max(1, dto.limit ? parseInt(dto.limit, 10) || 20 : 20), 50);
+    return this.searchService.searchPosts(dto.q, userId, dto.cursor, safeLimit);
   }
 
   @Get('threads')
@@ -72,13 +64,11 @@ export class SearchController {
   @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Search threads by query string' })
   searchThreads(
-    @Query('q') query: string,
-    @Query('cursor') cursor?: string,
-    @Query('limit') limit?: string,
+    @Query() dto: SearchQueryDto,
     @CurrentUser('id') userId?: string,
   ) {
-    const safeLimit = Math.min(Math.max(1, limit ? parseInt(limit, 10) || 20 : 20), 50);
-    return this.searchService.searchThreads(query, cursor, safeLimit, userId);
+    const safeLimit = Math.min(Math.max(1, dto.limit ? parseInt(dto.limit, 10) || 20 : 20), 50);
+    return this.searchService.searchThreads(dto.q, dto.cursor, safeLimit, userId);
   }
 
   @Get('reels')
@@ -86,13 +76,11 @@ export class SearchController {
   @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Search reels by query string' })
   searchReels(
-    @Query('q') query: string,
-    @Query('cursor') cursor?: string,
-    @Query('limit') limit?: string,
+    @Query() dto: SearchQueryDto,
     @CurrentUser('id') userId?: string,
   ) {
-    const safeLimit = Math.min(Math.max(1, limit ? parseInt(limit, 10) || 20 : 20), 50);
-    return this.searchService.searchReels(query, cursor, safeLimit, userId);
+    const safeLimit = Math.min(Math.max(1, dto.limit ? parseInt(dto.limit, 10) || 20 : 20), 50);
+    return this.searchService.searchReels(dto.q, dto.cursor, safeLimit, userId);
   }
 
   @Get('explore')
@@ -112,11 +100,8 @@ export class SearchController {
   @UseGuards(OptionalClerkAuthGuard)
   @Throttle({ default: { ttl: 60000, limit: 30 } })
   @ApiOperation({ summary: 'Get search query autocomplete suggestions' })
-  querySuggestions(
-    @Query('q') query: string,
-    @Query('limit') limit?: string,
-  ) {
-    const safeLimit = Math.min(Math.max(1, limit ? parseInt(limit, 10) || 10 : 10), 20);
-    return this.searchService.getSuggestions(query || '', safeLimit);
+  querySuggestions(@Query() dto: SearchSuggestionsDto) {
+    const safeLimit = Math.min(Math.max(1, dto.limit ? parseInt(dto.limit, 10) || 10 : 10), 20);
+    return this.searchService.getSuggestions(dto.q || '', safeLimit);
   }
 }
