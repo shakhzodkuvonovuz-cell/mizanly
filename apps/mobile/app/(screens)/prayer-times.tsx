@@ -553,7 +553,10 @@ export default function PrayerTimesScreen() {
                 <Icon name="map-pin" size="sm" color={colors.emerald} />
                 <Text style={styles.locationText}>{userLocation ? t('islamic.locationCoords', { lat: userLocation.lat.toFixed(2), lng: userLocation.lng.toFixed(2) }) : t('islamic.detectingLocation')}</Text>
               </View>
-              <Pressable onPress={() => navigate('/(screens)/location-picker')}>
+                            <Pressable
+                accessibilityRole="button"
+                onPress={() => navigate('/(screens)/location-picker')}
+              >
                 <Text style={styles.changeLocation}>{t('common.change')}</Text>
               </Pressable>
             </LinearGradient>
@@ -663,6 +666,7 @@ export default function PrayerTimesScreen() {
 
           {/* Calculation Method */}
           <Pressable
+            accessibilityLabel={t('accessibility.settings')}
             accessibilityRole="button"
             style={styles.methodSelector}
             onPress={() => setShowMethodPicker(true)}

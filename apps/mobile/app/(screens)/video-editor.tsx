@@ -168,6 +168,7 @@ export default function VideoEditorScreen() {
               <View style={styles.timeInputContainer}>
                 <Text style={styles.timeInputLabel}>{t('videoEditor.start')}</Text>
                 <TextInput
+                  accessibilityLabel={t('accessibility.textInput')}
                   style={styles.timeInput}
                   value={formatTime(state.startTime)}
                   editable={false}
@@ -176,6 +177,7 @@ export default function VideoEditorScreen() {
               <View style={styles.timeInputContainer}>
                 <Text style={styles.timeInputLabel}>{t('videoEditor.end')}</Text>
                 <TextInput
+                  accessibilityLabel={t('accessibility.textInput')}
                   style={styles.timeInput}
                   value={formatTime(state.endTime)}
                   editable={false}
@@ -347,6 +349,7 @@ export default function VideoEditorScreen() {
                       : { right: '50%', width: `${Math.abs(value) / 2}%` }
                   ]} />
                   <Pressable
+                    accessibilityRole="button"
                     style={[styles.adjustSliderThumb, { left: `${50 + value / 2}%` }]}
                     onPress={() => { state.pushUndo(); setter(0); haptic.tick(); }}
                   />
@@ -354,6 +357,7 @@ export default function VideoEditorScreen() {
                 <View style={styles.adjustPresetRow}>
                   {[-50, -25, 0, 25, 50].map(preset => (
                     <Pressable
+                      accessibilityRole="button"
                       key={preset}
                       style={[styles.adjustPreset, value === preset && styles.adjustPresetActive]}
                       onPress={() => { state.pushUndo(); setter(preset); haptic.tick(); }}
@@ -375,6 +379,7 @@ export default function VideoEditorScreen() {
                 <View style={styles.fadeButtons}>
                   {[0, 0.5, 1, 2].map(sec => (
                     <Pressable
+                      accessibilityRole="button"
                       key={sec}
                       style={[styles.fadeButton, state.fadeIn === sec && styles.fadeButtonActive]}
                       onPress={() => { state.pushUndo(); state.setFadeIn(sec); haptic.tick(); }}
@@ -391,6 +396,7 @@ export default function VideoEditorScreen() {
                 <View style={styles.fadeButtons}>
                   {[0, 0.5, 1, 2].map(sec => (
                     <Pressable
+                      accessibilityRole="button"
                       key={sec}
                       style={[styles.fadeButton, state.fadeOut === sec && styles.fadeButtonActive]}
                       onPress={() => { state.pushUndo(); state.setFadeOut(sec); haptic.tick(); }}
@@ -502,6 +508,7 @@ export default function VideoEditorScreen() {
             <View style={styles.adjustPresetRow}>
               {[24, 36, 48, 64, 80].map(size => (
                 <Pressable
+                  accessibilityRole="button"
                   key={size}
                   style={[styles.adjustPreset, state.textSize === size && styles.adjustPresetActive]}
                   onPress={() => { state.pushUndo(); state.setTextSize(size); haptic.tick(); }}
@@ -514,12 +521,14 @@ export default function VideoEditorScreen() {
             {/* Text style toggles */}
             <View style={[styles.effectToggleGrid, { marginTop: spacing.sm }]}>
               <Pressable
+                accessibilityRole="button"
                 style={[styles.effectToggleItem, state.textBg && styles.effectToggleActive]}
                 onPress={() => { state.pushUndo(); state.setTextBg(!state.textBg); haptic.tick(); }}
               >
                 <Text style={[styles.effectToggleText, state.textBg && styles.effectToggleTextActive]}>{t('videoEditor.textBackground')}</Text>
               </Pressable>
               <Pressable
+                accessibilityRole="button"
                 style={[styles.effectToggleItem, state.textShadow && styles.effectToggleActive]}
                 onPress={() => { state.pushUndo(); state.setTextShadow(!state.textShadow); haptic.tick(); }}
               >
@@ -728,6 +737,7 @@ export default function VideoEditorScreen() {
             <View style={styles.adjustPresetRow}>
               {[-6, -3, 0, 3, 6].map(preset => (
                 <Pressable
+                  accessibilityRole="button"
                   key={preset}
                   style={[styles.adjustPreset, state.audioPitch === preset && styles.adjustPresetActive]}
                   onPress={() => { state.pushUndo(); state.setAudioPitch(preset); haptic.tick(); }}
@@ -743,6 +753,7 @@ export default function VideoEditorScreen() {
             <Text style={[styles.toolSubTitle, { marginTop: spacing.md }]}>{t('videoEditor.enhancements')}</Text>
 
             <Pressable
+              accessibilityLabel={t('accessibility.toggleMute')}
               accessibilityRole="switch"
               style={styles.toggleRow}
               onPress={() => { state.pushUndo(); state.setNoiseReduce(!state.noiseReduce); haptic.tick(); }}
@@ -760,6 +771,7 @@ export default function VideoEditorScreen() {
             </Pressable>
 
             <Pressable
+              accessibilityLabel={t('accessibility.selectCategory')}
               accessibilityRole="switch"
               style={styles.toggleRow}
               onPress={() => { state.pushUndo(); state.setStabilize(!state.stabilize); haptic.tick(); }}
@@ -780,6 +792,7 @@ export default function VideoEditorScreen() {
             <Text style={[styles.toolSubTitle, { marginTop: spacing.md }]}>{t('videoEditor.freezeFrame')}</Text>
             <View style={styles.freezeRow}>
               <Pressable
+                accessibilityLabel={t('accessibility.pauseAudio')}
                 accessibilityRole="button"
                 style={styles.freezeButton}
                 onPress={() => {
@@ -811,6 +824,8 @@ export default function VideoEditorScreen() {
 
             <View style={styles.effectToggleGrid}>
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.showMore')}
                 style={[styles.effectToggleItem, state.sharpen && styles.effectToggleActive]}
                 onPress={() => { state.pushUndo(); state.setSharpen(!state.sharpen); haptic.tick(); }}
               >
@@ -818,6 +833,7 @@ export default function VideoEditorScreen() {
                 <Text style={[styles.effectToggleText, state.sharpen && styles.effectToggleTextActive]}>{t('videoEditor.sharpen')}</Text>
               </Pressable>
               <Pressable
+                accessibilityRole="button"
                 style={[styles.effectToggleItem, state.vignetteOn && styles.effectToggleActive]}
                 onPress={() => { state.pushUndo(); state.setVignetteOn(!state.vignetteOn); haptic.tick(); }}
               >
@@ -825,6 +841,7 @@ export default function VideoEditorScreen() {
                 <Text style={[styles.effectToggleText, state.vignetteOn && styles.effectToggleTextActive]}>{t('videoEditor.vignetteEffect')}</Text>
               </Pressable>
               <Pressable
+                accessibilityRole="button"
                 style={[styles.effectToggleItem, state.grain && styles.effectToggleActive]}
                 onPress={() => { state.pushUndo(); state.setGrain(!state.grain); haptic.tick(); }}
               >
@@ -832,6 +849,7 @@ export default function VideoEditorScreen() {
                 <Text style={[styles.effectToggleText, state.grain && styles.effectToggleTextActive]}>{t('videoEditor.filmGrain')}</Text>
               </Pressable>
               <Pressable
+                accessibilityRole="button"
                 style={[styles.effectToggleItem, state.rotation !== 0 && styles.effectToggleActive]}
                 onPress={() => {
                   state.pushUndo();
@@ -847,6 +865,8 @@ export default function VideoEditorScreen() {
                 </Text>
               </Pressable>
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.navigateBack')}
                 style={[styles.effectToggleItem, state.flipH && styles.effectToggleActive]}
                 onPress={() => { state.pushUndo(); state.setFlipH(!state.flipH); haptic.tick(); }}
               >
@@ -854,6 +874,8 @@ export default function VideoEditorScreen() {
                 <Text style={[styles.effectToggleText, state.flipH && styles.effectToggleTextActive]}>{t('videoEditor.flipH')}</Text>
               </Pressable>
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.navigateBack')}
                 style={[styles.effectToggleItem, state.flipV && styles.effectToggleActive]}
                 onPress={() => { state.pushUndo(); state.setFlipV(!state.flipV); haptic.tick(); }}
               >
@@ -861,6 +883,7 @@ export default function VideoEditorScreen() {
                 <Text style={[styles.effectToggleText, state.flipV && styles.effectToggleTextActive]}>{t('videoEditor.flipV')}</Text>
               </Pressable>
               <Pressable
+                accessibilityRole="button"
                 style={[styles.effectToggleItem, state.glitch && styles.effectToggleActive]}
                 onPress={() => { state.pushUndo(); state.setGlitch(!state.glitch); haptic.tick(); }}
               >
@@ -868,6 +891,8 @@ export default function VideoEditorScreen() {
                 <Text style={[styles.effectToggleText, state.glitch && styles.effectToggleTextActive]}>{t('videoEditor.glitchEffect')}</Text>
               </Pressable>
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.remove')}
                 style={[styles.effectToggleItem, state.letterbox && styles.effectToggleActive]}
                 onPress={() => { state.pushUndo(); state.setLetterbox(!state.letterbox); haptic.tick(); }}
               >
@@ -875,6 +900,7 @@ export default function VideoEditorScreen() {
                 <Text style={[styles.effectToggleText, state.letterbox && styles.effectToggleTextActive]}>{t('videoEditor.letterbox')}</Text>
               </Pressable>
               <Pressable
+                accessibilityRole="button"
                 style={[styles.effectToggleItem, state.boomerang && styles.effectToggleActive]}
                 onPress={() => { state.pushUndo(); state.setBoomerang(!state.boomerang); haptic.tick(); }}
               >
@@ -920,6 +946,7 @@ export default function VideoEditorScreen() {
                 <Icon name="check-circle" size="sm" color={colors.emerald} />
                 <Text style={styles.voiceoverRecordedText}>{t('videoEditor.voiceoverReady')}</Text>
                 <Pressable
+                  accessibilityLabel={t('accessibility.delete')}
                   accessibilityRole="button"
                   onPress={() => {
                     state.setVoiceoverUri(null);

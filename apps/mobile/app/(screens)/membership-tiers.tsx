@@ -419,6 +419,7 @@ export default function MembershipTiersScreen() {
                         </Pressable>
 
                         <Pressable
+                          accessibilityLabel={t('accessibility.add')}
                           accessibilityRole="button"
                           onPress={handleCreateTier}
                           disabled={!newTierName.trim() || !newTierPrice.trim()}

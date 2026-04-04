@@ -489,6 +489,7 @@ function QuranReadingPlanContent() {
             {/* Mark Reading Button */}
             <Animated.View entering={FadeInUp.delay(250).duration(400)}>
               <Pressable
+                accessibilityLabel={t('accessibility.confirm')}
                 accessibilityRole="button"
                 onPress={() => setMarkSheetVisible(true)}
                

@@ -52,7 +52,11 @@ function AmountButton({
   const tc = useThemeColors();
   const styles = useMemo(() => createStyles(tc), [tc]);
   return (
-    <Pressable onPress={onPress} style={styles.amountButton}>
+        <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={styles.amountButton}
+    >
       <LinearGradient
         colors={
           isSelected
@@ -221,7 +225,11 @@ export default function SendTipScreen() {
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.doneButtonContainer}>
-            <Pressable onPress={handleDone}>
+                        <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('accessibility.done')}
+              onPress={handleDone}
+            >
               <LinearGradient
                 colors={[colors.emerald, colors.emeraldDark]}
                 style={styles.doneButton}

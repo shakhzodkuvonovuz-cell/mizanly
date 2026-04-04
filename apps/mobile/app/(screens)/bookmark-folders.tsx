@@ -44,6 +44,8 @@ function FolderCard({ folder, onPress, onLongPress }: FolderCardProps) {
   // For now, no cover thumbnail; we could later fetch first item's image
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={t('accessibility.bookmark')}
       onPress={onPress}
       onLongPress={onLongPress}
       style={({ pressed }) => [styles.folderCard, { backgroundColor: tc.bgCard }, pressed && { opacity: 0.7 }]}
@@ -239,10 +241,16 @@ export default function BookmarkFoldersScreen() {
               autoFocus
             />
             <View style={styles.sheetButtons}>
-              <Pressable style={({ pressed }) => [styles.cancelBtn, pressed && { opacity: 0.7 }]} onPress={() => setCreateSheetVisible(false)}>
+                            <Pressable
+                accessibilityRole="button"
+                style={({ pressed }) => [styles.cancelBtn, pressed && { opacity: 0.7 }]}
+                onPress={() => setCreateSheetVisible(false)}
+              >
                 <Text style={[styles.cancelText, { color: tc.text.secondary }]}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.add')}
                 style={({ pressed }) => [styles.createBtn, pressed && { opacity: 0.8 }, !newFolderName.trim() && { opacity: 0.4 }]}
                 onPress={handleCreateFolder}
                 disabled={!newFolderName.trim()}

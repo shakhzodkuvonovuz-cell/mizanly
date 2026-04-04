@@ -418,6 +418,7 @@ export default function CreateVideoScreen() {
                   </Pressable>
                 ))}
                 <Pressable
+                  accessibilityLabel={t('accessibility.pickImage')}
                   accessibilityRole="button"
                   onPress={async () => {
                     const result = await ImagePicker.launchImageLibraryAsync({
@@ -498,6 +499,7 @@ export default function CreateVideoScreen() {
           <View style={styles.field}>
             <Text style={styles.fieldLabel}>{t('createVideo.categoryField')}</Text>
             <Pressable
+              accessibilityLabel={t('accessibility.expandSection')}
               accessibilityRole="button"
               style={[styles.pickerButton, { backgroundColor: tc.surface }]}
               onPress={() => setShowCategorySheet(true)}
@@ -542,6 +544,7 @@ export default function CreateVideoScreen() {
             <View style={styles.field}>
               <Text style={styles.fieldLabel}>{t('createVideo.channelField')}</Text>
               <Pressable
+                accessibilityLabel={t('accessibility.expandSection')}
                 accessibilityRole="button"
                 style={[styles.pickerButton, { backgroundColor: tc.surface }]}
                 onPress={() => setShowChannelSheet(true)}
@@ -556,6 +559,7 @@ export default function CreateVideoScreen() {
           <View style={styles.field}>
             <Text style={styles.fieldLabel}>{t('createVideo.visibilityField')}</Text>
             <Pressable
+              accessibilityLabel={t('accessibility.expandSection')}
               accessibilityRole="button"
               style={[styles.pickerButton, { backgroundColor: tc.surface }]}
               onPress={() => setShowVisibilitySheet(true)}

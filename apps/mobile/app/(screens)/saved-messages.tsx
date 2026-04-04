@@ -112,6 +112,7 @@ export default function SavedMessagesScreen() {
     return (
       <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(250)} exiting={SlideOutRight.duration(200)}>
         <Pressable
+          accessibilityLabel={t('accessibility.bookmark')}
           accessibilityRole="button"
           style={[styles.messageCard, isPinned && styles.messageCardPinned]}
           onLongPress={() => { setMenuItem(item); haptic.longPress(); }}
@@ -182,7 +183,11 @@ export default function SavedMessagesScreen() {
               placeholderTextColor={tc.text.tertiary}
               autoFocus
             />
-            <Pressable onPress={() => { setSearchMode(false); setSearchQuery(''); }}>
+                        <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('accessibility.clearSearchInput')}
+              onPress={() => { setSearchMode(false); setSearchQuery(''); }}
+            >
               <Icon name="x" size="sm" color={tc.text.tertiary} />
             </Pressable>
           </Animated.View>
@@ -228,6 +233,7 @@ export default function SavedMessagesScreen() {
             maxLength={5000}
           />
           <Pressable
+            accessibilityLabel={t('accessibility.sendMessage')}
             accessibilityRole="button"
             style={[styles.sendBtn, !newMessage.trim() && { opacity: 0.3 }]}
             onPress={() => newMessage.trim() && saveMutation.mutate()}

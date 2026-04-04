@@ -393,6 +393,7 @@ export default function ZakatCalculatorScreen() {
                 {/* Next Button */}
                 <Animated.View entering={FadeInUp.delay(400).duration(400)}>
                   <Pressable
+                    accessibilityLabel={t('accessibility.seeMore')}
                     accessibilityRole="button"
                     onPress={goNext}
                     disabled={totalAssets === 0}

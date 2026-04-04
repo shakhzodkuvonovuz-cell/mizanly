@@ -38,9 +38,14 @@ function UserRow({ user, isMe, isCloseFriend, onToggle, onPress, disabled, index
   index?: number;
 }) {
   const tc = useThemeColors();
+  const { t } = useTranslation();
   return (
     <Animated.View entering={FadeInUp.delay(index * 30).duration(300)}>
-      <Pressable onPress={onPress} style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
+            <Pressable
+        accessibilityRole="button"
+        onPress={onPress}
+        style={({ pressed }) => [pressed && { opacity: 0.7 }]}
+      >
         <LinearGradient
           colors={isCloseFriend ? ['rgba(10,123,79,0.12)', 'rgba(10,123,79,0.04)'] : ['rgba(45,53,72,0.2)', 'rgba(28,35,51,0.1)']}
           style={styles.row}
@@ -66,6 +71,7 @@ function UserRow({ user, isMe, isCloseFriend, onToggle, onPress, disabled, index
               {isCloseFriend && (
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={t('common.remove')}
                   onPress={() => onToggle(user.id, false)}
                   hitSlop={8}
                   style={styles.removeBtn}
@@ -364,7 +370,12 @@ export default function CloseFriendsScreen() {
               autoCorrect={false}
             />
             {searchQuery.length > 0 && (
-              <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+                            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.clearSearchInput')}
+                onPress={() => setSearchQuery('')}
+                hitSlop={8}
+              >
                 <Icon name="x" size="sm" color={tc.text.secondary} />
               </Pressable>
             )}

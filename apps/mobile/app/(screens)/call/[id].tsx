@@ -749,7 +749,12 @@ export default function CallScreen() {
           {isActive && (
             <View style={styles.reactionBar}>
               {['\u{1F44D}', '\u{2764}', '\u{1F602}', '\u{1F44F}', '\u{1F389}'].map((emoji) => (
-                <Pressable key={emoji} onPress={() => handleSendReaction(emoji)} style={styles.reactionButton}>
+                                <Pressable
+                  accessibilityRole="button"
+                  key={emoji}
+                  onPress={() => handleSendReaction(emoji)}
+                  style={styles.reactionButton}
+                >
                   <Text style={styles.reactionEmoji}>{emoji}</Text>
                 </Pressable>
               ))}

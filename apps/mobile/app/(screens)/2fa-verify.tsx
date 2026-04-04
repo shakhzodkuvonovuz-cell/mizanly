@@ -134,6 +134,7 @@ export default function TwoFactorVerifyScreen() {
               style={styles.otpDigitBox}
             >
               <TextInput
+                accessibilityLabel={t('accessibility.textInput')}
                 ref={el => inputRefs.current[idx] = el}
                 style={[styles.otpDigit, error && styles.otpDigitError]}
                 value={digit}

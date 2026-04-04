@@ -67,6 +67,7 @@ export default function WatchPartyScreen() {
   const renderVideoPickerItem = useCallback(
     ({ item }: { item: Video }) => (
       <Pressable
+        accessibilityLabel={t('accessibility.pickVideo')}
         accessibilityRole="button"
         style={styles.videoPickerRow}
         onPress={() => {

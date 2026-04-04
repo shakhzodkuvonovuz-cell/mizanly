@@ -481,6 +481,8 @@ export default function SafScreen() {
         <PostCard post={item} viewerId={user?.id} isOwn={user?.username === item.user.username} />
         {item.commentsCount > 0 && (
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('accessibility.viewPost')}
             onPress={() => router.push(`/(screens)/post/${item.id}`)}
             style={styles.commentPreview}
           >
@@ -629,7 +631,12 @@ export default function SafScreen() {
           <Text style={{ color: '#FFF', fontSize: fontSize.sm, flex: 1, fontFamily: fonts.bodyMedium }}>
             {t('onboarding.safTip', 'Welcome to Saf! Swipe between Following and For You feeds. Double-tap to like!')}
           </Text>
-          <Pressable onPress={() => setShowCoachMark(false)} hitSlop={8}>
+                    <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('accessibility.close')}
+            onPress={() => setShowCoachMark(false)}
+            hitSlop={8}
+          >
             <Icon name="x" size="xs" color="#FFF" />
           </Pressable>
         </Animated.View>

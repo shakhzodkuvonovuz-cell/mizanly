@@ -50,6 +50,7 @@ const CategoryChip = memo(function CategoryChip({ cat, isActive, onPress }: Cate
   const tc = useThemeColors();
   return (
     <AnimatedPressable
+      accessibilityRole="button"
       key={cat.key}
       style={[
         styles.categoryChip,
@@ -104,6 +105,8 @@ const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMor
 
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={t('accessibility.pickVideo')}
       style={styles.videoCard}
       onPress={() => onPress(video)}
     >
@@ -137,6 +140,7 @@ const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMor
       {/* Info row */}
       <View style={[styles.infoRow, { flexDirection: rtlFlexRow(isRTLProp) }]}>
         <Pressable
+          accessibilityRole="button"
           style={styles.channelAvatar}
           onPress={() => onChannelPress(video.channel.handle)}
           hitSlop={8}
@@ -163,6 +167,8 @@ const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMor
           </Text>
         </View>
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('accessibility.moreOptions')}
           style={styles.moreButton}
           onPress={() => onMorePress(video)}
           hitSlop={8}
@@ -307,13 +313,20 @@ export default function MinbarScreen() {
         <View style={styles.continueSection}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.continueTitle}>{t('minbar.continueWatching')}</Text>
-            <Pressable onPress={() => router.push('/(screens)/watch-history')} hitSlop={8}>
+                        <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('accessibility.seeMore')}
+              onPress={() => router.push('/(screens)/watch-history')}
+              hitSlop={8}
+            >
               <Text style={styles.seeAllText}>{t('common.seeMore')}</Text>
             </Pressable>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.continueScroll}>
             {continueWatchingQuery.data.map((item) => (
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.viewVideo')}
                 key={item.id}
                 style={styles.continueCard}
                 onPress={() => router.push(`/(screens)/video/${item.id}`)}

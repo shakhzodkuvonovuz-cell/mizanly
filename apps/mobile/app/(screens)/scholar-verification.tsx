@@ -340,6 +340,7 @@ function ScholarVerificationContent() {
       <Animated.View entering={FadeInUp.delay(100).duration(400)} style={styles.fieldContainer}>
         <Text style={styles.fieldLabel}>{t('scholar.specialization')}</Text>
         <Pressable
+          accessibilityLabel={t('accessibility.expandSection')}
           accessibilityRole="button"
           style={styles.pickerButton}
           onPress={() => setSpecSheetVisible(true)}
@@ -358,6 +359,7 @@ function ScholarVerificationContent() {
       <Animated.View entering={FadeInUp.delay(200).duration(400)} style={styles.fieldContainer}>
         <Text style={styles.fieldLabel}>{t('scholar.madhab')}</Text>
         <Pressable
+          accessibilityLabel={t('accessibility.expandSection')}
           accessibilityRole="button"
           style={styles.pickerButton}
           onPress={() => setMadhabSheetVisible(true)}

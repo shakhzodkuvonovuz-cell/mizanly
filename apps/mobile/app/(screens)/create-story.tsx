@@ -1155,7 +1155,12 @@ export default function CreateStoryScreen() {
                 autoCapitalize="none"
               />
               {stickerSearch.length > 0 && (
-                <Pressable onPress={() => setStickerSearch('')} hitSlop={8}>
+                                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('accessibility.close')}
+                  onPress={() => setStickerSearch('')}
+                  hitSlop={8}
+                >
                   <Icon name="x" size="sm" color={tc.text.tertiary} />
                 </Pressable>
               )}
@@ -1298,7 +1303,13 @@ export default function CreateStoryScreen() {
             <TextInput value={quizQuestion} onChangeText={setQuizQuestion} placeholder={t('stories.quizQuestion')}
               placeholderTextColor={tc.text.tertiary} maxLength={100} style={editorInput} />
             {quizOptions.map((opt, i) => (
-              <Pressable key={i} onPress={() => setQuizCorrectIndex(i)} style={{ flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm }}>
+                            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.confirm')}
+                key={i}
+                onPress={() => setQuizCorrectIndex(i)}
+                style={{ flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm }}
+              >
                 <View style={{
                   width: 20, height: 20, borderRadius: radius.full,
                   backgroundColor: i === quizCorrectIndex ? colors.emerald : tc.surface,
@@ -1513,6 +1524,8 @@ export default function CreateStoryScreen() {
         <View style={{ marginTop: spacing.lg }}>
           {/* Close friends toggle */}
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('accessibility.close')}
             onPress={() => handleCloseFriendsToggle(!closeFriendsOnly)}
             style={{
               flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -1537,6 +1550,8 @@ export default function CreateStoryScreen() {
           </Pressable>
           {/* Subscribers-only toggle */}
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('accessibility.chatLock')}
             onPress={() => handleSubscribersToggle(!subscribersOnly)}
             style={{
               flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',

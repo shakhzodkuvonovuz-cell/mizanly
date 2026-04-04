@@ -442,7 +442,11 @@ function VerifyEncryptionContent() {
             style={styles.statusSection}
           >
             {isVerified ? (
-              <Pressable onPress={handleUnmark} style={styles.statusPill}>
+                            <Pressable
+                accessibilityRole="button"
+                onPress={handleUnmark}
+                style={styles.statusPill}
+              >
                 <LinearGradient
                   colors={[colors.active.emerald20, colors.active.emerald10]}
                   style={styles.statusPillInner}

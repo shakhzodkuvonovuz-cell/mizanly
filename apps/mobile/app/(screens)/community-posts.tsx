@@ -83,7 +83,11 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
           style={styles.postCardGradient}
         >
       <View style={styles.postHeader}>
-        <Pressable style={styles.postUser} onPress={handlePressUser}>
+                <Pressable
+          accessibilityRole="button"
+          style={styles.postUser}
+          onPress={handlePressUser}
+        >
           <Avatar
             uri={post.user.avatarUrl}
             name={post.user.displayName}

@@ -340,7 +340,11 @@ export default function BroadcastChannelScreen() {
                     onPress={handleSubscribe}
                   />
                   {channel.isMuted && (
-                    <Pressable style={styles.muteBadge}>
+                                        <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={t('accessibility.toggleMute')}
+                      style={styles.muteBadge}
+                    >
                       <Icon name="volume-x" size="xs" color={tc.text.tertiary} />
                       <Text style={styles.muteText}>{t('broadcast.muted')}</Text>
                     </Pressable>
@@ -385,6 +389,7 @@ export default function BroadcastChannelScreen() {
                   editable={!sending}
                 />
                 <Pressable
+                  accessibilityLabel={t('accessibility.sendMessage')}
                   accessibilityRole="button"
                   style={[styles.sendButton, (!newMessage.trim() || sending) && styles.sendButtonDisabled]}
                   onPress={handleSendMessage}

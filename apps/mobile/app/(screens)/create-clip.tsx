@@ -106,23 +106,43 @@ export default function CreateClipScreen() {
           <Animated.View entering={FadeInUp.delay(100).duration(300)} style={styles.timeSection}>
             <Text style={[styles.sectionLabel, { color: tc.text.secondary }]}>{t('clips.from')}</Text>
             <View style={styles.timeControls}>
-              <Pressable onPress={() => adjustStart(-5)} style={[styles.timeBtn, { backgroundColor: tc.surface }]}>
+                            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.navigateBack')}
+                onPress={() => adjustStart(-5)}
+                style={[styles.timeBtn, { backgroundColor: tc.surface }]}
+              >
                 <Icon name="chevron-left" size="sm" color={tc.text.primary} />
               </Pressable>
               <View style={[styles.timeDisplay, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
                 <Text style={styles.timeText}>{formatTime(startTime)}</Text>
               </View>
-              <Pressable onPress={() => adjustStart(5)} style={[styles.timeBtn, { backgroundColor: tc.surface }]}>
+                            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.seeMore')}
+                onPress={() => adjustStart(5)}
+                style={[styles.timeBtn, { backgroundColor: tc.surface }]}
+              >
                 <Icon name="chevron-right" size="sm" color={tc.text.primary} />
               </Pressable>
               <Text style={[styles.timeSep, { color: tc.text.tertiary }]}>—</Text>
-              <Pressable onPress={() => adjustEnd(-5)} style={[styles.timeBtn, { backgroundColor: tc.surface }]}>
+                            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.navigateBack')}
+                onPress={() => adjustEnd(-5)}
+                style={[styles.timeBtn, { backgroundColor: tc.surface }]}
+              >
                 <Icon name="chevron-left" size="sm" color={tc.text.primary} />
               </Pressable>
               <View style={[styles.timeDisplay, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
                 <Text style={styles.timeText}>{formatTime(endTime)}</Text>
               </View>
-              <Pressable onPress={() => adjustEnd(5)} style={[styles.timeBtn, { backgroundColor: tc.surface }]}>
+                            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.seeMore')}
+                onPress={() => adjustEnd(5)}
+                style={[styles.timeBtn, { backgroundColor: tc.surface }]}
+              >
                 <Icon name="chevron-right" size="sm" color={tc.text.primary} />
               </Pressable>
             </View>

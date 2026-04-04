@@ -1722,7 +1722,11 @@
     "viewNotification": "عرض الإشعار من {{name}}",
     "episodeLabel": "الحلقة {{num}}: {{title}}",
     "accentColor": "لون التمييز {{color}}",
-    "viewSellerProfile": "عرض ملف {{name}}"
+    "viewSellerProfile": "عرض ملف {{name}}",
+    "orderLabel": "طلب: {{title}}",
+    "playlistLabel": "قائمة تشغيل: {{title}}، {{count}} فيديو",
+    "selectTheme": "اختيار سمة {{label}}",
+    "followUser": "متابعة {{name}}"
   },
   "gif": {
     "searchPlaceholder": "البحث عن صور متحركة...",

@@ -125,6 +125,7 @@ export default function ArchiveScreen() {
     return (
       <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
       <Pressable
+        accessibilityLabel={t('accessibility.playAudio')}
         accessibilityRole="button"
         style={({ pressed }) => [styles.gridItem as ViewStyle, { width: ITEM_SIZE, backgroundColor: tc.bgCard }, pressed && { opacity: 0.7 }]}
         onPress={() => handleStoryPress(item)}

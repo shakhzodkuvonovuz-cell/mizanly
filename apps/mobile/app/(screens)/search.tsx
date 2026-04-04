@@ -324,7 +324,12 @@ export default function SearchScreen() {
   const renderPostItem = useCallback(({ item }: { item: Post }) => <PostCard post={item} />, []);
   const renderThreadItem = useCallback(({ item }: { item: Thread }) => <ThreadCard thread={item} />, []);
   const renderReelItem = useCallback(({ item }: { item: Reel }) => (
-    <Pressable style={styles.reelRow} onPress={() => { haptic.navigate(); router.push(`/(screens)/reel/${item.id}`); }}>
+        <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={t('accessibility.viewReel')}
+      style={styles.reelRow}
+      onPress={() => { haptic.navigate(); router.push(`/(screens)/reel/${item.id}`); }}
+    >
       <ProgressiveImage uri={item.thumbnailUrl || item.videoUrl} width={110} height={190} borderRadius={radius.sm} contentFit="cover" />
       <View style={styles.reelInfo}>
         <Text style={styles.reelCaption} numberOfLines={2}>{item.caption || t('search.noCaption')}</Text>
@@ -356,7 +361,12 @@ export default function SearchScreen() {
       <Pressable style={[styles.historyText, { flexDirection: rtlFlexRow(isRTL) }]} onPress={() => { setQuery(item); setDebouncedQuery(item); }} accessibilityRole="button" accessibilityLabel={t('search.searchFor', { term: item })}>
         <Icon name="clock" size={16} color={tc.text.secondary} /><Text style={styles.historyTerm}>{item}</Text>
       </Pressable>
-      <Pressable onPress={() => { haptic.delete(); const updated = searchHistory.filter(h => h !== item); setSearchHistory(updated); AsyncStorage.setItem('search-history', JSON.stringify(updated)).catch(() => {}); }} hitSlop={8}>
+            <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t('accessibility.clearSearchInput')}
+        onPress={() => { haptic.delete(); const updated = searchHistory.filter(h => h !== item); setSearchHistory(updated); AsyncStorage.setItem('search-history', JSON.stringify(updated)).catch(() => {}); }}
+        hitSlop={8}
+      >
         <Icon name="x" size={16} color={tc.text.tertiary} />
       </Pressable>
     </View>
@@ -373,7 +383,13 @@ export default function SearchScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
+                <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('accessibility.navigateBack')}
+          onPress={() => router.back()}
+          hitSlop={8}
+          style={styles.backBtn}
+        >
           <Icon name={rtlArrow(isRTL, 'back')} size="md" color={tc.text.primary} />
         </Pressable>
         <View style={[styles.searchBox, isFocused && styles.searchBoxFocused, { flexDirection: rtlFlexRow(isRTL) }]}>
@@ -393,7 +409,12 @@ export default function SearchScreen() {
             onSubmitEditing={handleSearchSubmit}
           />
           {query.length > 0 && (
-            <Pressable onPress={() => { setQuery(''); setDebouncedQuery(''); }} hitSlop={8}>
+                        <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('accessibility.clearSearchInput')}
+              onPress={() => { setQuery(''); setDebouncedQuery(''); }}
+              hitSlop={8}
+            >
               <Icon name="x" size="xs" color={tc.text.secondary} />
             </Pressable>
           )}
@@ -683,6 +704,7 @@ export default function SearchScreen() {
               <View style={styles.trendingList}>
                 {trending.map((item, i) => (
                   <Pressable
+                    accessibilityLabel={t('accessibility.viewHashtag')}
                     accessibilityRole="button"
                     key={i}
                     style={[styles.trendingItem, { flexDirection: rtlFlexRow(isRTL) }]}

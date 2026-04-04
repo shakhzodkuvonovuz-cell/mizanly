@@ -270,6 +270,7 @@ export default function ConversationInfoScreen() {
   const renderSearchResultItem = useCallback(
     ({ item }: { item: User }) => (
       <Pressable
+        accessibilityLabel={t('accessibility.add')}
         accessibilityRole="button"
         style={[styles.userRow, { borderBottomColor: tc.border }]}
         onPress={() => setSelectedNewMembers(prev => [...prev, item])}
@@ -305,7 +306,12 @@ export default function ConversationInfoScreen() {
               colors={colors.gradient.cardDark}
               style={styles.heroCard}
             >
-              <Pressable onPress={isGroup && isCreator ? pickAvatar : undefined} style={{ position: 'relative' }}>
+                            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.edit')}
+                onPress={isGroup && isCreator ? pickAvatar : undefined}
+                style={{ position: 'relative' }}
+              >
                 <Avatar uri={avatarUri} name={name} size="2xl" />
                 {isGroup && isCreator && (
                   <LinearGradient
@@ -332,7 +338,13 @@ export default function ConversationInfoScreen() {
               )}
               {isGroup && isCreator && (
                 <View style={styles.adminActions}>
-                  <Pressable style={[styles.adminAction, addMembersMutation.isPending && { opacity: 0.5 }]} onPress={() => setAddMembersSheetOpen(true)} disabled={addMembersMutation.isPending}>
+                                    <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t('accessibility.add')}
+                    style={[styles.adminAction, addMembersMutation.isPending && { opacity: 0.5 }]}
+                    onPress={() => setAddMembersSheetOpen(true)}
+                    disabled={addMembersMutation.isPending}
+                  >
                     <LinearGradient
                       colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
                       style={styles.adminActionIconBg}
@@ -413,6 +425,8 @@ export default function ConversationInfoScreen() {
           {!isGroup && otherMember && (
             <Animated.View entering={FadeInUp.delay(80).duration(400)} style={styles.quickActions}>
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.openProfile')}
                 style={styles.quickAction}
                 onPress={() => router.push(`/(screens)/profile/${otherMember.user.username}`)}
               >
@@ -524,7 +538,12 @@ export default function ConversationInfoScreen() {
               colors={colors.gradient.cardDark}
               style={styles.optionsCardGlass}
             >
-              <Pressable style={[styles.actionRow, { borderBottomColor: tc.border }]} onPress={() => navigate(`/(screens)/starred-messages?conversationId=${convo?.id}`)}>
+                            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.bookmark')}
+                style={[styles.actionRow, { borderBottomColor: tc.border }]}
+                onPress={() => navigate(`/(screens)/starred-messages?conversationId=${convo?.id}`)}
+              >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                   <LinearGradient colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']} style={styles.actionIconBg}>
                     <Icon name="bookmark" size="xs" color={colors.gold} />
@@ -532,7 +551,12 @@ export default function ConversationInfoScreen() {
                   <Text style={styles.actionText}>{t('screens.starred-messages.title')}</Text>
                 </View>
               </Pressable>
-              <Pressable style={[styles.actionRow, { borderBottomColor: tc.border }]} onPress={() => navigate(`/(screens)/pinned-messages?conversationId=${convo?.id}`)}>
+                            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.addLocation')}
+                style={[styles.actionRow, { borderBottomColor: tc.border }]}
+                onPress={() => navigate(`/(screens)/pinned-messages?conversationId=${convo?.id}`)}
+              >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                   <LinearGradient colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']} style={styles.actionIconBg}>
                     <Icon name="map-pin" size="xs" color={colors.emerald} />
@@ -540,7 +564,12 @@ export default function ConversationInfoScreen() {
                   <Text style={styles.actionText}>{t('screens.pinned-messages.title')}</Text>
                 </View>
               </Pressable>
-              <Pressable style={[styles.actionRow, { borderBottomColor: tc.border }]} onPress={() => navigate(`/(screens)/conversation-media?id=${convo?.id}`)}>
+                            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.pickImage')}
+                style={[styles.actionRow, { borderBottomColor: tc.border }]}
+                onPress={() => navigate(`/(screens)/conversation-media?id=${convo?.id}`)}
+              >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                   <LinearGradient colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']} style={styles.actionIconBg}>
                     <Icon name="image" size="xs" color={colors.gold} />
@@ -548,7 +577,12 @@ export default function ConversationInfoScreen() {
                   <Text style={styles.actionText}>{t('risalah.media')}</Text>
                 </View>
               </Pressable>
-              <Pressable style={[styles.actionRow, { borderBottomColor: tc.border }]} onPress={() => navigate(`/(screens)/chat-export?conversationId=${convo?.id}`)}>
+                            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.share')}
+                style={[styles.actionRow, { borderBottomColor: tc.border }]}
+                onPress={() => navigate(`/(screens)/chat-export?conversationId=${convo?.id}`)}
+              >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                   <LinearGradient colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']} style={styles.actionIconBg}>
                     <Icon name="share" size="xs" color={colors.emerald} />
@@ -556,7 +590,11 @@ export default function ConversationInfoScreen() {
                   <Text style={styles.actionText}>{t('settings.export')}</Text>
                 </View>
               </Pressable>
-              <Pressable style={[styles.actionRow, { borderBottomColor: tc.border }]} onPress={() => navigate(`/(screens)/disappearing-settings?conversationId=${convo?.id}`)}>
+                            <Pressable
+                accessibilityRole="button"
+                style={[styles.actionRow, { borderBottomColor: tc.border }]}
+                onPress={() => navigate(`/(screens)/disappearing-settings?conversationId=${convo?.id}`)}
+              >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                   <LinearGradient colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']} style={styles.actionIconBg}>
                     <Icon name="clock" size="xs" color={colors.gold} />
@@ -564,7 +602,12 @@ export default function ConversationInfoScreen() {
                   <Text style={styles.actionText}>{t('risalah.disappearingMessages')}</Text>
                 </View>
               </Pressable>
-              <Pressable style={[styles.actionRow, { borderBottomColor: tc.border }]} onPress={() => navigate(`/(screens)/chat-wallpaper?conversationId=${convo?.id}`)}>
+                            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.pickImage')}
+                style={[styles.actionRow, { borderBottomColor: tc.border }]}
+                onPress={() => navigate(`/(screens)/chat-wallpaper?conversationId=${convo?.id}`)}
+              >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                   <LinearGradient colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']} style={styles.actionIconBg}>
                     <Icon name="image" size="xs" color={colors.emerald} />
@@ -572,7 +615,12 @@ export default function ConversationInfoScreen() {
                   <Text style={styles.actionText}>{t('settings.appearance')}</Text>
                 </View>
               </Pressable>
-              <Pressable style={[styles.actionRow, { borderBottomColor: tc.border }]} onPress={() => navigate(`/(screens)/chat-theme-picker?conversationId=${convo?.id}`)}>
+                            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.showMore')}
+                style={[styles.actionRow, { borderBottomColor: tc.border }]}
+                onPress={() => navigate(`/(screens)/chat-theme-picker?conversationId=${convo?.id}`)}
+              >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                   <LinearGradient colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']} style={styles.actionIconBg}>
                     <Icon name="eye" size="xs" color={colors.gold} />
@@ -580,7 +628,12 @@ export default function ConversationInfoScreen() {
                   <Text style={styles.actionText}>{t('settings.theme')}</Text>
                 </View>
               </Pressable>
-              <Pressable style={[styles.actionRow, { borderBottomColor: tc.border }]} onPress={() => navigate(`/(screens)/chat-lock?conversationId=${convo?.id}`)}>
+                            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.chatLock')}
+                style={[styles.actionRow, { borderBottomColor: tc.border }]}
+                onPress={() => navigate(`/(screens)/chat-lock?conversationId=${convo?.id}`)}
+              >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                   <LinearGradient colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']} style={styles.actionIconBg}>
                     <Icon name="lock" size="xs" color={colors.emerald} />
@@ -588,7 +641,11 @@ export default function ConversationInfoScreen() {
                   <Text style={styles.actionText}>{t('biometric.settingsLabel')}</Text>
                 </View>
               </Pressable>
-              <Pressable style={[styles.actionRow, { borderBottomColor: tc.border }]} onPress={() => navigate(`/(screens)/verify-encryption?conversationId=${convo?.id}`)}>
+                            <Pressable
+                accessibilityRole="button"
+                style={[styles.actionRow, { borderBottomColor: tc.border }]}
+                onPress={() => navigate(`/(screens)/verify-encryption?conversationId=${convo?.id}`)}
+              >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                   <LinearGradient colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']} style={styles.actionIconBg}>
                     <Icon name="check-circle" size="xs" color={colors.gold} />
@@ -606,7 +663,12 @@ export default function ConversationInfoScreen() {
               style={styles.optionsCardGlass}
             >
               {isGroup && !isCreator && (
-                <Pressable style={[styles.actionRow, { borderBottomColor: tc.border }]} onPress={handleLeave}>
+                                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('accessibility.leaveRoom')}
+                  style={[styles.actionRow, { borderBottomColor: tc.border }]}
+                  onPress={handleLeave}
+                >
                   {leaveGroupMutation.isPending
                     ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, opacity: 0.5 }}>
                         <LinearGradient

@@ -249,7 +249,12 @@ function FollowedTopicsContent() {
             autoCorrect={false}
           />
           {searchQuery ? (
-            <Pressable onPress={() => handleSearch('')} hitSlop={8}>
+                        <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('accessibility.close')}
+              onPress={() => handleSearch('')}
+              hitSlop={8}
+            >
               <Icon name="x" size="xs" color={tc.text.tertiary} />
             </Pressable>
           ) : null}

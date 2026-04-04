@@ -406,7 +406,12 @@ export default function SearchResultsScreen() {
                 returnKeyType="search"
               />
               {query.length > 0 && (
-                <Pressable onPress={() => { haptic.tick(); setQuery(''); setDebouncedQuery(''); }} hitSlop={8}>
+                                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('accessibility.clearSearchInput')}
+                  onPress={() => { haptic.tick(); setQuery(''); setDebouncedQuery(''); }}
+                  hitSlop={8}
+                >
                   <Icon name="x" size="xs" color={tc.text.secondary} />
                 </Pressable>
               )}

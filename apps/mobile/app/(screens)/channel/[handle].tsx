@@ -68,7 +68,12 @@ function VideoCard({ video }: { video: Video }) {
   };
 
   return (
-    <Pressable style={({ pressed }) => [styles.videoCard, pressed && { opacity: 0.8 }]} onPress={handlePress}>
+        <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={t('accessibility.pickVideo')}
+      style={({ pressed }) => [styles.videoCard, pressed && { opacity: 0.8 }]}
+      onPress={handlePress}
+    >
       {/* Thumbnail */}
       <View style={[styles.thumbnailContainer, { backgroundColor: tc.surface }]}>
         {video.thumbnailUrl ? (
@@ -85,7 +90,12 @@ function VideoCard({ video }: { video: Video }) {
 
       {/* Info row */}
       <View style={styles.infoRow}>
-        <Pressable style={styles.channelAvatar} onPress={handleChannelPress} hitSlop={8}>
+                <Pressable
+          accessibilityRole="button"
+          style={styles.channelAvatar}
+          onPress={handleChannelPress}
+          hitSlop={8}
+        >
           <Avatar
             uri={video.channel.avatarUrl}
             name={video.channel.name}
@@ -124,7 +134,12 @@ function VideoCard({ video }: { video: Video }) {
 
     return (
       <Animated.View entering={FadeInUp.delay(100)} style={styles.featuredContainer}>
-        <Pressable style={({ pressed }) => [styles.featuredCard, { backgroundColor: tc.surface }, pressed && { opacity: 0.8 }]} onPress={onPress}>
+                <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('accessibility.confirm')}
+          style={({ pressed }) => [styles.featuredCard, { backgroundColor: tc.surface }, pressed && { opacity: 0.8 }]}
+          onPress={onPress}
+        >
           <ProgressiveImage uri={video.thumbnailUrl || ''} width="100%" height={FEATURED_HEIGHT} contentFit="cover" />
           <LinearGradient
             colors={['transparent', 'rgba(13,17,23,0.8)', 'rgba(13,17,23,0.98)']}
@@ -164,7 +179,12 @@ function VideoCard({ video }: { video: Video }) {
   };
 
   return (
-    <Pressable style={({ pressed }) => [styles.playlistCard, { backgroundColor: tc.surface }, pressed && { opacity: 0.8 }]} onPress={handlePress}>
+        <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={t('accessibility.selectCategory')}
+      style={({ pressed }) => [styles.playlistCard, { backgroundColor: tc.surface }, pressed && { opacity: 0.8 }]}
+      onPress={handlePress}
+    >
       {playlist.thumbnailUrl ? (
         <ProgressiveImage uri={playlist.thumbnailUrl} width={120} height={68} borderRadius={radius.sm} contentFit="cover" />
       ) : (
@@ -553,7 +573,12 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8}>
+                    <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('accessibility.navigateBack')}
+            onPress={() => router.back()}
+            hitSlop={8}
+          >
             <Icon name="arrow-left" size="md" color={tc.text.primary} />
           </Pressable>
         </View>

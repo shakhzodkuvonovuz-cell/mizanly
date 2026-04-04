@@ -366,6 +366,7 @@ export default function QuranRoomScreen() {
 
           {/* Translation toggle */}
           <Pressable
+            accessibilityLabel={t('accessibility.toggleSwitch')}
             accessibilityRole="button"
             onPress={handleToggleTranslation}
             style={styles.toggleRow}
@@ -421,6 +422,7 @@ export default function QuranRoomScreen() {
         {/* Host FAB */}
         {roomState?.hostId === currentUserId && (
           <Pressable
+            accessibilityLabel={t('accessibility.openFilter')}
             accessibilityRole="button"
             style={styles.hostFab}
             onPress={() => {

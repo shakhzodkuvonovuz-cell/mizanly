@@ -63,6 +63,7 @@ function SuggestedScreenContent() {
             {item.bio ? <Text style={[styles.bio, { color: tc.text.tertiary }]} numberOfLines={1}>{item.bio}</Text> : null}
           </View>
           <Pressable
+            accessibilityLabel={t('accessibility.follow')}
             accessibilityRole="button"
             style={[styles.followBtn, isFollowingUser && [styles.followingBtn, { borderColor: tc.border }]]}
             onPress={() => handleFollow(item.id)}

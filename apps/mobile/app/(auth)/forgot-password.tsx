@@ -156,7 +156,13 @@ export default function ForgotPasswordScreen() {
                   disabled={!code.trim()}
                   fullWidth
                 />
-                <Pressable onPress={handleSendCode} hitSlop={8} style={styles.resendBtn}>
+                                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('accessibility.chatLock')}
+                  onPress={handleSendCode}
+                  hitSlop={8}
+                  style={styles.resendBtn}
+                >
                   <Text style={styles.resendText}>{t('auth.resendCode')}</Text>
                 </Pressable>
               </View>

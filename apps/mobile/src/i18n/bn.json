@@ -1794,7 +1794,11 @@
     "viewNotification": "{{name}} থেকে বিজ্ঞপ্তি দেখুন",
     "episodeLabel": "পর্ব {{num}}: {{title}}",
     "accentColor": "অ্যাক্সেন্ট রঙ {{color}}",
-    "viewSellerProfile": "{{name}} এর প্রোফাইল দেখুন"
+    "viewSellerProfile": "{{name}} এর প্রোফাইল দেখুন",
+    "orderLabel": "অর্ডার: {{title}}",
+    "playlistLabel": "প্লেলিস্ট: {{title}}, {{count}} ভিডিও",
+    "selectTheme": "{{label}} থিম নির্বাচন করুন",
+    "followUser": "{{name}} কে ফলো করুন"
   },
   "gif": {
     "searchPlaceholder": "Search GIFs...",

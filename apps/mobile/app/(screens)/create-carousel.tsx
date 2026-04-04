@@ -378,6 +378,7 @@ function CreateCarouselScreen() {
             {slides.length > 1 && (
               <View style={styles.reorderRow}>
                 <Pressable
+                  accessibilityRole="button"
                   onPress={() => moveSlide(selectedIndex, selectedIndex - 1)}
                   disabled={selectedIndex === 0}
                   style={[styles.reorderBtn, selectedIndex === 0 && { opacity: 0.3 }]}
@@ -387,6 +388,7 @@ function CreateCarouselScreen() {
                   <Icon name="chevron-left" size="md" color={tc.text.onColor} />
                 </Pressable>
                 <Pressable
+                  accessibilityRole="button"
                   onPress={() => moveSlide(selectedIndex, selectedIndex + 1)}
                   disabled={selectedIndex === slides.length - 1}
                   style={[styles.reorderBtn, selectedIndex === slides.length - 1 && { opacity: 0.3 }]}
@@ -501,6 +503,7 @@ function CreateCarouselScreen() {
             </View>
             {selectedTrack ? (
               <Pressable
+                accessibilityRole="button"
                 onPress={() => { setSelectedTrack(null); haptic.delete(); }}
                 hitSlop={8}
                 accessibilityLabel={t('common.remove')}

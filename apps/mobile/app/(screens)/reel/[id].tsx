@@ -111,17 +111,26 @@ function CommentRow({
           {localLikes > 0 && (
             <Text style={styles.commentLikesLabel}>{formatCount(localLikes)} {t('saf.likes')}</Text>
           )}
-          <Pressable onPress={() => onReply(comment.id, comment.user.username)}>
+                    <Pressable
+            accessibilityRole="button"
+            onPress={() => onReply(comment.id, comment.user.username)}
+          >
             <Text style={styles.commentAction}>{t('common.reply')}</Text>
           </Pressable>
           {isOwn && (
-            <Pressable onPress={handleDelete} disabled={deleteMutation.isPending}>
+                        <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('accessibility.delete')}
+              onPress={handleDelete}
+              disabled={deleteMutation.isPending}
+            >
               <Text style={styles.commentActionDestructive}>{t('common.delete')}</Text>
             </Pressable>
           )}
         </View>
       </View>
       <Pressable
+        accessibilityLabel={t('accessibility.like')}
           accessibilityRole="button"
           onPress={() => { viewerId && handleLikeComment(); }}
           disabled={!viewerId}
@@ -391,6 +400,8 @@ export default function ReelDetailScreen() {
       <View style={styles.reelContainer}>
         {/* Video Player — double-tap to like */}
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('accessibility.like')}
           onPress={() => {
             const now = Date.now();
             if (lastTapRef.current && now - lastTapRef.current < 300) {
@@ -430,7 +441,12 @@ export default function ReelDetailScreen() {
               {/* Video Controls Overlay - Show play button when paused */}
               {!isPlaying && (
                 <View style={styles.videoControls}>
-                  <Pressable onPress={handlePlayPause} style={styles.controlButton}>
+                                    <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t('accessibility.playAudio')}
+                    onPress={handlePlayPause}
+                    style={styles.controlButton}
+                  >
                     <Icon
                       name="play"
                       size={44}
@@ -463,6 +479,7 @@ export default function ReelDetailScreen() {
                 <Text style={styles.reelDisplayName}>{reelQuery.data.user.displayName}</Text>
               </View>
               <Pressable
+                accessibilityRole="button"
                 style={styles.followButton}
                 onPress={async () => {
                   try {
@@ -632,7 +649,12 @@ export default function ReelDetailScreen() {
                   <Text style={styles.replyBannerText}>
                     {t('comments.replyingTo')} @{replyTo.username}
                   </Text>
-                  <Pressable onPress={() => setReplyTo(null)} hitSlop={8}>
+                                    <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t('accessibility.close')}
+                    onPress={() => setReplyTo(null)}
+                    hitSlop={8}
+                  >
                     <Icon name="x" size="xs" color={tc.text.secondary} />
                   </Pressable>
                 </View>

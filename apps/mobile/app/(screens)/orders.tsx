@@ -116,7 +116,7 @@ function OrdersContent() {
           onPress={() => handleOrderPress(item)}
           onLongPress={() => handleOrderLongPress(item)}
           accessibilityRole="button"
-          accessibilityLabel={`Order ${item.id}, ${item.product.title}`}
+          accessibilityLabel={t('accessibility.orderLabel', { title: item.product.title })}
         >
           <View style={[styles.orderRow, { flexDirection: rtlFlexRow(isRTL) }]}>
             {/* Thumbnail */}

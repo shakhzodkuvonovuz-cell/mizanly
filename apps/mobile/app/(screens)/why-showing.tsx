@@ -236,6 +236,7 @@ function WhyShowingContent() {
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
           <Pressable
+            accessibilityLabel={t('accessibility.close')}
             style={[styles.actionButton, { flexDirection: rtlFlexRow(isRTL) }, isActioning && { opacity: 0.5 }]}
             onPress={handleNotInterested}
             disabled={isActioning}
@@ -248,6 +249,7 @@ function WhyShowingContent() {
           </Pressable>
 
           <Pressable
+            accessibilityLabel={t('accessibility.togglePasswordVisibility')}
             style={[styles.actionButtonSecondary, { flexDirection: rtlFlexRow(isRTL) }, isActioning && { opacity: 0.5 }]}
             onPress={handleSeeLess}
             disabled={isActioning}

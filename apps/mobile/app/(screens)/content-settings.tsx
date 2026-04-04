@@ -81,6 +81,8 @@ function Row({
         </View>
         {onToggle !== undefined && value !== undefined ? (
           <Pressable
+            accessibilityRole="switch"
+            accessibilityLabel={label}
             style={[styles.toggleTrack, { backgroundColor: tc.border }, value && styles.toggleTrackActive]}
             onPress={() => onToggle(!value)}
           >

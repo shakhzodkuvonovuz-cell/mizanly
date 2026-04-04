@@ -351,6 +351,7 @@ export default function FlipsideScreen() {
                   {t('editProfile.displayName')}
                 </Text>
                 <TextInput
+                  accessibilityLabel={t('accessibility.textInput')}
                   style={[styles.input, { color: tc.text.primary, borderColor: tc.border, backgroundColor: tc.surface }]}
                   value={displayName}
                   onChangeText={setDisplayName}
@@ -362,6 +363,7 @@ export default function FlipsideScreen() {
                   {t('editProfile.bio')}
                 </Text>
                 <TextInput
+                  accessibilityLabel={t('accessibility.textInput')}
                   style={[styles.input, styles.multiline, { color: tc.text.primary, borderColor: tc.border, backgroundColor: tc.surface }]}
                   value={bio}
                   onChangeText={setBio}
@@ -371,7 +373,10 @@ export default function FlipsideScreen() {
                 />
               </View>
               <View style={[styles.editActions, { flexDirection: rtlFlexRow(isRTL) }]}>
-                <Pressable onPress={() => setIsEditing(false)}>
+                                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => setIsEditing(false)}
+                >
                   <Text style={[styles.cancelText, { color: tc.text.secondary }]}>{t('common.cancel')}</Text>
                 </Pressable>
                 <GradientButton

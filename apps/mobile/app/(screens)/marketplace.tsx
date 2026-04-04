@@ -266,7 +266,11 @@ function MarketplaceContent() {
             returnKeyType="search"
           />
           {searchQuery.length > 0 && (
-            <Pressable onPress={() => setSearchQuery('')}>
+                        <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('accessibility.clearSearchInput')}
+              onPress={() => setSearchQuery('')}
+            >
               <Icon name="x" size="sm" color={tc.text.tertiary} />
             </Pressable>
           )}

@@ -1788,7 +1788,11 @@
     "viewNotification": "{{name}} adlı kişiden bildirimi görüntüle",
     "episodeLabel": "Bölüm {{num}}: {{title}}",
     "accentColor": "Vurgu rengi {{color}}",
-    "viewSellerProfile": "{{name}} profilini görüntüle"
+    "viewSellerProfile": "{{name}} profilini görüntüle",
+    "orderLabel": "Siparis: {{title}}",
+    "playlistLabel": "Oynatma listesi: {{title}}, {{count}} video",
+    "selectTheme": "{{label}} temasını seç",
+    "followUser": "{{name}} takip et"
   },
   "gif": {
     "searchPlaceholder": "Search GIFs...",

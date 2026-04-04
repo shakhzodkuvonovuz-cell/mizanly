@@ -258,6 +258,7 @@ function CreatorDashboardContent() {
       <View style={styles.tabContent}>
         {/* Scheduled Content Section */}
         <Pressable
+          accessibilityRole="button"
           style={[styles.scheduledBanner, { backgroundColor: `${colors.emerald}10`, borderColor: `${colors.emerald}30` }]}
           onPress={() => router.push('/(screens)/scheduled-content' as never)}
           accessibilityLabel={t('creatorDashboard.viewScheduled', 'View scheduled content')}

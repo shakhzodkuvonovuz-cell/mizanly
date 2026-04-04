@@ -199,6 +199,7 @@ export default function FatwaQAScreen() {
             </Pressable>
 
             <Pressable
+              accessibilityLabel={t('accessibility.sendMessage')}
               accessibilityRole="button"
               style={[styles.submitBtn, (!question.trim() || askMutation.isPending) && { opacity: 0.5 }]}
               onPress={() => { haptic.tick(); askMutation.mutate(); }}

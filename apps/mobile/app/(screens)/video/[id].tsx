@@ -62,6 +62,7 @@ function ChapterMarker({ chapter, index, total, currentProgress, videoDuration, 
 
   return (
     <Pressable
+      accessibilityRole="button"
       style={[
         styles.chapterMarker,
         isCurrent && styles.chapterMarkerActive,
@@ -617,6 +618,8 @@ export default function VideoDetailScreen() {
           {/* Cinematic Video Player with gradient overlay */}
           <View style={styles.videoContainer}>
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('accessibility.clearAll')}
               onPress={handleClearModeToggle}
               style={styles.videoWrapper}
             >

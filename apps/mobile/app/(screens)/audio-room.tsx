@@ -517,7 +517,12 @@ export default function AudioRoomScreen() {
                   </View>
                   {isHost && (
                     <View style={styles.raisedHandActions}>
-                      <Pressable onPress={() => handleAcceptHand(hand.userId)} style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
+                                            <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={t('accessibility.acceptHand')}
+                        onPress={() => handleAcceptHand(hand.userId)}
+                        style={({ pressed }) => [pressed && { opacity: 0.7 }]}
+                      >
                         <LinearGradient
                           colors={[colors.emerald, colors.emeraldDark]}
                           style={styles.acceptButton}
@@ -597,7 +602,13 @@ export default function AudioRoomScreen() {
             </Pressable>
 
             {/* Leave */}
-            <Pressable style={({ pressed }) => [styles.controlButton, pressed && { opacity: 0.7 }]} onPress={handleLeave} disabled={actionPending}>
+                        <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('accessibility.leaveRoom')}
+              style={({ pressed }) => [styles.controlButton, pressed && { opacity: 0.7 }]}
+              onPress={handleLeave}
+              disabled={actionPending}
+            >
               <LinearGradient
                 colors={[colors.error, colors.error]}
                 style={styles.controlButtonInner}

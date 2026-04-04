@@ -127,7 +127,11 @@ function AudioCard({
         style={[styles.audioCard, isCurrentTrack && styles.audioCardActive]}
       >
         {/* Play Button */}
-        <Pressable onPress={onPlay} style={({ pressed }) => [styles.playButton, pressed && { opacity: 0.7 }]}>
+                <Pressable
+          accessibilityRole="button"
+          onPress={onPlay}
+          style={({ pressed }) => [styles.playButton, pressed && { opacity: 0.7 }]}
+        >
           <LinearGradient
             colors={[colors.emerald, colors.gold]}
             style={styles.playButtonInner}
@@ -153,7 +157,11 @@ function AudioCard({
 
         {/* Actions */}
         <View style={styles.trackActions}>
-          <Pressable onPress={onToggleFavorite} style={({ pressed }) => [styles.favoriteButton, pressed && { opacity: 0.7 }]}>
+                    <Pressable
+            accessibilityRole="button"
+            onPress={onToggleFavorite}
+            style={({ pressed }) => [styles.favoriteButton, pressed && { opacity: 0.7 }]}
+          >
             <Icon name={track.isFavorite ? 'heart-filled' : 'heart'} size="sm" color={track.isFavorite ? colors.like : tc.text.tertiary} />
           </Pressable>
           <GradientButton
@@ -326,7 +334,11 @@ export default function AudioLibraryScreen() {
               onChangeText={setSearchQuery}
             />
             {searchQuery.length > 0 && (
-              <Pressable onPress={() => setSearchQuery('')}>
+                            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.clearSearchInput')}
+                onPress={() => setSearchQuery('')}
+              >
                 <Icon name="x" size="sm" color={tc.text.tertiary} />
               </Pressable>
             )}
@@ -340,6 +352,7 @@ export default function AudioLibraryScreen() {
           contentContainerStyle={styles.categoriesContainer}
         >
           <Pressable
+            accessibilityLabel={t('accessibility.like')}
             accessibilityRole="button"
             style={[styles.categoryPill, favoritesOnly && styles.categoryPillActive]}
             onPress={() => setFavoritesOnly(!favoritesOnly)}
@@ -411,7 +424,12 @@ export default function AudioLibraryScreen() {
                     {allTracks.find(t => t.id === currentTrackId)?.artist}
                   </Text>
                 </View>
-                <Pressable onPress={handleUseSound} style={({ pressed }) => [styles.nowPlayingUseButton, pressed && { opacity: 0.7 }]}>
+                                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('accessibility.seeMore')}
+                  onPress={handleUseSound}
+                  style={({ pressed }) => [styles.nowPlayingUseButton, pressed && { opacity: 0.7 }]}
+                >
                   <Text style={styles.nowPlayingUseText}>{t('audioLibrary.useThisSound')}</Text>
                   <Icon name="chevron-right" size="xs" color="#fff" />
                 </Pressable>
@@ -423,7 +441,12 @@ export default function AudioLibraryScreen() {
         {/* Selected Track Overlay */}
         {selectedTrack && (
           <View style={styles.overlay}>
-            <Pressable style={styles.overlayBg} onPress={() => setSelectedTrack(null)} />
+                        <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('accessibility.close')}
+              style={styles.overlayBg}
+              onPress={() => setSelectedTrack(null)}
+            />
             <Animated.View entering={FadeInUp} style={styles.selectedTrackCard}>
               <LinearGradient
                 colors={['rgba(45,53,72,0.95)', 'rgba(28,35,51,0.98)']}
@@ -444,6 +467,7 @@ export default function AudioLibraryScreen() {
                   onPress={handleUseSound}
                 />
                 <Pressable
+                  accessibilityLabel={t('accessibility.close')}
                   accessibilityRole="button"
                   onPress={() => setSelectedTrack(null)}
                   style={styles.selectedTrackCancel}

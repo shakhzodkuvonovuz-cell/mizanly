@@ -77,7 +77,7 @@ export default function ChannelPlaylistsScreen() {
       <Pressable
         style={styles.playlistCard}
         onPress={() => router.push(`/(screens)/playlist/${item.id}`)}
-        accessibilityLabel={`Playlist: ${item.title}, ${item.videosCount} videos`}
+        accessibilityLabel={t('accessibility.playlistLabel', { title: item.title, count: item.videosCount })}
         accessibilityRole="button"
       >
         <LinearGradient

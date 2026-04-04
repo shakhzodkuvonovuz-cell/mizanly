@@ -173,7 +173,10 @@ export default function CirclesScreen() {
   const renderCircleItem = useCallback(
     ({ item, index }: { item: Circle; index: number }) => (
       <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
-        <Pressable style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
+                <Pressable
+          accessibilityRole="button"
+          style={({ pressed }) => [pressed && { opacity: 0.7 }]}
+        >
         <LinearGradient
           colors={colors.gradient.cardDark}
           style={styles.circleCard}
@@ -196,6 +199,7 @@ export default function CirclesScreen() {
             </View>
           </View>
           <Pressable
+            accessibilityLabel={t('accessibility.delete')}
             accessibilityRole="button"
             hitSlop={8}
             onPress={() => handleDelete(item)}

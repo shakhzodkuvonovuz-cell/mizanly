@@ -1795,7 +1795,11 @@
     "viewNotification": "Lihat notifikasi dari {{name}}",
     "episodeLabel": "Episode {{num}}: {{title}}",
     "accentColor": "Warna aksen {{color}}",
-    "viewSellerProfile": "Lihat profil {{name}}"
+    "viewSellerProfile": "Lihat profil {{name}}",
+    "orderLabel": "Pesanan: {{title}}",
+    "playlistLabel": "Playlist: {{title}}, {{count}} video",
+    "selectTheme": "Pilih tema {{label}}",
+    "followUser": "Ikuti {{name}}"
   },
   "gif": {
     "searchPlaceholder": "Search GIFs...",

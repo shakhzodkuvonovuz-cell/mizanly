@@ -196,6 +196,7 @@ function MosqueCard({ mosque, index }: { mosque: Mosque; index: number }) {
 
         {/* Directions Button */}
         <Pressable
+          accessibilityLabel={t('accessibility.addLocation')}
           accessibilityRole="button"
           style={({ pressed }) => [styles.directionsButton, pressed && { opacity: 0.7 }]}
           onPress={() => { haptic.navigate(); openDirections(mosque.lat, mosque.lng, mosque.name); }}

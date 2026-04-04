@@ -550,6 +550,7 @@ export default function EditProfileScreen() {
                           <Text style={[styles.linkUrl, { color: tc.text.secondary }]} numberOfLines={1}>{link.url}</Text>
                         </View>
                         <Pressable
+                          accessibilityLabel={t('accessibility.close')}
                           accessibilityRole="button"
                           hitSlop={8}
                           onPress={() => deleteLinkMutation.mutate(link.id)}
@@ -587,7 +588,11 @@ export default function EditProfileScreen() {
                       maxLength={200}
                     />
                     <View style={styles.addLinkActions}>
-                      <Pressable onPress={() => { setShowAddLink(false); setNewLinkTitle(''); setNewLinkUrl(''); }}>
+                                            <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={t('accessibility.close')}
+                        onPress={() => { setShowAddLink(false); setNewLinkTitle(''); setNewLinkUrl(''); }}
+                      >
                         <Text style={[styles.addLinkCancel, { color: tc.text.secondary }]}>{t('common.cancel')}</Text>
                       </Pressable>
                       <Pressable
@@ -608,7 +613,12 @@ export default function EditProfileScreen() {
                     </View>
                   </LinearGradient>
                 ) : links.length < 5 ? (
-                  <Pressable style={styles.addLinkBtn} onPress={() => setShowAddLink(true)}>
+                                    <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t('accessibility.add')}
+                    style={styles.addLinkBtn}
+                    onPress={() => setShowAddLink(true)}
+                  >
                     <LinearGradient
                       colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']}
                       style={styles.addLinkBtnGradient}

@@ -177,6 +177,7 @@ function CommentRow({
       <Avatar uri={comment.user.avatarUrl} name={comment.user.displayName} size="sm" />
       <View style={styles.commentBody}>
         <Pressable
+          accessibilityRole="button"
           onLongPress={handleLongPress}
           delayLongPress={400}
           style={[
@@ -190,6 +191,7 @@ function CommentRow({
           <Text style={[styles.commentUser, { textAlign: rtlTextAlign(isRTL) }]}>{comment.user.displayName}</Text>
           {editing ? (
             <TextInput
+              accessibilityLabel={t('accessibility.commentTextInput')}
               style={[styles.commentText, styles.commentEditInput]}
               value={editText}
               onChangeText={setEditText}
@@ -239,6 +241,7 @@ function CommentRow({
         {/* Finding #410: View replies expansion */}
         {((comment as unknown as Record<string, unknown>).repliesCount as number) > 0 ? (
           <Pressable
+            accessibilityRole="button"
             onPress={() => onReply(comment.id, comment.user.username)}
             style={{ paddingStart: spacing['2xl'], paddingVertical: spacing.xs }}
           >
@@ -429,7 +432,11 @@ function CommunityNotesSection({ postId }: { postId: string }) {
               textAlignVertical="top"
             />
             <View style={cnStyles.addActions}>
-              <Pressable onPress={() => { setShowAddForm(false); setNoteText(''); }}>
+                            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.close')}
+                onPress={() => { setShowAddForm(false); setNoteText(''); }}
+              >
                 <Text style={cnStyles.addCancel}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable

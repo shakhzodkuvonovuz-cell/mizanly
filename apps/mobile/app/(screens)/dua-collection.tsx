@@ -258,6 +258,7 @@ export default function DuaCollectionScreen() {
       {/* Tabs: Categories / Bookmarked */}
       <View style={[styles.tabRow, { flexDirection: rtlFlexRow(isRTL) }]}>
         <Pressable
+          accessibilityLabel={t('accessibility.close')}
           style={[styles.tab, { backgroundColor: tc.bgElevated }, !showBookmarked && styles.tabActive]}
           onPress={() => { setShowBookmarked(false); haptic.tick(); }}
           accessibilityRole="tab"

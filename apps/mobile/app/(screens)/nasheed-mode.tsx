@@ -103,7 +103,12 @@ export default function NasheedModeScreen() {
             style={styles.card}
           >
             {SAMPLE_NASHEEDS.map((nasheed, i) => (
-              <Pressable key={i} onPress={() => showToast({ message: t('common.comingSoon', { defaultValue: 'Coming soon' }), variant: 'info' })}>
+                            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.playAudio')}
+                key={i}
+                onPress={() => showToast({ message: t('common.comingSoon', { defaultValue: 'Coming soon' }), variant: 'info' })}
+              >
               <Animated.View entering={FadeInUp.delay(Math.min(i, 15) * 40).duration(350).springify()} style={[styles.nasheedRow, { flexDirection: rtlFlexRow(isRTL) }, i < SAMPLE_NASHEEDS.length - 1 && styles.nasheedRowBorder]}>
                 <LinearGradient
                   colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.05)']}

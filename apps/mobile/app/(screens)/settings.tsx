@@ -51,7 +51,10 @@ function PremiumToggle({ value, onValueChange }: { value: boolean; onValueChange
   }));
 
   return (
-    <Pressable onPress={handlePress}>
+        <Pressable
+      accessibilityRole="button"
+      onPress={handlePress}
+    >
       <LinearGradient
         colors={value ? [colors.emerald, colors.extended.greenDark] : [tc.border, tc.surface]}
         start={{ x: 0, y: 0 }}
@@ -1354,7 +1357,12 @@ export default function SettingsScreen() {
           {/* Premium Sign Out Button + About — always visible */}
           <Animated.View entering={sectionEntering(900)}>
           {matchesSearch(t('settings.signOut')) && (
-          <Pressable style={styles.signOutButton} onPress={handleSignOut}>
+                    <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('accessibility.signOut')}
+            style={styles.signOutButton}
+            onPress={handleSignOut}
+          >
             <LinearGradient
               colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
               start={{ x: 0, y: 0 }}

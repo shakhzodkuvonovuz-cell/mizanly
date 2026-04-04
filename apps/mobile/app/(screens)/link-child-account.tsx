@@ -166,6 +166,7 @@ export default function LinkChildAccountScreen() {
         <View style={styles.numPad}>
           {digits.map((d, i) => (
             <Pressable
+              accessibilityLabel={t('accessibility.pin')}
               accessibilityRole="button"
               key={i}
               style={[styles.numKey, { backgroundColor: tc.bgElevated }, d === '' && styles.numKeyEmpty]}

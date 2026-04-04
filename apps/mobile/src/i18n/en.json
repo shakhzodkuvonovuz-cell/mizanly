@@ -1795,7 +1795,11 @@
     "viewNotification": "View notification from {{name}}",
     "episodeLabel": "Episode {{num}}: {{title}}",
     "accentColor": "Accent color {{color}}",
-    "viewSellerProfile": "View {{name}}'s profile"
+    "viewSellerProfile": "View {{name}}'s profile",
+    "orderLabel": "Order: {{title}}",
+    "playlistLabel": "Playlist: {{title}}, {{count}} videos",
+    "selectTheme": "Select {{label}} theme",
+    "followUser": "Follow {{name}}"
   },
   "gif": {
     "searchPlaceholder": "Search GIFs...",

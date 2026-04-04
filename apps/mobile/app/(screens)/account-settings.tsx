@@ -217,7 +217,7 @@ export default function AccountSettingsScreen() {
     onSuccess: async (data) => {
       try {
         const formatted = formatExportAsText(data as Record<string, unknown>);
-        await Share.share({ message: formatted, title: 'Mizanly Data Export' });
+        await Share.share({ message: formatted, title: t('accountSettings.dataExportTitle') });
       } catch {
         showToast({ message: t('accountSettings.dataReadyMessage'), variant: 'success' });
       }

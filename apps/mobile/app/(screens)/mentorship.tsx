@@ -71,6 +71,7 @@ export default function MentorshipScreen() {
   const renderMentor = ({ item, index }: { item: Record<string, unknown>; index: number }) => (
     <Animated.View entering={FadeInUp.delay(Math.min(index, 10) * 60).duration(300)}>
       <Pressable
+        accessibilityLabel={t('accessibility.sendMessage')}
         accessibilityRole="button"
         style={[styles.mentorCard, { backgroundColor: tc.bgCard, borderColor: tc.border, flexDirection: rtlFlexRow(isRTL) }]}
 

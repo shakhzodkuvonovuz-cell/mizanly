@@ -371,16 +371,20 @@ export default function ThreadDetailScreen() {
   const listHeader = useMemo(() => (
     threadQuery.data ? (
       <View>
-        <Pressable onPress={() => {
-          const now = Date.now();
-          if (lastThreadTapRef.current && now - lastThreadTapRef.current < 300) {
-            threadLikeMutation.mutate();
-            haptic.like();
-            lastThreadTapRef.current = 0;
-          } else {
-            lastThreadTapRef.current = now;
-          }
-        }}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('accessibility.doubleTapLike')}
+          onPress={() => {
+            const now = Date.now();
+            if (lastThreadTapRef.current && now - lastThreadTapRef.current < 300) {
+              threadLikeMutation.mutate();
+              haptic.like();
+              lastThreadTapRef.current = 0;
+            } else {
+              lastThreadTapRef.current = now;
+            }
+          }}
+        >
           <ThreadCard thread={threadQuery.data} viewerId={user?.id} />
         </Pressable>
         {showListenButton && (

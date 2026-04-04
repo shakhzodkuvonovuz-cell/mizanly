@@ -176,6 +176,7 @@ function SignUpScreenContent() {
           <View style={styles.form}>
             {/* Digit boxes with hidden input */}
             <Pressable
+              accessibilityRole="button"
               onPress={() => hiddenInputRef.current?.focus()}
               style={styles.codeRow}
             >
@@ -193,6 +194,7 @@ function SignUpScreenContent() {
               ))}
             </Pressable>
             <TextInput
+              accessibilityLabel={t('accessibility.textInput')}
               ref={hiddenInputRef}
               style={{ position: 'absolute', opacity: 0 }}
               value={code}
@@ -314,6 +316,7 @@ function SignUpScreenContent() {
                 onBlur={() => setPasswordFocused(false)}
               />
               <Pressable
+                accessibilityRole="button"
                 onPress={() => setShowPassword((v) => !v)}
                 hitSlop={12}
                 accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}

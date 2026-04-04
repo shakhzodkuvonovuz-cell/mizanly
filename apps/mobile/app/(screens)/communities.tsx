@@ -329,6 +329,7 @@ export default function CommunitiesScreen() {
         {/* Tabs */}
         <View style={styles.tabsContainer}>
           <Pressable
+            accessibilityLabel={t('accessibility.search')}
             accessibilityRole="button"
             style={[styles.tab, activeTab === 'discover' && styles.tabActive]}
             onPress={() => setActiveTab('discover')}
@@ -343,6 +344,7 @@ export default function CommunitiesScreen() {
           </Pressable>
 
           <Pressable
+            accessibilityLabel={t('accessibility.manageMembers')}
             accessibilityRole="button"
             style={[styles.tab, activeTab === 'joined' && styles.tabActive]}
             onPress={() => setActiveTab('joined')}

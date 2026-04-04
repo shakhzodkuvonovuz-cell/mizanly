@@ -788,7 +788,12 @@ export default function CreateReelScreen() {
                 </Pressable>
               </View>
 
-              <Pressable style={[styles.uploadPlaceholder, { backgroundColor: tc.surface, borderColor: tc.border }]} onPress={pickVideo}>
+                            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.pickVideo')}
+                style={[styles.uploadPlaceholder, { backgroundColor: tc.surface, borderColor: tc.border }]}
+                onPress={pickVideo}
+              >
                 <LinearGradient
                   colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
                   style={styles.uploadPlaceholderGradient}
@@ -992,7 +997,12 @@ export default function CreateReelScreen() {
               <Text style={styles.selectedTrackText} numberOfLines={1}>
                 {selectedTrack.title} — {selectedTrack.artist}
               </Text>
-              <Pressable onPress={() => setSelectedTrack(null)} hitSlop={8}>
+                            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.close')}
+                onPress={() => setSelectedTrack(null)}
+                hitSlop={8}
+              >
                 <Icon name="x" size="sm" color={tc.text.secondary} />
               </Pressable>
             </Animated.View>

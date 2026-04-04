@@ -1795,7 +1795,11 @@
     "viewNotification": "{{name}} کی طرف سے اطلاع دیکھیں",
     "episodeLabel": "ایپیسوڈ {{num}}: {{title}}",
     "accentColor": "ایکسنٹ رنگ {{color}}",
-    "viewSellerProfile": "{{name}} کا پروفائل دیکھیں"
+    "viewSellerProfile": "{{name}} کا پروفائل دیکھیں",
+    "orderLabel": "آرڈر: {{title}}",
+    "playlistLabel": "پلے لسٹ: {{title}}، {{count}} ویڈیوز",
+    "selectTheme": "{{label}} تھیم منتخب کریں",
+    "followUser": "{{name}} کو فالو کریں"
   },
   "gif": {
     "searchPlaceholder": "Search GIFs...",

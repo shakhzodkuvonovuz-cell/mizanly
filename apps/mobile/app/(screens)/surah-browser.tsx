@@ -144,7 +144,12 @@ function SurahBrowserContent() {
           accessibilityLabel={t('quran.searchSurahs', 'Search surahs')}
         />
         {search.length > 0 && (
-          <Pressable onPress={() => setSearch('')} hitSlop={8}>
+                    <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('accessibility.clearSearchInput')}
+            onPress={() => setSearch('')}
+            hitSlop={8}
+          >
             <Icon name="x" size="xs" color={tc.text.tertiary} />
           </Pressable>
         )}

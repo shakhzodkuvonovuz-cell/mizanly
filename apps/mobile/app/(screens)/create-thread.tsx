@@ -195,6 +195,7 @@ function ThreadPart({
             </Pressable>
 
             <Pressable
+              accessibilityLabel={t('accessibility.close')}
               accessibilityRole="button"
               onPress={() => {
                 if (autocomplete.partIndex === index && autocomplete.type === 'hashtag') {
@@ -218,6 +219,7 @@ function ThreadPart({
             </Pressable>
 
             <Pressable
+              accessibilityLabel={t('accessibility.close')}
               accessibilityRole="button"
               onPress={() => {
                 if (autocomplete.partIndex === index && autocomplete.type === 'mention') {
@@ -471,6 +473,7 @@ export default function CreateThreadScreen() {
         {/* Visibility bar */}
         <View style={[styles.visBar, { borderBottomColor: tc.border }]}>
           <Pressable
+            accessibilityLabel={t('accessibility.expandSection')}
             accessibilityRole="button"
             style={({ pressed }) => [styles.visPill, { backgroundColor: tc.bgElevated, transform: [{ scale: pressed ? 0.95 : 1 }] }]}
             onPress={() => { haptic.tick(); setShowVisibility((v) => !v); }}
@@ -651,6 +654,7 @@ export default function CreateThreadScreen() {
                       />
                       {poll.options.length > 2 && (
                         <Pressable
+                          accessibilityLabel={t('accessibility.close')}
                           accessibilityRole="button"
                           onPress={() => setPoll((p) => p ? { ...p, options: p.options.filter((_, i) => i !== oi) } : p)}
                           hitSlop={8}

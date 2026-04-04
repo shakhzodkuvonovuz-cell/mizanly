@@ -315,7 +315,11 @@ export default function TwoFactorSetupScreen() {
                           <>
                             <Icon name="flag" size="lg" color={colors.error} />
                             <Text style={styles.qrMockSubtext}>{error}</Text>
-                            <Pressable onPress={fetchSetup} style={{ marginTop: spacing.sm }}>
+                                                        <Pressable
+                              accessibilityRole="button"
+                              onPress={fetchSetup}
+                              style={{ marginTop: spacing.sm }}
+                            >
                               <Text style={{ color: colors.emerald, fontWeight: '600' }}>{t('common.retry')}</Text>
                             </Pressable>
                           </>
@@ -391,6 +395,7 @@ export default function TwoFactorSetupScreen() {
                         style={styles.otpDigitBox}
                       >
                         <TextInput
+                          accessibilityLabel={t('accessibility.textInput')}
                           ref={el => inputRefs.current[idx] = el}
                           style={styles.otpDigit}
                           value={digit}

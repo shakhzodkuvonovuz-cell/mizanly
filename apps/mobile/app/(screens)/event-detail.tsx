@@ -321,6 +321,7 @@ export default function EventDetailScreen() {
               <Text style={[styles.infoSub, { color: tc.text.secondary }]}>{formatEventTime(event.startDate, event.endDate)}</Text>
             </View>
             <Pressable
+              accessibilityLabel={t('accessibility.viewCalendar')}
               style={({ pressed }) => [styles.addToCalendar, { backgroundColor: tc.surface }, pressed && { opacity: 0.7 }]}
               onPress={() => {
                 haptic.tick();
@@ -404,6 +405,7 @@ export default function EventDetailScreen() {
 
                 return (
                     <Pressable
+                      accessibilityLabel={t('accessibility.confirm')}
                       accessibilityRole="button"
                       key={status}
                       style={[styles_result.button, !isSelected && { backgroundColor: tc.surface, borderColor: tc.border }]}
@@ -486,6 +488,7 @@ export default function EventDetailScreen() {
                 </View>
 
                 <Pressable
+                  accessibilityLabel={t('accessibility.viewItem')}
                   style={({ pressed }) => [styles.seeAllButton, pressed && { opacity: 0.7 }]}
                   onPress={() => {
                     if (isNavigatingRef.current) return;
@@ -511,6 +514,7 @@ export default function EventDetailScreen() {
       {/* Bottom Bar */}
       <Animated.View entering={FadeInUp.delay(100).duration(300)} style={[styles.bottomBar, { backgroundColor: tc.bg, borderTopColor: tc.border, paddingBottom: Math.max(insets.bottom, spacing.base), flexDirection: rtlFlexRow(isRTL) }]}>
         <Pressable
+          accessibilityLabel={t('accessibility.share')}
           style={({ pressed }) => [styles.shareEventButton, pressed && { opacity: 0.7 }]}
           onPress={() => {
             haptic.tick();
@@ -529,7 +533,11 @@ export default function EventDetailScreen() {
           </LinearGradient>
         </Pressable>
 
-        <Pressable disabled={rsvpMutation.isPending} style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
+                <Pressable
+          accessibilityRole="button"
+          disabled={rsvpMutation.isPending}
+          style={({ pressed }) => [pressed && { opacity: 0.7 }]}
+        >
           <LinearGradient
             colors={[colors.emerald, colors.emeraldDark]}
             style={styles.rsvpConfirmButton}

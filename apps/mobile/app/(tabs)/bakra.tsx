@@ -291,6 +291,8 @@ const ReelItem = memo(function ReelItem({
             </Animated.View>
           </View>
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('accessibility.selectAudioTrack')}
             onPress={() => {
               if (item.audioTrackId) {
                 onNavigate(`/(screens)/sound/${item.audioTrackId}`);
@@ -432,6 +434,8 @@ const ReelItem = memo(function ReelItem({
 
           {/* Duet button */}
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('accessibility.selectCategory')}
             onPress={() => {
               haptic.navigate();
               onNavigate(`/(screens)/create-reel?duetWith=${item.id}`);
@@ -446,6 +450,7 @@ const ReelItem = memo(function ReelItem({
 
           {/* Stitch button */}
           <Pressable
+            accessibilityRole="button"
             onPress={() => {
               haptic.navigate();
               onNavigate(`/(screens)/create-reel?stitchFrom=${item.id}`);

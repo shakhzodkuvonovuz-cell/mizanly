@@ -58,6 +58,7 @@ export default function LocalBoardsScreen() {
   const renderBoard = ({ item, index }: { item: Record<string, unknown>; index: number }) => (
     <Animated.View entering={FadeInUp.delay(Math.min(index * 60, 600)).duration(300)}>
       <Pressable
+        accessibilityLabel={t('accessibility.seeMore')}
         accessibilityRole="button"
         style={({ pressed }) => [styles.boardCard, { borderColor: tc.border }, pressed && { opacity: 0.7 }]}
         android_ripple={{ color: 'rgba(255,255,255,0.1)' }}

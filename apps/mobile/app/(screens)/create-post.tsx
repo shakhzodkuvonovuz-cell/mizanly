@@ -348,13 +348,18 @@ export default function CreatePostScreen() {
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: tc.border }]}>
-          <Pressable onPress={() => {
-            if (content.trim() || media.length > 0) {
-              setShowDiscardSheet(true);
-            } else {
-              router.back();
-            }
-          }} hitSlop={8}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('accessibility.navigateBack')}
+            onPress={() => {
+              if (content.trim() || media.length > 0) {
+                setShowDiscardSheet(true);
+              } else {
+                router.back();
+              }
+            }}
+            hitSlop={8}
+          >
             <Icon name="x" size="md" color={tc.text.primary} />
           </Pressable>
           <Text style={styles.headerTitle}>{scheduledAt ? t('schedule.scheduled') : t('saf.newPost')}</Text>
@@ -370,7 +375,11 @@ export default function CreatePostScreen() {
             </Pressable>
             {/* Finding #384: Alt text reminder */}
             {media.length > 0 && !altText.trim() && (
-              <Pressable onPress={() => inputRef.current?.blur()} hitSlop={8}>
+                            <Pressable
+                accessibilityRole="button"
+                onPress={() => inputRef.current?.blur()}
+                hitSlop={8}
+              >
                 <Text style={{ color: colors.gold, fontSize: fontSize.xs, marginEnd: spacing.sm }}>{t('compose.addAltTextReminder', 'Add alt text?')}</Text>
               </Pressable>
             )}
@@ -389,7 +398,12 @@ export default function CreatePostScreen() {
           <View style={styles.draftBanner}>
             <Icon name="clock" size="sm" color={colors.gold} />
             <Text style={styles.draftBannerText}>{t('compose.draftRestored')}</Text>
-            <Pressable onPress={() => setShowDraftBanner(false)} hitSlop={8}>
+                        <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('accessibility.close')}
+              onPress={() => setShowDraftBanner(false)}
+              hitSlop={8}
+            >
               <Icon name="x" size="xs" color={tc.text.secondary} />
             </Pressable>
           </View>
@@ -407,6 +421,8 @@ export default function CreatePostScreen() {
               <Text style={styles.userName}>{user?.fullName ?? user?.username}</Text>
               {/* Visibility picker */}
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.expandSection')}
                 style={[styles.visibilityPill, { backgroundColor: tc.bgElevated }]}
                 onPress={() => setShowVisibility((v) => !v)}
               >
@@ -423,6 +439,8 @@ export default function CreatePostScreen() {
             <View style={[styles.visibilityMenu, { backgroundColor: tc.bgSheet, borderColor: tc.border }]}>
               {VISIBILITY_KEYS.map((opt) => (
                 <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('accessibility.close')}
                   key={opt.value}
                   style={[styles.visOption, visibility === opt.value && styles.visOptionActive]}
                   onPress={() => {
@@ -444,6 +462,8 @@ export default function CreatePostScreen() {
           {/* Circle picker — shown when CIRCLE visibility is active */}
           {visibility === 'CIRCLE' && (
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('accessibility.seeMore')}
               style={styles.circlePill}
               onPress={() => setShowCirclePicker(true)}
             >
@@ -857,7 +877,12 @@ export default function CreatePostScreen() {
           ) : circles.length === 0 ? (
             <View style={styles.emptyCircles}>
               <Text style={styles.emptyCirclesText}>{t('compose.noCirclesYet')}</Text>
-              <Pressable style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }} onPress={() => { setShowCirclePicker(false); router.push('/(screens)/circles'); }}>
+                            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.seeMore')}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}
+                onPress={() => { setShowCirclePicker(false); router.push('/(screens)/circles'); }}
+              >
                 <Text style={styles.emptyCirclesLink}>{t('compose.createCircle')}</Text>
                 <Icon name="chevron-right" size="sm" color={colors.emerald} />
               </Pressable>
@@ -903,7 +928,12 @@ export default function CreatePostScreen() {
           <View style={styles.locationPill}>
             <Icon name="map-pin" size="xs" color={colors.emerald} />
             <Text style={styles.locationPillText}>{location.name}</Text>
-            <Pressable onPress={() => setLocation(null)} hitSlop={8}>
+                        <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('accessibility.close')}
+              onPress={() => setLocation(null)}
+              hitSlop={8}
+            >
               <Icon name="x" size="xs" color={tc.text.tertiary} />
             </Pressable>
           </View>
@@ -955,7 +985,13 @@ export default function CreatePostScreen() {
           style={styles.toolbarGradient}
         >
           <View style={[styles.toolbar, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
-            <Pressable onPress={pickMedia} hitSlop={8} style={styles.toolbarBtn}>
+                        <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('accessibility.pickMedia')}
+              onPress={pickMedia}
+              hitSlop={8}
+              style={styles.toolbarBtn}
+            >
               <LinearGradient
                 colors={['rgba(10,123,79,0.1)', 'rgba(10,123,79,0.05)']}
                 style={[styles.toolbarBtnGradient, media.length > 0 && styles.toolbarBtnGradientActive]}
@@ -970,6 +1006,8 @@ export default function CreatePostScreen() {
             </Pressable>
 
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('accessibility.addLocation')}
               hitSlop={8}
               style={styles.toolbarBtn}
               onPress={() => setShowLocationPicker(true)}
@@ -983,6 +1021,7 @@ export default function CreatePostScreen() {
             </Pressable>
 
             <Pressable
+              accessibilityRole="button"
               hitSlop={8}
               style={styles.toolbarBtn}
               onPress={() => {
@@ -1001,6 +1040,7 @@ export default function CreatePostScreen() {
             </Pressable>
 
             <Pressable
+              accessibilityRole="button"
               hitSlop={8}
               style={styles.toolbarBtn}
               onPress={() => {
