@@ -66,7 +66,7 @@ import {
 import type { PendingMessage, EmitEncryptedMessageFn, EncryptedMessage } from '@/hooks/conversation';
 
 // #region Types & Constants
-import { TenorGifResult, searchTenorGifs, getTenorFeatured } from '@/services/tenorService';
+import { searchGiphy, getTrending, type GiphyMediaItem } from '@/services/giphyService';
 
 const QUICK_REACTION_EMOJIS = ['❤️', '👍', '😂', '😮', '😢', '🤲'];
 
@@ -232,7 +232,7 @@ function GifPicker({ visible, onClose, onSelect }: {
   onSelect: (gifUrl: string) => void;
 }) {
   const [search, setSearch] = useState('');
-  const [results, setResults] = useState<TenorGifResult[]>([]);
+  const [results, setResults] = useState<GiphyMediaItem[]>([]);
   const [loading, setLoading] = useState(false);
   const { t } = useTranslation();
   const tc = useThemeColors();
@@ -241,13 +241,13 @@ function GifPicker({ visible, onClose, onSelect }: {
     setLoading(true);
     try {
       const data = query.trim()
-        ? await searchTenorGifs(query)
-        : await getTenorFeatured();
+        ? await searchGiphy({ query, type: 'gifs', limit: 30 })
+        : await getTrending('gifs', 30);
       setResults(data);
-      if (data.length === 0 && !process.env.EXPO_PUBLIC_TENOR_API_KEY) {
+      if (data.length === 0 && !process.env.EXPO_PUBLIC_GIPHY_API_KEY) {
         showToast({ message: t('errors.gifServiceNotConfigured'), variant: 'error' });
       }
-    } catch (err) {
+    } catch {
       showToast({ message: t('errors.gifLoadFailed'), variant: 'error' });
     } finally {
       setLoading(false);
@@ -261,15 +261,15 @@ function GifPicker({ visible, onClose, onSelect }: {
   }, [visible, fetchGifs]);
 
   const renderGifItem = useCallback(
-    ({ item }: { item: TenorGifResult }) => (
+    ({ item }: { item: GiphyMediaItem }) => (
       <Pressable
         style={[styles.gifItem, { backgroundColor: tc.bgElevated }]}
-        onPress={() => onSelect(item.media_formats.gif.url)}
+        onPress={() => onSelect(item.url)}
         accessibilityRole="button"
         accessibilityLabel={t('gif.selectGif')}
       >
         <ProgressiveImage
-          uri={item.media_formats.gif.url}
+          uri={item.previewUrl || item.url}
           width="100%"
           height={150}
           blurhash={null}
