@@ -104,6 +104,7 @@ export const RichCaptionInput = forwardRef<RichCaptionInputRef, RichCaptionInput
   ) {
     const tc = useThemeColors();
     const inputRef = useRef<TextInput>(null);
+    const selectionRef = useRef<{ start: number; end: number }>({ start: 0, end: 0 });
     const [isFocused, setIsFocused] = useState(false);
 
     useImperativeHandle(ref, () => ({
@@ -111,13 +112,20 @@ export const RichCaptionInput = forwardRef<RichCaptionInputRef, RichCaptionInput
       blur: () => inputRef.current?.blur(),
     }));
 
+    const handleSelectionChange = useCallback(
+      (event: NativeSyntheticEvent<TextInputSelectionChangeEventData>) => {
+        selectionRef.current = event.nativeEvent.selection;
+      },
+      [],
+    );
+
     const handleChangeText = useCallback((text: string) => {
       onChangeText(text);
 
-      // Detect autocomplete triggers
+      // Detect autocomplete triggers using tracked cursor position
       if (onTriggerAutocomplete && onDismissAutocomplete) {
-        const cursorPos = text.length; // Approximate — no native cursor API in RN
-        const beforeCursor = text.slice(0, cursorPos);
+        const cursorPos = selectionRef.current.start;
+        const beforeCursor = text.slice(0, cursorPos || text.length);
 
         const hashMatch = beforeCursor.match(/#([a-zA-Z0-9_\u0600-\u06FF]*)$/);
         if (hashMatch) {
@@ -179,6 +187,7 @@ export const RichCaptionInput = forwardRef<RichCaptionInputRef, RichCaptionInput
           multiline={multiline}
           maxLength={maxLength}
           autoFocus={autoFocus}
+          onSelectionChange={handleSelectionChange}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           style={[

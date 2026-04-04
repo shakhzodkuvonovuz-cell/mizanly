@@ -5,12 +5,12 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  Image,
   TextInput,
   SafeAreaView,
   Pressable,
 } from 'react-native';
 import { Icon } from '@/components/ui/Icon';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -65,7 +65,7 @@ export const StickerPackBrowser = memo(function StickerPackBrowser({ onClose }: 
 
   const renderStickerItem = useCallback(
     ({ item }: { item: StickerItem }) => (
-      <Image source={{ uri: item.imageUrl }} style={styles.stickerImage} resizeMode="contain" />
+      <ProgressiveImage uri={item.imageUrl} width={70} height={70} borderRadius={radius.sm} contentFit="contain" blurhash={null} />
     ),
     [],
   );
@@ -212,11 +212,11 @@ export const StickerPackBrowser = memo(function StickerPackBrowser({ onClose }: 
   const renderFeaturedPack = ({ item }: { item: LocalStickerPack }) => (
     <View style={styles.featuredCard}>
       <View style={styles.featuredHeader}>
-        <Image source={{ uri: item.iconUrl }} style={styles.featuredIcon} />
+        <ProgressiveImage uri={item.iconUrl} width={48} height={48} borderRadius={radius.full} blurhash={null} />
         <View style={styles.featuredInfo}>
           <Text style={styles.featuredName}>{item.name}</Text>
           <Text style={styles.featuredDescription}>{item.description}</Text>
-          <Text style={styles.featuredCount}>{item.stickerCount} stickers</Text>
+          <Text style={styles.featuredCount}>{t('stickers.stickersCount', { count: item.stickerCount })}</Text>
         </View>
         <Pressable
           style={[
@@ -236,11 +236,14 @@ export const StickerPackBrowser = memo(function StickerPackBrowser({ onClose }: 
       </View>
       <Pressable style={styles.featuredPreview} onPress={() => openPackDetail(item.id)}>
         {item.previewUrls.map((url, idx) => (
-          <Image
+          <ProgressiveImage
             key={idx}
-            source={{ uri: url }}
-            style={styles.featuredPreviewImage}
-            resizeMode="contain"
+            uri={url}
+            width={70}
+            height={70}
+            borderRadius={radius.sm}
+            contentFit="contain"
+            blurhash={null}
           />
         ))}
       </Pressable>
@@ -250,11 +253,11 @@ export const StickerPackBrowser = memo(function StickerPackBrowser({ onClose }: 
   const renderPackCard = ({ item }: { item: LocalStickerPack }) => (
     <View style={styles.packCard}>
       <View style={styles.packCardHeader}>
-        <Image source={{ uri: item.iconUrl }} style={styles.packIcon} />
+        <ProgressiveImage uri={item.iconUrl} width={48} height={48} borderRadius={radius.full} blurhash={null} />
         <View style={styles.packInfo}>
           <Text style={styles.packName}>{item.name}</Text>
           <Text style={styles.packDescription}>{item.description}</Text>
-          <Text style={styles.packCount}>{item.stickerCount} stickers</Text>
+          <Text style={styles.packCount}>{t('stickers.stickersCount', { count: item.stickerCount })}</Text>
         </View>
         <Pressable
           style={[
@@ -277,11 +280,14 @@ export const StickerPackBrowser = memo(function StickerPackBrowser({ onClose }: 
       </View>
       <Pressable style={styles.packPreview} onPress={() => openPackDetail(item.id)}>
         {item.previewUrls.map((url, idx) => (
-          <Image
+          <ProgressiveImage
             key={idx}
-            source={{ uri: url }}
-            style={styles.packPreviewImage}
-            resizeMode="contain"
+            uri={url}
+            width={70}
+            height={70}
+            borderRadius={radius.sm}
+            contentFit="contain"
+            blurhash={null}
           />
         ))}
       </Pressable>
@@ -301,7 +307,7 @@ export const StickerPackBrowser = memo(function StickerPackBrowser({ onClose }: 
           >
             <Icon name="arrow-left" size="md" color={colors.text.primary} />
           </Pressable>
-          <Text style={styles.headerTitle}>Sticker Packs</Text>
+          <Text style={styles.headerTitle}>{t('stickers.stickerPacks')}</Text>
           <View style={styles.headerSpacer} />
         </View>
 
@@ -360,7 +366,7 @@ export const StickerPackBrowser = memo(function StickerPackBrowser({ onClose }: 
                 {/* Featured section */}
                 {!searchQuery && featuredPacks.length > 0 && (
                   <View style={styles.featuredSection}>
-                    <Text style={styles.sectionTitle}>Featured</Text>
+                    <Text style={styles.sectionTitle}>{t('stickers.featured')}</Text>
                     <FlatList
             removeClippedSubviews={true}
                       data={featuredPacks}
@@ -397,11 +403,11 @@ export const StickerPackBrowser = memo(function StickerPackBrowser({ onClose }: 
           {selectedPack && (
             <View style={styles.sheetContent}>
               <View style={styles.sheetHeader}>
-                <Image source={{ uri: selectedPack.coverUrl || '' }} style={styles.sheetIcon} />
+                <ProgressiveImage uri={selectedPack.coverUrl || ''} width={56} height={56} borderRadius={radius.full} blurhash={null} />
                 <View style={styles.sheetInfo}>
                   <Text style={styles.sheetName}>{selectedPack.name}</Text>
                   <Text style={styles.sheetDescription}>{selectedPack.description}</Text>
-                  <Text style={styles.sheetCount}>{selectedPack.stickers.length} stickers</Text>
+                  <Text style={styles.sheetCount}>{t('stickers.stickersCount', { count: selectedPack.stickers.length })}</Text>
                 </View>
                 <Pressable
                   accessibilityRole="button"

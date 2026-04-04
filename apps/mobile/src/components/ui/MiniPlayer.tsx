@@ -121,10 +121,13 @@ export const MiniPlayer = memo(function MiniPlayer() {
     if (!miniPlayerVideo) return;
     haptic.navigate();
     const videoId = miniPlayerVideo.id;
-    // Close mini player first, then navigate
+    // Pause mini player video before navigating to full screen to prevent audio leak
+    videoRef.current?.pauseAsync().catch(() => {});
+    setMiniPlayerPlaying(false);
+    // Close mini player, then navigate
     closeMiniPlayer();
     navigate(`/(screens)/video/${videoId}`);
-  }, [haptic, miniPlayerVideo, closeMiniPlayer, router]);
+  }, [haptic, miniPlayerVideo, closeMiniPlayer, setMiniPlayerPlaying]);
 
   // Gesture: pan to dismiss
   const panGesture = Gesture.Pan()

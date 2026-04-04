@@ -275,7 +275,11 @@ export const VideoPlayer = memo(function VideoPlayer({
   const durationMillis = status?.isLoaded ? (status.durationMillis ?? 0) : (duration ? duration * 1000 : 0);
   const progress = durationMillis > 0 ? position / durationMillis : 0;
 
-  // Prefer HLS URL (adaptive bitrate) over raw R2 URL
+  // Prefer HLS URL (adaptive bitrate) over raw R2 URL.
+  // TODO: Quality selector is UI-only. To wire it, the backend needs to provide
+  // quality-specific HLS variant URLs (e.g., hlsUrl + "?quality=720p") or separate
+  // URLs per quality level. Until then, selectedQuality is cosmetic — the player
+  // always uses adaptive bitrate via the base HLS URL.
   const effectiveUri = hlsUrl || uri;
 
   if (error) {
@@ -348,12 +352,9 @@ export const VideoPlayer = memo(function VideoPlayer({
                 <Icon name="repeat" size="md" color={looping ? colors.emerald : colors.text.primary} />
               </Pressable>
               <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-                {qualities && qualities.length > 0 && (
-                  <Pressable onPress={() => setQualitySheetVisible(true)} style={styles.iconButton}
-                    accessibilityRole="button" accessibilityLabel={t('minbar.quality')}>
-                    <Text style={styles.speedText}>{selectedQuality === 'auto' ? 'Auto' : selectedQuality}</Text>
-                  </Pressable>
-                )}
+                {/* Quality selector hidden — selectedQuality is not wired to change the video source.
+                    Backend needs to provide per-quality HLS variant URLs before this can function.
+                    See TODO above effectiveUri for details. */}
                 {enablePiP && isPiPSupported && (
                   <Pressable onPress={() => { enterPiP(); haptic.tick(); }} style={styles.iconButton}
                     accessibilityLabel={t('minbar.pictureInPicture')} accessibilityRole="button">
@@ -484,22 +485,8 @@ export const VideoPlayer = memo(function VideoPlayer({
         />
       </BottomSheet>
 
-      {/* Quality selector bottom sheet */}
-      <BottomSheet visible={qualitySheetVisible} onClose={() => setQualitySheetVisible(false)}>
-        <BottomSheetItem
-          label={t('minbar.all')}
-          onPress={() => { setSelectedQuality('auto'); setQualitySheetVisible(false); }}
-          icon={<Icon name="settings" size="md" color={selectedQuality === 'auto' ? colors.emerald : colors.text.secondary} />}
-        />
-        {(qualities || []).map((q) => (
-          <BottomSheetItem
-            key={q}
-            label={q}
-            onPress={() => { setSelectedQuality(q as VideoQuality); setQualitySheetVisible(false); }}
-            icon={<Icon name="layers" size="md" color={selectedQuality === q ? colors.emerald : colors.text.secondary} />}
-          />
-        ))}
-      </BottomSheet>
+      {/* Quality selector bottom sheet removed — not wired to change video source.
+          Re-enable when backend provides per-quality HLS variant URLs. */}
     </View>
   );
 });

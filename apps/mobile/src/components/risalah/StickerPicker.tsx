@@ -5,13 +5,13 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  Image,
   Pressable,
   Dimensions,
   TextInput,
 } from 'react-native';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { Icon } from '@/components/ui/Icon';
 import { TabSelector } from '@/components/ui/TabSelector';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -116,10 +116,12 @@ export const StickerPicker = memo(function StickerPicker({ visible, onClose, onS
       accessibilityLabel={`Sticker ${item.id}`}
       accessibilityRole="button"
     >
-      <Image
-        source={{ uri: item.imageUrl }}
-        style={styles.stickerImage}
-        resizeMode="contain"
+      <ProgressiveImage
+        uri={item.imageUrl}
+        width={ITEM_SIZE - 12}
+        height={ITEM_SIZE - 12}
+        contentFit="contain"
+        blurhash={null}
       />
     </Pressable>
   );
@@ -136,11 +138,15 @@ export const StickerPicker = memo(function StickerPicker({ visible, onClose, onS
       accessibilityRole="button"
     >
       <View style={styles.packIconWrapper}>
-        <Image
-          source={item.coverUrl ? { uri: item.coverUrl } : undefined}
-          style={styles.packIcon}
-          resizeMode="contain"
-        />
+        {item.coverUrl ? (
+          <ProgressiveImage
+            uri={item.coverUrl}
+            width={28}
+            height={28}
+            contentFit="contain"
+            blurhash={null}
+          />
+        ) : null}
       </View>
       <Text
         style={[
@@ -162,10 +168,12 @@ export const StickerPicker = memo(function StickerPicker({ visible, onClose, onS
       accessibilityLabel={`Recent sticker ${index + 1}`}
       accessibilityRole="button"
     >
-      <Image
-        source={{ uri: sticker.imageUrl }}
-        style={styles.recentStickerImage}
-        resizeMode="contain"
+      <ProgressiveImage
+        uri={sticker.imageUrl}
+        width={48}
+        height={48}
+        contentFit="contain"
+        blurhash={null}
       />
     </Pressable>
   );
@@ -173,7 +181,7 @@ export const StickerPicker = memo(function StickerPicker({ visible, onClose, onS
   return (
     <BottomSheet visible={visible} onClose={onClose} snapPoint={0.7}>
       <View style={styles.container}>
-        <Text style={styles.title}>Stickers</Text>
+        <Text style={styles.title}>{t('stickers.title')}</Text>
 
         {/* Search bar */}
         <View style={[styles.searchContainer, { backgroundColor: tc.bgElevated }]}>
@@ -207,7 +215,7 @@ export const StickerPicker = memo(function StickerPicker({ visible, onClose, onS
         {activeTab === 'recent' ? (
           /* Recent stickers grid */
           <View style={styles.stickerGridSection}>
-            <Text style={styles.sectionTitle}>Recently Used</Text>
+            <Text style={styles.sectionTitle}>{t('stickers.recentlyUsed')}</Text>
             {loading ? (
               <View style={styles.skeletonGrid}>
                 {Array.from({ length: 8 }).map((_, i) => (
@@ -265,7 +273,7 @@ export const StickerPicker = memo(function StickerPicker({ visible, onClose, onS
                 accessibilityRole="button"
               >
                 <Icon name="plus" size="sm" color={colors.text.secondary} />
-                <Text style={styles.addMoreText}>Add more</Text>
+                <Text style={styles.addMoreText}>{t('stickers.addMore')}</Text>
               </Pressable>
             </View>
 
