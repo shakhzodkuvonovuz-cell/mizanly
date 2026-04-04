@@ -8,10 +8,11 @@ const path = require('path');
 
 /**
  * Expo config plugin that configures ffmpeg-kit-react-native to use the
- * full-gpl variant on both iOS and Android.
+ * min-gpl variant on both iOS and Android.
  *
- * full-gpl includes: x264, x265, libass (styled subtitles), fribidi (RTL text),
- * freetype, fontconfig, vidstab (stabilization), zimg (filters).
+ * min-gpl includes libx264 (H.264 encoding) which is the only GPL codec
+ * needed for video export. Saves ~10-20MB vs full-gpl by excluding x265,
+ * libass, fribidi, freetype, fontconfig, vidstab, and zimg.
  *
  * Without this plugin, the default 'https' variant is used which lacks
  * H.264 encoding (libx264) — making video export impossible.
@@ -20,7 +21,7 @@ const path = require('path');
  */
 
 const PLUGIN_NAME = 'mizanly-ffmpeg-kit';
-const VARIANT = 'full-gpl';
+const VARIANT = 'min-gpl';
 
 // ── Android ─────────────────────────────────────────────────────────
 // Sets rootProject.ext.ffmpegKitPackage in the root build.gradle.
