@@ -8,7 +8,7 @@
  * - Quality preset mapping
  * - Filter graph composition
  *
- * Uses ffmpeg-kit-react-native (min-gpl variant configured via Expo plugin).
+ * Uses ffmpeg-kit-react-native (full-gpl variant configured via Expo plugin).
  * Gracefully degrades if native module isn't linked.
  *
  * NOTE: Only one export can run at a time (single activeSessionId).
