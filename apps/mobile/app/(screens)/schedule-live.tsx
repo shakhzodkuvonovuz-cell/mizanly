@@ -13,6 +13,14 @@ import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
+
+// Native DateTimePicker — gracefully degrades in Expo Go (falls back to custom picker)
+let RNDateTimePicker: React.ComponentType<{
+  value: Date; mode: 'date' | 'time' | 'datetime';
+  onChange?: (event: { type: string }, date?: Date) => void;
+  minimumDate?: Date; display?: string; themeVariant?: string;
+}> | null = null;
+try { RNDateTimePicker = require('@react-native-community/datetimepicker').default; } catch { /* Expo Go */ }
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CharCountRing } from '@/components/ui/CharCountRing';
@@ -302,69 +310,84 @@ export default function ScheduleLiveScreen() {
         </ScrollView>
         </KeyboardAvoidingView>
 
-        {/* Date picker bottom sheet */}
-        <BottomSheet visible={showDatePicker} onClose={() => setShowDatePicker(false)} snapPoint={0.6}>
+        {/* Date picker bottom sheet — native DateTimePicker when available, custom chips fallback */}
+        <BottomSheet visible={showDatePicker} onClose={() => setShowDatePicker(false)} snapPoint={RNDateTimePicker ? 0.45 : 0.6}>
           <Text style={styles.sheetTitle}>{t('screens.schedule-live.scheduleTimeLabel')}</Text>
 
-          {/* Day selection */}
-          <View style={styles.pickerSection}>
-            <Text style={styles.pickerLabel}>{t('screens.schedule-live.day')}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow}>
-              {dayOptions.map((day, idx) => (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={day.label}
-                  key={idx}
-                  style={[styles.pickerChip, selectedDayIndex === idx && styles.pickerChipActive]}
-                  onPress={() => setSelectedDayIndex(idx)}
-                >
-                  <Text style={[styles.pickerChipText, selectedDayIndex === idx && styles.pickerChipTextActive]}>
-                    {day.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </View>
+          {RNDateTimePicker ? (
+            <>
+              <RNDateTimePicker
+                value={tempDate}
+                mode="datetime"
+                minimumDate={new Date()}
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                themeVariant="dark"
+                onChange={(_event: { type: string }, selectedDate?: Date) => {
+                  if (selectedDate) setTempDate(selectedDate);
+                }}
+              />
+            </>
+          ) : (
+            <>
+              {/* Fallback: custom day/hour/minute chip selectors (Expo Go) */}
+              <View style={styles.pickerSection}>
+                <Text style={styles.pickerLabel}>{t('screens.schedule-live.day')}</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow}>
+                  {dayOptions.map((day, idx) => (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={day.label}
+                      key={idx}
+                      style={[styles.pickerChip, selectedDayIndex === idx && styles.pickerChipActive]}
+                      onPress={() => setSelectedDayIndex(idx)}
+                    >
+                      <Text style={[styles.pickerChipText, selectedDayIndex === idx && styles.pickerChipTextActive]}>
+                        {day.label}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
 
-          {/* Hour selection */}
-          <View style={styles.pickerSection}>
-            <Text style={styles.pickerLabel}>{t('screens.schedule-live.hour')}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow}>
-              {HOURS.map((hour) => (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`${t('screens.schedule-live.hour')} ${hour.toString().padStart(2, '0')}`}
-                  key={hour}
-                  style={[styles.pickerChip, selectedHour === hour && styles.pickerChipActive]}
-                  onPress={() => setSelectedHour(hour)}
-                >
-                  <Text style={[styles.pickerChipText, selectedHour === hour && styles.pickerChipTextActive]}>
-                    {hour.toString().padStart(2, '0')}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </View>
+              <View style={styles.pickerSection}>
+                <Text style={styles.pickerLabel}>{t('screens.schedule-live.hour')}</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow}>
+                  {HOURS.map((hour) => (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`${t('screens.schedule-live.hour')} ${hour.toString().padStart(2, '0')}`}
+                      key={hour}
+                      style={[styles.pickerChip, selectedHour === hour && styles.pickerChipActive]}
+                      onPress={() => setSelectedHour(hour)}
+                    >
+                      <Text style={[styles.pickerChipText, selectedHour === hour && styles.pickerChipTextActive]}>
+                        {hour.toString().padStart(2, '0')}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
 
-          {/* Minute selection */}
-          <View style={styles.pickerSection}>
-            <Text style={styles.pickerLabel}>{t('screens.schedule-live.minute')}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow}>
-              {MINUTES.map((minute) => (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`${t('screens.schedule-live.minute')} ${minute.toString().padStart(2, '0')}`}
-                  key={minute}
-                  style={[styles.pickerChip, selectedMinute === minute && styles.pickerChipActive]}
-                  onPress={() => setSelectedMinute(minute)}
-                >
-                  <Text style={[styles.pickerChipText, selectedMinute === minute && styles.pickerChipTextActive]}>
-                    {minute.toString().padStart(2, '0')}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </View>
+              <View style={styles.pickerSection}>
+                <Text style={styles.pickerLabel}>{t('screens.schedule-live.minute')}</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow}>
+                  {MINUTES.map((minute) => (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`${t('screens.schedule-live.minute')} ${minute.toString().padStart(2, '0')}`}
+                      key={minute}
+                      style={[styles.pickerChip, selectedMinute === minute && styles.pickerChipActive]}
+                      onPress={() => setSelectedMinute(minute)}
+                    >
+                      <Text style={[styles.pickerChipText, selectedMinute === minute && styles.pickerChipTextActive]}>
+                        {minute.toString().padStart(2, '0')}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+            </>
+          )}
 
           <View style={styles.pickerPreview}>
             <Text style={styles.pickerPreviewText}>

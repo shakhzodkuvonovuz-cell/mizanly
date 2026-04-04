@@ -17,6 +17,14 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
+
+// Native DateTimePicker — gracefully degrades in Expo Go (falls back to quick-select options)
+let RNDateTimePicker: React.ComponentType<{
+  value: Date; mode: 'date' | 'time' | 'datetime';
+  onChange?: (event: { type: string }, date?: Date) => void;
+  minimumDate?: Date; display?: string; themeVariant?: string;
+}> | null = null;
+try { RNDateTimePicker = require('@react-native-community/datetimepicker').default; } catch { /* Expo Go */ }
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { Avatar } from '@/components/ui/Avatar';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
@@ -667,36 +675,49 @@ export default function CreateEventScreen() {
         />
       </BottomSheet>
 
-      {/* Date Picker Bottom Sheet — @react-native-community/datetimepicker not installed, using quick-select options */}
-      <BottomSheet visible={showDatePicker !== null} onClose={() => setShowDatePicker(null)} snapPoint={0.6}>
+      {/* Date Picker Bottom Sheet — native picker when available, quick-select fallback for Expo Go */}
+      <BottomSheet visible={showDatePicker !== null} onClose={() => setShowDatePicker(null)} snapPoint={RNDateTimePicker ? 0.45 : 0.6}>
         <Text style={styles.sheetTitle}>{t('events.selectDateTime')}</Text>
-        <View style={styles.datePickerPlaceholder}>
-          <Text style={styles.datePickerText}>
-            {showDatePicker === 'start' ? t('events.selectStartDate') : t('events.selectEndDate')}
-          </Text>
-          {[
-            { label: t('events.inOneHour'), hours: 1 },
-            { label: t('events.inTwoHours'), hours: 2 },
-            { label: t('events.tomorrow'), hours: 24 },
-            { label: t('events.nextWeek'), hours: 168 },
-          ].map((option) => {
-            const optionDate = new Date();
-            optionDate.setHours(optionDate.getHours() + option.hours);
-            return (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={option.label}
-                key={option.hours}
-                style={styles.confirmButton}
-                onPress={() => handleDateSelect(optionDate)}
-              >
-                <LinearGradient colors={colors.gradient.cardDark} style={styles.confirmButtonGradient}>
-                  <Text style={styles.confirmButtonText}>{option.label} — {formatDateTime(optionDate)}</Text>
-                </LinearGradient>
-              </Pressable>
-            );
-          })}
-        </View>
+        <Text style={styles.datePickerText}>
+          {showDatePicker === 'start' ? t('events.selectStartDate') : t('events.selectEndDate')}
+        </Text>
+        {RNDateTimePicker ? (
+          <RNDateTimePicker
+            value={showDatePicker === 'start' ? startDate : endDate}
+            mode="datetime"
+            minimumDate={showDatePicker === 'end' ? startDate : new Date()}
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            themeVariant="dark"
+            onChange={(_event: { type: string }, selectedDate?: Date) => {
+              if (selectedDate) handleDateSelect(selectedDate);
+            }}
+          />
+        ) : (
+          <View style={styles.datePickerPlaceholder}>
+            {[
+              { label: t('events.inOneHour'), hours: 1 },
+              { label: t('events.inTwoHours'), hours: 2 },
+              { label: t('events.tomorrow'), hours: 24 },
+              { label: t('events.nextWeek'), hours: 168 },
+            ].map((option) => {
+              const optionDate = new Date();
+              optionDate.setHours(optionDate.getHours() + option.hours);
+              return (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={option.label}
+                  key={option.hours}
+                  style={styles.confirmButton}
+                  onPress={() => handleDateSelect(optionDate)}
+                >
+                  <LinearGradient colors={colors.gradient.cardDark} style={styles.confirmButtonGradient}>
+                    <Text style={styles.confirmButtonText}>{option.label} — {formatDateTime(optionDate)}</Text>
+                  </LinearGradient>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
       </BottomSheet>
     </SafeAreaView>
     </ScreenErrorBoundary>
