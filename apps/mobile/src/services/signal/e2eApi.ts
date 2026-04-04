@@ -21,6 +21,57 @@ import type {
 } from './types';
 
 // ============================================================
+// RAW JSON TYPES (Go server returns base64 strings, not Uint8Array)
+// ============================================================
+
+/** Shape of a pre-key bundle as returned by the Go E2E server (base64 strings for keys) */
+interface RawPreKeyBundle {
+  identityKey: string;
+  registrationId: number;
+  deviceId: number;
+  signedPreKey: {
+    keyId: number;
+    publicKey: string;
+    signature: string;
+    createdAt?: number;
+  };
+  oneTimePreKey?: {
+    keyId: number;
+    publicKey: string;
+  };
+  supportedVersions?: number[];
+  pqPreKey?: {
+    keyId: number;
+    publicKey: string;
+    signature: string;
+  };
+}
+
+/** Shape of a single-user bundle response from the Go server */
+interface RawBundleResponse {
+  bundle: RawPreKeyBundle;
+  remainingOneTimeKeys: number;
+}
+
+/** Shape of the batch bundle response from the Go server */
+interface RawBatchBundleResponse {
+  bundles: Record<string, RawBundleResponse>;
+}
+
+/** Shape of a sender key entry from the Go server */
+interface RawSenderKey {
+  senderUserId: string;
+  encryptedKey: string;
+  chainId: number;
+  generation: number;
+}
+
+/** Shape of the sender keys response from the Go server */
+interface RawSenderKeysResponse {
+  senderKeys?: RawSenderKey[];
+}
+
+// ============================================================
 // CONFIG
 // ============================================================
 
@@ -160,7 +211,7 @@ export async function fetchPreKeyBundle(
   userId: string,
 ): Promise<BundleResponse> {
   const response = await e2eFetch(`/api/v1/e2e/keys/bundle/${encodeURIComponent(userId)}`);
-  const raw = await response.json();
+  const raw: RawBundleResponse = await response.json();
 
   // Convert all base64 fields to Uint8Array
   const bundle: PreKeyBundle = {
@@ -198,11 +249,10 @@ export async function fetchPreKeyBundlesBatch(
     method: 'POST',
     body: JSON.stringify({ userIds }),
   });
-  const raw = await response.json();
+  const raw: RawBatchBundleResponse = await response.json();
 
   const result = new Map<string, BundleResponse>();
-  for (const [uid, bundleRaw] of Object.entries(raw.bundles ?? {})) {
-    const br = bundleRaw as any;
+  for (const [uid, br] of Object.entries(raw.bundles ?? {})) {
     const bundle: PreKeyBundle = {
       identityKey: fromBase64(br.bundle.identityKey),
       registrationId: br.bundle.registrationId,
@@ -259,9 +309,9 @@ export async function fetchSenderKeys(
   groupId: string,
 ): Promise<Array<{ senderUserId: string; encryptedKey: Uint8Array; chainId: number; generation: number }>> {
   const response = await e2eFetch(`/api/v1/e2e/sender-keys/${encodeURIComponent(groupId)}`);
-  const raw = await response.json();
+  const raw: RawSenderKeysResponse = await response.json();
 
-  return (raw.senderKeys ?? []).map((sk: any) => ({
+  return (raw.senderKeys ?? []).map((sk: RawSenderKey) => ({
     senderUserId: sk.senderUserId,
     encryptedKey: fromBase64(sk.encryptedKey),
     chainId: sk.chainId,

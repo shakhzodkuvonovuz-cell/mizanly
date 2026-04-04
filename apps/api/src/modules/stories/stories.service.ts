@@ -292,7 +292,7 @@ export class StoriesService {
 
       // B07-#3: closeFriendsOnly / subscribersOnly enforcement
       if (story.closeFriendsOnly) throw new ForbiddenException('This story is for close friends only');
-      if ((story as any).subscribersOnly) throw new ForbiddenException('This story is for subscribers only');
+      if (story.subscribersOnly) throw new ForbiddenException('This story is for subscribers only');
 
       // Private account: only approved followers can view stories
       if (story.userId) {
@@ -618,7 +618,7 @@ export class StoriesService {
     if (story.closeFriendsOnly && userId !== story.userId) {
       throw new ForbiddenException('This story is for close friends only');
     }
-    if ((story as any).subscribersOnly && userId !== story.userId) {
+    if (story.subscribersOnly && userId !== story.userId) {
       throw new ForbiddenException('This story is for subscribers only');
     }
     if (story.userId && userId !== story.userId) {

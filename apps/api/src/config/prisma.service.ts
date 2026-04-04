@@ -1,5 +1,10 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
+
+/** PrismaClient instantiated with query-event logging enabled */
+type PrismaClientWithQueryEvents = PrismaClient<{
+  log: [{ emit: 'event'; level: 'query' }];
+}>;
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
@@ -14,7 +19,10 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     });
 
     // Prisma query-level timing: log slow queries for performance investigation
-    (this as any).$on('query', (e: { query: string; duration: number; params: string }) => {
+    // Cast to PrismaClientWithQueryEvents because `extends PrismaClient` without generics
+    // resolves the event type parameter U to `never`. This is type-safe: the super() call
+    // above configures { emit: 'event', level: 'query' }.
+    (this as unknown as PrismaClientWithQueryEvents).$on('query', (e: Prisma.QueryEvent) => {
       if (e.duration > 500) {
         this.logger.error(`VERY SLOW query (${e.duration}ms): ${e.query.slice(0, 300)}`);
       } else if (e.duration > 100) {
