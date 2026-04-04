@@ -302,6 +302,23 @@ export default function ThreadDetailScreen() {
     inputRef.current?.focus();
   }, []);
 
+  const renderReplyItem = useCallback(
+    ({ item }: { item: ThreadReply }) => (
+      <ReplyRow
+        reply={item}
+        threadId={id}
+        viewerId={user?.id}
+        onReply={handleReply}
+        onDeleted={() => {
+          queryClient.invalidateQueries({ queryKey: ['thread-replies', id] });
+          queryClient.invalidateQueries({ queryKey: ['thread', id] });
+        }}
+        depth={depthMap.get(item.id) ?? 0}
+      />
+    ),
+    [id, user?.id, handleReply, queryClient, depthMap],
+  );
+
   const handleShare = useCallback(async () => {
     try {
       await Share.share({
@@ -463,19 +480,7 @@ export default function ThreadDetailScreen() {
               onRefresh={handleRefresh}
             />
           }
-          renderItem={({ item }) => (
-            <ReplyRow
-              reply={item}
-              threadId={id}
-              viewerId={user?.id}
-              onReply={handleReply}
-              onDeleted={() => {
-                queryClient.invalidateQueries({ queryKey: ['thread-replies', id] });
-                queryClient.invalidateQueries({ queryKey: ['thread', id] });
-              }}
-              depth={depthMap.get(item.id) ?? 0}
-            />
-          )}
+          renderItem={renderReplyItem}
           ListEmptyComponent={listEmpty}
           ListFooterComponent={listFooter}
           contentContainerStyle={{ paddingBottom: 140 }}

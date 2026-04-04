@@ -136,6 +136,34 @@ export const GifSearch = memo(function GifSearch({ onSelect, onClose, style }: G
     setQuery('');
   }, [haptic]);
 
+  const renderCategoryChip = useCallback(
+    ({ item }: { item: typeof GIPHY_CATEGORIES[number] }) => {
+      const isActive = item.id === activeCategory && !query;
+      const iconName: IconName = GIF_CATEGORY_ICONS[item.id] || 'star';
+      return (
+        <Pressable
+          onPress={() => handleCategoryPress(item.id)}
+          style={({ pressed }) => [
+            styles.categoryChip,
+            {
+              backgroundColor: isActive ? colors.emerald : pressed ? colors.active.white10 : tc.bgElevated,
+              transform: [{ scale: pressed ? 0.95 : 1 }],
+            },
+          ]}
+          accessibilityRole="button"
+          accessibilityState={{ selected: isActive }}
+          accessibilityLabel={t(item.labelKey)}
+        >
+          <Icon name={iconName} size={14} color={isActive ? '#fff' : tc.text.secondary} />
+          <Text style={[styles.categoryLabel, { color: isActive ? '#fff' : tc.text.secondary }]}>
+            {t(item.labelKey)}
+          </Text>
+        </Pressable>
+      );
+    },
+    [activeCategory, query, handleCategoryPress, tc.bgElevated, tc.text.secondary, t],
+  );
+
   // ── Waterfall masonry: assign GIFs to two columns, shortest-first ──
   const { leftColumn, rightColumn } = useMemo(() => {
     const left: Array<GifItem & { globalIndex: number }> = [];
@@ -291,30 +319,7 @@ export const GifSearch = memo(function GifSearch({ onSelect, onClose, style }: G
         keyExtractor={item => item.id}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.categoryList}
-        renderItem={({ item }) => {
-          const isActive = item.id === activeCategory && !query;
-          const iconName: IconName = GIF_CATEGORY_ICONS[item.id] || 'star';
-          return (
-            <Pressable
-              onPress={() => handleCategoryPress(item.id)}
-              style={({ pressed }) => [
-                styles.categoryChip,
-                {
-                  backgroundColor: isActive ? colors.emerald : pressed ? colors.active.white10 : tc.bgElevated,
-                  transform: [{ scale: pressed ? 0.95 : 1 }],
-                },
-              ]}
-              accessibilityRole="button"
-              accessibilityState={{ selected: isActive }}
-              accessibilityLabel={t(item.labelKey)}
-            >
-              <Icon name={iconName} size={14} color={isActive ? '#fff' : tc.text.secondary} />
-              <Text style={[styles.categoryLabel, { color: isActive ? '#fff' : tc.text.secondary }]}>
-                {t(item.labelKey)}
-              </Text>
-            </Pressable>
-          );
-        }}
+        renderItem={renderCategoryChip}
       />
 
       {/* GIF grid */}

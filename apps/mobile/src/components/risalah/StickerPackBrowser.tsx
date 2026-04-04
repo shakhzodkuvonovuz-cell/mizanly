@@ -62,6 +62,13 @@ export const StickerPackBrowser = memo(function StickerPackBrowser({ onClose }: 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedPack, setSelectedPack] = useState<ApiStickerPack | null>(null);
+
+  const renderStickerItem = useCallback(
+    ({ item }: { item: StickerItem }) => (
+      <Image source={{ uri: item.imageUrl }} style={styles.stickerImage} resizeMode="contain" />
+    ),
+    [],
+  );
   const [showDetailSheet, setShowDetailSheet] = useState(false);
 
   // Load data on mount
@@ -418,9 +425,7 @@ export const StickerPackBrowser = memo(function StickerPackBrowser({ onClose }: 
             removeClippedSubviews={true}
                 data={selectedPack.stickers}
                 numColumns={4}
-                renderItem={({ item }) => (
-                  <Image source={{ uri: item.imageUrl }} style={styles.stickerImage} resizeMode="contain" />
-                )}
+                renderItem={renderStickerItem}
                 keyExtractor={item => item.id}
                 contentContainerStyle={styles.stickerGrid}
               />

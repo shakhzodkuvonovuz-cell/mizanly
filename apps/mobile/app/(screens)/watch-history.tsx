@@ -174,6 +174,13 @@ export default function WatchHistoryScreen() {
     setTimeout(() => { isNavigatingRef.current = false; }, 500);
   };
 
+  const renderHistoryItem = useCallback(
+    ({ item, index }: { item: WatchHistoryItem; index: number }) => (
+      <VideoCard item={item} onPress={() => handleVideoPress(item)} index={index} />
+    ),
+    [handleVideoPress],
+  );
+
   const listEmpty = useMemo(() =>
     !watchHistoryQuery.isLoading ? (
       <EmptyState
@@ -246,9 +253,7 @@ export default function WatchHistoryScreen() {
           refreshControl={
             <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
-          renderItem={({ item, index }) => (
-            <VideoCard item={item} onPress={() => handleVideoPress(item)} index={index} />
-          )}
+          renderItem={renderHistoryItem}
           ListEmptyComponent={listEmpty}
           ListFooterComponent={listFooter}
           contentContainerStyle={styles.listContainer}

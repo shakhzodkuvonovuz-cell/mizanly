@@ -89,6 +89,33 @@ export const LocationSearch = memo(function LocationSearch({ onSelect, onClose, 
     onSelect(location);
   }, [haptic, onSelect]);
 
+  const renderLocationItem = useCallback(
+    ({ item, index }: { item: LocationData; index: number }) => (
+      <Animated.View entering={FadeInDown.delay(index * 40).duration(200)}>
+        <Pressable
+          onPress={() => handleSelect(item)}
+          style={({ pressed }) => [styles.locationItem, { backgroundColor: pressed ? colors.active.emerald10 : tc.bgElevated, transform: [{ scale: pressed ? 0.97 : 1 }] }]}
+          accessibilityLabel={`${item.name}, ${item.address}`}
+          accessibilityRole="button"
+        >
+          <View style={[styles.locationIcon, { backgroundColor: colors.active.emerald10 }]}>
+            <Icon name={categoryIcon(item.category)} size="sm" color={colors.emerald} />
+          </View>
+          <View style={styles.locationInfo}>
+            <Text style={[styles.locationName, { color: tc.text.primary }]} numberOfLines={1}>{item.name}</Text>
+            <Text style={[styles.locationAddress, { color: tc.text.secondary }]} numberOfLines={1}>{item.address}</Text>
+          </View>
+          {item.category && (
+            <View style={styles.categoryBadge}>
+              <Text style={styles.categoryText}>{item.category}</Text>
+            </View>
+          )}
+        </Pressable>
+      </Animated.View>
+    ),
+    [handleSelect, tc.bgElevated, tc.text.primary, tc.text.secondary],
+  );
+
   useEffect(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -191,33 +218,7 @@ export const LocationSearch = memo(function LocationSearch({ onSelect, onClose, 
         data={filteredResults}
         keyExtractor={item => item.id}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item, index }) => (
-          <Animated.View entering={FadeInDown.delay(index * 40).duration(200)}>
-            <Pressable
-              onPress={() => handleSelect(item)}
-              style={({ pressed }) => [styles.locationItem, { backgroundColor: pressed ? colors.active.emerald10 : tc.bgElevated, transform: [{ scale: pressed ? 0.97 : 1 }] }]}
-              accessibilityLabel={`${item.name}, ${item.address}`}
-              accessibilityRole="button"
-            >
-              <View style={[styles.locationIcon, { backgroundColor: colors.active.emerald10 }]}>
-                <Icon name={categoryIcon(item.category)} size="sm" color={colors.emerald} />
-              </View>
-              <View style={styles.locationInfo}>
-                <Text style={[styles.locationName, { color: tc.text.primary }]} numberOfLines={1}>
-                  {item.name}
-                </Text>
-                <Text style={[styles.locationAddress, { color: tc.text.secondary }]} numberOfLines={1}>
-                  {item.address}
-                </Text>
-              </View>
-              {item.category && (
-                <View style={styles.categoryBadge}>
-                  <Text style={styles.categoryText}>{item.category}</Text>
-                </View>
-              )}
-            </Pressable>
-          </Animated.View>
-        )}
+        renderItem={renderLocationItem}
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Icon name="map-pin" size="lg" color={tc.text.tertiary} />

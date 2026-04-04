@@ -358,6 +358,19 @@ export default function SearchResultsScreen() {
     />
   ), [t]);
 
+  const renderPeopleItem = useCallback(({ item, index }: { item: User; index: number }) => (
+    <UserRow user={item} onPress={() => router.push(`/(screens)/profile/${item.username}`)} index={index} onFollow={(userId: string, follow: boolean) => followMutation.mutate({ userId, follow })} />
+  ), [router, followMutation]);
+  const renderPostItem = useCallback(({ item }: { item: Post }) => <PostCard post={item} />, []);
+  const renderThreadItem = useCallback(({ item }: { item: Thread }) => <ThreadCard thread={item} />, []);
+  const renderReelSkeletonItem = useCallback(() => <Skeleton.Rect width={120} height={160} />, []);
+  const renderReelItem = useCallback(({ item, index }: { item: Reel; index: number }) => (
+    <ReelGridItem reel={item} onPress={() => router.push(`/(screens)/reel/${item.id}`)} index={index} />
+  ), [router]);
+  const renderHashtagItem = useCallback(({ item, index }: { item: Hashtag; index: number }) => (
+    <HashtagRow hashtag={item} onPress={() => router.push(`/(screens)/hashtag/${item.name}`)} index={index} />
+  ), [router]);
+
   return (
     <ScreenErrorBoundary>
       <View style={styles.container}>
@@ -453,14 +466,7 @@ export default function SearchResultsScreen() {
             removeClippedSubviews={true}
                     data={people}
                     keyExtractor={(item) => item.id}
-                    renderItem={({ item, index }) => (
-                      <UserRow
-                        user={item}
-                        onPress={() => router.push(`/(screens)/profile/${item.username}`)}
-                        index={index}
-                        onFollow={(userId, follow) => followMutation.mutate({ userId, follow })}
-                      />
-                    )}
+                    renderItem={renderPeopleItem}
                     ListEmptyComponent={peopleListEmpty}
                     contentContainerStyle={{ paddingBottom: 40 }}
                     refreshControl={
@@ -488,7 +494,7 @@ export default function SearchResultsScreen() {
             removeClippedSubviews={true}
                     data={posts}
                     keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => <PostCard post={item} />}
+                    renderItem={renderPostItem}
                     ListEmptyComponent={postsListEmpty}
                     onEndReached={handleFetchNextPage}
                     onEndReachedThreshold={0.5}
@@ -518,7 +524,7 @@ export default function SearchResultsScreen() {
             removeClippedSubviews={true}
                     data={threads}
                     keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => <ThreadCard thread={item} />}
+                    renderItem={renderThreadItem}
                     ListEmptyComponent={threadsListEmpty}
                     onEndReached={handleFetchNextPage}
                     onEndReachedThreshold={0.5}
@@ -542,9 +548,7 @@ export default function SearchResultsScreen() {
             removeClippedSubviews={true}
                     data={Array.from({ length: 9 })}
                     keyExtractor={(_, i) => `skeleton-${i}`}
-                    renderItem={() => (
-                      <Skeleton.Rect width={120} height={160} />
-                    )}
+                    renderItem={renderReelSkeletonItem}
                     numColumns={3}
                     columnWrapperStyle={styles.reelGridRow}
                     scrollEnabled={false}
@@ -555,13 +559,7 @@ export default function SearchResultsScreen() {
             removeClippedSubviews={true}
                     data={reels}
                     keyExtractor={(item) => item.id}
-                    renderItem={({ item, index }) => (
-                      <ReelGridItem
-                        reel={item}
-                        onPress={() => router.push(`/(screens)/reel/${item.id}`)}
-                        index={index}
-                      />
-                    )}
+                    renderItem={renderReelItem}
                     numColumns={3}
                     columnWrapperStyle={styles.reelGridRow}
                     ListEmptyComponent={reelsListEmpty}
@@ -599,13 +597,7 @@ export default function SearchResultsScreen() {
             removeClippedSubviews={true}
                     data={hashtags}
                     keyExtractor={(item) => item.id || `ht-${item.name}`}
-                    renderItem={({ item, index }) => (
-                      <HashtagRow
-                        hashtag={item}
-                        onPress={() => router.push(`/(screens)/hashtag/${item.name}`)}
-                        index={index}
-                      />
-                    )}
+                    renderItem={renderHashtagItem}
                     ListEmptyComponent={hashtagsListEmpty}
                     onEndReached={handleFetchNextPage}
                     onEndReachedThreshold={0.5}

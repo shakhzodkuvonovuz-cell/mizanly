@@ -208,6 +208,24 @@ export const ImageGallery = memo(function ImageGallery({
     opacity: backdropOpacity.value,
   }));
 
+  const renderGalleryImage = useCallback(
+    ({ item }: { item: string }) => (
+      <View style={[styles.imageContainer, { width: SCREEN_WIDTH, height: SCREEN_HEIGHT }]}>
+        <GestureDetector gesture={composedGesture}>
+          <Animated.View style={[styles.imageWrapper, imageAnimatedStyle]}>
+            <Image
+              source={{ uri: item }}
+              style={styles.image}
+              contentFit="contain"
+              transition={200}
+            />
+          </Animated.View>
+        </GestureDetector>
+      </View>
+    ),
+    [composedGesture, imageAnimatedStyle],
+  );
+
   // Entrance animation (FadeInUp)
   const entranceAnimatedStyle = useAnimatedStyle(() => ({
     opacity: entranceProgress.value,
@@ -297,20 +315,7 @@ export const ImageGallery = memo(function ImageGallery({
             ref={flatListRef}
             data={images}
             keyExtractor={(item, index) => `${item}-${index}`}
-            renderItem={({ item }) => (
-              <View style={[styles.imageContainer, { width: SCREEN_WIDTH, height: SCREEN_HEIGHT }]}>
-                <GestureDetector gesture={composedGesture}>
-                  <Animated.View style={[styles.imageWrapper, imageAnimatedStyle]}>
-                    <Image
-                      source={{ uri: item }}
-                      style={styles.image}
-                      contentFit="contain"
-                      transition={200}
-                    />
-                  </Animated.View>
-                </GestureDetector>
-              </View>
-            )}
+            renderItem={renderGalleryImage}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}

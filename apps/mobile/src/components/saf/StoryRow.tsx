@@ -34,6 +34,17 @@ export const StoryRow = memo(function StoryRow({ groups, onPressGroup, onPressOw
 
   const items = [ownGroup, ...groups.filter((g) => g.user.id !== user?.id)];
 
+  const renderStoryBubble = useCallback(
+    ({ item, index }: { item: StoryGroup; index: number }) => (
+      <StoryBubble
+        group={item}
+        isOwn={index === 0}
+        onPress={() => index === 0 ? onPressOwn() : onPressGroup(item, index - 1)}
+      />
+    ),
+    [onPressOwn, onPressGroup],
+  );
+
   return (
     <FlatList
             removeClippedSubviews={true}
@@ -42,13 +53,7 @@ export const StoryRow = memo(function StoryRow({ groups, onPressGroup, onPressOw
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.content}
-      renderItem={({ item, index }) => (
-        <StoryBubble
-          group={item}
-          isOwn={index === 0}
-          onPress={() => index === 0 ? onPressOwn() : onPressGroup(item, index - 1)}
-        />
-      )}
+      renderItem={renderStoryBubble}
       style={[styles.row, { borderBottomColor: tc.border }]}
     />
   );

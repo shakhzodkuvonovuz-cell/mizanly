@@ -175,6 +175,19 @@ const StoryGroupPage = memo(function StoryGroupPage({
     enabled: isOwnStory && showViewers && !!story?.id,
   });
 
+  const renderViewerItem = useCallback(
+    ({ item }: { item: { id: string; displayName: string; username: string; avatarUrl: string | null } }) => (
+      <View style={styles.viewerRow}>
+        <Avatar uri={item.avatarUrl} name={item.displayName} size="sm" />
+        <View style={styles.viewerInfo}>
+          <Text style={[styles.viewerName, { color: tc.text.primary }]}>{item.displayName}</Text>
+          <Text style={[styles.viewerUsername, { color: tc.text.secondary }]}>@{item.username}</Text>
+        </View>
+      </View>
+    ),
+    [tc.text.primary, tc.text.secondary],
+  );
+
   // Reset story index when this page becomes active (returning from a swipe)
   // Only reset if we're swiping BACK to this group — not on initial mount
   const hasBeenActive = useRef(false);
@@ -664,15 +677,7 @@ const StoryGroupPage = memo(function StoryGroupPage({
                 onRefresh={() => viewersQuery.refetch()}
               />
             }
-            renderItem={({ item }) => (
-              <View style={styles.viewerRow}>
-                <Avatar uri={item.avatarUrl} name={item.displayName} size="sm" />
-                <View style={styles.viewerInfo}>
-                  <Text style={[styles.viewerName, { color: tc.text.primary }]}>{item.displayName}</Text>
-                  <Text style={[styles.viewerUsername, { color: tc.text.secondary }]}>@{item.username}</Text>
-                </View>
-              </View>
-            )}
+            renderItem={renderViewerItem}
             ListEmptyComponent={
               <Text style={[styles.viewersEmpty, { color: tc.text.tertiary }]}>{t('saf.noViewsYet')}</Text>
             }

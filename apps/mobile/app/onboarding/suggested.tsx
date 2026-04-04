@@ -51,6 +51,32 @@ function SuggestedScreenContent() {
     }
   }, [following]);
 
+  const renderSuggestedUser = useCallback(
+    ({ item }: { item: User }) => {
+      const isFollowingUser = following.has(item.id);
+      return (
+        <View style={styles.row}>
+          <Avatar uri={item.avatarUrl} name={item.displayName} size="lg" />
+          <View style={styles.info}>
+            <Text style={[styles.name, { color: tc.text.primary }]}>{item.displayName}</Text>
+            <Text style={[styles.handle, { color: tc.text.secondary }]}>@{item.username}</Text>
+            {item.bio ? <Text style={[styles.bio, { color: tc.text.tertiary }]} numberOfLines={1}>{item.bio}</Text> : null}
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            style={[styles.followBtn, isFollowingUser && [styles.followingBtn, { borderColor: tc.border }]]}
+            onPress={() => handleFollow(item.id)}
+          >
+            <Text style={[styles.followBtnText, isFollowingUser && styles.followingBtnText, isFollowingUser && { color: tc.text.secondary }]}>
+              {isFollowingUser ? t('onboarding.suggested.following') : t('onboarding.suggested.follow')}
+            </Text>
+          </Pressable>
+        </View>
+      );
+    },
+    [following, handleFollow, tc.text.primary, tc.text.secondary, tc.text.tertiary, tc.border, t],
+  );
+
   const handleFinish = async () => {
     setFinishing(true);
     try {
@@ -100,28 +126,7 @@ function SuggestedScreenContent() {
               onRefresh={() => refetch()}
             />
           }
-          renderItem={({ item }: { item: User }) => {
-            const isFollowing = following.has(item.id);
-            return (
-              <View style={styles.row}>
-                <Avatar uri={item.avatarUrl} name={item.displayName} size="lg" />
-                <View style={styles.info}>
-                  <Text style={[styles.name, { color: tc.text.primary }]}>{item.displayName}</Text>
-                  <Text style={[styles.handle, { color: tc.text.secondary }]}>@{item.username}</Text>
-                  {item.bio ? <Text style={[styles.bio, { color: tc.text.tertiary }]} numberOfLines={1}>{item.bio}</Text> : null}
-                </View>
-                <Pressable
-                  accessibilityRole="button"
-                  style={[styles.followBtn, isFollowing && [styles.followingBtn, { borderColor: tc.border }]]}
-                  onPress={() => handleFollow(item.id)}
-                >
-                  <Text style={[styles.followBtnText, isFollowing && styles.followingBtnText, isFollowing && { color: tc.text.secondary }]}>
-                    {isFollowing ? t('onboarding.suggested.following') : t('onboarding.suggested.follow')}
-                  </Text>
-                </Pressable>
-              </View>
-            );
-          }}
+          renderItem={renderSuggestedUser}
         />
       )}
 

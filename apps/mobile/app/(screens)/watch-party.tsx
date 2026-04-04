@@ -64,6 +64,39 @@ export default function WatchPartyScreen() {
     enabled: videoPickerOpen && debouncedVideoSearch.trim().length >= 2,
   });
 
+  const renderVideoPickerItem = useCallback(
+    ({ item }: { item: Video }) => (
+      <Pressable
+        accessibilityRole="button"
+        style={styles.videoPickerRow}
+        onPress={() => {
+          haptic.tick();
+          setSelectedVideo(item);
+          setVideoPickerOpen(false);
+          setVideoSearchQuery('');
+        }}
+      >
+        {item.thumbnailUrl ? (
+          <ProgressiveImage uri={item.thumbnailUrl} width={80} height={48} borderRadius={radius.sm} />
+        ) : (
+          <View style={[styles.videoThumbPlaceholder, { width: 80, height: 48 }]}>
+            <Icon name="video" size="sm" color={tc.text.tertiary} />
+          </View>
+        )}
+        <View style={styles.videoPickerInfo}>
+          <Text style={styles.videoPickerTitle} numberOfLines={2}>{item.title}</Text>
+          <View style={styles.videoPickerMeta}>
+            <Text style={styles.videoPickerDuration}>{Math.floor(item.duration / 60)}:{String(item.duration % 60).padStart(2, '0')}</Text>
+            {typeof item.viewsCount === 'number' && (
+              <Text style={styles.videoPickerViews}>{formatCount(item.viewsCount)} {t('common.views')}</Text>
+            )}
+          </View>
+        </View>
+      </Pressable>
+    ),
+    [haptic, tc.text.tertiary, t],
+  );
+
   const availableVideos: Video[] = (() => {
     if (debouncedVideoSearch.trim().length >= 2) {
       const searchData = videoSearchResults.data;
@@ -305,35 +338,7 @@ export default function WatchPartyScreen() {
                 style={styles.videoList}
                 keyExtractor={(item) => item.id}
                 refreshControl={<BrandedRefreshControl refreshing={false} onRefresh={() => {}} />}
-                renderItem={({ item }) => (
-                  <Pressable
-                    accessibilityRole="button"
-                    style={styles.videoPickerRow}
-                    onPress={() => {
-                      haptic.tick();
-                      setSelectedVideo(item);
-                      setVideoPickerOpen(false);
-                      setVideoSearchQuery('');
-                    }}
-                  >
-                    {item.thumbnailUrl ? (
-                      <ProgressiveImage uri={item.thumbnailUrl} width={80} height={48} borderRadius={radius.sm} />
-                    ) : (
-                      <View style={[styles.videoThumbPlaceholder, { width: 80, height: 48 }]}>
-                        <Icon name="video" size="sm" color={tc.text.tertiary} />
-                      </View>
-                    )}
-                    <View style={styles.videoPickerInfo}>
-                      <Text style={styles.videoPickerTitle} numberOfLines={2}>{item.title}</Text>
-                      <View style={styles.videoPickerMeta}>
-                        <Text style={styles.videoPickerDuration}>{Math.floor(item.duration / 60)}:{String(item.duration % 60).padStart(2, '0')}</Text>
-                        {typeof item.viewsCount === 'number' && (
-                          <Text style={styles.videoPickerViews}>{formatCount(item.viewsCount)} {t('common.views')}</Text>
-                        )}
-                      </View>
-                    </View>
-                  </Pressable>
-                )}
+                renderItem={renderVideoPickerItem}
                 ListEmptyComponent={
                   <EmptyState
                     icon="video"

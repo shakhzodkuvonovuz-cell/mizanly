@@ -174,9 +174,22 @@ function StickerBrowserScreenInner() {
   const handleAdd = (id: string) => addMutation.mutate(id);
   const handleRemove = (id: string) => removeMutation.mutate(id);
 
-  const packs = debouncedQuery.length > 0 
+  const packs = debouncedQuery.length > 0
     ? (searchData || [])
     : (browseData?.pages.flatMap((page) => (page as { data: StickerPack[] })?.data ?? []) ?? []);
+
+  const renderPackItem = useCallback(
+    ({ item, index }: { item: StickerPack; index: number }) => (
+      <PackCard
+        pack={item}
+        onPress={() => setSelectedPack(item)}
+        onAdd={() => handleAdd(item.id)}
+        onRemove={() => handleRemove(item.id)}
+        index={index}
+      />
+    ),
+    [handleAdd, handleRemove],
+  );
 
   const renderFeatured = () => {
     if (debouncedQuery.length > 0) return null;
@@ -263,15 +276,7 @@ function StickerBrowserScreenInner() {
         <FlatList
           data={packs}
           ListHeaderComponent={renderFeatured}
-          renderItem={({ item, index }) => (
-            <PackCard
-              pack={item}
-              onPress={() => setSelectedPack(item)}
-              onAdd={() => handleAdd(item.id)}
-              onRemove={() => handleRemove(item.id)}
-              index={index}
-            />
-          )}
+          renderItem={renderPackItem}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           removeClippedSubviews={true}
