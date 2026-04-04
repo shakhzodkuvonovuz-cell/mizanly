@@ -3732,7 +3732,19 @@
     "noGifsFound": "No GIFs found",
     "useCurrentLocation": "Use Current Location",
     "shareWhereYouAre": "Share where you are",
-    "searchStickers": "Search stickers..."
+    "searchStickers": "Search stickers...",
+    "drawing.tool.pen": "Pen",
+    "drawing.tool.marker": "Penanda",
+    "drawing.tool.highlighter": "Penyerlah",
+    "drawing.tool.neon": "Neon",
+    "drawing.tool.eraser": "Pemadam",
+    "textEffect.typewriter": "Mesin Taip",
+    "textEffect.cursive": "Tulisan Tangan",
+    "textAnimation.none": "Tiada",
+    "textAnimation.fadeIn": "Pudar Masuk",
+    "textAnimation.typewriter": "Mesin Taip",
+    "textAnimation.bounce": "Melantun",
+    "textAnimation.slideUp": "Luncur Ke Atas"
   },
   "windDown": {
     "title": "Time to Wind Down",
@@ -5132,5 +5144,23 @@
     "changelog.smartNotifications.description": "Pemberitahuan berkumpulan, kawalan mengikut jenis, tolak untuk suka dan ikuti",
     "changelog.forYouFeed.title": "Suapan Untuk Anda",
     "changelog.forYouFeed.description": "Kedudukan AI 3 peringkat dengan peningkatan Islam, slot penerokaan, kepelbagaian hashtag"
+  },
+  "story": {
+    "textEffects.styles.classic": "Klasik",
+    "textEffects.styles.modern": "Moden",
+    "textEffects.styles.neon": "Neon",
+    "textEffects.styles.typewriter": "Mesin Taip",
+    "textEffects.styles.strong": "Tebal",
+    "textEffects.styles.cursive": "Tulisan Tangan",
+    "textEffects.animations.none": "Tiada",
+    "textEffects.animations.fade-in": "Pudar Masuk",
+    "textEffects.animations.typewriter": "Mesin Taip",
+    "textEffects.animations.bounce": "Melantun",
+    "textEffects.animations.slide-up": "Luncur Ke Atas",
+    "drawing.tool.pen": "Pen",
+    "drawing.tool.marker": "Penanda",
+    "drawing.tool.highlighter": "Penyerlah",
+    "drawing.tool.neon": "Neon",
+    "drawing.tool.eraser": "Pemadam"
   }
 }

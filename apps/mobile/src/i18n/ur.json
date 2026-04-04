@@ -3733,7 +3733,19 @@
     "noGifsFound": "No GIFs found",
     "useCurrentLocation": "Use Current Location",
     "shareWhereYouAre": "Share where you are",
-    "searchStickers": "Search stickers..."
+    "searchStickers": "Search stickers...",
+    "drawing.tool.pen": "قلم",
+    "drawing.tool.marker": "مارکر",
+    "drawing.tool.highlighter": "ہائی لائٹر",
+    "drawing.tool.neon": "نیون",
+    "drawing.tool.eraser": "ایریزر",
+    "textEffect.typewriter": "ٹائپ رائٹر",
+    "textEffect.cursive": "نستعلیق",
+    "textAnimation.none": "کوئی نہیں",
+    "textAnimation.fadeIn": "فیڈ ان",
+    "textAnimation.typewriter": "ٹائپ رائٹر",
+    "textAnimation.bounce": "باؤنس",
+    "textAnimation.slideUp": "سلائیڈ اپ"
   },
   "windDown": {
     "title": "Time to Wind Down",
@@ -5139,5 +5151,23 @@
     "changelog.smartNotifications.description": "بیچڈ نوٹیفکیشنز، فی قسم کنٹرولز، لائیکس اور فالوز کے لیے پش",
     "changelog.forYouFeed.title": "آپ کے لیے فیڈ",
     "changelog.forYouFeed.description": "3 مرحلہ AI رینکنگ اسلامی بوسٹ، ایکسپلوریشن سلاٹس، ہیش ٹیگ ڈائیورسٹی کے ساتھ"
+  },
+  "story": {
+    "textEffects.styles.classic": "کلاسک",
+    "textEffects.styles.modern": "جدید",
+    "textEffects.styles.neon": "نیون",
+    "textEffects.styles.typewriter": "ٹائپ رائٹر",
+    "textEffects.styles.strong": "مضبوط",
+    "textEffects.styles.cursive": "نستعلیق",
+    "textEffects.animations.none": "کوئی نہیں",
+    "textEffects.animations.fade-in": "فیڈ ان",
+    "textEffects.animations.typewriter": "ٹائپ رائٹر",
+    "textEffects.animations.bounce": "باؤنس",
+    "textEffects.animations.slide-up": "سلائیڈ اپ",
+    "drawing.tool.pen": "قلم",
+    "drawing.tool.marker": "مارکر",
+    "drawing.tool.highlighter": "ہائی لائٹر",
+    "drawing.tool.neon": "نیون",
+    "drawing.tool.eraser": "ایریزر"
   }
 }

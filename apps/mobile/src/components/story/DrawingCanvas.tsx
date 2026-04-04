@@ -547,7 +547,7 @@ export const DrawingCanvas = memo(function DrawingCanvas({
                   color={isActive ? colors.emerald : colors.text.secondary}
                 />
                 <Text style={[styles.toolLabel, isActive && styles.toolLabelActive]}>
-                  {t(`story.drawing.tool.${tool}`, { defaultValue: config.label })}
+                  {t(`story.drawing.tool.${tool}`)}
                 </Text>
               </Pressable>
             );

@@ -3443,7 +3443,19 @@
     "noGifsFound": "No GIFs found",
     "useCurrentLocation": "Use Current Location",
     "shareWhereYouAre": "Share where you are",
-    "searchStickers": "Search stickers..."
+    "searchStickers": "Search stickers...",
+    "drawing.tool.pen": "قلم",
+    "drawing.tool.marker": "قلم تحديد",
+    "drawing.tool.highlighter": "إبراز",
+    "drawing.tool.neon": "نيون",
+    "drawing.tool.eraser": "ممحاة",
+    "textEffect.typewriter": "آلة كاتبة",
+    "textEffect.cursive": "خط يدوي",
+    "textAnimation.none": "بدون",
+    "textAnimation.fadeIn": "تلاشي",
+    "textAnimation.typewriter": "آلة كاتبة",
+    "textAnimation.bounce": "ارتداد",
+    "textAnimation.slideUp": "انزلاق للأعلى"
   },
   "windDown": {
     "title": "حان وقت الراحة",
@@ -5126,5 +5138,23 @@
     "changelog.smartNotifications.description": "إشعارات مجمعة، تحكم حسب النوع، إشعارات للإعجابات والمتابعات",
     "changelog.forYouFeed.title": "خلاصة لك",
     "changelog.forYouFeed.description": "تصنيف ذكاء اصطناعي من 3 مراحل مع تعزيز إسلامي وفتحات استكشاف وتنوع الهاشتاق"
+  },
+  "story": {
+    "textEffects.styles.classic": "كلاسيكي",
+    "textEffects.styles.modern": "عصري",
+    "textEffects.styles.neon": "نيون",
+    "textEffects.styles.typewriter": "آلة كاتبة",
+    "textEffects.styles.strong": "قوي",
+    "textEffects.styles.cursive": "خط يدوي",
+    "textEffects.animations.none": "بدون",
+    "textEffects.animations.fade-in": "تلاشي",
+    "textEffects.animations.typewriter": "آلة كاتبة",
+    "textEffects.animations.bounce": "ارتداد",
+    "textEffects.animations.slide-up": "انزلاق للأعلى",
+    "drawing.tool.pen": "قلم",
+    "drawing.tool.marker": "قلم تحديد",
+    "drawing.tool.highlighter": "إبراز",
+    "drawing.tool.neon": "نيون",
+    "drawing.tool.eraser": "ممحاة"
   }
 }

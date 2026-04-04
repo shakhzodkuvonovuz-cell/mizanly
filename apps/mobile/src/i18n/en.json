@@ -3792,7 +3792,19 @@
     "noGifsFound": "No GIFs found",
     "useCurrentLocation": "Use Current Location",
     "shareWhereYouAre": "Share where you are",
-    "searchStickers": "Search stickers..."
+    "searchStickers": "Search stickers...",
+    "drawing.tool.pen": "Pen",
+    "drawing.tool.marker": "Marker",
+    "drawing.tool.highlighter": "Highlighter",
+    "drawing.tool.neon": "Neon",
+    "drawing.tool.eraser": "Eraser",
+    "textEffect.typewriter": "Typewriter",
+    "textEffect.cursive": "Cursive",
+    "textAnimation.none": "None",
+    "textAnimation.fadeIn": "Fade In",
+    "textAnimation.typewriter": "Typewriter",
+    "textAnimation.bounce": "Bounce",
+    "textAnimation.slideUp": "Slide Up"
   },
   "windDown": {
     "title": "Time to Wind Down",
@@ -5131,5 +5143,23 @@
     "changelog.smartNotifications.description": "Batched notifications, per-type controls, push for likes and follows",
     "changelog.forYouFeed.title": "For You Feed",
     "changelog.forYouFeed.description": "3-stage AI ranking with Islamic boost, exploration slots, hashtag diversity"
+  },
+  "story": {
+    "textEffects.styles.classic": "Classic",
+    "textEffects.styles.modern": "Modern",
+    "textEffects.styles.neon": "Neon",
+    "textEffects.styles.typewriter": "Typewriter",
+    "textEffects.styles.strong": "Strong",
+    "textEffects.styles.cursive": "Cursive",
+    "textEffects.animations.none": "None",
+    "textEffects.animations.fade-in": "Fade In",
+    "textEffects.animations.typewriter": "Typewriter",
+    "textEffects.animations.bounce": "Bounce",
+    "textEffects.animations.slide-up": "Slide Up",
+    "drawing.tool.pen": "Pen",
+    "drawing.tool.marker": "Marker",
+    "drawing.tool.highlighter": "Highlighter",
+    "drawing.tool.neon": "Neon",
+    "drawing.tool.eraser": "Eraser"
   }
 }

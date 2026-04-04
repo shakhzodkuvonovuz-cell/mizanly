@@ -3732,7 +3732,19 @@
     "noGifsFound": "No GIFs found",
     "useCurrentLocation": "Use Current Location",
     "shareWhereYouAre": "Share where you are",
-    "searchStickers": "Search stickers..."
+    "searchStickers": "Search stickers...",
+    "drawing.tool.pen": "পেন",
+    "drawing.tool.marker": "মার্কার",
+    "drawing.tool.highlighter": "হাইলাইটার",
+    "drawing.tool.neon": "নিয়ন",
+    "drawing.tool.eraser": "ইরেজার",
+    "textEffect.typewriter": "টাইপরাইটার",
+    "textEffect.cursive": "কার্সিভ",
+    "textAnimation.none": "কোনোটিই নয়",
+    "textAnimation.fadeIn": "ফেড ইন",
+    "textAnimation.typewriter": "টাইপরাইটার",
+    "textAnimation.bounce": "বাউন্স",
+    "textAnimation.slideUp": "স্লাইড আপ"
   },
   "windDown": {
     "title": "Time to Wind Down",
@@ -5132,5 +5144,23 @@
     "changelog.smartNotifications.description": "ব্যাচড নোটিফিকেশন, প্রকার অনুযায়ী নিয়ন্ত্রণ, লাইক এবং ফলো পুশ",
     "changelog.forYouFeed.title": "আপনার জন্য ফিড",
     "changelog.forYouFeed.description": "3-পর্যায় AI র্যাঙ্কিং ইসলামিক বুস্ট, এক্সপ্লোরেশন স্লট, হ্যাশট্যাগ বৈচিত্র্য সহ"
+  },
+  "story": {
+    "textEffects.styles.classic": "ক্লাসিক",
+    "textEffects.styles.modern": "আধুনিক",
+    "textEffects.styles.neon": "নিয়ন",
+    "textEffects.styles.typewriter": "টাইপরাইটার",
+    "textEffects.styles.strong": "গাঢ়",
+    "textEffects.styles.cursive": "কার্সিভ",
+    "textEffects.animations.none": "কোনোটিই নয়",
+    "textEffects.animations.fade-in": "ফেড ইন",
+    "textEffects.animations.typewriter": "টাইপরাইটার",
+    "textEffects.animations.bounce": "বাউন্স",
+    "textEffects.animations.slide-up": "স্লাইড আপ",
+    "drawing.tool.pen": "পেন",
+    "drawing.tool.marker": "মার্কার",
+    "drawing.tool.highlighter": "হাইলাইটার",
+    "drawing.tool.neon": "নিয়ন",
+    "drawing.tool.eraser": "ইরেজার"
   }
 }

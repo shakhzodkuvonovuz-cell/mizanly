@@ -3726,7 +3726,19 @@
     "noGifsFound": "No GIFs found",
     "useCurrentLocation": "Use Current Location",
     "shareWhereYouAre": "Share where you are",
-    "searchStickers": "Search stickers..."
+    "searchStickers": "Search stickers...",
+    "drawing.tool.pen": "Kalem",
+    "drawing.tool.marker": "Isaretleyici",
+    "drawing.tool.highlighter": "Fosforlu",
+    "drawing.tool.neon": "Neon",
+    "drawing.tool.eraser": "Silgi",
+    "textEffect.typewriter": "Daktilo",
+    "textEffect.cursive": "El yazisi",
+    "textAnimation.none": "Yok",
+    "textAnimation.fadeIn": "Belirme",
+    "textAnimation.typewriter": "Daktilo",
+    "textAnimation.bounce": "Zipla",
+    "textAnimation.slideUp": "Yukari Kaydir"
   },
   "windDown": {
     "title": "Dinlenme Zamanı",
@@ -5126,5 +5138,23 @@
     "changelog.smartNotifications.description": "Toplu bildirimler, tur bazli kontroller, begeni ve takip bildirimleri",
     "changelog.forYouFeed.title": "Senin Icin Akisi",
     "changelog.forYouFeed.description": "3 asamali yapay zeka siralamasi, Islami destek, kesif alanlari, hashtag cesitliligi"
+  },
+  "story": {
+    "textEffects.styles.classic": "Klasik",
+    "textEffects.styles.modern": "Modern",
+    "textEffects.styles.neon": "Neon",
+    "textEffects.styles.typewriter": "Daktilo",
+    "textEffects.styles.strong": "Kalin",
+    "textEffects.styles.cursive": "El yazisi",
+    "textEffects.animations.none": "Yok",
+    "textEffects.animations.fade-in": "Belirme",
+    "textEffects.animations.typewriter": "Daktilo",
+    "textEffects.animations.bounce": "Zipla",
+    "textEffects.animations.slide-up": "Yukari Kaydir",
+    "drawing.tool.pen": "Kalem",
+    "drawing.tool.marker": "Isaretleyici",
+    "drawing.tool.highlighter": "Fosforlu",
+    "drawing.tool.neon": "Neon",
+    "drawing.tool.eraser": "Silgi"
   }
 }

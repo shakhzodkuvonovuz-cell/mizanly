@@ -3733,7 +3733,19 @@
     "noGifsFound": "No GIFs found",
     "useCurrentLocation": "Use Current Location",
     "shareWhereYouAre": "Share where you are",
-    "searchStickers": "Search stickers..."
+    "searchStickers": "Search stickers...",
+    "drawing.tool.pen": "Stylo",
+    "drawing.tool.marker": "Marqueur",
+    "drawing.tool.highlighter": "Surligneur",
+    "drawing.tool.neon": "Neon",
+    "drawing.tool.eraser": "Gomme",
+    "textEffect.typewriter": "Machine a ecrire",
+    "textEffect.cursive": "Cursif",
+    "textAnimation.none": "Aucun",
+    "textAnimation.fadeIn": "Fondu",
+    "textAnimation.typewriter": "Machine a ecrire",
+    "textAnimation.bounce": "Rebond",
+    "textAnimation.slideUp": "Glisser vers le haut"
   },
   "windDown": {
     "title": "Time to Wind Down",
@@ -5133,5 +5145,23 @@
     "changelog.smartNotifications.description": "Notifications groupees, controles par type, push pour likes et abonnements",
     "changelog.forYouFeed.title": "Fil Pour Vous",
     "changelog.forYouFeed.description": "Classement IA en 3 etapes avec boost islamique, creneaux d'exploration, diversite hashtag"
+  },
+  "story": {
+    "textEffects.styles.classic": "Classique",
+    "textEffects.styles.modern": "Moderne",
+    "textEffects.styles.neon": "Neon",
+    "textEffects.styles.typewriter": "Machine a ecrire",
+    "textEffects.styles.strong": "Gras",
+    "textEffects.styles.cursive": "Cursif",
+    "textEffects.animations.none": "Aucun",
+    "textEffects.animations.fade-in": "Fondu",
+    "textEffects.animations.typewriter": "Machine a ecrire",
+    "textEffects.animations.bounce": "Rebond",
+    "textEffects.animations.slide-up": "Glisser vers le haut",
+    "drawing.tool.pen": "Stylo",
+    "drawing.tool.marker": "Marqueur",
+    "drawing.tool.highlighter": "Surligneur",
+    "drawing.tool.neon": "Neon",
+    "drawing.tool.eraser": "Gomme"
   }
 }
