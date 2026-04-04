@@ -820,9 +820,9 @@ enum TierLevel {
 }
 
 enum ScreenPosition {
-  top_left    @map("top-left")
-  top_right   @map("top-right")
-  bottom_left @map("bottom-left")
+  top_left     @map("top-left")
+  top_right    @map("top-right")
+  bottom_left  @map("bottom-left")
   bottom_right @map("bottom-right")
   center
 }
@@ -836,11 +836,11 @@ enum TrafficSource {
 }
 
 enum DemoAgeRange {
-  age_13_17 @map("13-17")
-  age_18_24 @map("18-24")
-  age_25_34 @map("25-34")
-  age_35_44 @map("35-44")
-  age_45_54 @map("45-54")
+  age_13_17   @map("13-17")
+  age_18_24   @map("18-24")
+  age_25_34   @map("25-34")
+  age_35_44   @map("35-44")
+  age_45_54   @map("45-54")
   age_55_plus @map("55+")
 }
 
@@ -881,20 +881,20 @@ enum CreatorCategory {
 // ============================================================
 
 model User {
-  id             String  @id @default(cuid())
-  clerkId        String  @unique
-  email          String  @unique
+  id               String  @id @default(cuid())
+  clerkId          String  @unique
+  email            String  @unique
   username         String  @unique
   previousUsername String?
   displayName      String
-  bio            String  @default("") @db.VarChar(500)
-  avatarUrl      String?
-  avatarBlurhash String?
-  coverUrl       String?
-  coverBlurhash  String?
-  website        String?
-  location       String?
-  phone          String?
+  bio              String  @default("") @db.VarChar(500)
+  avatarUrl        String?
+  avatarBlurhash   String?
+  coverUrl         String?
+  coverBlurhash    String?
+  website          String?
+  location         String?
+  phone            String?
 
   followersCount Int @default(0)
   followingCount Int @default(0)
@@ -912,35 +912,35 @@ model User {
   expoPushToken   String?
   notificationsOn Boolean  @default(true)
 
-  isBanned      Boolean   @default(false)
-  banReason     String?
-  banExpiresAt  DateTime?
-  warningsCount     Int       @default(0)
-  reputationScore   Int       @default(100)
-  isMemorialized    Boolean   @default(false) // Finding #267: Deceased account memorialization
+  isBanned        Boolean   @default(false)
+  banReason       String?
+  banExpiresAt    DateTime?
+  warningsCount   Int       @default(0)
+  reputationScore Int       @default(100)
+  isMemorialized  Boolean   @default(false) // Finding #267: Deceased account memorialization
 
-  isScholarVerified Boolean @default(false)
-  nasheedMode       Boolean @default(false)
+  isScholarVerified Boolean          @default(false)
+  nasheedMode       Boolean          @default(false)
   creatorCategory   CreatorCategory? // S01-#44: was String, closed set per DTO @IsIn
 
   // Legal/compliance
-  tosAcceptedAt     DateTime?
-  tosVersion        String?   @db.VarChar(20)
+  tosAcceptedAt DateTime?
+  tosVersion    String?   @db.VarChar(20)
 
   // Referral system (Finding #326)
-  referralCode           String?  @unique @db.VarChar(12)
-  referredBy             String?  // userId of the person who referred this user
+  referralCode String? @unique @db.VarChar(12)
+  referredBy   String? // userId of the person who referred this user
 
   // Monetization — balance is in CoinBalance table (NOT on User model)
   stripeConnectAccountId String?
   madhab                 String?  @db.VarChar(20)
   lastActiveAt           DateTime @default(now())
 
-  isDeactivated Boolean   @default(false)
-  deactivatedAt DateTime?
-  isDeleted            Boolean   @default(false)
-  deletedAt            DateTime?
-  scheduledDeletionAt  DateTime?
+  isDeactivated       Boolean   @default(false)
+  deactivatedAt       DateTime?
+  isDeleted           Boolean   @default(false)
+  deletedAt           DateTime?
+  scheduledDeletionAt DateTime?
 
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -957,7 +957,7 @@ model User {
 
   // Bakra
   reels                Reel[]
-  taggedInReels        ReelTaggedUser[]  @relation("taggedInReels")
+  taggedInReels        ReelTaggedUser[]      @relation("taggedInReels")
   reelReactions        ReelReaction[]
   reelComments         ReelComment[]
   reelCommentReactions ReelCommentReaction[]
@@ -1149,34 +1149,34 @@ model User {
   conversationKeyEnvelopes ConversationKeyEnvelope[]   @relation("conversationKeyEnvelopes")
 
   // Signal Protocol E2E
-  e2eIdentityKeys       E2EIdentityKey[]   @relation("e2eIdentityKey")
-  e2eSignedPreKeys      E2ESignedPreKey[]  @relation("e2eSignedPreKeys")
-  e2eOneTimePreKeys     E2EOneTimePreKey[] @relation("e2eOneTimePreKeys")
-  e2eSenderKeysSent     E2ESenderKey[]     @relation("e2eSenderKeysSent")
-  e2eSenderKeysReceived E2ESenderKey[]     @relation("e2eSenderKeysReceived")
-  adminLogsPerformed       AdminLog[]                  @relation("adminLogs")
-  adminLogTargets          AdminLog[]                  @relation("adminLogTargets")
-  storyViews               StoryView[]                 @relation("storyViews")
-  conversationLastMessages Conversation[]              @relation("conversationLastMessage")
-  pinnedMessages           Message[]                   @relation("messagePinner")
-  reportReviews            Report[]                    @relation("reportReviewer")
-  altProfileRecord         AltProfile?                 @relation("altProfile")
-  callScreenShares         CallSession[]               @relation("callScreenShare")
-  playlistCollabsAdded     PlaylistCollaborator[]      @relation("playlistCollabAdder")
-  zakatFundsVerified       ZakatFund[]                 @relation("zakatFundVerifier")
+  e2eIdentityKeys          E2EIdentityKey[]       @relation("e2eIdentityKey")
+  e2eSignedPreKeys         E2ESignedPreKey[]      @relation("e2eSignedPreKeys")
+  e2eOneTimePreKeys        E2EOneTimePreKey[]     @relation("e2eOneTimePreKeys")
+  e2eSenderKeysSent        E2ESenderKey[]         @relation("e2eSenderKeysSent")
+  e2eSenderKeysReceived    E2ESenderKey[]         @relation("e2eSenderKeysReceived")
+  adminLogsPerformed       AdminLog[]             @relation("adminLogs")
+  adminLogTargets          AdminLog[]             @relation("adminLogTargets")
+  storyViews               StoryView[]            @relation("storyViews")
+  conversationLastMessages Conversation[]         @relation("conversationLastMessage")
+  pinnedMessages           Message[]              @relation("messagePinner")
+  reportReviews            Report[]               @relation("reportReviewer")
+  altProfileRecord         AltProfile?            @relation("altProfile")
+  callScreenShares         CallSession[]          @relation("callScreenShare")
+  playlistCollabsAdded     PlaylistCollaborator[] @relation("playlistCollabAdder")
+  zakatFundsVerified       ZakatFund[]            @relation("zakatFundVerifier")
 
   // Batch 5: Dangling FK fixes
-  waqfDonations            WaqfDonation[]              @relation("waqfDonations")
-  videoCommentLikes        VideoCommentLike[]           @relation("videoCommentLikes")
-  scholarQuestionVotes     ScholarQuestionVote[]        @relation("scholarQuestionVotes")
-  halalVerifyVotes         HalalVerifyVote[]            @relation("halalVerifyVotes")
-  starredMessageRecords    StarredMessage[]             @relation("starredMessages")
-  adminAuditLogs           AdminAuditLog[]              @relation("adminAuditLogs")
-  savedSearches            SavedSearch[]                @relation("savedSearches")
-  ownedStickerPacks        StickerPack[]                @relation("ownedStickerPacks")
-  audioTracks              AudioTrack[]                 @relation("audioTracks")
-  fatwaAnswers             FatwaQuestion[]              @relation("FatwaAnswers")
-  broadcastChannelsCreated BroadcastChannel[]           @relation("broadcastChannelsCreated")
+  waqfDonations            WaqfDonation[]        @relation("waqfDonations")
+  videoCommentLikes        VideoCommentLike[]    @relation("videoCommentLikes")
+  scholarQuestionVotes     ScholarQuestionVote[] @relation("scholarQuestionVotes")
+  halalVerifyVotes         HalalVerifyVote[]     @relation("halalVerifyVotes")
+  starredMessageRecords    StarredMessage[]      @relation("starredMessages")
+  adminAuditLogs           AdminAuditLog[]       @relation("adminAuditLogs")
+  savedSearches            SavedSearch[]         @relation("savedSearches")
+  ownedStickerPacks        StickerPack[]         @relation("ownedStickerPacks")
+  audioTracks              AudioTrack[]          @relation("audioTracks")
+  fatwaAnswers             FatwaQuestion[]       @relation("FatwaAnswers")
+  broadcastChannelsCreated BroadcastChannel[]    @relation("broadcastChannelsCreated")
 
   // @@index([username]) — redundant: username is @unique
   // @@index([clerkId]) — redundant: clerkId is @unique
@@ -1209,53 +1209,53 @@ model Follow {
 // ============================================================
 
 model Post {
-  id               String         @id @default(cuid())
-  userId           String?
-  user             User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
-  content          String?        @db.VarChar(2000)
-  postType         PostType       @default(TEXT)
-  visibility       PostVisibility @default(PUBLIC)
-  space            ContentSpace   @default(SAF)
-  mediaUrls        String[]       @default([])
-  mediaTypes       String[]       @default([])
-  thumbnailUrl     String?
-  mediaWidth       Int?
-  mediaHeight      Int?
-  videoDuration    Float?
-  hashtags         String[]       @default([])
-  mentions         String[]       @default([])
-  locationName     String?
-  locationLat      Float?
-  locationLng      Float?
-  language         String         @default("en")
-  likesCount       Int            @default(0)
-  commentsCount    Int            @default(0)
-  sharesCount      Int            @default(0)
-  savesCount       Int            @default(0)
-  viewsCount       Int            @default(0)
-  sharedPostId     String?
-  sharedPost       Post?          @relation("PostShares", fields: [sharedPostId], references: [id], onDelete: SetNull)
-  shares           Post[]         @relation("PostShares")
-  circleId         String?
-  circle           Circle?        @relation(fields: [circleId], references: [id], onDelete: SetNull)
-  isSensitive      Boolean        @default(false)
-  altText          String?
-  scheduledAt      DateTime?
-  originalScheduledAt DateTime?   // Preserved when publishOverdueContent sets scheduledAt=null
-  hideLikesCount   Boolean        @default(false)
-  commentsDisabled  Boolean           @default(false)
-  commentPermission CommentPermission @default(EVERYONE)
-  brandedContent    Boolean           @default(false)
-  brandPartner      String?
-  remixAllowed      Boolean           @default(true)
-  shareToFeed       Boolean           @default(true)
-  topics            String[]          @default([])
-  isDownloadable    Boolean           @default(true)
-  isPinned         Boolean        @default(false)
-  isFeatured       Boolean        @default(false)
-  featuredAt       DateTime?
-  blurhash         String?
-  isAltProfile     Boolean        @default(false)
+  id                  String            @id @default(cuid())
+  userId              String?
+  user                User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  content             String?           @db.VarChar(2000)
+  postType            PostType          @default(TEXT)
+  visibility          PostVisibility    @default(PUBLIC)
+  space               ContentSpace      @default(SAF)
+  mediaUrls           String[]          @default([])
+  mediaTypes          String[]          @default([])
+  thumbnailUrl        String?
+  mediaWidth          Int?
+  mediaHeight         Int?
+  videoDuration       Float?
+  hashtags            String[]          @default([])
+  mentions            String[]          @default([])
+  locationName        String?
+  locationLat         Float?
+  locationLng         Float?
+  language            String            @default("en")
+  likesCount          Int               @default(0)
+  commentsCount       Int               @default(0)
+  sharesCount         Int               @default(0)
+  savesCount          Int               @default(0)
+  viewsCount          Int               @default(0)
+  sharedPostId        String?
+  sharedPost          Post?             @relation("PostShares", fields: [sharedPostId], references: [id], onDelete: SetNull)
+  shares              Post[]            @relation("PostShares")
+  circleId            String?
+  circle              Circle?           @relation(fields: [circleId], references: [id], onDelete: SetNull)
+  isSensitive         Boolean           @default(false)
+  altText             String?
+  scheduledAt         DateTime?
+  originalScheduledAt DateTime? // Preserved when publishOverdueContent sets scheduledAt=null
+  hideLikesCount      Boolean           @default(false)
+  commentsDisabled    Boolean           @default(false)
+  commentPermission   CommentPermission @default(EVERYONE)
+  brandedContent      Boolean           @default(false)
+  brandPartner        String?
+  remixAllowed        Boolean           @default(true)
+  shareToFeed         Boolean           @default(true)
+  topics              String[]          @default([])
+  isDownloadable      Boolean           @default(true)
+  isPinned            Boolean           @default(false)
+  isFeatured          Boolean           @default(false)
+  featuredAt          DateTime?
+  blurhash            String?
+  isAltProfile        Boolean           @default(false)
 
   editedAt          DateTime?
   editHistory       Json?
@@ -1291,8 +1291,10 @@ model Post {
   @@index([hashtags])
   @@index([isFeatured, featuredAt(sort: Desc)])
   @@index([visibility, createdAt(sort: Desc)]) // P0: for-you/trending feeds filter visibility+sort
-  @@index([isRemoved, createdAt(sort: Desc)])  // P0: all feeds exclude removed posts
+  @@index([isRemoved, createdAt(sort: Desc)]) // P0: all feeds exclude removed posts
   @@index([isRemoved, visibility, likesCount(sort: Desc)]) // Trending: engagement-sorted candidates
+  @@index([isRemoved, visibility, createdAt(sort: Desc)]) // J02-C1: feed queries (isRemoved+visibility filter+sort by date)
+  @@index([visibility, isRemoved, likesCount(sort: Desc)]) // J02-C2: search/related posts (visibility-first for search context)
   @@map("posts")
 }
 
@@ -1368,83 +1370,85 @@ model StoryView {
 // ============================================================
 
 model Reel {
-  id              String            @id @default(cuid())
-  userId          String?
-  user            User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
-  videoUrl        String
-  streamId        String?
-  hlsUrl          String?
-  dashUrl         String?
-  qualities       String[]          @default([])
-  isLooping       Boolean           @default(true)
-  normalizeAudio  Boolean           @default(false)
-  thumbnailUrl    String?
-  duration        Float
-  width           Int               @default(1080)
-  height          Int               @default(1920)
-  status          ReelStatus        @default(PROCESSING)
-  caption         String?           @db.VarChar(500)
-  hashtags        String[]          @default([])
-  mentions        String[]          @default([])
-  language        String            @default("en")
-  audioId         String?
-  audioTitle      String?
-  audioArtist     String?
-  audioTrackId    String?
-  audioTrack      AudioTrack?       @relation(fields: [audioTrackId], references: [id], onDelete: SetNull)
-  duetOfId        String?
-  duetOf          Reel?             @relation("DuetOf", fields: [duetOfId], references: [id], onDelete: SetNull)
-  stitchOfId      String?
-  stitchOf        Reel?             @relation("StitchOf", fields: [stitchOfId], references: [id], onDelete: SetNull)
-  isDuet          Boolean           @default(false)
-  isStitch        Boolean           @default(false)
-  isPhotoCarousel   Boolean           @default(false)
-  carouselUrls      String[]          @default([])
-  carouselTexts     String[]          @default([])
-  altText           String?
-  locationName      String?
-  locationLat       Float?
-  locationLng       Float?
-  commentPermission CommentPermission @default(EVERYONE)
-  brandedContent    Boolean           @default(false)
-  brandPartner      String?
-  remixAllowed      Boolean           @default(true)
-  topics            String[]          @default([])
-  scheduledAt       DateTime?
+  id                  String            @id @default(cuid())
+  userId              String?
+  user                User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  videoUrl            String
+  streamId            String?
+  hlsUrl              String?
+  dashUrl             String?
+  qualities           String[]          @default([])
+  isLooping           Boolean           @default(true)
+  normalizeAudio      Boolean           @default(false)
+  thumbnailUrl        String?
+  duration            Float
+  width               Int               @default(1080)
+  height              Int               @default(1920)
+  status              ReelStatus        @default(PROCESSING)
+  caption             String?           @db.VarChar(500)
+  hashtags            String[]          @default([])
+  mentions            String[]          @default([])
+  language            String            @default("en")
+  audioId             String?
+  audioTitle          String?
+  audioArtist         String?
+  audioTrackId        String?
+  audioTrack          AudioTrack?       @relation(fields: [audioTrackId], references: [id], onDelete: SetNull)
+  duetOfId            String?
+  duetOf              Reel?             @relation("DuetOf", fields: [duetOfId], references: [id], onDelete: SetNull)
+  stitchOfId          String?
+  stitchOf            Reel?             @relation("StitchOf", fields: [stitchOfId], references: [id], onDelete: SetNull)
+  isDuet              Boolean           @default(false)
+  isStitch            Boolean           @default(false)
+  isPhotoCarousel     Boolean           @default(false)
+  carouselUrls        String[]          @default([])
+  carouselTexts       String[]          @default([])
+  altText             String?
+  locationName        String?
+  locationLat         Float?
+  locationLng         Float?
+  commentPermission   CommentPermission @default(EVERYONE)
+  brandedContent      Boolean           @default(false)
+  brandPartner        String?
+  remixAllowed        Boolean           @default(true)
+  topics              String[]          @default([])
+  scheduledAt         DateTime?
   originalScheduledAt DateTime?
-  blurhash          String?
-  likesCount      Int               @default(0)
-  commentsCount   Int               @default(0)
-  sharesCount     Int               @default(0)
-  savesCount      Int               @default(0)
-  viewsCount      Int               @default(0)
-  loopsCount      Int               @default(0)
-  isFeatureWorthy Boolean           @default(false)
-  isTrial         Boolean           @default(false)
-  isSensitive     Boolean           @default(false)
-  isArchived      Boolean           @default(false)
-  isRemoved       Boolean           @default(false)
-  removedReason   String?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  reactions       ReelReaction[]
-  comments        ReelComment[]
-  interactions    ReelInteraction[]
-  notifications   Notification[]
-  duets           Reel[]            @relation("DuetOf")
-  stitches        Reel[]            @relation("StitchOf")
-  templates       ReelTemplate[]    @relation("ReelTemplateSource")
-  seriesEpisodes  SeriesEpisode[]   @relation("seriesEpisodeReels")
-  taggedUsers      ReelTaggedUser[]
-  feedInteractions FeedInteraction[] @relation("feedInteractionReel")
+  blurhash            String?
+  likesCount          Int               @default(0)
+  commentsCount       Int               @default(0)
+  sharesCount         Int               @default(0)
+  savesCount          Int               @default(0)
+  viewsCount          Int               @default(0)
+  loopsCount          Int               @default(0)
+  isFeatureWorthy     Boolean           @default(false)
+  isTrial             Boolean           @default(false)
+  isSensitive         Boolean           @default(false)
+  isArchived          Boolean           @default(false)
+  isRemoved           Boolean           @default(false)
+  removedReason       String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  reactions           ReelReaction[]
+  comments            ReelComment[]
+  interactions        ReelInteraction[]
+  notifications       Notification[]
+  duets               Reel[]            @relation("DuetOf")
+  stitches            Reel[]            @relation("StitchOf")
+  templates           ReelTemplate[]    @relation("ReelTemplateSource")
+  seriesEpisodes      SeriesEpisode[]   @relation("seriesEpisodeReels")
+  taggedUsers         ReelTaggedUser[]
+  feedInteractions    FeedInteraction[] @relation("feedInteractionReel")
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([createdAt(sort: Desc)])
   @@index([viewsCount(sort: Desc)])
   @@index([hashtags])
-  @@index([status, createdAt(sort: Desc)])   // P0: feed queries filter status=READY+sort
+  @@index([status, createdAt(sort: Desc)]) // P0: feed queries filter status=READY+sort
   @@index([isRemoved, createdAt(sort: Desc)]) // P0: all feeds exclude removed reels
   @@index([status, isRemoved, isTrial, createdAt(sort: Desc)]) // ForYou feed composite filter
+  @@index([status, isRemoved, likesCount(sort: Desc)]) // J02-C3: search/trending reels by engagement
+  @@index([status, isRemoved, viewsCount(sort: Desc)]) // J02-C4: trending reels by views
   @@map("reels")
 }
 
@@ -1516,48 +1520,48 @@ model ReelCommentReaction {
 // ============================================================
 
 model Thread {
-  id              String           @id @default(cuid())
-  userId          String?
-  user            User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
-  content         String           @db.VarChar(500)
-  mediaUrls       String[]         @default([])
-  mediaTypes      String[]         @default([])
-  isChainHead     Boolean          @default(true)
-  chainId         String?
-  chainPosition   Int              @default(0)
-  repostOfId      String?
-  repostOf        Thread?          @relation("ThreadReposts", fields: [repostOfId], references: [id], onDelete: SetNull)
-  reposts         Thread[]         @relation("ThreadReposts")
-  isQuotePost     Boolean          @default(false)
-  quoteText       String?          @db.VarChar(500)
-  hashtags        String[]         @default([])
-  mentions        String[]         @default([])
-  language        String           @default("en")
-  visibility      ThreadVisibility @default(PUBLIC)
-  circleId        String?
-  circle          Circle?          @relation(fields: [circleId], references: [id], onDelete: SetNull)
-  likesCount      Int              @default(0)
-  repliesCount    Int              @default(0)
-  repostsCount    Int              @default(0)
-  quotesCount     Int              @default(0)
-  viewsCount      Int              @default(0)
-  bookmarksCount  Int              @default(0)
-  isPinned        Boolean          @default(false)
-  isSensitive     Boolean          @default(false)
-  altText         String?
-  scheduledAt     DateTime?
+  id                  String            @id @default(cuid())
+  userId              String?
+  user                User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  content             String            @db.VarChar(500)
+  mediaUrls           String[]          @default([])
+  mediaTypes          String[]          @default([])
+  isChainHead         Boolean           @default(true)
+  chainId             String?
+  chainPosition       Int               @default(0)
+  repostOfId          String?
+  repostOf            Thread?           @relation("ThreadReposts", fields: [repostOfId], references: [id], onDelete: SetNull)
+  reposts             Thread[]          @relation("ThreadReposts")
+  isQuotePost         Boolean           @default(false)
+  quoteText           String?           @db.VarChar(500)
+  hashtags            String[]          @default([])
+  mentions            String[]          @default([])
+  language            String            @default("en")
+  visibility          ThreadVisibility  @default(PUBLIC)
+  circleId            String?
+  circle              Circle?           @relation(fields: [circleId], references: [id], onDelete: SetNull)
+  likesCount          Int               @default(0)
+  repliesCount        Int               @default(0)
+  repostsCount        Int               @default(0)
+  quotesCount         Int               @default(0)
+  viewsCount          Int               @default(0)
+  bookmarksCount      Int               @default(0)
+  isPinned            Boolean           @default(false)
+  isSensitive         Boolean           @default(false)
+  altText             String?
+  scheduledAt         DateTime?
   originalScheduledAt DateTime?
-  hideLikesCount  Boolean          @default(false)
-  isRemoved       Boolean          @default(false)
-  replyPermission ReplyPermission  @default(EVERYONE)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  reactions       ThreadReaction[]
-  replies         ThreadReply[]
-  poll            Poll?
-  bookmarks        ThreadBookmark[]
-  notifications    Notification[]
-  feedInteractions FeedInteraction[] @relation("feedInteractionThread")
+  hideLikesCount      Boolean           @default(false)
+  isRemoved           Boolean           @default(false)
+  replyPermission     ReplyPermission   @default(EVERYONE)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  reactions           ThreadReaction[]
+  replies             ThreadReply[]
+  poll                Poll?
+  bookmarks           ThreadBookmark[]
+  notifications       Notification[]
+  feedInteractions    FeedInteraction[] @relation("feedInteractionThread")
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([createdAt(sort: Desc)])
@@ -1566,6 +1570,7 @@ model Thread {
   @@index([hashtags])
   @@index([isChainHead, createdAt(sort: Desc)]) // P0: thread feeds filter chain heads+sort
   @@index([isRemoved, visibility, likesCount(sort: Desc)]) // Trending: engagement-sorted candidates
+  @@index([isRemoved, visibility, isChainHead, likesCount(sort: Desc)]) // J02-C5: search/trending chain-head threads
   @@map("threads")
 }
 
@@ -1650,63 +1655,63 @@ model Channel {
 }
 
 model Video {
-  id                 String              @id @default(cuid())
-  userId             String?
-  channelId          String
-  user               User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
-  channel            Channel             @relation(fields: [channelId], references: [id], onDelete: Cascade)
-  title              String              @db.VarChar(200)
-  description        String?             @db.VarChar(10000)
-  videoUrl           String
-  streamId           String?
-  hlsUrl             String?
-  dashUrl            String?
-  qualities          String[]            @default([])
-  isLooping          Boolean             @default(false)
-  normalizeAudio     Boolean             @default(false)
-  thumbnailUrl       String?
-  blurhash           String?
-  duration           Float
-  width              Int?
-  height             Int?
-  status             VideoStatus         @default(DRAFT)
-  category           VideoCategory       @default(OTHER)
-  tags               String[]            @default([])
-  language           String              @default("en")
-  chapters           Json?
-  viewsCount         Int                 @default(0)
-  likesCount         Int                 @default(0)
-  dislikesCount      Int                 @default(0)
-  commentsCount      Int                 @default(0)
-  sharesCount        Int                 @default(0)
-  savesCount         Int                 @default(0)
-  avgWatchDuration   Float?
-  completionRate     Float?
-  isRemoved          Boolean             @default(false)
-  isAgeRestricted    Boolean             @default(false)
-  isPremiereEnabled  Boolean             @default(false)
-  scheduledAt        DateTime?
+  id                  String              @id @default(cuid())
+  userId              String?
+  channelId           String
+  user                User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  channel             Channel             @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  title               String              @db.VarChar(200)
+  description         String?             @db.VarChar(10000)
+  videoUrl            String
+  streamId            String?
+  hlsUrl              String?
+  dashUrl             String?
+  qualities           String[]            @default([])
+  isLooping           Boolean             @default(false)
+  normalizeAudio      Boolean             @default(false)
+  thumbnailUrl        String?
+  blurhash            String?
+  duration            Float
+  width               Int?
+  height              Int?
+  status              VideoStatus         @default(DRAFT)
+  category            VideoCategory       @default(OTHER)
+  tags                String[]            @default([])
+  language            String              @default("en")
+  chapters            Json?
+  viewsCount          Int                 @default(0)
+  likesCount          Int                 @default(0)
+  dislikesCount       Int                 @default(0)
+  commentsCount       Int                 @default(0)
+  sharesCount         Int                 @default(0)
+  savesCount          Int                 @default(0)
+  avgWatchDuration    Float?
+  completionRate      Float?
+  isRemoved           Boolean             @default(false)
+  isAgeRestricted     Boolean             @default(false)
+  isPremiereEnabled   Boolean             @default(false)
+  scheduledAt         DateTime?
   originalScheduledAt DateTime?
-  publishedAt        DateTime?
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  comments           VideoComment[]
-  reactions          VideoReaction[]
-  playlistItems      PlaylistItem[]
-  subtitles          SubtitleTrack[]
-  bookmarks          VideoBookmark[]
-  interactions       VideoInteraction[]
-  watchLater         WatchLater[]
-  watchHistory       WatchHistory[]
-  notifications      Notification[]
-  premiere           VideoPremiere?
-  clips              VideoClip[]
-  endScreens         EndScreen[]
-  aiCaptions         AiCaption[]
-  videoChapters      VideoChapter[]      @relation("videoChapters")
-  watchParties       WatchParty[]        @relation("watchParties")
-  viewerDemographics ViewerDemographic[] @relation("viewerDemographics")
-  seriesEpisodes     SeriesEpisode[]     @relation("seriesEpisodeVideos")
+  publishedAt         DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  comments            VideoComment[]
+  reactions           VideoReaction[]
+  playlistItems       PlaylistItem[]
+  subtitles           SubtitleTrack[]
+  bookmarks           VideoBookmark[]
+  interactions        VideoInteraction[]
+  watchLater          WatchLater[]
+  watchHistory        WatchHistory[]
+  notifications       Notification[]
+  premiere            VideoPremiere?
+  clips               VideoClip[]
+  endScreens          EndScreen[]
+  aiCaptions          AiCaption[]
+  videoChapters       VideoChapter[]      @relation("videoChapters")
+  watchParties        WatchParty[]        @relation("watchParties")
+  viewerDemographics  ViewerDemographic[] @relation("viewerDemographics")
+  seriesEpisodes      SeriesEpisode[]     @relation("seriesEpisodeVideos")
 
   @@index([channelId, publishedAt(sort: Desc)])
   @@index([status, publishedAt(sort: Desc)])
@@ -1715,18 +1720,19 @@ model Video {
   @@index([category, viewsCount(sort: Desc)])
   @@index([tags])
   @@index([userId]) // B05-#25: user's videos lookup
+  @@index([status, isRemoved, viewsCount(sort: Desc)]) // J02-C6: video search/trending by views
   @@map("videos")
 }
 
 model VideoComment {
-  id         String         @id @default(cuid())
+  id         String             @id @default(cuid())
   videoId    String
   userId     String
-  video      Video          @relation(fields: [videoId], references: [id], onDelete: Cascade)
-  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video      Video              @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   parentId   String?
-  parent     VideoComment?  @relation("VideoCommentThread", fields: [parentId], references: [id], onDelete: Cascade)
-  replies    VideoComment[] @relation("VideoCommentThread")
+  parent     VideoComment?      @relation("VideoCommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies    VideoComment[]     @relation("VideoCommentThread")
   content    String             @db.VarChar(2000)
   likesCount Int                @default(0)
   timestamp  Float?
@@ -1881,41 +1887,41 @@ model SavedPost {
 // ============================================================
 
 model Conversation {
-  id                    String                    @id @default(cuid())
-  isGroup               Boolean                   @default(false)
+  id                    String    @id @default(cuid())
+  isGroup               Boolean   @default(false)
   groupName             String?
-  groupDescription      String?                   @db.VarChar(500)
+  groupDescription      String?   @db.VarChar(500)
   groupAvatarUrl        String?
   createdById           String?
-  createdBy             User?                     @relation("ConversationCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdBy             User?     @relation("ConversationCreator", fields: [createdById], references: [id], onDelete: SetNull)
   lastMessageText       String?
   lastMessageAt         DateTime?
   lastMessageById       String?
-  lastMessageBy         User?                     @relation("conversationLastMessage", fields: [lastMessageById], references: [id], onDelete: SetNull)
+  lastMessageBy         User?     @relation("conversationLastMessage", fields: [lastMessageById], references: [id], onDelete: SetNull)
   disappearingDuration  Int?
   slowModeSeconds       Int? // 0 = off, 30, 60, 300, 900, 3600
   lockCode              String? // Secret code to unlock this conversation
-  genderRestriction     String?                    @db.VarChar(10) // Finding #395: null=mixed, 'male', 'female'
-  newMemberHistoryCount Int?                      @default(25) // Number of recent messages shown to new members (0-100)
-  inviteCode            String?                   @db.VarChar(32) // Shareable group invite code (DB backup for Redis cache)
-  inviteExpiresAt       DateTime?                 // When the invite link expires
+  genderRestriction     String?   @db.VarChar(10) // Finding #395: null=mixed, 'male', 'female'
+  newMemberHistoryCount Int?      @default(25) // Number of recent messages shown to new members (0-100)
+  inviteCode            String?   @db.VarChar(32) // Shareable group invite code (DB backup for Redis cache)
+  inviteExpiresAt       DateTime? // When the invite link expires
 
   // Signal Protocol E2E — client-encrypted preview for conversation list
   encryptedLastMessagePreview Bytes?
   // V6-F2b: Persistent E2E flag — set on first encrypted message, never unset.
   // Once true, the server rejects plaintext messages in this conversation.
   // Replaces Redis TTL-based check (which expired after 24h, allowing delayed injection).
-  isE2E                       Boolean                   @default(false)
+  isE2E                       Boolean @default(false)
 
-  createdAt             DateTime                  @default(now())
-  updatedAt             DateTime                  @updatedAt
-  members               ConversationMember[]
-  messages              Message[]
-  notifications         Notification[]
-  adminLogs             AdminLog[]
-  groupTopics           GroupTopic[]
-  checklists            MessageChecklist[]
-  keyEnvelopes          ConversationKeyEnvelope[] @relation("keyEnvelopes")
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+  members       ConversationMember[]
+  messages      Message[]
+  notifications Notification[]
+  adminLogs     AdminLog[]
+  groupTopics   GroupTopic[]
+  checklists    MessageChecklist[]
+  keyEnvelopes  ConversationKeyEnvelope[] @relation("keyEnvelopes")
 
   @@index([lastMessageAt(sort: Desc)])
   @@index([createdById]) // B06-#13: admin/creator conversation lookup
@@ -1925,20 +1931,20 @@ model Conversation {
 model ConversationMember {
   conversationId String
   userId         String
-  lastReadAt     DateTime     @default(now())
-  lastMessageAt  DateTime?    // Denormalized for per-member conversation ordering
-  unreadCount    Int          @default(0)
-  isMuted        Boolean      @default(false)
-  isPinned       Boolean      @default(false)
-  isArchived     Boolean      @default(false)
+  lastReadAt     DateTime         @default(now())
+  lastMessageAt  DateTime? // Denormalized for per-member conversation ordering
+  unreadCount    Int              @default(0)
+  isMuted        Boolean          @default(false)
+  isPinned       Boolean          @default(false)
+  isArchived     Boolean          @default(false)
   role           ConversationRole @default(member)
-  isBanned       Boolean      @default(false)
+  isBanned       Boolean          @default(false)
   customTone     String?
   wallpaperUrl   String?
-  tag            String?      @db.VarChar(30)
-  joinedAt       DateTime     @default(now())
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tag            String?          @db.VarChar(30)
+  joinedAt       DateTime         @default(now())
+  conversation   Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([conversationId, userId])
   @@index([userId])
@@ -1947,52 +1953,52 @@ model ConversationMember {
 }
 
 model Message {
-  id              String            @id @default(cuid())
+  id              String      @id @default(cuid())
   conversationId  String
   senderId        String?
-  content         String?           @db.VarChar(5000)
-  messageType     MessageType       @default(TEXT)
+  content         String?     @db.VarChar(5000)
+  messageType     MessageType @default(TEXT)
   mediaUrl        String?
   mediaType       String?
   voiceDuration   Float?
   fileName        String?
   fileSize        Int?
   replyToId       String?
-  replyTo         Message?          @relation("MessageReply", fields: [replyToId], references: [id], onDelete: SetNull)
-  replies         Message[]         @relation("MessageReply")
+  replyTo         Message?    @relation("MessageReply", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies         Message[]   @relation("MessageReply")
   deliveredAt     DateTime?
-  isForwarded     Boolean           @default(false)
+  isForwarded     Boolean     @default(false)
   forwardedFromId String?
-  forwardedFrom   Message?          @relation("MessageForwardedFrom", fields: [forwardedFromId], references: [id], onDelete: SetNull)
-  forwardCount    Int               @default(0)
+  forwardedFrom   Message?    @relation("MessageForwardedFrom", fields: [forwardedFromId], references: [id], onDelete: SetNull)
+  forwardCount    Int         @default(0)
   editableUntil   DateTime?
   expiresAt       DateTime?
-  isDeleted       Boolean           @default(false)
+  isDeleted       Boolean     @default(false)
   editedAt        DateTime?
-  isScheduled     Boolean           @default(false)
+  isScheduled     Boolean     @default(false)
   scheduledAt     DateTime?
-  starredBy       String[]          @default([]) // @deprecated — use StarredMessage join table instead. Kept for migration compatibility.
-  isPinned        Boolean           @default(false)
+  starredBy       String[]    @default([]) // @deprecated — use StarredMessage join table instead. Kept for migration compatibility.
+  isPinned        Boolean     @default(false)
   pinnedAt        DateTime?
   pinnedById      String?
-  pinnedBy        User?             @relation("messagePinner", fields: [pinnedById], references: [id], onDelete: SetNull)
-  isViewOnce      Boolean           @default(false)
+  pinnedBy        User?       @relation("messagePinner", fields: [pinnedById], references: [id], onDelete: SetNull)
+  isViewOnce      Boolean     @default(false)
   viewedAt        DateTime?
-  isSpoiler       Boolean           @default(false)
-  isSilent        Boolean           @default(false)
-  isEncrypted     Boolean           @default(false)
+  isSpoiler       Boolean     @default(false)
+  isSilent        Boolean     @default(false)
+  isEncrypted     Boolean     @default(false)
   transcription   String?
   encNonce        String?
 
   // Signal Protocol E2E fields
-  encryptedContent    Bytes?            // Raw binary ciphertext (avoids base64 overhead)
-  e2eVersion          Int?              // 1=classical X3DH, 2=PQXDH (future), 3=sealed sender (future)
-  e2eSenderDeviceId   Int?              // Sender device for multi-device session routing
-  e2eSenderRatchetKey Bytes?            // 32 bytes: sender's current DH ratchet public key
-  e2eCounter          Int?              // Message counter in current sending chain
-  e2ePreviousCounter  Int?              // Last counter in previous sending chain
-  e2eSenderKeyId      Int?              // For group messages: sender key chain identifier
-  clientMessageId     String?  @unique  // Client-generated UUID for idempotent dedup
+  encryptedContent    Bytes? // Raw binary ciphertext (avoids base64 overhead)
+  e2eVersion          Int? // 1=classical X3DH, 2=PQXDH (future), 3=sealed sender (future)
+  e2eSenderDeviceId   Int? // Sender device for multi-device session routing
+  e2eSenderRatchetKey Bytes? // 32 bytes: sender's current DH ratchet public key
+  e2eCounter          Int? // Message counter in current sending chain
+  e2ePreviousCounter  Int? // Last counter in previous sending chain
+  e2eSenderKeyId      Int? // For group messages: sender key chain identifier
+  clientMessageId     String? @unique // Client-generated UUID for idempotent dedup
 
   createdAt       DateTime          @default(now())
   conversation    Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -2004,10 +2010,12 @@ model Message {
   forwardedCopies Message[]         @relation("MessageForwardedFrom")
 
   @@index([conversationId, createdAt(sort: Desc)])
-  @@index([conversationId, isPinned]) // B06-#14: pinned messages query
+  @@index([conversationId, isPinned, isDeleted]) // J02-C7: pinned messages query (replaces B06-#14, adds isDeleted filter)
   @@index([senderId])
   @@index([expiresAt])
   @@index([scheduledAt])
+  @@index([conversationId, senderId, createdAt(sort: Desc)]) // J02-C8: slow mode check (last message by sender in conversation)
+  @@index([isScheduled, scheduledAt]) // J02-C9: scheduled message cron job
   @@map("messages")
 }
 
@@ -2020,7 +2028,7 @@ model BroadcastChannel {
   channelType      ChannelType        @default(BROADCAST)
   subscribersCount Int                @default(0)
   postsCount       Int                @default(0)
-  createdById      String?            // R2: owner/creator FK (nullable for existing rows)
+  createdById      String? // R2: owner/creator FK (nullable for existing rows)
   createdBy        User?              @relation("broadcastChannelsCreated", fields: [createdById], references: [id], onDelete: SetNull)
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
@@ -2181,13 +2189,13 @@ model Circle {
 }
 
 model CircleMember {
-  circleId String
-  userId   String
-  role     CircleRole @default(MEMBER)
-  joinedAt DateTime   @default(now())
-  updatedAt DateTime  @updatedAt // S01-#24: role change tracking
-  circle   Circle     @relation(fields: [circleId], references: [id], onDelete: Cascade)
-  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  circleId  String
+  userId    String
+  role      CircleRole @default(MEMBER)
+  joinedAt  DateTime   @default(now())
+  updatedAt DateTime   @updatedAt // S01-#24: role change tracking
+  circle    Circle     @relation(fields: [circleId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([circleId, userId])
   @@index([userId])
@@ -2288,6 +2296,15 @@ model Report {
   reportedUser          User?            @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: SetNull)
   moderationLogs        ModerationLog[]
 
+  // B11-#7: prevent duplicate reports (same reporter + same target)
+  // Prisma nullable unique: multiple NULLs allowed, only non-null values deduplicated
+  @@unique([reporterId, reportedPostId])
+  @@unique([reporterId, reportedCommentId])
+  @@unique([reporterId, reportedMessageId])
+  @@unique([reporterId, reportedThreadId])
+  @@unique([reporterId, reportedReelId])
+  @@unique([reporterId, reportedVideoId])
+  @@unique([reporterId, reportedUserId])
   @@index([status, createdAt])
   @@index([reportedUserId])
   @@index([reporterId])
@@ -2298,15 +2315,6 @@ model Report {
   @@index([reportedCommentId]) // B11-#9: FK index for comment reports
   @@index([reportedMessageId]) // B11-#9: FK index for message reports
   @@index([reviewedById]) // B11-#9: reviewer lookup
-  // B11-#7: prevent duplicate reports (same reporter + same target)
-  // Prisma nullable unique: multiple NULLs allowed, only non-null values deduplicated
-  @@unique([reporterId, reportedPostId])
-  @@unique([reporterId, reportedCommentId])
-  @@unique([reporterId, reportedMessageId])
-  @@unique([reporterId, reportedThreadId])
-  @@unique([reporterId, reportedReelId])
-  @@unique([reporterId, reportedVideoId])
-  @@unique([reporterId, reportedUserId])
   @@map("reports")
 }
 
@@ -2489,7 +2497,7 @@ model PollVote {
 
 model AudioTrack {
   id         String   @id @default(cuid())
-  userId     String?  // R2-A16-#2: track creator/uploader
+  userId     String? // R2-A16-#2: track creator/uploader
   user       User?    @relation("audioTracks", fields: [userId], references: [id], onDelete: SetNull)
   title      String   @db.VarChar(200)
   artist     String?  @db.VarChar(100)
@@ -2587,15 +2595,15 @@ model StoryHighlightAlbum {
 }
 
 model StoryStickerResponse {
-  id           String   @id @default(cuid())
+  id           String              @id @default(cuid())
   storyId      String
   userId       String
   stickerType  StickerResponseType // S01-#34: was String
   responseData Json
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt // S01-#22: upsert mutation tracking
-  story        Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt // S01-#22: upsert mutation tracking
+  story        Story               @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([storyId, userId, stickerType])
   @@index([storyId])
@@ -2615,12 +2623,12 @@ model UserInterest {
 }
 
 model FeedDismissal {
-  id          String   @id @default(cuid())
+  id          String          @id @default(cuid())
   userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   contentId   String
   contentType FeedContentType // S01-#32: was String
-  createdAt   DateTime @default(now())
+  createdAt   DateTime        @default(now())
 
   @@unique([userId, contentId, contentType])
   @@index([userId])
@@ -2708,11 +2716,11 @@ model CallParticipant {
   sessionId       String
   userId          String
   role            CallParticipantRole @default(caller)
-  joinedAt        DateTime    @default(now())
+  joinedAt        DateTime            @default(now())
   leftAt          DateTime?
   livekitJoinedAt DateTime?
-  session         CallSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session         CallSession         @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([sessionId, userId])
   // @@index([sessionId]) — redundant: @@id already has sessionId as leading column
@@ -2768,9 +2776,9 @@ model UserStickerPack {
 }
 
 model GeneratedSticker {
-  id        String   @id @default(cuid())
+  id        String       @id @default(cuid())
   userId    String
-  user      User     @relation("generatedStickers", fields: [userId], references: [id], onDelete: Cascade)
+  user      User         @relation("generatedStickers", fields: [userId], references: [id], onDelete: Cascade)
   imageUrl  String
   prompt    String
   style     StickerStyle @default(cartoon) // S02-#47: was String
@@ -2880,44 +2888,44 @@ model CreatorStat {
 }
 
 model UserSettings {
-  id                     String   @id @default(cuid())
-  userId                 String   @unique
-  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                     String                @id @default(cuid())
+  userId                 String                @unique
+  user                   User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   // Privacy
-  messagePermission      PermissionLevel @default(everyone) // S01-#8, S02-#17
-  mentionPermission      PermissionLevel @default(everyone) // S01-#8, S02-#17
-  activityStatus         Boolean  @default(true)
-  readReceipts           Boolean  @default(true)
-  typingIndicators       Boolean  @default(true)
-  lastSeenVisibility     PermissionLevel @default(everyone) // S02-#18
+  messagePermission      PermissionLevel       @default(everyone) // S01-#8, S02-#17
+  mentionPermission      PermissionLevel       @default(everyone) // S01-#8, S02-#17
+  activityStatus         Boolean               @default(true)
+  readReceipts           Boolean               @default(true)
+  typingIndicators       Boolean               @default(true)
+  lastSeenVisibility     PermissionLevel       @default(everyone) // S02-#18
   // Notifications
-  notifyLikes            Boolean  @default(true)
-  notifyComments         Boolean  @default(true)
-  notifyFollows          Boolean  @default(true)
-  notifyMentions         Boolean  @default(true)
-  notifyMessages         Boolean  @default(true)
-  notifyLiveStreams      Boolean  @default(true)
-  emailDigest            Boolean  @default(false)
+  notifyLikes            Boolean               @default(true)
+  notifyComments         Boolean               @default(true)
+  notifyFollows          Boolean               @default(true)
+  notifyMentions         Boolean               @default(true)
+  notifyMessages         Boolean               @default(true)
+  notifyLiveStreams      Boolean               @default(true)
+  emailDigest            Boolean               @default(false)
   // Accessibility
-  reducedMotion          Boolean  @default(false)
-  largeText              Boolean  @default(false)
-  highContrast           Boolean  @default(false)
+  reducedMotion          Boolean               @default(false)
+  largeText              Boolean               @default(false)
+  highContrast           Boolean               @default(false)
   // Wellbeing
   dailyTimeLimit         Int?
-  restrictedMode         Boolean  @default(false)
-  sensitiveContent       Boolean  @default(false)
+  restrictedMode         Boolean               @default(false)
+  sensitiveContent       Boolean               @default(false)
   // Finding #246: Islamic knowledge level for content filtering
   islamicKnowledgeLevel  IslamicKnowledgeLevel @default(all) // S02-#19
   // Finding #265: Grief support mode — filters celebratory content
-  griefMode              Boolean  @default(false)
+  griefMode              Boolean               @default(false)
   // Finding #266: Ramadan food filter during fasting hours
-  ramadanFoodFilter      Boolean  @default(false)
+  ramadanFoodFilter      Boolean               @default(false)
   // Screen Time & Playback
   screenTimeLimitMinutes Int?
-  undoSendSeconds        Int      @default(5)
-  autoPlaySetting        AutoPlaySetting @default(WIFI)
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  undoSendSeconds        Int                   @default(5)
+  autoPlaySetting        AutoPlaySetting       @default(WIFI)
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
 
   @@map("user_settings")
 }
@@ -2937,18 +2945,18 @@ model SubtitleTrack {
 }
 
 model ChannelPost {
-  id            String   @id @default(cuid())
+  id            String            @id @default(cuid())
   channelId     String
-  channel       Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  channel       Channel           @relation(fields: [channelId], references: [id], onDelete: Cascade)
   userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  content       String   @db.VarChar(5000)
-  mediaUrls     String[] @default([])
-  likesCount    Int      @default(0)
-  commentsCount Int      @default(0)
-  isPinned      Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content       String            @db.VarChar(5000)
+  mediaUrls     String[]          @default([])
+  likesCount    Int               @default(0)
+  commentsCount Int               @default(0)
+  isPinned      Boolean           @default(false)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
   likes         ChannelPostLike[]
 
   @@index([channelId, createdAt(sort: Desc)])
@@ -3012,25 +3020,25 @@ model VideoInteraction {
 // ═══════════════════════════════════════════════════
 
 model Event {
-  id          String      @id @default(cuid())
-  title       String      @db.VarChar(200)
-  description String?     @db.VarChar(5000)
+  id          String        @id @default(cuid())
+  title       String        @db.VarChar(200)
+  description String?       @db.VarChar(5000)
   coverUrl    String?
   startDate   DateTime
   endDate     DateTime?
-  location    String?     @db.VarChar(500)
+  location    String?       @db.VarChar(500)
   locationUrl String?
-  isOnline    Boolean     @default(false)
+  isOnline    Boolean       @default(false)
   onlineUrl   String?
   eventType   EventTypeEnum @default(IN_PERSON)
   privacy     EventPrivacy  @default(EVENT_PUBLIC)
   userId      String
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   communityId String?
-  community   Circle?     @relation("communityEvents", fields: [communityId], references: [id], onDelete: SetNull)
+  community   Circle?       @relation("communityEvents", fields: [communityId], references: [id], onDelete: SetNull)
   rsvps       EventRSVP[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
   @@index([userId])
   @@index([startDate(sort: Desc)])
@@ -3039,11 +3047,11 @@ model Event {
 }
 
 model EventRSVP {
-  id        String   @id @default(cuid())
+  id        String     @id @default(cuid())
   eventId   String
-  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event     Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   status    RsvpStatus @default(going) // S02-#20
   createdAt DateTime   @default(now())
 
@@ -3053,19 +3061,19 @@ model EventRSVP {
 }
 
 model Tip {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
   senderId        String?
   receiverId      String?
-  sender          User?    @relation("TipSender", fields: [senderId], references: [id], onDelete: SetNull)
-  receiver        User?    @relation("TipReceiver", fields: [receiverId], references: [id], onDelete: SetNull)
-  amount          Decimal  @db.Decimal(12, 2)
-  currency        String   @default("USD") @db.VarChar(3)
-  message         String?  @db.VarChar(500)
-  platformFee     Decimal  @default(0) @db.Decimal(12, 2)
+  sender          User?     @relation("TipSender", fields: [senderId], references: [id], onDelete: SetNull)
+  receiver        User?     @relation("TipReceiver", fields: [receiverId], references: [id], onDelete: SetNull)
+  amount          Decimal   @db.Decimal(12, 2)
+  currency        String    @default("USD") @db.VarChar(3)
+  message         String?   @db.VarChar(500)
+  platformFee     Decimal   @default(0) @db.Decimal(12, 2)
   status          TipStatus @default(pending) // S01-#6: was String, now uses TipStatus enum
   stripePaymentId String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt // S02-#31: status change tracking
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt // S02-#31: status change tracking
 
   @@unique([senderId, receiverId, createdAt])
   @@index([senderId])
@@ -3094,16 +3102,16 @@ model MembershipTier {
 }
 
 model MembershipSubscription {
-  id        String         @id @default(cuid())
+  id        String          @id @default(cuid())
   tierId    String
-  tier      MembershipTier @relation(fields: [tierId], references: [id], onDelete: Cascade)
+  tier      MembershipTier  @relation(fields: [tierId], references: [id], onDelete: Cascade)
   userId    String
-  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   status    MemberSubStatus @default(active) // was String, now enum
-  startDate DateTime           @default(now())
+  startDate DateTime        @default(now())
   endDate   DateTime?
-  createdAt DateTime           @default(now())
-  updatedAt DateTime           @updatedAt // S02-#30: status transition tracking
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt // S02-#30: status transition tracking
 
   @@unique([tierId, userId])
   @@index([userId])
@@ -3135,15 +3143,15 @@ model AudioRoom {
 }
 
 model AudioRoomParticipant {
-  id         String    @id @default(cuid())
+  id         String        @id @default(cuid())
   roomId     String
-  room       AudioRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  room       AudioRoom     @relation(fields: [roomId], references: [id], onDelete: Cascade)
   userId     String
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   role       AudioRoomRole @default(listener) // S02-#7
-  isMuted    Boolean   @default(true)
-  handRaised Boolean   @default(false)
-  joinedAt   DateTime  @default(now())
+  isMuted    Boolean       @default(true)
+  handRaised Boolean       @default(false)
+  joinedAt   DateTime      @default(now())
 
   @@unique([roomId, userId])
   @@index([roomId])
@@ -3223,18 +3231,18 @@ model ReelTemplate {
 // ============================================================
 
 model VideoReply {
-  id           String   @id @default(cuid())
+  id           String            @id @default(cuid())
   userId       String
-  user         User     @relation("videoReplies", fields: [userId], references: [id], onDelete: Cascade)
+  user         User              @relation("videoReplies", fields: [userId], references: [id], onDelete: Cascade)
   commentId    String
   commentType  CommentTargetType
   mediaUrl     String
   thumbnailUrl String?
   duration     Float?
-  viewsCount   Int      @default(0)
-  likesCount   Int      @default(0)
-  isDeleted    Boolean  @default(false)
-  createdAt    DateTime @default(now())
+  viewsCount   Int               @default(0)
+  likesCount   Int               @default(0)
+  isDeleted    Boolean           @default(false)
+  createdAt    DateTime          @default(now())
 
   @@index([commentId])
   @@index([userId])
@@ -3289,8 +3297,8 @@ model E2EIdentityKey {
   userId         String
   user           User     @relation("e2eIdentityKey", fields: [userId], references: [id], onDelete: Cascade)
   deviceId       Int      @default(1)
-  publicKey      Bytes    // 32 bytes Ed25519 public key
-  registrationId Int      // 14-bit unsigned (0-16383) per Signal spec
+  publicKey      Bytes // 32 bytes Ed25519 public key
+  registrationId Int // 14-bit unsigned (0-16383) per Signal spec
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -3306,8 +3314,8 @@ model E2ESignedPreKey {
   user      User     @relation("e2eSignedPreKeys", fields: [userId], references: [id], onDelete: Cascade)
   deviceId  Int      @default(1)
   keyId     Int
-  publicKey Bytes    // 32 bytes X25519 public key
-  signature Bytes    // 64 bytes Ed25519 signature over publicKey
+  publicKey Bytes // 32 bytes X25519 public key
+  signature Bytes // 64 bytes Ed25519 signature over publicKey
   createdAt DateTime @default(now())
 
   @@unique([userId, deviceId, keyId])
@@ -3321,7 +3329,7 @@ model E2EOneTimePreKey {
   user      User     @relation("e2eOneTimePreKeys", fields: [userId], references: [id], onDelete: Cascade)
   deviceId  Int      @default(1)
   keyId     Int
-  publicKey Bytes    // 32 bytes X25519 public key
+  publicKey Bytes // 32 bytes X25519 public key
   // No `used` boolean — rows are DELETED on claim to prevent metadata leak and table bloat
   createdAt DateTime @default(now())
 
@@ -3392,16 +3400,16 @@ model CoinTransaction {
 }
 
 model GiftRecord {
-  id          String   @id @default(cuid())
+  id          String           @id @default(cuid())
   senderId    String?
-  sender      User?    @relation("giftsSent", fields: [senderId], references: [id], onDelete: SetNull)
+  sender      User?            @relation("giftsSent", fields: [senderId], references: [id], onDelete: SetNull)
   receiverId  String?
-  receiver    User?    @relation("giftsReceived", fields: [receiverId], references: [id], onDelete: SetNull)
-  giftType    String   @db.VarChar(50)
+  receiver    User?            @relation("giftsReceived", fields: [receiverId], references: [id], onDelete: SetNull)
+  giftType    String           @db.VarChar(50)
   coinCost    Int
   contentId   String?
   contentType FeedContentType? // S02-#56: was String?, reuses FeedContentType
-  createdAt   DateTime @default(now())
+  createdAt   DateTime         @default(now())
 
   @@index([receiverId])
   @@index([senderId])
@@ -3414,20 +3422,20 @@ model GiftRecord {
 // ============================================================
 
 model PostPromotion {
-  id          String   @id @default(cuid())
+  id          String          @id @default(cuid())
   postId      String
-  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post        Post            @relation(fields: [postId], references: [id], onDelete: Cascade)
   userId      String
-  user        User     @relation("postPromotions", fields: [userId], references: [id], onDelete: Cascade)
-  budget      Decimal  @db.Decimal(12, 2)
-  currency    String   @default("USD") @db.VarChar(3)
+  user        User            @relation("postPromotions", fields: [userId], references: [id], onDelete: Cascade)
+  budget      Decimal         @db.Decimal(12, 2)
+  currency    String          @default("USD") @db.VarChar(3)
   targetReach Int
-  actualReach Int      @default(0)
+  actualReach Int             @default(0)
   status      PromotionStatus @default(active) // S02-#21
-  startsAt    DateTime @default(now())
+  startsAt    DateTime        @default(now())
   endsAt      DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt // S02-#43: reach/status tracking
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt // S02-#43: reach/status tracking
 
   @@index([postId])
   @@index([userId])
@@ -3455,17 +3463,17 @@ model PostReminder {
 // ============================================================
 
 model QuranReadingPlan {
-  id          String   @id @default(uuid())
+  id          String        @id @default(uuid())
   userId      String
-  user        User     @relation("quranReadingPlans", fields: [userId], references: [id], onDelete: Cascade)
+  user        User          @relation("quranReadingPlans", fields: [userId], references: [id], onDelete: Cascade)
   planType    QuranPlanType // S02-#27: was String
   startDate   DateTime
   endDate     DateTime
-  currentJuz  Int      @default(1)
-  currentPage Int      @default(1)
-  isComplete  Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  currentJuz  Int           @default(1)
+  currentPage Int           @default(1)
+  isComplete  Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
   @@index([userId])
   @@map("quran_reading_plans")
@@ -3486,12 +3494,12 @@ model DhikrSession {
 }
 
 model DailyTaskCompletion {
-  id        String   @id @default(cuid())
+  id        String        @id @default(cuid())
   userId    String
-  user      User     @relation("dailyTaskCompletions", fields: [userId], references: [id], onDelete: Cascade)
-  date      DateTime @db.Date
+  user      User          @relation("dailyTaskCompletions", fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime      @db.Date
   taskType  DailyTaskType
-  createdAt DateTime @default(now())
+  createdAt DateTime      @default(now())
 
   @@unique([userId, date, taskType])
   @@index([userId, date])
@@ -3587,48 +3595,48 @@ model HajjProgress {
 }
 
 model PrayerNotificationSetting {
-  id              String   @id @default(uuid())
-  userId          String   @unique
-  user            User     @relation("prayerNotifications", fields: [userId], references: [id], onDelete: Cascade)
-  dndDuringPrayer Boolean  @default(false)
-  adhanEnabled    Boolean  @default(false)
+  id              String     @id @default(uuid())
+  userId          String     @unique
+  user            User       @relation("prayerNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  dndDuringPrayer Boolean    @default(false)
+  adhanEnabled    Boolean    @default(false)
   adhanStyle      AdhanStyle @default(MAKKAH)
-  reminderMinutes Int      @default(15)
-  mosqueName      String?  // Preferred mosque name for prayer times
-  mosqueLat       Float?   // Mosque latitude (DB backup for Redis cache)
-  mosqueLng       Float?   // Mosque longitude
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  reminderMinutes Int        @default(15)
+  mosqueName      String? // Preferred mosque name for prayer times
+  mosqueLat       Float? // Mosque latitude (DB backup for Redis cache)
+  mosqueLng       Float? // Mosque longitude
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
   @@map("prayer_notification_settings")
 }
 
 model ContentFilterSetting {
-  id              String   @id @default(uuid())
-  userId          String   @unique
-  user            User     @relation("contentFilter", fields: [userId], references: [id], onDelete: Cascade)
+  id              String                 @id @default(uuid())
+  userId          String                 @unique
+  user            User                   @relation("contentFilter", fields: [userId], references: [id], onDelete: Cascade)
   strictnessLevel ContentStrictnessLevel @default(MODERATE)
-  blurHaram       Boolean  @default(true)
-  hideMusic       Boolean  @default(false)
-  hideMixedGender Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  blurHaram       Boolean                @default(true)
+  hideMusic       Boolean                @default(false)
+  hideMixedGender Boolean                @default(false)
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
 
   @@map("content_filter_settings")
 }
 
 model ScholarVerification {
-  id             String    @id @default(uuid())
-  userId         String    @unique
-  user           User      @relation("scholarVerification", fields: [userId], references: [id], onDelete: Cascade)
+  id             String                    @id @default(uuid())
+  userId         String                    @unique
+  user           User                      @relation("scholarVerification", fields: [userId], references: [id], onDelete: Cascade)
   institution    String
   specialization String?
   madhab         MadhhabType?
   verifiedAt     DateTime?
   status         ScholarVerificationStatus @default(VERIFICATION_PENDING)
   documentUrls   String[]
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
 
   @@map("scholar_verifications")
 }
@@ -3698,19 +3706,19 @@ model QuietModeSetting {
 // ============================================================
 
 model OfflineDownload {
-  id          String          @id @default(uuid())
+  id          String               @id @default(uuid())
   userId      String
   contentType ThumbnailContentType
   contentId   String
-  quality     DownloadQuality @default(AUTO)
-  fileSize    Int             @default(0)
-  status      DownloadStatus  @default(PENDING)
-  progress    Float           @default(0)
+  quality     DownloadQuality      @default(AUTO)
+  fileSize    Int                  @default(0)
+  status      DownloadStatus       @default(PENDING)
+  progress    Float                @default(0)
   filePath    String?
   expiresAt   DateTime?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, contentId])
   @@index([userId, status])
@@ -3772,16 +3780,16 @@ model VideoClip {
 }
 
 model EndScreen {
-  id            String        @id @default(uuid())
+  id            String         @id @default(uuid())
   videoId       String
   type          EndScreenType
   targetId      String?
-  label         String        @db.VarChar(60)
+  label         String         @db.VarChar(60)
   url           String?
   position      ScreenPosition @default(bottom_right) // S02-#49: was String
-  showAtSeconds Float         @default(10)
-  createdAt     DateTime      @default(now())
-  video         Video         @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  showAtSeconds Float          @default(10)
+  createdAt     DateTime       @default(now())
+  video         Video          @relation(fields: [videoId], references: [id], onDelete: Cascade)
 
   @@index([videoId])
   @@map("end_screens")
@@ -3792,33 +3800,33 @@ model PlaylistCollaborator {
   userId     String
   role       PlaylistCollabRole @default(editor) // S02-#10
   addedById  String
-  addedBy    User     @relation("playlistCollabAdder", fields: [addedById], references: [id], onDelete: Cascade)
-  addedAt    DateTime @default(now())
-  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
-  user       User     @relation("PlaylistCollaborators", fields: [userId], references: [id], onDelete: Cascade)
+  addedBy    User               @relation("playlistCollabAdder", fields: [addedById], references: [id], onDelete: Cascade)
+  addedAt    DateTime           @default(now())
+  playlist   Playlist           @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  user       User               @relation("PlaylistCollaborators", fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([playlistId, userId])
   @@map("playlist_collaborators")
 }
 
 model ParentalControl {
-  id                String    @id @default(uuid())
+  id                String        @id @default(uuid())
   parentUserId      String
-  childUserId       String    @unique
+  childUserId       String        @unique
   pin               String
-  restrictedMode    Boolean   @default(true)
-  maxAgeRating      AgeRating      @default(PG) // S02-#24
+  restrictedMode    Boolean       @default(true)
+  maxAgeRating      AgeRating     @default(PG) // S02-#24
   dailyLimitMinutes Int?
-  dmRestriction     DmRestriction  @default(none) // S02-#25
-  canGoLive         Boolean   @default(false)
-  canPost           Boolean   @default(true)
-  canComment        Boolean   @default(true)
-  activityDigest    Boolean   @default(true)
+  dmRestriction     DmRestriction @default(none) // S02-#25
+  canGoLive         Boolean       @default(false)
+  canPost           Boolean       @default(true)
+  canComment        Boolean       @default(true)
+  activityDigest    Boolean       @default(true)
   lastDigestAt      DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  parent            User      @relation("ParentControls", fields: [parentUserId], references: [id], onDelete: Cascade)
-  child             User      @relation("ChildControls", fields: [childUserId], references: [id], onDelete: Cascade)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  parent            User          @relation("ParentControls", fields: [parentUserId], references: [id], onDelete: Cascade)
+  child             User          @relation("ChildControls", fields: [childUserId], references: [id], onDelete: Cascade)
 
   @@unique([parentUserId, childUserId])
   @@map("parental_controls")
@@ -3827,13 +3835,13 @@ model ParentalControl {
 // ── AI Models (Tier 9) ──────────────────────────────────
 
 model AiTranslation {
-  id             String   @id @default(uuid())
+  id             String                 @id @default(uuid())
   contentType    TranslationContentType
   contentId      String
   sourceLanguage String
   targetLanguage String
-  translatedText String   @db.Text
-  createdAt      DateTime @default(now())
+  translatedText String                 @db.Text
+  createdAt      DateTime               @default(now())
 
   @@unique([contentId, targetLanguage])
   @@index([contentId])
@@ -3841,27 +3849,27 @@ model AiTranslation {
 }
 
 model AiCaption {
-  id         String   @id @default(uuid())
+  id         String          @id @default(uuid())
   videoId    String
   language   String
-  srtContent String   @db.Text
+  srtContent String          @db.Text
   status     AiCaptionStatus @default(CAPTION_PENDING)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  video      Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  video      Video           @relation(fields: [videoId], references: [id], onDelete: Cascade)
 
   @@unique([videoId, language])
   @@map("ai_captions")
 }
 
 model AiAvatar {
-  id        String   @id @default(uuid())
+  id        String      @id @default(uuid())
   userId    String
   sourceUrl String
   avatarUrl String
   style     AvatarStyle @default(DEFAULT)
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("ai_avatars")
@@ -3885,16 +3893,16 @@ model UserStreak {
 }
 
 model Achievement {
-  id          String            @id @default(uuid())
-  key         String            @unique // first_post, 100_days, quran_khatmah, ramadan_warrior, etc.
-  name        String            @db.VarChar(100)
-  description String            @db.VarChar(300)
+  id          String              @id @default(uuid())
+  key         String              @unique // first_post, 100_days, quran_khatmah, ramadan_warrior, etc.
+  name        String              @db.VarChar(100)
+  description String              @db.VarChar(300)
   iconUrl     String?
   category    AchievementCategory
   xpReward    Int                 @default(0)
   rarity      AchievementRarity   @default(COMMON)
   criteria    Json // S02-#58: was String @db.Text, now proper JSON type
-  createdAt   DateTime          @default(now())
+  createdAt   DateTime            @default(now())
   unlocks     UserAchievement[]
 
   @@map("achievements")
@@ -4030,14 +4038,14 @@ model SeriesFollower {
 }
 
 model ThumbnailVariant {
-  id           String   @id @default(cuid())
+  id           String               @id @default(cuid())
   contentType  ThumbnailContentType
   contentId    String
   thumbnailUrl String
-  impressions  Int      @default(0)
-  clicks       Int      @default(0)
-  isWinner     Boolean  @default(false)
-  createdAt    DateTime @default(now())
+  impressions  Int                  @default(0)
+  clicks       Int                  @default(0)
+  isWinner     Boolean              @default(false)
+  createdAt    DateTime             @default(now())
 
   @@index([contentType, contentId])
   @@map("thumbnail_variants")
@@ -4160,26 +4168,26 @@ model PostProductTag {
 }
 
 model HalalBusiness {
-  id            String           @id @default(uuid())
+  id            String            @id @default(uuid())
   ownerId       String
-  name          String           @db.VarChar(200)
-  description   String?          @db.VarChar(1000)
+  name          String            @db.VarChar(200)
+  description   String?           @db.VarChar(1000)
   category      HalalCategory
-  address       String?          @db.VarChar(500)
+  address       String?           @db.VarChar(500)
   lat           Float?
   lng           Float?
   phone         String?
   website       String?
   avatarUrl     String?
   coverUrl      String?
-  isVerified    Boolean          @default(false)
-  isMuslimOwned Boolean          @default(true)
-  rating        Decimal          @default(0) @db.Decimal(3, 2)
-  reviewCount   Int              @default(0)
+  isVerified    Boolean           @default(false)
+  isMuslimOwned Boolean           @default(true)
+  rating        Decimal           @default(0) @db.Decimal(3, 2)
+  reviewCount   Int               @default(0)
   halalCertUrl  String?
   openingHours  Json? // S02-#23: was String, now proper JSON type
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
   owner         User              @relation("BusinessOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   reviews       BusinessReview[]
   verifyVotes   HalalVerifyVote[] @relation("halalVerifyVotes")
@@ -4279,18 +4287,18 @@ model TreasuryContribution {
 }
 
 model PremiumSubscription {
-  id          String             @id @default(uuid())
-  userId      String             @unique
-  plan        SubscriptionPlan   @default(MONTHLY)
-  status      SubscriptionStatus @default(PENDING)
-  stripeSubId String?            // Stripe Subscription ID (sub_xxx) — for recurring subscriptions
-  stripePaymentIntentId String?  // Stripe PaymentIntent ID (pi_xxx) — for one-time premium purchases
-  startDate   DateTime           @default(now())
-  endDate     DateTime?
-  autoRenew   Boolean            @default(true)
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                    String             @id @default(uuid())
+  userId                String             @unique
+  plan                  SubscriptionPlan   @default(MONTHLY)
+  status                SubscriptionStatus @default(PENDING)
+  stripeSubId           String? // Stripe Subscription ID (sub_xxx) — for recurring subscriptions
+  stripePaymentIntentId String? // Stripe PaymentIntent ID (pi_xxx) — for one-time premium purchases
+  startDate             DateTime           @default(now())
+  endDate               DateTime?
+  autoRenew             Boolean            @default(true)
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  user                  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("premium_subscriptions")
 }
@@ -4318,18 +4326,18 @@ model LocalBoard {
 }
 
 model Mentorship {
-  id          String    @id @default(uuid())
+  id          String           @id @default(uuid())
   mentorId    String
   menteeId    String
   status      MentorshipStatus @default(MENTORSHIP_PENDING)
   topic       FatwaTopicType
-  notes       String?   @db.VarChar(1000)
+  notes       String?          @db.VarChar(1000)
   startedAt   DateTime?
   completedAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt // S02-#32: status change tracking
-  mentor      User      @relation("MentorOf", fields: [mentorId], references: [id], onDelete: Cascade)
-  mentee      User      @relation("MenteeOf", fields: [menteeId], references: [id], onDelete: Cascade)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt // S02-#32: status change tracking
+  mentor      User             @relation("MentorOf", fields: [mentorId], references: [id], onDelete: Cascade)
+  mentee      User             @relation("MenteeOf", fields: [menteeId], references: [id], onDelete: Cascade)
 
   @@unique([mentorId, menteeId])
   @@index([mentorId])
@@ -4338,18 +4346,18 @@ model Mentorship {
 }
 
 model StudyCircle {
-  id           String   @id @default(uuid())
+  id           String           @id @default(uuid())
   leaderId     String
-  title        String   @db.VarChar(200)
-  description  String?  @db.VarChar(1000)
+  title        String           @db.VarChar(200)
+  description  String?          @db.VarChar(1000)
   topic        ScholarTopicType
-  schedule     String?  @db.VarChar(200) // "Every Sunday 7 PM"
-  isOnline     Boolean  @default(true)
-  maxMembers   Int      @default(20)
-  membersCount Int      @default(0)
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  leader       User     @relation("CircleLeader", fields: [leaderId], references: [id], onDelete: Cascade)
+  schedule     String?          @db.VarChar(200) // "Every Sunday 7 PM"
+  isOnline     Boolean          @default(true)
+  maxMembers   Int              @default(20)
+  membersCount Int              @default(0)
+  isActive     Boolean          @default(true)
+  createdAt    DateTime         @default(now())
+  leader       User             @relation("CircleLeader", fields: [leaderId], references: [id], onDelete: Cascade)
 
   @@index([topic, isActive])
   @@index([leaderId])
@@ -4357,19 +4365,19 @@ model StudyCircle {
 }
 
 model FatwaQuestion {
-  id         String    @id @default(uuid())
-  askerId    String
-  question   String    @db.VarChar(2000)
-  madhab     MadhhabType?
-  language   String      @default("en")
-  status     FatwaStatus @default(FATWA_PENDING)
-  answerId   String?
-  answer     FatwaQuestion? @relation("FatwaAnswer", fields: [answerId], references: [id], onDelete: SetNull)
-  answeredBy     String?
-  answeredByUser User?  @relation("FatwaAnswers", fields: [answeredBy], references: [id], onDelete: SetNull)
-  answeredAt DateTime?
-  createdAt  DateTime  @default(now())
-  asker          User            @relation("FatwaAsker", fields: [askerId], references: [id], onDelete: Cascade)
+  id                String          @id @default(uuid())
+  askerId           String
+  question          String          @db.VarChar(2000)
+  madhab            MadhhabType?
+  language          String          @default("en")
+  status            FatwaStatus     @default(FATWA_PENDING)
+  answerId          String?
+  answer            FatwaQuestion?  @relation("FatwaAnswer", fields: [answerId], references: [id], onDelete: SetNull)
+  answeredBy        String?
+  answeredByUser    User?           @relation("FatwaAnswers", fields: [answeredBy], references: [id], onDelete: SetNull)
+  answeredAt        DateTime?
+  createdAt         DateTime        @default(now())
+  asker             User            @relation("FatwaAsker", fields: [askerId], references: [id], onDelete: Cascade)
   answeredQuestions FatwaQuestion[] @relation("FatwaAnswer")
 
   @@index([status, madhab])
@@ -4379,21 +4387,21 @@ model FatwaQuestion {
 
 /// @deprecated Dead model — zero service references. Remove in next major migration.
 model VolunteerOpportunity {
-  id          String    @id @default(uuid())
+  id          String            @id @default(uuid())
   organizerId String
-  title       String    @db.VarChar(200)
-  description String    @db.VarChar(2000)
+  title       String            @db.VarChar(200)
+  description String            @db.VarChar(2000)
   category    VolunteerCategory
   location    String?
   lat         Float?
   lng         Float?
   date        DateTime?
-  spotsTotal  Int       @default(10)
-  spotsFilled Int       @default(0)
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt // S02-#41: spots/active tracking
-  organizer   User      @relation("VolunteerOrganizer", fields: [organizerId], references: [id], onDelete: Cascade)
+  spotsTotal  Int               @default(10)
+  spotsFilled Int               @default(0)
+  isActive    Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt // S02-#41: spots/active tracking
+  organizer   User              @relation("VolunteerOrganizer", fields: [organizerId], references: [id], onDelete: Cascade)
 
   @@index([category, isActive])
   @@index([organizerId])
@@ -4401,23 +4409,23 @@ model VolunteerOpportunity {
 }
 
 model IslamicEvent {
-  id            String    @id @default(uuid())
+  id            String           @id @default(uuid())
   organizerId   String
-  title         String    @db.VarChar(200)
-  description   String?   @db.VarChar(2000)
+  title         String           @db.VarChar(200)
+  description   String?          @db.VarChar(2000)
   eventType     IslamicEventType
   location      String?
   lat           Float?
   lng           Float?
   startDate     DateTime
   endDate       DateTime?
-  isOnline      Boolean   @default(false)
+  isOnline      Boolean          @default(false)
   streamUrl     String?
-  attendeeCount Int       @default(0)
+  attendeeCount Int              @default(0)
   coverUrl      String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt // S02-#42: attendee tracking
-  organizer     User      @relation("EventOrganizer", fields: [organizerId], references: [id], onDelete: Cascade)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt // S02-#42: attendee tracking
+  organizer     User             @relation("EventOrganizer", fields: [organizerId], references: [id], onDelete: Cascade)
 
   @@index([eventType, startDate])
   @@index([organizerId])
@@ -4426,16 +4434,16 @@ model IslamicEvent {
 
 /// @deprecated No standalone service — only referenced in a DEFERRED comment. Remove in next major migration.
 model UserReputation {
-  id            String   @id @default(uuid())
-  userId        String   @unique
-  score         Int      @default(0)
-  helpfulCount  Int      @default(0)
-  reportedCount Int      @default(0)
-  warningCount  Int      @default(0)
+  id            String         @id @default(uuid())
+  userId        String         @unique
+  score         Int            @default(0)
+  helpfulCount  Int            @default(0)
+  reportedCount Int            @default(0)
+  warningCount  Int            @default(0)
   tier          ReputationTier @default(NEWCOMER)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_reputations")
 }
@@ -4494,11 +4502,11 @@ model SharedCollection {
 }
 
 model WaqfFund {
-  id           String   @id @default(uuid())
-  title        String   @db.VarChar(200)
-  description  String   @db.VarChar(2000)
-  goalAmount   Decimal  @db.Decimal(12, 2)
-  raisedAmount Decimal  @default(0) @db.Decimal(12, 2)
+  id           String         @id @default(uuid())
+  title        String         @db.VarChar(200)
+  description  String         @db.VarChar(2000)
+  goalAmount   Decimal        @db.Decimal(12, 2)
+  raisedAmount Decimal        @default(0) @db.Decimal(12, 2)
   createdById  String
   isActive     Boolean        @default(true)
   createdAt    DateTime       @default(now())
@@ -4528,51 +4536,51 @@ model WaqfDonation {
 // ── Telegram Parity Models (Batch 50) ───────────────────
 
 model SavedMessage {
-  id                String   @id @default(uuid())
+  id                String             @id @default(uuid())
   userId            String
-  content           String?  @db.Text
+  content           String?            @db.Text
   mediaUrl          String?
   mediaType         MediaType? // S02-#28: was String?
   forwardedFromType ForwardedFromType?
   forwardedFromId   String?
-  isPinned          Boolean  @default(false)
-  createdAt         DateTime @default(now())
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isPinned          Boolean            @default(false)
+  createdAt         DateTime           @default(now())
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt(sort: Desc)])
   @@map("saved_messages")
 }
 
 model ChatFolder {
-  id              String   @id @default(uuid())
+  id              String               @id @default(uuid())
   userId          String
-  name            String   @db.VarChar(50)
+  name            String               @db.VarChar(50)
   icon            String? // emoji or icon name
-  position        Int      @default(0)
+  position        Int                  @default(0)
   filterType      ChatFolderFilterType @default(INCLUDE)
   conversationIds String[] // array of conversation IDs
-  includeGroups   Boolean  @default(false)
-  includeChannels Boolean  @default(false)
-  includeBots     Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  includeGroups   Boolean              @default(false)
+  includeChannels Boolean              @default(false)
+  includeBots     Boolean              @default(false)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, position])
   @@map("chat_folders")
 }
 
 model AdminLog {
-  id        String       @id @default(uuid())
+  id        String         @id @default(uuid())
   groupId   String // conversationId
-  group     Conversation @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  group     Conversation   @relation(fields: [groupId], references: [id], onDelete: Cascade)
   adminId   String
-  admin     User         @relation("adminLogs", fields: [adminId], references: [id], onDelete: Cascade)
+  admin     User           @relation("adminLogs", fields: [adminId], references: [id], onDelete: Cascade)
   action    AdminLogAction
   targetId  String? // userId or messageId affected
-  target    User?        @relation("adminLogTargets", fields: [targetId], references: [id], onDelete: SetNull)
-  details   String?      @db.VarChar(500)
-  createdAt DateTime     @default(now())
+  target    User?          @relation("adminLogTargets", fields: [targetId], references: [id], onDelete: SetNull)
+  details   String?        @db.VarChar(500)
+  createdAt DateTime       @default(now())
 
   @@index([groupId, createdAt(sort: Desc)])
   @@index([adminId])
@@ -4689,20 +4697,20 @@ model Webhook {
 }
 
 model StageSession {
-  id            String    @id @default(uuid())
+  id            String             @id @default(uuid())
   circleId      String
-  circle        Circle    @relation("stageSessions", fields: [circleId], references: [id], onDelete: Cascade)
-  title         String    @db.VarChar(200)
+  circle        Circle             @relation("stageSessions", fields: [circleId], references: [id], onDelete: Cascade)
+  title         String             @db.VarChar(200)
   hostId        String
   status        StageSessionStatus @default(STAGE_SCHEDULED)
   speakerIds    String[]
-  audienceCount Int       @default(0)
+  audienceCount Int                @default(0)
   scheduledAt   DateTime?
   startedAt     DateTime?
   endedAt       DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt // S02-#35: state change tracking
-  host          User      @relation("StageHost", fields: [hostId], references: [id], onDelete: Cascade)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt // S02-#35: state change tracking
+  host          User               @relation("StageHost", fields: [hostId], references: [id], onDelete: Cascade)
 
   @@index([circleId, status])
   @@map("stage_sessions")
@@ -4743,15 +4751,15 @@ model Embedding {
 // ============================================================
 
 model CreatorEarning {
-  id        String   @id @default(uuid())
+  id        String      @id @default(uuid())
   userId    String?
-  amount    Decimal  @db.Decimal(12, 2)
-  currency  String   @default("USD") @db.VarChar(3)
+  amount    Decimal     @db.Decimal(12, 2)
+  currency  String      @default("USD") @db.VarChar(3)
   type      EarningType
-  diamonds  Int      @default(0)
+  diamonds  Int         @default(0)
   year      Int
-  createdAt DateTime @default(now())
-  user      User?    @relation("CreatorEarnings", fields: [userId], references: [id], onDelete: SetNull)
+  createdAt DateTime    @default(now())
+  user      User?       @relation("CreatorEarnings", fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([userId, year])
   @@map("creator_earnings")
@@ -4762,16 +4770,16 @@ model CreatorEarning {
 // ============================================================
 
 model ViewerDemographic {
-  id        String   @id @default(cuid())
+  id        String        @id @default(cuid())
   videoId   String?
-  video     Video?   @relation("viewerDemographics", fields: [videoId], references: [id], onDelete: SetNull)
+  video     Video?        @relation("viewerDemographics", fields: [videoId], references: [id], onDelete: SetNull)
   channelId String?
-  channel   Channel? @relation("viewerDemographics", fields: [channelId], references: [id], onDelete: SetNull)
-  country   String   @db.VarChar(2)
+  channel   Channel?      @relation("viewerDemographics", fields: [channelId], references: [id], onDelete: SetNull)
+  country   String        @db.VarChar(2)
   ageRange  DemoAgeRange // S02-#52: was String
-  gender    DemoGender   // S02-#52: was String
+  gender    DemoGender // S02-#52: was String
   source    TrafficSource @default(browse) // S02-#51: was String
-  viewDate  DateTime @default(now())
+  viewDate  DateTime      @default(now())
 
   @@index([videoId, viewDate])
   @@index([channelId, viewDate])
@@ -4826,13 +4834,13 @@ model CommunityRole {
 // ============================================================
 
 model HifzProgress {
-  id             String    @id @default(cuid())
+  id             String     @id @default(cuid())
   userId         String
-  user           User      @relation("hifzProgressRecords", fields: [userId], references: [id], onDelete: Cascade)
+  user           User       @relation("hifzProgressRecords", fields: [userId], references: [id], onDelete: Cascade)
   surahNum       Int // 1-114
   status         HifzStatus @default(NOT_STARTED)
   lastReviewedAt DateTime?
-  updatedAt      DateTime  @updatedAt
+  updatedAt      DateTime   @updatedAt
 
   @@unique([userId, surahNum])
   // @@index([userId]) — redundant: @@unique leading column
@@ -4844,7 +4852,7 @@ model HifzProgress {
 // ============================================================
 
 model MosqueCommunity {
-  id          String   @id @default(cuid())
+  id          String       @id @default(cuid())
   name        String
   address     String
   city        String
@@ -4856,12 +4864,12 @@ model MosqueCommunity {
   phone       String?
   website     String?
   imageUrl    String?
-  memberCount Int      @default(0)
+  memberCount Int          @default(0)
   createdById String
-  createdBy   User     @relation("mosqueCommunitiesCreated", fields: [createdById], references: [id], onDelete: Cascade)
-  isVerified  Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt // S02-#36: member/verify tracking
+  createdBy   User         @relation("mosqueCommunitiesCreated", fields: [createdById], references: [id], onDelete: Cascade)
+  isVerified  Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt // S02-#36: member/verify tracking
 
   memberships MosqueMembership[]
   posts       MosquePost[]
@@ -4872,13 +4880,13 @@ model MosqueCommunity {
 }
 
 model MosqueMembership {
-  id        String          @id @default(cuid())
+  id        String           @id @default(cuid())
   mosqueId  String
-  mosque    MosqueCommunity @relation(fields: [mosqueId], references: [id], onDelete: Cascade)
+  mosque    MosqueCommunity  @relation(fields: [mosqueId], references: [id], onDelete: Cascade)
   userId    String
-  user      User            @relation("mosqueMemberships", fields: [userId], references: [id], onDelete: Cascade)
+  user      User             @relation("mosqueMemberships", fields: [userId], references: [id], onDelete: Cascade)
   role      MosqueMemberRole @default(member) // S02-#11
-  createdAt DateTime        @default(now())
+  createdAt DateTime         @default(now())
 
   @@unique([mosqueId, userId])
   @@map("mosque_memberships")
@@ -4904,19 +4912,19 @@ model MosquePost {
 // ============================================================
 
 model ScholarQA {
-  id           String    @id @default(cuid())
+  id           String            @id @default(cuid())
   scholarId    String
-  scholar      User      @relation("scholarQAs", fields: [scholarId], references: [id], onDelete: Cascade)
+  scholar      User              @relation("scholarQAs", fields: [scholarId], references: [id], onDelete: Cascade)
   title        String
   description  String?
   category     ScholarQACategory
-  language     String         @default("en")
+  language     String            @default("en")
   scheduledAt  DateTime
   startedAt    DateTime?
   endedAt      DateTime?
   recordingUrl String?
-  status       ScholarQAStatus @default(QA_SCHEDULED)
-  createdAt    DateTime  @default(now())
+  status       ScholarQAStatus   @default(QA_SCHEDULED)
+  createdAt    DateTime          @default(now())
 
   questions ScholarQuestion[]
 
@@ -4926,16 +4934,16 @@ model ScholarQA {
 }
 
 model ScholarQuestion {
-  id         String    @id @default(cuid())
-  qaId       String
-  qa         ScholarQA @relation(fields: [qaId], references: [id], onDelete: Cascade)
-  userId     String
-  user       User      @relation("scholarQuestions", fields: [userId], references: [id], onDelete: Cascade)
-  question   String
-  votes      Int                    @default(0)
-  isAnswered Boolean                @default(false)
-  answeredAt DateTime?
-  createdAt  DateTime               @default(now())
+  id          String                @id @default(cuid())
+  qaId        String
+  qa          ScholarQA             @relation(fields: [qaId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User                  @relation("scholarQuestions", fields: [userId], references: [id], onDelete: Cascade)
+  question    String
+  votes       Int                   @default(0)
+  isAnswered  Boolean               @default(false)
+  answeredAt  DateTime?
+  createdAt   DateTime              @default(now())
   voteRecords ScholarQuestionVote[] @relation("scholarQuestionVotes")
 
   @@index([qaId, votes(sort: Desc)])
@@ -4975,16 +4983,16 @@ model HadithBookmark {
 // ============================================================
 
 model CommunityNote {
-  id              String   @id @default(cuid())
+  id              String               @id @default(cuid())
   contentType     EmbeddingContentType
   contentId       String
   authorId        String
-  author          User     @relation("communityNotes", fields: [authorId], references: [id], onDelete: Cascade)
+  author          User                 @relation("communityNotes", fields: [authorId], references: [id], onDelete: Cascade)
   note            String
-  status          CommunityNoteStatus @default(PROPOSED)
-  helpfulVotes    Int      @default(0)
-  notHelpfulVotes Int      @default(0)
-  createdAt       DateTime @default(now())
+  status          CommunityNoteStatus  @default(PROPOSED)
+  helpfulVotes    Int                  @default(0)
+  notHelpfulVotes Int                  @default(0)
+  createdAt       DateTime             @default(now())
 
   ratings CommunityNoteRating[]
 
@@ -5013,16 +5021,16 @@ model CommunityNoteRating {
 // ============================================================
 
 model CollabInvite {
-  id        String   @id @default(cuid())
+  id        String             @id @default(cuid())
   postId    String
-  post      Post     @relation("collabInvites", fields: [postId], references: [id], onDelete: Cascade)
+  post      Post               @relation("collabInvites", fields: [postId], references: [id], onDelete: Cascade)
   inviterId String
-  inviter   User     @relation("collabInvitesSent", fields: [inviterId], references: [id], onDelete: Cascade)
+  inviter   User               @relation("collabInvitesSent", fields: [inviterId], references: [id], onDelete: Cascade)
   inviteeId String
-  invitee   User     @relation("collabInvitesReceived", fields: [inviteeId], references: [id], onDelete: Cascade)
+  invitee   User               @relation("collabInvitesReceived", fields: [inviteeId], references: [id], onDelete: Cascade)
   status    CollabInviteStatus @default(COLLAB_PENDING)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt // S02-#40: status change tracking
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt // S02-#40: status change tracking
 
   @@unique([postId, inviteeId])
   @@index([inviteeId, status])
@@ -5066,14 +5074,14 @@ model MessageChecklistItem {
 // ============================================================
 
 model FastingLog {
-  id        String   @id @default(cuid())
+  id        String      @id @default(cuid())
   userId    String
-  user      User     @relation("fastingLogs", fields: [userId], references: [id], onDelete: Cascade)
-  date      DateTime @db.Date
+  user      User        @relation("fastingLogs", fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime    @db.Date
   isFasting Boolean
   fastType  FastingType @default(RAMADAN)
   reason    String? // if not fasting: travel, illness, menstruation, other
-  createdAt DateTime @default(now())
+  createdAt DateTime    @default(now())
 
   @@unique([userId, date])
   @@index([userId, date])
@@ -5217,15 +5225,15 @@ model SavedSearch {
 
 // Finding #417: Admin audit trail
 model AdminAuditLog {
-  id          String   @id @default(cuid())
-  adminId     String
-  admin       User     @relation("adminAuditLogs", fields: [adminId], references: [id], onDelete: Cascade)
-  action      String   @db.VarChar(100)
-  targetType  String?  @db.VarChar(50)
-  targetId    String?
-  details     Json?
-  ipAddress   String?
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  adminId    String
+  admin      User     @relation("adminAuditLogs", fields: [adminId], references: [id], onDelete: Cascade)
+  action     String   @db.VarChar(100)
+  targetType String?  @db.VarChar(50)
+  targetId   String?
+  details    Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
 
   @@index([adminId, createdAt(sort: Desc)])
   @@index([targetType, targetId])
@@ -5270,14 +5278,14 @@ model ProcessedWebhookEvent {
 // ============================================================
 
 model Experiment {
-  id        String   @id
-  name      String   @db.VarChar(200)
-  variants  Json     // Array<{ name: string; weight: number }>
-  enabled   Boolean  @default(true)
+  id        String    @id
+  name      String    @db.VarChar(200)
+  variants  Json // Array<{ name: string; weight: number }>
+  enabled   Boolean   @default(true)
   startDate DateTime?
   endDate   DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@map("experiments")
 }
@@ -5295,16 +5303,16 @@ model FeatureFlag {
 // Dead Letter Queue — persists permanently-failed queue jobs for investigation.
 // Redis DLQ is volatile (lost on flush). This table survives infrastructure events.
 model FailedJob {
-  id         String   @id @default(cuid())
-  queue      String   @db.VarChar(50)  // notifications, media-processing, webhooks, etc.
-  jobName    String   @db.VarChar(100) // push-trigger, bulk-push, index, etc.
-  jobId      String?  @db.VarChar(100) // BullMQ job ID
-  data       Json     // Original job payload
-  error      String   @db.Text         // Error message
-  attempts   Int      @default(1)      // How many times it was retried
-  failedAt   DateTime @default(now())
-  resolvedAt DateTime?                 // Set when manually investigated/resolved
-  resolution String?  @db.VarChar(200) // "retried", "data_fixed", "ignored", etc.
+  id         String    @id @default(cuid())
+  queue      String    @db.VarChar(50) // notifications, media-processing, webhooks, etc.
+  jobName    String    @db.VarChar(100) // push-trigger, bulk-push, index, etc.
+  jobId      String?   @db.VarChar(100) // BullMQ job ID
+  data       Json // Original job payload
+  error      String    @db.Text // Error message
+  attempts   Int       @default(1) // How many times it was retried
+  failedAt   DateTime  @default(now())
+  resolvedAt DateTime? // Set when manually investigated/resolved
+  resolution String?   @db.VarChar(200) // "retried", "data_fixed", "ignored", etc.
 
   @@index([queue, failedAt(sort: Desc)])
   @@index([resolvedAt])
@@ -5314,11 +5322,11 @@ model FailedJob {
 // Payment State Store — durable mapping between Stripe IDs and internal IDs.
 // Replaces volatile Redis-only mappings that are lost on flush/TTL expiry.
 model PaymentMapping {
-  id              String   @id @default(cuid())
-  stripeId        String   @unique @db.VarChar(100) // pi_xxx, sub_xxx, cs_xxx
-  internalId      String   @db.VarChar(100)         // tip ID, subscription ID, order ID
-  type            String   @db.VarChar(30)          // "tip", "subscription", "order", "premium"
-  createdAt       DateTime @default(now())
+  id         String   @id @default(cuid())
+  stripeId   String   @unique @db.VarChar(100) // pi_xxx, sub_xxx, cs_xxx
+  internalId String   @db.VarChar(100) // tip ID, subscription ID, order ID
+  type       String   @db.VarChar(30) // "tip", "subscription", "order", "premium"
+  createdAt  DateTime @default(now())
 
   @@index([type, createdAt(sort: Desc)])
   @@map("payment_mappings")

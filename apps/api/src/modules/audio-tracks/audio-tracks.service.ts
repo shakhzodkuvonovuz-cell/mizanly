@@ -13,7 +13,7 @@ export class AudioTracksService {
     });
     if (existing) throw new ConflictException('Audio track with this title and artist already exists');
 
-    return this.prisma.audioTrack.create({ data: { ...data, isOriginal: data.isOriginal ?? false } });
+    return this.prisma.audioTrack.create({ data: { ...data, userId, isOriginal: data.isOriginal ?? false } });
   }
 
   async getById(trackId: string) {
@@ -58,16 +58,21 @@ export class AudioTracksService {
   }
 
   async incrementUsage(trackId: string) {
-    await this.prisma.$executeRaw`UPDATE audio_tracks SET "reelsCount" = "reelsCount" + 1 WHERE id = ${trackId}`;
+    await this.prisma.$executeRaw`UPDATE "audio_tracks" SET "reelsCount" = "reelsCount" + 1 WHERE id = ${trackId}`;
   }
 
   async decrementUsage(trackId: string) {
-    await this.prisma.$executeRaw`UPDATE audio_tracks SET "reelsCount" = GREATEST("reelsCount" - 1, 0) WHERE id = ${trackId}`;
+    await this.prisma.$executeRaw`UPDATE "audio_tracks" SET "reelsCount" = GREATEST("reelsCount" - 1, 0) WHERE id = ${trackId}`;
   }
 
   async delete(trackId: string, userId: string) {
     const track = await this.prisma.audioTrack.findUnique({ where: { id: trackId } });
     if (!track) throw new NotFoundException('Audio track not found');
+
+    // Ownership check — only creator can delete
+    if (track.userId !== userId) {
+      throw new ForbiddenException('You can only delete your own audio tracks');
+    }
 
     // Only allow deletion if no reels are using this track
     if (track.reelsCount > 0) {
