@@ -178,10 +178,10 @@ export class CirclesService {
   }
 
   async removeMembers(circleId: string, userId: string, memberIds: string[]) {
-    // J08-#36: Use lightweight ownership check for removeMembers
+    // J08-#36: Select name for notification body (lightweight query)
     const circle = await this.prisma.circle.findUnique({
       where: { id: circleId },
-      select: { id: true, ownerId: true },
+      select: { id: true, ownerId: true, name: true },
     });
     if (!circle) throw new NotFoundException('Circle not found');
     if (circle.ownerId !== userId) throw new ForbiddenException('Only the circle owner can manage members');
@@ -199,6 +199,18 @@ export class CirclesService {
     // Atomic decrement by actual number of rows deleted
     if (result.count > 0) {
       await this.prisma.$executeRaw`UPDATE circles SET "membersCount" = GREATEST("membersCount" - ${result.count}, 1) WHERE id = ${circleId}`;
+
+      // Notify each removed member (fire-and-forget, capped at 50)
+      for (const memberId of safeIds.slice(0, 50)) {
+        this.notificationsService.create({
+          userId: memberId,
+          actorId: userId,
+          type: 'SYSTEM',
+          circleId,
+          title: 'Removed from circle',
+          body: `You were removed from "${circle.name}"`,
+        }).catch(err => this.logger.warn('Circle remove notification failed', err.message));
+      }
     }
 
     return { removed: result.count };

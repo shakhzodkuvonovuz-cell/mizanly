@@ -91,17 +91,17 @@ export class TwoFactorController {
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @Throttle({ default: { limit: 5, ttl: 300000 } })
-  @ApiOperation({ summary: 'Validate TOTP code (5 attempts per 5 min)' })
-  @ApiResponse({ status: 200, description: 'Returns validation result' })
+  @ApiOperation({ summary: 'Validate TOTP code and set session flag (5 attempts per 5 min)' })
+  @ApiResponse({ status: 200, description: 'Returns validation result with session verification status' })
   async validate(@CurrentUser('id') userId: string, @Body() dto: VerifyDto) {
-    // A01-#10: Use validateStrict so callers know if 2FA was actually checked.
-    // validate() returns true when 2FA is not enabled, which is misleading.
+    // A01-#10: Use validate() which sets session-level 2FA flag in Redis on success.
+    // Also returns twoFactorEnabled so caller knows if 2FA was actually checked.
     const isEnabled = await this.twoFactorService.getStatus(userId);
     if (!isEnabled) {
-      return { valid: true, twoFactorEnabled: false, message: '2FA not enabled — no code required' };
+      return { valid: true, twoFactorEnabled: false, sessionVerified: true, message: '2FA not enabled — no code required' };
     }
-    const valid = await this.twoFactorService.validateStrict(userId, dto.code);
-    return { valid, twoFactorEnabled: true };
+    const valid = await this.twoFactorService.validate(userId, dto.code);
+    return { valid, twoFactorEnabled: true, sessionVerified: valid };
   }
 
   @Delete('disable')
@@ -122,11 +122,12 @@ export class TwoFactorController {
   @Get('status')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Check if 2FA is enabled for user' })
-  @ApiResponse({ status: 200, description: 'Returns 2FA status' })
+  @ApiOperation({ summary: 'Check if 2FA is enabled and session is verified' })
+  @ApiResponse({ status: 200, description: 'Returns 2FA status and session verification' })
   async status(@CurrentUser('id') userId: string) {
     const isEnabled = await this.twoFactorService.getStatus(userId);
-    return { isEnabled };
+    const sessionVerified = await this.twoFactorService.isTwoFactorVerified(userId);
+    return { isEnabled, sessionVerified };
   }
 
   @Post('backup')

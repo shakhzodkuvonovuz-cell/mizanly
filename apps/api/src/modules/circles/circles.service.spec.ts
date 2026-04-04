@@ -2,10 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { CirclesService } from './circles.service';
 import { PrismaService } from '../../config/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('CirclesService', () => {
   let service: CirclesService;
+  let notificationsService: { create: jest.Mock };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let prisma: any;
 
@@ -47,6 +49,11 @@ describe('CirclesService', () => {
     }).compile();
 
     service = module.get<CirclesService>(CirclesService);
+    notificationsService = module.get(NotificationsService) as unknown as { create: jest.Mock };
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   describe('getMyCircles', () => {
@@ -262,7 +269,7 @@ describe('CirclesService', () => {
       const userId = 'user-123';
       const circleId = 'circle-abc';
       const memberIds = ['user-456', 'user-789'];
-      const existingCircle = { id: circleId, ownerId: userId };
+      const existingCircle = { id: circleId, ownerId: userId, name: 'Test Circle' };
       prisma.circle.findUnique.mockResolvedValue(existingCircle);
       prisma.circleMember.deleteMany.mockResolvedValue({ count: 2 });
 
@@ -280,6 +287,61 @@ describe('CirclesService', () => {
 
       await expect(service.removeMembers('circle-abc', 'user-123', ['user-456']))
         .rejects.toThrow(NotFoundException);
+    });
+
+    it('should send SYSTEM notification to removed members', async () => {
+      const userId = 'user-123';
+      const circleId = 'circle-abc';
+      const memberIds = ['user-456', 'user-789'];
+      const existingCircle = { id: circleId, ownerId: userId, name: 'Study Group' };
+      prisma.circle.findUnique.mockResolvedValue(existingCircle);
+      prisma.circleMember.deleteMany.mockResolvedValue({ count: 2 });
+
+      await service.removeMembers(circleId, userId, memberIds);
+
+      // Should notify each removed member
+      expect(notificationsService.create).toHaveBeenCalledTimes(2);
+      expect(notificationsService.create).toHaveBeenCalledWith({
+        userId: 'user-456',
+        actorId: userId,
+        type: 'SYSTEM',
+        circleId,
+        title: 'Removed from circle',
+        body: 'You were removed from "Study Group"',
+      });
+      expect(notificationsService.create).toHaveBeenCalledWith({
+        userId: 'user-789',
+        actorId: userId,
+        type: 'SYSTEM',
+        circleId,
+        title: 'Removed from circle',
+        body: 'You were removed from "Study Group"',
+      });
+    });
+
+    it('should not send notifications when no members are actually removed', async () => {
+      const userId = 'user-123';
+      const circleId = 'circle-abc';
+      const existingCircle = { id: circleId, ownerId: userId, name: 'Empty' };
+      prisma.circle.findUnique.mockResolvedValue(existingCircle);
+      prisma.circleMember.deleteMany.mockResolvedValue({ count: 0 });
+
+      await service.removeMembers(circleId, userId, ['user-456']);
+
+      expect(notificationsService.create).not.toHaveBeenCalled();
+    });
+
+    it('should not send notification when trying to remove the owner', async () => {
+      const userId = 'user-123';
+      const circleId = 'circle-abc';
+      const existingCircle = { id: circleId, ownerId: userId, name: 'My Circle' };
+      prisma.circle.findUnique.mockResolvedValue(existingCircle);
+
+      const result = await service.removeMembers(circleId, userId, [userId]);
+
+      expect(result).toEqual({ removed: 0 });
+      expect(prisma.circleMember.deleteMany).not.toHaveBeenCalled();
+      expect(notificationsService.create).not.toHaveBeenCalled();
     });
   });
 

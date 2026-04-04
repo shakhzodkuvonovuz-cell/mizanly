@@ -326,17 +326,17 @@ export class TwoFactorService {
     return true;
   }
 
+  /** Redis TTL for a 2FA-verified session (24 hours) */
+  private readonly TWO_FACTOR_SESSION_TTL = 24 * 60 * 60;
+
   /**
    * Validate a TOTP code for login flow.
    * Returns true if 2FA is not enabled (user doesn't need to provide code).
    * For sensitive operations that REQUIRE 2FA, use validateStrict() instead.
    *
-   * TODO: [ARCH/F16] 2FA is currently disconnected from Clerk login flow.
-   * Clerk handles authentication externally and issues JWTs. To enforce 2FA at login:
-   * 1. Use Clerk custom session claims or metadata to mark 2FA-required users
-   * 2. Add a Clerk middleware/webhook that checks 2FA status before issuing session
-   * 3. Or: require 2FA validation on first API call after login (session-level flag)
-   * This requires Clerk dashboard configuration + custom session management.
+   * When validation succeeds for a user with 2FA enabled, a session-level flag
+   * is stored in Redis so subsequent requests can verify the user has completed
+   * 2FA without re-prompting. The flag expires after 24 hours.
    */
   async validate(userId: string, code: string): Promise<boolean> {
     const secretRecord = await this.prisma.twoFactorSecret.findUnique({
@@ -348,7 +348,33 @@ export class TwoFactorService {
     }
 
     const plaintextSecret = decryptSecretWithFallback(secretRecord.secret, this.encryptionKey, this.oldEncryptionKey);
-    return verifyTotp(code, plaintextSecret);
+    const isValid = verifyTotp(code, plaintextSecret);
+    if (isValid) {
+      // Store session-level 2FA verification flag in Redis
+      await this.redis.setex(`2fa_verified:${userId}`, this.TWO_FACTOR_SESSION_TTL, '1');
+    }
+    return isValid;
+  }
+
+  /**
+   * Check if the user has verified 2FA in the current session.
+   * Returns true if:
+   * - 2FA is not enabled for the user (no verification needed), OR
+   * - 2FA was verified within the session TTL (24 hours)
+   */
+  async isTwoFactorVerified(userId: string): Promise<boolean> {
+    const isEnabled = await this.getStatus(userId);
+    if (!isEnabled) return true; // 2FA not enabled — no verification needed
+
+    const verified = await this.redis.get(`2fa_verified:${userId}`);
+    return verified === '1';
+  }
+
+  /**
+   * Clear the 2FA session flag (e.g., on logout or session revocation).
+   */
+  async clearTwoFactorSession(userId: string): Promise<void> {
+    await this.redis.del(`2fa_verified:${userId}`);
   }
 
   /**
