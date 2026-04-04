@@ -1149,7 +1149,7 @@ model User {
   conversationKeyEnvelopes ConversationKeyEnvelope[]   @relation("conversationKeyEnvelopes")
 
   // Signal Protocol E2E
-  e2eIdentityKey        E2EIdentityKey?    @relation("e2eIdentityKey")
+  e2eIdentityKeys       E2EIdentityKey[]   @relation("e2eIdentityKey")
   e2eSignedPreKeys      E2ESignedPreKey[]  @relation("e2eSignedPreKeys")
   e2eOneTimePreKeys     E2EOneTimePreKey[] @relation("e2eOneTimePreKeys")
   e2eSenderKeysSent     E2ESenderKey[]     @relation("e2eSenderKeysSent")
@@ -3286,7 +3286,7 @@ model ConversationKeyEnvelope {
 
 model E2EIdentityKey {
   id             String   @id @default(cuid())
-  userId         String   @unique
+  userId         String
   user           User     @relation("e2eIdentityKey", fields: [userId], references: [id], onDelete: Cascade)
   deviceId       Int      @default(1)
   publicKey      Bytes    // 32 bytes Ed25519 public key
@@ -3294,6 +3294,9 @@ model E2EIdentityKey {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
+  // [G02-C1 fix] Composite unique on (userId, deviceId) for multi-device support.
+  // The Go e2e-server does ON CONFLICT ("userId", "deviceId") — this constraint is required.
+  @@unique([userId, deviceId])
   @@map("e2e_identity_keys")
 }
 

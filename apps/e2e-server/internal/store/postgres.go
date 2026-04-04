@@ -111,15 +111,9 @@ func (s *Store) UpsertIdentityKey(ctx context.Context, userID string, deviceID i
 		return false, "", errors.New("registrationId must be 1-16383 (14-bit, non-zero)")
 	}
 
-	// G02-#1 NOTE: ON CONFLICT ("userId","deviceId") requires a UNIQUE index on
-	// ("userId","deviceId") in the database. The Prisma schema currently only has
-	// @unique on "userId". A migration adding @@unique([userId, deviceId]) is needed
-	// for this conflict target to work correctly. DEFERRED — schema change required.
-	//
-	// Codex-V7-F4 FIX: Conflict on ("userId","deviceId") — NOT just "userId".
-	// Previously: one row per user → device 2 overwrites device 1's key.
-	// Now: one row per (user, device) → multi-device identity keys coexist.
-	// Requires a UNIQUE index on ("userId","deviceId") in the DB schema.
+	// [G02-C1] ON CONFLICT ("userId","deviceId") — requires @@unique([userId, deviceId])
+	// in the Prisma schema. FIXED: schema now has the composite unique constraint.
+	// One row per (user, device) → multi-device identity keys coexist.
 	var oldPub []byte
 	err = s.pool.QueryRow(ctx,
 		`INSERT INTO e2e_identity_keys (id, "userId", "deviceId", "publicKey", "registrationId", "createdAt", "updatedAt")

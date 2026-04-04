@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -71,8 +72,8 @@ func main() {
 		logger.Error("parse REDIS_URL failed", "error", err)
 		os.Exit(1)
 	}
-	// Ensure TLS for Upstash
-	if redisOpt.TLSConfig == nil {
+	// [G06-#1 fix] Only force TLS for rediss:// URLs — plain redis:// (localhost) must not get TLS.
+	if strings.HasPrefix(cfg.RedisURL, "rediss://") && redisOpt.TLSConfig == nil {
 		redisOpt.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12}
 	}
 	rdb := redis.NewClient(redisOpt)
