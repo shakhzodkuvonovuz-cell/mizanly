@@ -89,13 +89,13 @@ Mizanly is organized into five distinct "spaces" (فضاءات), each named in A
 
 | Metric | Count |
 |--------|-------|
-| **Mobile (TS/TSX)** | **166,591 lines** |
-| **API (TS)** | **6,165 lines source + 6,203 lines tests** |
-| **Go E2E Server** | **2,174 lines** |
-| **Go LiveKit Server** | **2,684 lines** |
+| **Mobile (TS/TSX)** | **187,912 lines** (121,392 screens + 66,520 src) |
+| **API (TS)** | **16,701 lines** (12,368 src + 4,333 integration tests) |
+| **Go E2E Server** | **3,310 lines** |
+| **Go LiveKit Server** | **6,030 lines** |
 | **Prisma Schema** | **5,414 lines** |
 | **i18n (8 languages)** | **41,324 lines** |
-| **Total Source Code** | **~225,000 lines** |
+| **Total Source Code** | **~261,000 lines** |
 | Mobile Screens | 218 |
 | Backend Modules | 81 |
 | Backend Endpoints | ~950 |
