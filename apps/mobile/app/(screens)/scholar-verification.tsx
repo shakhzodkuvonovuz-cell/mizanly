@@ -379,7 +379,7 @@ function ScholarVerificationContent() {
         <Text style={styles.fieldLabel}>{t('scholar.documents')}</Text>
 
         {documentUrls.map((url, index) => (
-          <View key={index} style={styles.documentRow}>
+          <View key={`doc-${url}`} style={styles.documentRow}>
             <Icon name="paperclip" size={18} color={colors.emerald} />
             <Text style={styles.documentText} numberOfLines={1}>
               {url.split('/').pop()}

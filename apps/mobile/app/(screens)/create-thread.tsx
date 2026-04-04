@@ -49,8 +49,14 @@ interface AutocompleteState {
 }
 
 interface ChainPart {
+  id: string;
   content: string;
   media: { uri: string; type: 'image' | 'video' }[];
+}
+
+let _partIdCounter = 0;
+function nextPartId(): string {
+  return `part-${Date.now()}-${++_partIdCounter}`;
 }
 
 interface ThreadPartProps {
@@ -271,7 +277,7 @@ export default function CreateThreadScreen() {
   const styles = useMemo(() => createStyles(tc), [tc]);
   const haptic = useContextualHaptic();
 
-  const [parts, setParts] = useState<ChainPart[]>([{ content: '', media: [] }]);
+  const [parts, setParts] = useState<ChainPart[]>([{ id: nextPartId(), content: '', media: [] }]);
   const [visibility, setVisibility] = useState<Visibility>('PUBLIC');
   const [showVisibility, setShowVisibility] = useState(false);
   const [circleId, setCircleId] = useState<string | undefined>();
@@ -296,7 +302,7 @@ export default function CreateThreadScreen() {
   const { save: saveDraftImmediate, clear: clearDraft, debouncedSave: debouncedSaveDraft } = useDraftPersistence<{ parts: ChainPart[] }>(
     THREAD_DRAFT_KEY,
     (draft) => {
-      if (draft.parts) setParts(draft.parts);
+      if (draft.parts) setParts(draft.parts.map(p => ({ ...p, id: p.id || nextPartId() })));
     },
   );
 
@@ -320,7 +326,7 @@ export default function CreateThreadScreen() {
 
   const addPart = () => {
     if (parts.length >= 10) return;
-    setParts((prev) => [...prev, { content: '', media: [] }]);
+    setParts((prev) => [...prev, { id: nextPartId(), content: '', media: [] }]);
   };
 
   const updateContent = (index: number, content: string) => {
@@ -560,7 +566,7 @@ export default function CreateThreadScreen() {
 
         <ScrollView style={styles.body} keyboardShouldPersistTaps="handled">
           {parts.map((part, index) => (
-            <View key={index}>
+            <View key={part.id}>
               <ThreadPart
                 part={part}
                 index={index}

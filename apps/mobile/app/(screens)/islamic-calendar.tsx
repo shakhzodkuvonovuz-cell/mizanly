@@ -466,7 +466,7 @@ export default function IslamicCalendarScreen() {
               <View style={[styles.calendarGrid, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                 {days.map((dayData, index) => (
                   <CalendarDay
-                    key={index}
+                    key={dayData.day !== null ? `day-${dayData.day}` : `pad-${index}`}
                     day={dayData.day}
                     isToday={dayData.isToday}
                     hasEvent={dayData.hasEvent}

@@ -271,8 +271,8 @@ export default function CreateReelScreen() {
             <View style={styles.thumbnailSection}>
               <Text style={styles.sectionLabel}>{t('createReel.selectThumbnail')}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
-                {capture.thumbnailOptions.map((frame, index) => (
-                  <Pressable accessibilityRole="button" key={index} onPress={() => { capture.setThumbnailUri(frame); capture.setCustomThumbnail(false); }} style={[styles.thumbnailFrame, capture.thumbnailUri === frame && !capture.customThumbnail && styles.thumbnailFrameSelected]}>
+                {capture.thumbnailOptions.map((frame) => (
+                  <Pressable accessibilityRole="button" key={frame} onPress={() => { capture.setThumbnailUri(frame); capture.setCustomThumbnail(false); }} style={[styles.thumbnailFrame, capture.thumbnailUri === frame && !capture.customThumbnail && styles.thumbnailFrameSelected]}>
                     <ProgressiveImage uri={frame} width={80} height={45} accessibilityLabel={t('accessibility.contentImage')} />
                   </Pressable>
                 ))}

@@ -737,7 +737,10 @@ describe('MessagesService', () => {
 
       const result = await service.reactToMessage(messageId, userId, emoji);
 
-      expect(prisma.message.findUnique).toHaveBeenCalledWith({ where: { id: messageId } });
+      expect(prisma.message.findUnique).toHaveBeenCalledWith({
+        where: { id: messageId },
+        select: { id: true, isDeleted: true, conversationId: true },
+      });
       expect(requireMembershipSpy).toHaveBeenCalledWith('conv-789', userId);
       expect(prisma.messageReaction.upsert).toHaveBeenCalledWith({
         where: { messageId_userId_emoji: { messageId, userId, emoji } },
@@ -773,7 +776,10 @@ describe('MessagesService', () => {
 
       const result = await service.removeReaction(messageId, userId, emoji);
 
-      expect(prisma.message.findUnique).toHaveBeenCalledWith({ where: { id: messageId } });
+      expect(prisma.message.findUnique).toHaveBeenCalledWith({
+        where: { id: messageId },
+        select: { id: true, conversationId: true },
+      });
       expect(prisma.messageReaction.deleteMany).toHaveBeenCalledWith({
         where: { messageId, userId, emoji },
       });

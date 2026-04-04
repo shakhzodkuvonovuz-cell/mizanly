@@ -91,7 +91,10 @@ export class CommerceService {
     category?: string; isHalal?: boolean; isMuslimOwned?: boolean; stock?: number;
     tags?: string[]; location?: string; shippingInfo?: string; halalCertUrl?: string; status?: string;
   }) {
-    const product = await this.prisma.product.findUnique({ where: { id: productId } });
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+      select: { id: true, sellerId: true },
+    });
     if (!product) throw new NotFoundException('Product not found');
     if (product.sellerId !== userId) throw new ForbiddenException('Not the product owner');
 
@@ -110,7 +113,10 @@ export class CommerceService {
   }
 
   async deleteProduct(userId: string, productId: string) {
-    const product = await this.prisma.product.findUnique({ where: { id: productId } });
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+      select: { id: true, sellerId: true },
+    });
     if (!product) throw new NotFoundException('Product not found');
     if (product.sellerId !== userId) throw new ForbiddenException('Not the product owner');
 
@@ -129,7 +135,10 @@ export class CommerceService {
   async reviewProduct(userId: string, productId: string, rating: number, comment?: string) {
     if (rating < 1 || rating > 5) throw new BadRequestException('Rating must be 1-5');
 
-    const product = await this.prisma.product.findUnique({ where: { id: productId } });
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+      select: { id: true, sellerId: true },
+    });
     if (!product) throw new NotFoundException('Product not found');
     if (product.sellerId === userId) throw new BadRequestException('Cannot review your own product');
 
@@ -159,7 +168,10 @@ export class CommerceService {
   async createOrder(userId: string, dto: { productId: string; quantity?: number; installments?: number; shippingAddress?: string }) {
     this.ensureStripeAvailable();
 
-    const product = await this.prisma.product.findUnique({ where: { id: dto.productId } });
+    const product = await this.prisma.product.findUnique({
+      where: { id: dto.productId },
+      select: { id: true, status: true, sellerId: true, price: true, stock: true, title: true, currency: true },
+    });
     if (!product) throw new NotFoundException('Product not found');
     if (product.status !== ProductStatus.ACTIVE) throw new BadRequestException('Product not available');
     if (product.sellerId === userId) throw new BadRequestException('Cannot buy your own product');
@@ -409,7 +421,10 @@ export class CommerceService {
   async reviewBusiness(userId: string, businessId: string, rating: number, comment?: string) {
     if (rating < 1 || rating > 5) throw new BadRequestException('Rating must be 1-5');
 
-    const business = await this.prisma.halalBusiness.findUnique({ where: { id: businessId } });
+    const business = await this.prisma.halalBusiness.findUnique({
+      where: { id: businessId },
+      select: { id: true, ownerId: true },
+    });
     if (!business) throw new NotFoundException('Business not found');
     if (business.ownerId === userId) throw new BadRequestException('Cannot review your own business');
 
@@ -438,7 +453,10 @@ export class CommerceService {
     lat?: number; lng?: number; phone?: string; website?: string;
     avatarUrl?: string; coverUrl?: string; isMuslimOwned?: boolean; halalCertUrl?: string;
   }) {
-    const business = await this.prisma.halalBusiness.findUnique({ where: { id: businessId } });
+    const business = await this.prisma.halalBusiness.findUnique({
+      where: { id: businessId },
+      select: { id: true, ownerId: true },
+    });
     if (!business) throw new NotFoundException('Business not found');
     if (business.ownerId !== userId) throw new ForbiddenException('Not the business owner');
 
@@ -450,7 +468,10 @@ export class CommerceService {
   }
 
   async deleteBusiness(userId: string, businessId: string) {
-    const business = await this.prisma.halalBusiness.findUnique({ where: { id: businessId } });
+    const business = await this.prisma.halalBusiness.findUnique({
+      where: { id: businessId },
+      select: { id: true, ownerId: true },
+    });
     if (!business) throw new NotFoundException('Business not found');
     if (business.ownerId !== userId) throw new ForbiddenException('Not the business owner');
 

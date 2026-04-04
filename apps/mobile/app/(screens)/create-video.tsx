@@ -376,10 +376,10 @@ export default function CreateVideoScreen() {
             <View style={styles.filmstripSection}>
               <Text style={styles.sectionLabel}>{t('createVideo.selectThumbnail')}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
-                {thumbnailOptions.map((frame, index) => (
+                {thumbnailOptions.map((frame) => (
                   <Pressable
                     accessibilityRole="button"
-                    key={index}
+                    key={frame}
                     onPress={() => { haptic.tick(); setThumbnailUri(frame); setCustomThumbnail(false); }}
                     style={[
                       styles.thumbnailFrame,

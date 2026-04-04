@@ -211,6 +211,9 @@ export class MessagesService {
       e2eSenderKeyId?: number;
       clientMessageId?: string;
       encryptedLastMessagePreview?: Uint8Array;
+      // X02-#3: Sealed sender envelope fields — persisted for offline recipient retrieval
+      e2eSealedEphemeralKey?: Uint8Array;
+      e2eSealedCiphertext?: Uint8Array;
       // V6-F1b: Sealed sender — senderId is null, sender identity is inside encrypted envelope
       _sealedSender?: boolean;
       // Internal: skip Redis publish when called from WebSocket gateway (prevents double delivery)
@@ -256,6 +259,9 @@ export class MessagesService {
             ...(data.e2eSenderKeyId !== undefined ? { e2eSenderKeyId: data.e2eSenderKeyId } : {}),
             ...(data.clientMessageId ? { clientMessageId: data.clientMessageId } : {}),
             ...(convo?.disappearingDuration ? { expiresAt: new Date(Date.now() + convo.disappearingDuration * 1000) } : {}),
+            // X02-#3: Persist sealed envelope for offline recipient retrieval
+            ...(data.e2eSealedEphemeralKey ? { e2eSealedEphemeralKey: new Uint8Array(data.e2eSealedEphemeralKey) } : {}),
+            ...(data.e2eSealedCiphertext ? { e2eSealedCiphertext: new Uint8Array(data.e2eSealedCiphertext) } : {}),
           },
           select: MESSAGE_SELECT,
         });
@@ -964,7 +970,10 @@ export class MessagesService {
   async leaveGroup(conversationId: string, userId: string) {
     await this.requireMembership(conversationId, userId);
 
-    const convo = await this.prisma.conversation.findUnique({ where: { id: conversationId } });
+    const convo = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      select: { id: true, createdById: true },
+    });
     if (!convo) throw new NotFoundException('Conversation not found');
     if (convo.createdById === userId) {
       throw new BadRequestException('Group owner cannot leave. Transfer ownership first.');
@@ -1004,7 +1013,10 @@ export class MessagesService {
   }
 
   async reactToMessage(messageId: string, userId: string, emoji: string) {
-    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+      select: { id: true, isDeleted: true, conversationId: true },
+    });
     if (!message || message.isDeleted) throw new NotFoundException('Message not found');
     await this.requireMembership(message.conversationId, userId);
 
@@ -1017,7 +1029,10 @@ export class MessagesService {
   }
 
   async removeReaction(messageId: string, userId: string, emoji: string) {
-    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+      select: { id: true, conversationId: true },
+    });
     if (!message) throw new NotFoundException('Message not found');
     await this.requireMembership(message.conversationId, userId);
     await this.prisma.messageReaction.deleteMany({
@@ -1186,7 +1201,10 @@ export class MessagesService {
   }
 
   async markDelivered(messageId: string, userId: string) {
-    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+      select: { id: true, conversationId: true, deliveredAt: true },
+    });
     if (!message) throw new NotFoundException('Message not found');
     await this.requireMembership(message.conversationId, userId);
     // Only set deliveredAt if not already set (idempotent)
@@ -1313,8 +1331,11 @@ export class MessagesService {
   }
 
   async starMessage(userId: string, messageId: string) {
-    // Verify message exists
-    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
+    // Verify message exists (select only id — existence check)
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+      select: { id: true },
+    });
     if (!message) throw new NotFoundException('Message not found');
 
     return this.prisma.starredMessage.upsert({

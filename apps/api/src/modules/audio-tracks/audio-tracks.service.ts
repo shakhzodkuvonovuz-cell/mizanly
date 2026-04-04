@@ -17,7 +17,21 @@ export class AudioTracksService {
   }
 
   async getById(trackId: string) {
-    const track = await this.prisma.audioTrack.findUnique({ where: { id: trackId } });
+    const track = await this.prisma.audioTrack.findUnique({
+      where: { id: trackId },
+      select: {
+        id: true,
+        title: true,
+        artist: true,
+        duration: true,
+        audioUrl: true,
+        coverUrl: true,
+        reelsCount: true,
+        isOriginal: true,
+        userId: true,
+        createdAt: true,
+      },
+    });
     if (!track) throw new NotFoundException('Audio track not found');
     return track;
   }
@@ -82,7 +96,10 @@ export class AudioTracksService {
   }
 
   async delete(trackId: string, userId: string) {
-    const track = await this.prisma.audioTrack.findUnique({ where: { id: trackId } });
+    const track = await this.prisma.audioTrack.findUnique({
+      where: { id: trackId },
+      select: { id: true, userId: true, reelsCount: true },
+    });
     if (!track) throw new NotFoundException('Audio track not found');
 
     // Ownership check — only creator can delete

@@ -139,7 +139,7 @@ function HeatMapRow({ days }: { days: number[] }) {
     <View style={styles.heatMapRow}>
       {days.map((value, index) => (
         <View
-          key={index}
+          key={`hm-${index}-${value}`}
           style={[
             styles.heatMapDot,
             {
