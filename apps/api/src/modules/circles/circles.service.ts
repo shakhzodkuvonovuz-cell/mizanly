@@ -1,8 +1,11 @@
-import { Injectable, NotFoundException, ForbiddenException, InternalServerErrorException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, ForbiddenException, InternalServerErrorException, BadRequestException, Logger } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { Prisma } from '@prisma/client';
+import Redis from 'ioredis';
 import { PrismaService } from '../../config/prisma.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { NOTIFICATION_REQUESTED, NotificationRequestedEvent } from '../../common/events/notification.events';
+import { acquireCronLock } from '../../common/utils/cron-lock';
 
 function generateSlug(name: string): string {
   return name
@@ -21,6 +24,7 @@ export class CirclesService {
   constructor(
     private prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
+    @Inject('REDIS') private redis: Redis,
   ) {}
 
   async getMyCircles(userId: string) {
@@ -243,5 +247,27 @@ export class CirclesService {
         hasMore,
       },
     };
+  }
+
+  // ── Expired Circle Invite Cleanup ──
+  @Cron('0 3 * * *') // Daily at 3:00 AM
+  async cleanupExpiredCircleInvites(): Promise<number> {
+    try {
+      if (!await acquireCronLock(this.redis, 'cron:cleanupExpiredCircleInvites', 3500, this.logger)) return 0;
+      const result = await this.prisma.circleInvite.deleteMany({
+        where: {
+          expiresAt: { not: null, lt: new Date() },
+        },
+      });
+      if (result.count > 0) {
+        this.logger.log(`Cleaned up ${result.count} expired circle invite(s)`);
+      }
+      return result.count;
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      const stack = error instanceof Error ? error.stack : undefined;
+      this.logger.error(`Failed to clean up expired circle invites: ${message}`, stack);
+      return 0;
+    }
   }
 }

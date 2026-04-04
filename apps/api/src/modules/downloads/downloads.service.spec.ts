@@ -159,4 +159,29 @@ describe('DownloadsService', () => {
       });
     });
   });
+
+  describe('cleanupExpiredDownloads', () => {
+    it('should delete expired download records and return count', async () => {
+      prisma.offlineDownload.deleteMany = jest.fn().mockResolvedValue({ count: 7 });
+      const result = await service.cleanupExpiredDownloads();
+      expect(result).toBe(7);
+      expect(prisma.offlineDownload.deleteMany).toHaveBeenCalledWith({
+        where: {
+          expiresAt: { not: null, lt: expect.any(Date) },
+        },
+      });
+    });
+
+    it('should return 0 when no expired downloads exist', async () => {
+      prisma.offlineDownload.deleteMany = jest.fn().mockResolvedValue({ count: 0 });
+      const result = await service.cleanupExpiredDownloads();
+      expect(result).toBe(0);
+    });
+
+    it('should return 0 and log error on failure', async () => {
+      prisma.offlineDownload.deleteMany = jest.fn().mockRejectedValue(new Error('DB fail'));
+      const result = await service.cleanupExpiredDownloads();
+      expect(result).toBe(0);
+    });
+  });
 });

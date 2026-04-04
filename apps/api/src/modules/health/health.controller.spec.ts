@@ -12,6 +12,7 @@ const originalFetch = global.fetch;
 describe('HealthController', () => {
   let controller: HealthController;
   let prisma: any;
+  let mockRedisInstance: Record<string, jest.Mock>;
 
   beforeEach(async () => {
     // Mock fetch to simulate healthy external services
@@ -25,13 +26,17 @@ describe('HealthController', () => {
       reel: { count: jest.fn() },
     };
 
-    const mockRedis = {
+    mockRedisInstance = {
       ping: jest.fn().mockResolvedValue('PONG'),
       get: jest.fn(),
       set: jest.fn(),
       setex: jest.fn(),
       del: jest.fn(),
+      mget: jest.fn().mockResolvedValue([]),
+      keys: jest.fn().mockResolvedValue([]),
     };
+
+    const mockRedis = mockRedisInstance;
 
     const mockAsyncJobService = {
       enqueue: jest.fn(),
@@ -177,6 +182,62 @@ describe('HealthController', () => {
       const result = controller.live();
       expect(result.status).toBe('alive');
       expect(result.uptime).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  describe('GET /health/crons', () => {
+    it('should return cron health status for admin user', async () => {
+      // Mock mget to return timestamps for all keys
+      const recentTimestamp = new Date(Date.now() - 60 * 60 * 1000).toISOString(); // 1 hour ago
+      mockRedisInstance.mget.mockResolvedValue(
+        Array.from({ length: 32 }, () => recentTimestamp),
+      );
+
+      const result = await controller.getCronHealth('admin-user-id');
+
+      expect(result.status).toBe('all_healthy');
+      expect(result.summary.total).toBeGreaterThan(0);
+      expect(result.summary.stale).toBe(0);
+      expect(result.timestamp).toBeDefined();
+    });
+
+    it('should report stale crons when no timestamps exist', async () => {
+      mockRedisInstance.mget.mockResolvedValue(
+        Array.from({ length: 32 }, () => null),
+      );
+
+      const result = await controller.getCronHealth('admin-user-id');
+
+      expect(result.status).toBe('all_stale');
+      expect(result.summary.healthy).toBe(0);
+      expect(result.summary.stale).toBe(result.summary.total);
+    });
+
+    it('should report degraded when some crons are stale', async () => {
+      const recentTimestamp = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const staleTimestamp = new Date(Date.now() - 30 * 60 * 60 * 1000).toISOString(); // 30 hours ago
+      const values = Array.from({ length: 32 }, (_, i) =>
+        i < 10 ? recentTimestamp : staleTimestamp,
+      );
+      mockRedisInstance.mget.mockResolvedValue(values);
+
+      const result = await controller.getCronHealth('admin-user-id');
+
+      expect(result.status).toBe('degraded');
+      expect(result.summary.healthy).toBe(10);
+      expect(result.summary.stale).toBe(22);
+    });
+
+    it('should throw ForbiddenException for non-admin users', async () => {
+      prisma.user.findUnique.mockResolvedValue({ role: 'USER' });
+
+      await expect(controller.getCronHealth('regular-user-id'))
+        .rejects.toThrow('Admin access required');
+    });
+
+    it('should throw ForbiddenException for unauthenticated requests', async () => {
+      await expect(controller.getCronHealth(undefined))
+        .rejects.toThrow('Authentication required');
     });
   });
 });

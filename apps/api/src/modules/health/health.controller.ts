@@ -10,6 +10,7 @@ import { FeatureFlagsService } from '../../common/services/feature-flags.service
 import { CircuitBreakerService } from '../../common/services/circuit-breaker.service';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { CRON_LASTRUN_PREFIX, KNOWN_CRON_KEYS } from '../../common/utils/cron-lock';
 
 @ApiTags('Health')
 @Throttle({ default: { limit: 60, ttl: 60000 } })
@@ -155,5 +156,41 @@ export class HealthController {
     }
 
     return { flags: resolved, announcement };
+  }
+
+  @Get('crons')
+  @UseGuards(OptionalClerkAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Cron health monitor — last-run timestamps for all cron jobs (admin only)' })
+  async getCronHealth(@CurrentUser('id') userId?: string) {
+    if (!userId) throw new ForbiddenException('Authentication required');
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    if (user?.role !== 'ADMIN') throw new ForbiddenException('Admin access required');
+
+    const lastRunKeys = KNOWN_CRON_KEYS.map(k => `${CRON_LASTRUN_PREFIX}${k}`);
+    const values = await this.redis.mget(...lastRunKeys);
+
+    const crons: Record<string, { lastRun: string | null; stale: boolean }> = {};
+    const now = Date.now();
+    const STALE_THRESHOLD_MS = 25 * 60 * 60 * 1000; // 25 hours — any daily cron missed
+
+    for (let i = 0; i < KNOWN_CRON_KEYS.length; i++) {
+      const lastRun = values[i] ?? null;
+      const stale = lastRun
+        ? (now - new Date(lastRun).getTime()) > STALE_THRESHOLD_MS
+        : true; // Never ran = stale
+      crons[KNOWN_CRON_KEYS[i]] = { lastRun, stale };
+    }
+
+    const totalCrons = KNOWN_CRON_KEYS.length;
+    const staleCount = Object.values(crons).filter(c => c.stale).length;
+    const healthyCount = totalCrons - staleCount;
+
+    return {
+      status: staleCount === 0 ? 'all_healthy' : staleCount === totalCrons ? 'all_stale' : 'degraded',
+      timestamp: new Date().toISOString(),
+      summary: { total: totalCrons, healthy: healthyCount, stale: staleCount },
+      crons,
+    };
   }
 }

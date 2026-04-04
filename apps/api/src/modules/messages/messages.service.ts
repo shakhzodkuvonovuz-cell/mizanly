@@ -1784,6 +1784,27 @@ export class MessagesService {
     }
   }
 
+  // ── Expired DM Note Cleanup ──
+  @Cron('0 2 * * *') // Daily at 2:00 AM
+  async cleanupExpiredDMNotes(): Promise<number> {
+    try {
+      if (!await acquireCronLock(this.redis, 'cron:cleanupExpiredDMNotes', 3500, this.logger)) return 0;
+      const result = await this.prisma.dMNote.deleteMany({
+        where: { expiresAt: { lt: new Date() } },
+      });
+      if (result.count > 0) {
+        this.logger.log(`Cleaned up ${result.count} expired DM note(s)`);
+      }
+      return result.count;
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      const stack = error instanceof Error ? error.stack : undefined;
+      this.logger.error(`Failed to clean up expired DM notes: ${message}`, stack);
+      Sentry.captureException(error);
+      return 0;
+    }
+  }
+
   // Finding #364: Group topics — Telegram-style discussion threads within groups
   async createGroupTopic(conversationId: string, userId: string, name: string, iconEmoji?: string) {
     const conv = await this.prisma.conversation.findUnique({ where: { id: conversationId } });

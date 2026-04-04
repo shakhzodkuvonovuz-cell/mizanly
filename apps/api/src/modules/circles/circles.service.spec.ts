@@ -381,4 +381,35 @@ describe('CirclesService', () => {
         .rejects.toThrow(NotFoundException);
     });
   });
+
+  describe('cleanupExpiredCircleInvites', () => {
+    beforeEach(() => {
+      prisma.circleInvite = {
+        deleteMany: jest.fn(),
+      };
+    });
+
+    it('should delete expired circle invites and return count', async () => {
+      prisma.circleInvite.deleteMany.mockResolvedValue({ count: 3 });
+      const result = await service.cleanupExpiredCircleInvites();
+      expect(result).toBe(3);
+      expect(prisma.circleInvite.deleteMany).toHaveBeenCalledWith({
+        where: {
+          expiresAt: { not: null, lt: expect.any(Date) },
+        },
+      });
+    });
+
+    it('should return 0 when no expired invites exist', async () => {
+      prisma.circleInvite.deleteMany.mockResolvedValue({ count: 0 });
+      const result = await service.cleanupExpiredCircleInvites();
+      expect(result).toBe(0);
+    });
+
+    it('should return 0 and log error on failure', async () => {
+      prisma.circleInvite.deleteMany.mockRejectedValue(new Error('DB error'));
+      const result = await service.cleanupExpiredCircleInvites();
+      expect(result).toBe(0);
+    });
+  });
 });

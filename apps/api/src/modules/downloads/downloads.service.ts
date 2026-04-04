@@ -1,18 +1,25 @@
 import {
   Injectable,
+  Inject,
   NotFoundException,
   BadRequestException,
   ForbiddenException,
   Logger,
 } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
+import Redis from 'ioredis';
 import { PrismaService } from '../../config/prisma.service';
 import { ThumbnailContentType, DownloadQuality } from '@prisma/client';
 import { CreateDownloadDto } from './dto/create-download.dto';
+import { acquireCronLock } from '../../common/utils/cron-lock';
 
 @Injectable()
 export class DownloadsService {
   private readonly logger = new Logger(DownloadsService.name);
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject('REDIS') private redis: Redis,
+  ) {}
 
   /** Upsert an OfflineDownload record; verify content exists and is downloadable */
   async requestDownload(userId: string, dto: CreateDownloadDto) {
@@ -159,6 +166,28 @@ export class DownloadsService {
       }
       default:
         throw new BadRequestException(`Unsupported content type: ${contentType}`);
+    }
+  }
+
+  // ── Expired Download Cleanup ──
+  @Cron('0 4 * * *') // Daily at 4:00 AM
+  async cleanupExpiredDownloads(): Promise<number> {
+    try {
+      if (!await acquireCronLock(this.redis, 'cron:cleanupExpiredDownloads', 3500, this.logger)) return 0;
+      const result = await this.prisma.offlineDownload.deleteMany({
+        where: {
+          expiresAt: { not: null, lt: new Date() },
+        },
+      });
+      if (result.count > 0) {
+        this.logger.log(`Cleaned up ${result.count} expired download record(s)`);
+      }
+      return result.count;
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      const stack = error instanceof Error ? error.stack : undefined;
+      this.logger.error(`Failed to clean up expired downloads: ${message}`, stack);
+      return 0;
     }
   }
 }

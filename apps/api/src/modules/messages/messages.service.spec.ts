@@ -2097,4 +2097,43 @@ describe('MessagesService', () => {
       })).rejects.toThrow(BadRequestException);
     });
   });
+
+  describe('cleanupExpiredDMNotes', () => {
+    let redis: { set: jest.Mock };
+
+    beforeEach(() => {
+      redis = (service as any).redis;
+      // Ensure lock acquisition succeeds
+      redis.set.mockResolvedValue('OK');
+    });
+
+    it('should delete expired DM notes and return count', async () => {
+      prisma.dMNote.deleteMany = jest.fn().mockResolvedValue({ count: 5 });
+      const result = await service.cleanupExpiredDMNotes();
+      expect(result).toBe(5);
+      expect(prisma.dMNote.deleteMany).toHaveBeenCalledWith({
+        where: { expiresAt: { lt: expect.any(Date) } },
+      });
+    });
+
+    it('should return 0 when no expired notes exist', async () => {
+      prisma.dMNote.deleteMany = jest.fn().mockResolvedValue({ count: 0 });
+      const result = await service.cleanupExpiredDMNotes();
+      expect(result).toBe(0);
+    });
+
+    it('should return 0 when lock not acquired', async () => {
+      redis.set.mockResolvedValue(null);
+      prisma.dMNote.deleteMany = jest.fn();
+      const result = await service.cleanupExpiredDMNotes();
+      expect(result).toBe(0);
+      expect(prisma.dMNote.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('should return 0 and log error on failure', async () => {
+      prisma.dMNote.deleteMany = jest.fn().mockRejectedValue(new Error('DB down'));
+      const result = await service.cleanupExpiredDMNotes();
+      expect(result).toBe(0);
+    });
+  });
 });
