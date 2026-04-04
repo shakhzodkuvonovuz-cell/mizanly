@@ -108,14 +108,28 @@ async function e2eFetch(
 ): Promise<Response> {
   const token = await getAuthToken();
   const url = `${e2eBaseUrl}${path}`;
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-      ...((options.headers as Record<string, string>) ?? {}),
-    },
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        ...((options.headers as Record<string, string>) ?? {}),
+      },
+      signal: options.signal ?? controller.signal,
+    });
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error('E2E request timed out');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (response.status === 429) {
     recordE2EEvent({ event: 'bundle_fetch_rate_limited' });

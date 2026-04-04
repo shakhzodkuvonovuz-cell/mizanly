@@ -284,7 +284,7 @@ export const VideoPlayer = memo(function VideoPlayer({
 
   if (error) {
     return (
-      <View style={styles.errorContainer}>
+      <View style={[styles.errorContainer, { backgroundColor: tc.bgCard }]}>
         <Icon name="slash" size="lg" color={colors.error} />
         <Text style={styles.errorText}>{error}</Text>
       </View>
@@ -292,7 +292,7 @@ export const VideoPlayer = memo(function VideoPlayer({
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tc.bgCard }]}>
       {/* Ambient gradient background — extracts dominant color from thumbnail */}
       {enableAmbient && dominantColor && (
         <LinearGradient
@@ -319,14 +319,14 @@ export const VideoPlayer = memo(function VideoPlayer({
           onLoadStart={() => setIsLoading(true)}
         />
         {thumbnailUrl && !status?.isLoaded && (
-          <View style={styles.thumbnailContainer}>
+          <View style={[styles.thumbnailContainer, { backgroundColor: tc.bgElevated }]}>
             {/* Thumbnail would be rendered via Image */}
           </View>
         )}
 
         {/* Loading skeleton */}
         {isLoading && (
-          <View style={styles.loadingContainer}>
+          <View style={[styles.loadingContainer, { backgroundColor: tc.bgCard }]}>
             <Skeleton.Rect width={windowWidth} height={windowWidth * (9 / 16)} borderRadius={0} />
           </View>
         )}
@@ -495,7 +495,6 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     aspectRatio: 16 / 9,
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.md,
     overflow: 'hidden',
   },
@@ -512,13 +511,11 @@ const styles = StyleSheet.create({
   },
   thumbnailContainer: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.dark.bgElevated,
   },
   loadingContainer: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.dark.bgCard,
   },
   bufferingContainer: {
     position: 'absolute',
@@ -533,7 +530,6 @@ const styles = StyleSheet.create({
   errorContainer: {
     width: '100%',
     aspectRatio: 16 / 9,
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.md,
     justifyContent: 'center',
     alignItems: 'center',
@@ -599,7 +595,7 @@ const styles = StyleSheet.create({
   },
   seekBarBackground: {
     height: 4,
-    backgroundColor: colors.dark.borderLight,
+    backgroundColor: 'rgba(255,255,255,0.3)',
     borderRadius: radius.sm,
     overflow: 'hidden',
   },

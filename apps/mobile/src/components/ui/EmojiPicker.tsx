@@ -6,7 +6,7 @@ import {
   Pressable,
   TextInput,
   FlatList,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BottomSheet } from '@/components/ui/BottomSheet';
@@ -37,9 +37,7 @@ interface CategoryDef {
 const STORAGE_KEY = 'mizanly_recent_emojis';
 const MAX_RECENT = 32;
 const NUM_COLUMNS = 8;
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GRID_PADDING = spacing.base;
-const CELL_SIZE = Math.floor((SCREEN_WIDTH - GRID_PADDING * 2) / NUM_COLUMNS);
 
 const CATEGORIES: CategoryDef[] = [
   { key: 'recent', icon: 'clock', label: 'Recent' },
@@ -99,13 +97,15 @@ const EMOJI_DATA: Record<Exclude<CategoryKey, 'recent'>, string[]> = {
 const EmojiCell = memo(function EmojiCell({
   emoji,
   onPress,
+  size,
 }: {
   emoji: string;
   onPress: (emoji: string) => void;
+  size: number;
 }) {
   return (
     <Pressable
-      style={styles.emojiCell}
+      style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}
       onPress={() => onPress(emoji)}
       accessibilityLabel={`Emoji ${emoji}`}
       accessibilityRole="button"
@@ -119,6 +119,11 @@ export const EmojiPicker = memo(function EmojiPicker({ onSelect, visible, onClos
   const tc = useThemeColors();
   const haptic = useContextualHaptic();
   const { t } = useTranslation();
+  const { width: windowWidth } = useWindowDimensions();
+  const cellSize = useMemo(
+    () => Math.floor((windowWidth - GRID_PADDING * 2) / NUM_COLUMNS),
+    [windowWidth],
+  );
   const [activeCategory, setActiveCategory] = useState<CategoryKey>('smileys');
   const [searchQuery, setSearchQuery] = useState('');
   const [recentEmojis, setRecentEmojis] = useState<string[]>([]);
@@ -187,8 +192,8 @@ export const EmojiPicker = memo(function EmojiPicker({ onSelect, visible, onClos
   }, [activeCategory, recentEmojis, searchQuery]);
 
   const renderItem = useCallback(({ item }: { item: string }) => (
-    <EmojiCell emoji={item} onPress={handleEmojiPress} />
-  ), [handleEmojiPress]);
+    <EmojiCell emoji={item} onPress={handleEmojiPress} size={cellSize} />
+  ), [handleEmojiPress, cellSize]);
 
   const keyExtractor = useCallback((item: string, index: number) => `${item}-${index}`, []);
 
@@ -266,8 +271,8 @@ export const EmojiPicker = memo(function EmojiPicker({ onSelect, visible, onClos
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.gridContent}
             getItemLayout={(_data, index) => ({
-              length: CELL_SIZE,
-              offset: CELL_SIZE * Math.floor(index / NUM_COLUMNS),
+              length: cellSize,
+              offset: cellSize * Math.floor(index / NUM_COLUMNS),
               index,
             })}
           />
@@ -316,12 +321,6 @@ const styles = StyleSheet.create({
   },
   gridContent: {
     paddingBottom: spacing.md,
-  },
-  emojiCell: {
-    width: CELL_SIZE,
-    height: CELL_SIZE,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   emojiText: {
     fontSize: 28,

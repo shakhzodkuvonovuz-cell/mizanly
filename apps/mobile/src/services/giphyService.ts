@@ -116,19 +116,23 @@ export function showGiphyPicker(options: {
 async function apiSearch(options: SearchOptions): Promise<GiphyMediaItem[]> {
   const { query, type = 'gifs', limit = 20, offset = 0, rating = 'pg' } = options;
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
   try {
     const isSearch = query && query !== 'trending';
     const endpoint = isSearch
       ? `${API_URL}/giphy/search?q=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}&rating=${rating}`
       : `${API_URL}/giphy/trending?limit=${limit}&offset=${offset}&rating=${rating}`;
 
-    const res = await fetch(endpoint);
+    const res = await fetch(endpoint, { signal: controller.signal });
     if (!res.ok) return [];
 
     const json = await res.json();
     return parseGiphyResponse(json.data || [], type);
   } catch {
     return [];
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 

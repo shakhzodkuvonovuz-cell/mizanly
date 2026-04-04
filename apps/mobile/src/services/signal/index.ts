@@ -236,15 +236,19 @@ export async function initialize(
   import('./key-transparency').then(({ verifyKeyTransparency }) => {
     if (!identityKeyPair || !selfUserId) return;
     verifyKeyTransparency(selfUserId, async (userId: string) => {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 10000);
       try {
         const response = await fetch(
           `${e2eServerUrl}/api/v1/e2e/transparency/${encodeURIComponent(userId)}`,
-          { headers: { Authorization: `Bearer ${await authTokenProvider()}` } },
+          { headers: { Authorization: `Bearer ${await authTokenProvider()}` }, signal: ctrl.signal },
         );
         if (!response.ok) return null;
         return response.json();
       } catch {
         return null;
+      } finally {
+        clearTimeout(tid);
       }
     }).then(result => {
       if (result.status === 'mismatch') {

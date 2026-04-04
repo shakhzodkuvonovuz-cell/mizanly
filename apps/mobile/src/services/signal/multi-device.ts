@@ -95,9 +95,12 @@ async function persistDeviceIds(userId: string, ids: number[]): Promise<void> {
 }
 
 export async function getDeviceIds(userId: string): Promise<number[]> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
   try {
     const response = await fetch(`${getE2EBaseUrl()}/api/v1/e2e/keys/devices/${encodeURIComponent(userId)}`, {
       headers: await getAuthHeaders(),
+      signal: controller.signal,
     });
     if (response.ok) {
       const data = await response.json();
@@ -138,6 +141,8 @@ export async function getDeviceIds(userId: string): Promise<number[]> {
     }
   } catch {
     // Endpoint not available — use cached or fallback
+  } finally {
+    clearTimeout(timeoutId);
   }
   // V5-F11: Fall back to persisted cache, then in-memory, then default
   return knownDeviceCache.get(userId) ?? await loadPersistedDeviceIds(userId) ?? [1];

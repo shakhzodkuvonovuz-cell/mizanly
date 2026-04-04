@@ -51,7 +51,8 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
   const queryClient = useQueryClient();
   const haptic = useContextualHaptic();
   const tc = useThemeColors();
-  const [localLiked, setLocalLiked] = useState(post.userReaction === 'LIKE');
+  const [localReaction, setLocalReaction] = useState<string | null>(post.userReaction ?? null);
+  const localLiked = localReaction != null;
   const [localLikes, setLocalLikes] = useState(post.likesCount);
   const [localSaved, setLocalSaved] = useState(post.isSaved ?? false);
   const [showMenu, setShowMenu] = useState(false);
@@ -62,7 +63,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
 
   // Sync local state when server data changes (e.g. after feed refetch or FlashList recycle)
   useEffect(() => {
-    setLocalLiked(post.userReaction === 'LIKE');
+    setLocalReaction(post.userReaction ?? null);
     setLocalLikes(post.likesCount);
     setLocalSaved(post.isSaved ?? false);
   }, [post.id, post.userReaction, post.likesCount, post.isSaved]);
@@ -84,12 +85,15 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
 
   const reactInFlight = useRef(false);
   const reactMutation = useMutation({
-    mutationFn: () =>
-      localLiked ? postsApi.unreact(post.id) : postsApi.react(post.id, 'LIKE'),
-    onMutate: () => {
-      const prev = { liked: localLiked, likes: localLikes };
-      setLocalLiked((p) => !p);
-      setLocalLikes((p) => localLiked ? p - 1 : p + 1);
+    mutationFn: (reactionType: string) =>
+      localReaction === reactionType
+        ? postsApi.unreact(post.id)
+        : postsApi.react(post.id, reactionType),
+    onMutate: (reactionType: string) => {
+      const prev = { reaction: localReaction, likes: localLikes };
+      const isToggleOff = localReaction === reactionType;
+      setLocalReaction(isToggleOff ? null : reactionType);
+      setLocalLikes((p) => isToggleOff ? p - 1 : (localReaction == null ? p + 1 : p));
       // Animate like count bump
       likeCountScale.value = withSequence(
         withSpring(1.2, { damping: 8, stiffness: 300 }),
@@ -99,7 +103,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
     },
     onError: (_e, _v, ctx) => {
       if (ctx) {
-        setLocalLiked(ctx.liked);
+        setLocalReaction(ctx.reaction);
         setLocalLikes(ctx.likes);
       }
     },
@@ -212,14 +216,14 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
       triggerHeartAnimation();
       heartAnim.trigger();
     }
-    reactMutation.mutate();
+    reactMutation.mutate('LIKE');
   }, [localLiked, triggerHeartAnimation, heartAnim, reactMutation]);
 
   // Double-tap to like handler (Instagram-style: only likes, never unlikes)
   const handleDoubleTapLike = useCallback(() => {
     if (!localLiked && !reactInFlight.current) {
       reactInFlight.current = true;
-      reactMutation.mutate();
+      reactMutation.mutate('LIKE');
       triggerHeartAnimation();
       haptic.like();
     } else if (localLiked) {
@@ -559,13 +563,12 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
               <ReactionPicker
                 onReact={(type) => {
                   setShowMenu(false);
-                  // Use the existing react mutation for like/unlike
                   if (!reactInFlight.current) {
                     reactInFlight.current = true;
-                    reactMutation.mutate();
+                    reactMutation.mutate(type);
                   }
                 }}
-                userReaction={localLiked ? 'LIKE' : undefined}
+                userReaction={localReaction ?? undefined}
                 compact
               />
             </View>

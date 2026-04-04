@@ -96,18 +96,26 @@ async function uploadSinglePut(
   onProgress?: (progress: number) => void,
 ): Promise<string> {
   // Get presigned URL from NestJS (existing upload service, extended TTL for messages)
-  const response = await fetch(`${apiBaseUrl}/upload/presigned-url`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${authToken}`,
-    },
-    body: JSON.stringify({
-      contentType: 'application/octet-stream',
-      folder: 'encrypted',
-      expiresIn: 1800, // 30 minutes for encrypted media
-    }),
-  });
+  const presignCtrl = new AbortController();
+  const presignTimeout = setTimeout(() => presignCtrl.abort(), 15000);
+  let response: Response;
+  try {
+    response = await fetch(`${apiBaseUrl}/upload/presigned-url`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({
+        contentType: 'application/octet-stream',
+        folder: 'encrypted',
+        expiresIn: 1800, // 30 minutes for encrypted media
+      }),
+      signal: presignCtrl.signal,
+    });
+  } finally {
+    clearTimeout(presignTimeout);
+  }
 
   if (!response.ok) {
     throw new Error(`Failed to get presigned URL: ${response.status}`);
@@ -144,17 +152,25 @@ async function uploadMultipart(
   const totalParts = Math.ceil(fileSize / MULTIPART_PART_SIZE);
 
   // Step 1: Initiate multipart upload
-  const initResponse = await fetch(`${apiBaseUrl}/upload/multipart/initiate`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${authToken}`,
-    },
-    body: JSON.stringify({
-      contentType: 'application/octet-stream',
-      folder: 'encrypted',
-    }),
-  });
+  const initCtrl = new AbortController();
+  const initTimeout = setTimeout(() => initCtrl.abort(), 15000);
+  let initResponse: Response;
+  try {
+    initResponse = await fetch(`${apiBaseUrl}/upload/multipart/initiate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({
+        contentType: 'application/octet-stream',
+        folder: 'encrypted',
+      }),
+      signal: initCtrl.signal,
+    });
+  } finally {
+    clearTimeout(initTimeout);
+  }
 
   if (!initResponse.ok) {
     throw new Error(`Failed to initiate multipart upload: ${initResponse.status}`);
@@ -181,12 +197,20 @@ async function uploadMultipart(
     }
 
     // Get presigned URL for this part
-    const presignResponse = await fetch(
-      `${apiBaseUrl}/upload/multipart/presign?uploadId=${encodeURIComponent(uploadId)}&partNumber=${partNumber}&key=${encodeURIComponent(key)}`,
-      {
-        headers: { Authorization: `Bearer ${authToken}` },
-      },
-    );
+    const partPresignCtrl = new AbortController();
+    const partPresignTimeout = setTimeout(() => partPresignCtrl.abort(), 15000);
+    let presignResponse: Response;
+    try {
+      presignResponse = await fetch(
+        `${apiBaseUrl}/upload/multipart/presign?uploadId=${encodeURIComponent(uploadId)}&partNumber=${partNumber}&key=${encodeURIComponent(key)}`,
+        {
+          headers: { Authorization: `Bearer ${authToken}` },
+          signal: partPresignCtrl.signal,
+        },
+      );
+    } finally {
+      clearTimeout(partPresignTimeout);
+    }
 
     if (!presignResponse.ok) {
       throw new Error(`Failed to get presigned URL for part ${partNumber}: ${presignResponse.status}`);
@@ -233,18 +257,26 @@ async function uploadMultipart(
   }
 
   // Step 3: Complete multipart upload
-  const completeResponse = await fetch(`${apiBaseUrl}/upload/multipart/complete`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${authToken}`,
-    },
-    body: JSON.stringify({
-      uploadId,
-      key,
-      parts: progress.completedParts.sort((a, b) => a.partNumber - b.partNumber),
-    }),
-  });
+  const completeCtrl = new AbortController();
+  const completeTimeout = setTimeout(() => completeCtrl.abort(), 15000);
+  let completeResponse: Response;
+  try {
+    completeResponse = await fetch(`${apiBaseUrl}/upload/multipart/complete`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({
+        uploadId,
+        key,
+        parts: progress.completedParts.sort((a, b) => a.partNumber - b.partNumber),
+      }),
+      signal: completeCtrl.signal,
+    });
+  } finally {
+    clearTimeout(completeTimeout);
+  }
 
   if (!completeResponse.ok) {
     throw new Error(`Failed to complete multipart upload: ${completeResponse.status}`);

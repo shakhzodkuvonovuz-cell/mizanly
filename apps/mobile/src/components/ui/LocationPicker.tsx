@@ -158,22 +158,22 @@ export function LocationPicker({ visible, onClose, onSelect }: LocationPickerPro
   return (
     <BottomSheet visible={visible} onClose={onClose} snapPoint={0.7}>
       <View style={styles.container}>
-        <Text style={styles.title}>{t('locationPicker.title')}</Text>
+        <Text style={[styles.title, { color: tc.text.primary }]}>{t('locationPicker.title')}</Text>
 
         <View style={styles.searchRow}>
           <View style={[styles.searchInput, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}>
-            <Icon name="search" size="sm" color={colors.text.tertiary} />
+            <Icon name="search" size="sm" color={tc.text.tertiary} />
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: tc.text.primary }]}
               placeholder={t('common.searchLocations')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               value={query}
               onChangeText={setQuery}
               autoFocus
             />
             {query.length > 0 && (
                 <Pressable onPress={() => setQuery('')}>
-                  <Icon name="x" size="sm" color={colors.text.tertiary} />
+                  <Icon name="x" size="sm" color={tc.text.tertiary} />
                 </Pressable>
               )}
           </View>
@@ -184,20 +184,20 @@ export function LocationPicker({ visible, onClose, onSelect }: LocationPickerPro
           style={[styles.currentLocation, { borderBottomColor: tc.border }]}
           onPress={handleCurrentLocation}
         >
-          <View style={styles.currentLocationIcon}>
+          <View style={[styles.currentLocationIcon, { backgroundColor: colors.active.emerald10 }]}>
             <Icon name="map-pin" size="md" color={colors.emerald} />
           </View>
-          <Text style={styles.currentLocationText}>{t('locationPicker.useCurrentLocation')}</Text>
+          <Text style={[styles.currentLocationText, { color: colors.emerald }]}>{t('locationPicker.useCurrentLocation')}</Text>
         </Pressable>
 
         {recentLocations.length > 0 && !query && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('locationPicker.recent')}</Text>
+            <Text style={[styles.sectionTitle, { color: tc.text.secondary }]}>{t('locationPicker.recent')}</Text>
             {recentLocations.map((loc) => (
               <BottomSheetItem
                 key={loc.id}
                 label={loc.name}
-                icon={<Icon name="map-pin" size="sm" color={colors.text.secondary} />}
+                icon={<Icon name="map-pin" size="sm" color={tc.text.secondary} />}
                 onPress={() => handleSelect(loc)}
               />
             ))}
@@ -205,7 +205,7 @@ export function LocationPicker({ visible, onClose, onSelect }: LocationPickerPro
         )}
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
+          <Text style={[styles.sectionTitle, { color: tc.text.secondary }]}>
             {query ? t('locationPicker.searchResults') : t('locationPicker.popularLocations')}
           </Text>
 
@@ -223,14 +223,14 @@ export function LocationPicker({ visible, onClose, onSelect }: LocationPickerPro
             </View>
           ) : results.length === 0 ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>{t('locationPicker.noLocationsFound')}</Text>
+              <Text style={[styles.emptyText, { color: tc.text.tertiary }]}>{t('locationPicker.noLocationsFound')}</Text>
             </View>
           ) : (
             results.map((loc) => (
               <BottomSheetItem
                 key={loc.id}
                 label={loc.name}
-                icon={<Icon name="map-pin" size="sm" color={colors.text.secondary} />}
+                icon={<Icon name="map-pin" size="sm" color={tc.text.secondary} />}
                 onPress={() => handleSelect(loc)}
               />
             ))
@@ -247,7 +247,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
   },
   title: {
-    color: colors.text.primary,
     fontSize: fontSize.lg,
     fontWeight: '700',
     marginBottom: spacing.md,
@@ -265,16 +264,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.dark.bgElevated,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.dark.border,
   },
   input: {
     flex: 1,
-    color: colors.text.primary,
     fontSize: fontSize.base,
     paddingVertical: spacing.xs,
   },
@@ -285,19 +281,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
     borderBottomWidth: 0.5,
-    borderBottomColor: colors.dark.border,
     marginBottom: spacing.sm,
   },
   currentLocationIcon: {
     width: 40,
     height: 40,
     borderRadius: radius.full,
-    backgroundColor: colors.active.emerald10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   currentLocationText: {
-    color: colors.emerald,
     fontSize: fontSize.base,
     fontWeight: '600',
   },
@@ -305,7 +298,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   sectionTitle: {
-    color: colors.text.secondary,
     fontSize: fontSize.sm,
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -327,7 +319,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyText: {
-    color: colors.text.tertiary,
     fontSize: fontSize.base,
   },
 });
