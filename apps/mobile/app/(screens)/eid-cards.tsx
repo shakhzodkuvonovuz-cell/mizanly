@@ -34,12 +34,12 @@ const CARD_GRADIENTS: Record<string, [string, string]> = {
 };
 
 const occasions: OccasionItem[] = [
-  { id: 'eid-fitr', name: 'Eid al-Fitr', nameAr: 'عيد الفطر', icon: 'star' },
-  { id: 'eid-adha', name: 'Eid al-Adha', nameAr: 'عيد الأضحى', icon: 'star' },
-  { id: 'ramadan', name: 'Ramadan', nameAr: 'رمضان', icon: 'moon' },
-  { id: 'mawlid', name: 'Mawlid al-Nabi', nameAr: 'المولد النبوي', icon: 'heart' },
-  { id: 'isra-miraj', name: "Isra' & Mi'raj", nameAr: 'الإسراء والمعراج', icon: 'globe' },
-  { id: 'hijri-new-year', name: 'Islamic New Year', nameAr: 'رأس السنة الهجرية', icon: 'calendar' },
+  { id: 'eid-fitr', name: 'eidCards.occasion.eidFitr', nameAr: 'عيد الفطر', icon: 'star' },
+  { id: 'eid-adha', name: 'eidCards.occasion.eidAdha', nameAr: 'عيد الأضحى', icon: 'star' },
+  { id: 'ramadan', name: 'eidCards.occasion.ramadan', nameAr: 'رمضان', icon: 'moon' },
+  { id: 'mawlid', name: 'eidCards.occasion.mawlid', nameAr: 'المولد النبوي', icon: 'heart' },
+  { id: 'isra-miraj', name: 'eidCards.occasion.israMiraj', nameAr: 'الإسراء والمعراج', icon: 'globe' },
+  { id: 'hijri-new-year', name: 'eidCards.occasion.hijriNewYear', nameAr: 'رأس السنة الهجرية', icon: 'calendar' },
 ];
 
 export default function EidCardsScreen() {
@@ -82,7 +82,7 @@ export default function EidCardsScreen() {
     if (!occ) return;
     try {
       await Share.share({
-        message: `${occ.nameAr}\n${occ.name}\n\nSent with Mizanly`,
+        message: `${occ.nameAr}\n${t(occ.name)}\n\nSent with Mizanly`,
       });
     } catch {
       // User cancelled share
@@ -104,7 +104,7 @@ export default function EidCardsScreen() {
               <Animated.View key={occ.id} entering={FadeInUp.delay(Math.min(index, 15) * 80).duration(400).springify()}>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={`${occ.name} - ${occ.nameAr}`}
+                  accessibilityLabel={`${t(occ.name)} - ${occ.nameAr}`}
                   onPress={() => handleOccasionPress(occ.id)}
                   style={({ pressed }) => [styles.cardOuter, { width: cardWidth }, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
                   android_ripple={{ color: 'rgba(255,255,255,0.1)' }}
@@ -119,7 +119,7 @@ export default function EidCardsScreen() {
                       <Icon name={occ.icon} size="xl" color={colors.gold} />
                     </View>
                     <Text style={styles.cardNameAr}>{occ.nameAr}</Text>
-                    <Text style={styles.cardName}>{occ.name}</Text>
+                    <Text style={styles.cardName}>{t(occ.name)}</Text>
                   </LinearGradient>
                 </Pressable>
               </Animated.View>

@@ -49,13 +49,13 @@ const TYPE_OPTIONS: { type: EndScreenType; icon: IconName; labelKey: string }[] 
   { type: 'link', icon: 'globe', labelKey: 'endScreens.typeLink' },
 ];
 
-const POSITION_OPTIONS: { value: EndScreenPosition; label: string }[] = [
-  { value: 'top-left', label: 'TL' },
-  { value: 'top-right', label: 'TR' },
-  { value: 'center-left', label: 'CL' },
-  { value: 'center-right', label: 'CR' },
-  { value: 'bottom-left', label: 'BL' },
-  { value: 'bottom-right', label: 'BR' },
+const POSITION_OPTIONS: { value: EndScreenPosition; i18nKey: string }[] = [
+  { value: 'top-left', i18nKey: 'endScreens.position.topLeft' },
+  { value: 'top-right', i18nKey: 'endScreens.position.topRight' },
+  { value: 'center-left', i18nKey: 'endScreens.position.centerLeft' },
+  { value: 'center-right', i18nKey: 'endScreens.position.centerRight' },
+  { value: 'bottom-left', i18nKey: 'endScreens.position.bottomLeft' },
+  { value: 'bottom-right', i18nKey: 'endScreens.position.bottomRight' },
 ];
 
 let draftCounter = 0;
@@ -383,7 +383,7 @@ export default function EndScreenEditorScreen() {
                               item.position === pos.value && styles.positionCellActive,
                             ]}
                             accessibilityRole="button"
-                            accessibilityLabel={pos.label}
+                            accessibilityLabel={t(pos.i18nKey)}
                           >
                             <Text
                               style={[
@@ -391,7 +391,7 @@ export default function EndScreenEditorScreen() {
                                 item.position === pos.value && styles.positionCellTextActive,
                               ]}
                             >
-                              {pos.label}
+                              {t(pos.i18nKey)}
                             </Text>
                           </Pressable>
                         ))}

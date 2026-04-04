@@ -35,15 +35,15 @@ const COIN_PACKAGES = [
   { coins: 5000, price: '$49.99' },
 ] as const;
 
-const DEFAULT_GIFTS: Array<{ type: string; name: string; coins: number; icon: IconName }> = [
-  { type: 'rose', name: 'Rose', coins: 1, icon: 'heart' },
-  { type: 'heart', name: 'Heart', coins: 5, icon: 'heart-filled' },
-  { type: 'star', name: 'Star', coins: 10, icon: 'trending-up' },
-  { type: 'crescent', name: 'Crescent', coins: 50, icon: 'globe' },
-  { type: 'mosque', name: 'Mosque', coins: 100, icon: 'layers' },
-  { type: 'diamond', name: 'Diamond', coins: 500, icon: 'bookmark' },
-  { type: 'crown', name: 'Crown', coins: 1000, icon: 'check-circle' },
-  { type: 'galaxy', name: 'Galaxy', coins: 5000, icon: 'globe' },
+const DEFAULT_GIFTS: Array<{ type: string; i18nKey: string; coins: number; icon: IconName }> = [
+  { type: 'rose', i18nKey: 'gifts.rose', coins: 1, icon: 'heart' },
+  { type: 'heart', i18nKey: 'gifts.heart', coins: 5, icon: 'heart-filled' },
+  { type: 'star', i18nKey: 'gifts.star', coins: 10, icon: 'trending-up' },
+  { type: 'crescent', i18nKey: 'gifts.crescent', coins: 50, icon: 'globe' },
+  { type: 'mosque', i18nKey: 'gifts.mosque', coins: 100, icon: 'layers' },
+  { type: 'diamond', i18nKey: 'gifts.diamond', coins: 500, icon: 'bookmark' },
+  { type: 'crown', i18nKey: 'gifts.crown', coins: 1000, icon: 'check-circle' },
+  { type: 'galaxy', i18nKey: 'gifts.galaxy', coins: 5000, icon: 'globe' },
 ];
 
 type TabKey = 'shop' | 'history';
@@ -161,13 +161,13 @@ function GiftShopContent() {
     }
   };
 
-  const handleGiftTap = (gift: GiftCatalogItem | { type: string; name: string; coins: number }) => {
+  const handleGiftTap = (gift: GiftCatalogItem) => {
     haptic.tick();
     setSelectedGift({
       type: gift.type,
       name: gift.name,
       coins: gift.coins,
-      animation: 'type' in gift && 'animation' in gift ? (gift as GiftCatalogItem).animation : '',
+      animation: gift.animation ?? '',
     });
     setRecipientSheet(true);
   };
@@ -203,7 +203,7 @@ function GiftShopContent() {
 
   const giftItems = catalog ?? DEFAULT_GIFTS.map((g) => ({
     type: g.type,
-    name: g.name,
+    name: t(g.i18nKey),
     coins: g.coins,
     animation: '',
   }));

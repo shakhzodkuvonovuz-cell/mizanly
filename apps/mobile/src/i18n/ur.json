@@ -2091,7 +2091,19 @@
       "selectReason": "Please select a reason",
       "successTitle": "Report Submitted",
       "successMessage": "Thank you. We will review this content.",
-      "errorTitle": "Error"
+      "errorTitle": "Error",
+      "reason.hateSpeech": "نفرت انگیز تقریر",
+      "reason.harassment": "ہراساں کرنا",
+      "reason.violence": "تشدد",
+      "reason.spam": "اسپام",
+      "reason.misinformation": "غلط معلومات",
+      "reason.nudity": "عریانی",
+      "reason.selfHarm": "خود کو نقصان",
+      "reason.terrorism": "دہشت گردی",
+      "reason.doxxing": "ڈاکسنگ",
+      "reason.copyright": "کاپی رائٹ",
+      "reason.impersonation": "نقالی",
+      "reason.other": "دیگر"
     },
     "playlist": {
       "title": "Playlist",
@@ -2720,6 +2732,19 @@
       "errorLoadFailed": "Could not load tip settings",
       "tipPreferencesDesc": "Choose how you'd like to receive tips from your supporters.",
       "stripeConnectDesc": "Connect your Stripe account to receive payouts."
+    },
+    "imageEditor": {
+      "filter.normal": "نارمل",
+      "filter.warm": "گرم",
+      "filter.cool": "ٹھنڈا",
+      "filter.vivid": "واضح",
+      "filter.noir": "نوار",
+      "filter.emerald": "زمرد",
+      "filter.gold": "سونا",
+      "filter.fade": "فیڈ",
+      "filter.sharp": "تیز",
+      "filter.dreamy": "خوابیدہ",
+      "crop.free": "فری"
     }
   },
   "createReel": {
@@ -5048,32 +5073,5 @@
     "changelog.smartNotifications.description": "بیچڈ نوٹیفکیشنز، فی قسم کنٹرولز، لائیکس اور فالوز کے لیے پش",
     "changelog.forYouFeed.title": "آپ کے لیے فیڈ",
     "changelog.forYouFeed.description": "3 مرحلہ AI رینکنگ اسلامی بوسٹ، ایکسپلوریشن سلاٹس، ہیش ٹیگ ڈائیورسٹی کے ساتھ"
-  },
-  "imageEditor": {
-    "filter.normal": "نارمل",
-    "filter.warm": "گرم",
-    "filter.cool": "ٹھنڈا",
-    "filter.vivid": "واضح",
-    "filter.noir": "نوار",
-    "filter.emerald": "زمرد",
-    "filter.gold": "سونا",
-    "filter.fade": "فیڈ",
-    "filter.sharp": "تیز",
-    "filter.dreamy": "خوابیدہ",
-    "crop.free": "فری"
-  },
-  "report": {
-    "reason.hateSpeech": "نفرت انگیز تقریر",
-    "reason.harassment": "ہراساں کرنا",
-    "reason.violence": "تشدد",
-    "reason.spam": "اسپام",
-    "reason.misinformation": "غلط معلومات",
-    "reason.nudity": "عریانی",
-    "reason.selfHarm": "خود کو نقصان",
-    "reason.terrorism": "دہشت گردی",
-    "reason.doxxing": "ڈاکسنگ",
-    "reason.copyright": "کاپی رائٹ",
-    "reason.impersonation": "نقالی",
-    "reason.other": "دیگر"
   }
 }

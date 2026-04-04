@@ -2091,7 +2091,19 @@
       "selectReason": "Please select a reason",
       "successTitle": "Report Submitted",
       "successMessage": "Thank you. We will review this content.",
-      "errorTitle": "Error"
+      "errorTitle": "Error",
+      "reason.hateSpeech": "Ujaran kebencian",
+      "reason.harassment": "Pelecehan",
+      "reason.violence": "Kekerasan",
+      "reason.spam": "Spam",
+      "reason.misinformation": "Misinformasi",
+      "reason.nudity": "Ketelanjangan",
+      "reason.selfHarm": "Menyakiti diri sendiri",
+      "reason.terrorism": "Terorisme",
+      "reason.doxxing": "Doxxing",
+      "reason.copyright": "Hak cipta",
+      "reason.impersonation": "Peniruan identitas",
+      "reason.other": "Lainnya"
     },
     "playlist": {
       "title": "Playlist",
@@ -2720,6 +2732,19 @@
       "errorLoadFailed": "Could not load tip settings",
       "tipPreferencesDesc": "Choose how you'd like to receive tips from your supporters.",
       "stripeConnectDesc": "Connect your Stripe account to receive payouts."
+    },
+    "imageEditor": {
+      "filter.normal": "Normal",
+      "filter.warm": "Hangat",
+      "filter.cool": "Sejuk",
+      "filter.vivid": "Cerah",
+      "filter.noir": "Noir",
+      "filter.emerald": "Zamrud",
+      "filter.gold": "Emas",
+      "filter.fade": "Pudar",
+      "filter.sharp": "Tajam",
+      "filter.dreamy": "Bermimpi",
+      "crop.free": "Bebas"
     }
   },
   "createReel": {
@@ -5042,32 +5067,5 @@
     "changelog.smartNotifications.description": "Notifikasi terkumpul, kontrol per-jenis, push untuk suka dan ikuti",
     "changelog.forYouFeed.title": "Feed Untuk Anda",
     "changelog.forYouFeed.description": "Peringkat AI 3-tahap dengan dorongan Islami, slot eksplorasi, keberagaman hashtag"
-  },
-  "imageEditor": {
-    "filter.normal": "Normal",
-    "filter.warm": "Hangat",
-    "filter.cool": "Sejuk",
-    "filter.vivid": "Cerah",
-    "filter.noir": "Noir",
-    "filter.emerald": "Zamrud",
-    "filter.gold": "Emas",
-    "filter.fade": "Pudar",
-    "filter.sharp": "Tajam",
-    "filter.dreamy": "Bermimpi",
-    "crop.free": "Bebas"
-  },
-  "report": {
-    "reason.hateSpeech": "Ujaran kebencian",
-    "reason.harassment": "Pelecehan",
-    "reason.violence": "Kekerasan",
-    "reason.spam": "Spam",
-    "reason.misinformation": "Misinformasi",
-    "reason.nudity": "Ketelanjangan",
-    "reason.selfHarm": "Menyakiti diri sendiri",
-    "reason.terrorism": "Terorisme",
-    "reason.doxxing": "Doxxing",
-    "reason.copyright": "Hak cipta",
-    "reason.impersonation": "Peniruan identitas",
-    "reason.other": "Lainnya"
   }
 }

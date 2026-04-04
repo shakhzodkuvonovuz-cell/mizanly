@@ -2091,7 +2091,19 @@
       "selectReason": "Please select a reason",
       "successTitle": "Report Submitted",
       "successMessage": "Thank you. We will review this content.",
-      "errorTitle": "Error"
+      "errorTitle": "Error",
+      "reason.hateSpeech": "Hate speech",
+      "reason.harassment": "Harassment",
+      "reason.violence": "Violence",
+      "reason.spam": "Spam",
+      "reason.misinformation": "Misinformation",
+      "reason.nudity": "Nudity",
+      "reason.selfHarm": "Self-harm",
+      "reason.terrorism": "Terrorism",
+      "reason.doxxing": "Doxxing",
+      "reason.copyright": "Copyright",
+      "reason.impersonation": "Impersonation",
+      "reason.other": "Other"
     },
     "playlist": {
       "title": "Playlist",
@@ -2720,6 +2732,19 @@
       "errorLoadFailed": "Could not load tip settings",
       "tipPreferencesDesc": "Choose how you'd like to receive tips from your supporters.",
       "stripeConnectDesc": "Connect your Stripe account to receive payouts."
+    },
+    "imageEditor": {
+      "filter.normal": "Normal",
+      "filter.warm": "Warm",
+      "filter.cool": "Cool",
+      "filter.vivid": "Vivid",
+      "filter.noir": "Noir",
+      "filter.emerald": "Emerald",
+      "filter.gold": "Gold",
+      "filter.fade": "Fade",
+      "filter.sharp": "Sharp",
+      "filter.dreamy": "Dreamy",
+      "crop.free": "Free"
     }
   },
   "createReel": {
@@ -5040,32 +5065,5 @@
     "changelog.smartNotifications.description": "Batched notifications, per-type controls, push for likes and follows",
     "changelog.forYouFeed.title": "For You Feed",
     "changelog.forYouFeed.description": "3-stage AI ranking with Islamic boost, exploration slots, hashtag diversity"
-  },
-  "imageEditor": {
-    "filter.normal": "Normal",
-    "filter.warm": "Warm",
-    "filter.cool": "Cool",
-    "filter.vivid": "Vivid",
-    "filter.noir": "Noir",
-    "filter.emerald": "Emerald",
-    "filter.gold": "Gold",
-    "filter.fade": "Fade",
-    "filter.sharp": "Sharp",
-    "filter.dreamy": "Dreamy",
-    "crop.free": "Free"
-  },
-  "report": {
-    "reason.hateSpeech": "Hate speech",
-    "reason.harassment": "Harassment",
-    "reason.violence": "Violence",
-    "reason.spam": "Spam",
-    "reason.misinformation": "Misinformation",
-    "reason.nudity": "Nudity",
-    "reason.selfHarm": "Self-harm",
-    "reason.terrorism": "Terrorism",
-    "reason.doxxing": "Doxxing",
-    "reason.copyright": "Copyright",
-    "reason.impersonation": "Impersonation",
-    "reason.other": "Other"
   }
 }

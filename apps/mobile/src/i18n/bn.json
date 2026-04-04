@@ -2090,7 +2090,19 @@
       "selectReason": "Please select a reason",
       "successTitle": "Report Submitted",
       "successMessage": "Thank you. We will review this content.",
-      "errorTitle": "Error"
+      "errorTitle": "Error",
+      "reason.hateSpeech": "ঘৃণামূলক বক্তব্য",
+      "reason.harassment": "হয়রানি",
+      "reason.violence": "সহিংসতা",
+      "reason.spam": "স্প্যাম",
+      "reason.misinformation": "ভুল তথ্য",
+      "reason.nudity": "নগ্নতা",
+      "reason.selfHarm": "আত্মক্ষতি",
+      "reason.terrorism": "সন্ত্রাসবাদ",
+      "reason.doxxing": "ডক্সিং",
+      "reason.copyright": "কপিরাইট",
+      "reason.impersonation": "ছদ্মবেশ",
+      "reason.other": "অন্যান্য"
     },
     "playlist": {
       "title": "Playlist",
@@ -2719,6 +2731,19 @@
       "errorLoadFailed": "Could not load tip settings",
       "tipPreferencesDesc": "Choose how you'd like to receive tips from your supporters.",
       "stripeConnectDesc": "Connect your Stripe account to receive payouts."
+    },
+    "imageEditor": {
+      "filter.normal": "নরমাল",
+      "filter.warm": "উষ্ণ",
+      "filter.cool": "শীতল",
+      "filter.vivid": "প্রাণবন্ত",
+      "filter.noir": "নোয়ার",
+      "filter.emerald": "পান্না",
+      "filter.gold": "সোনা",
+      "filter.fade": "ফেড",
+      "filter.sharp": "তীক্ষ্ণ",
+      "filter.dreamy": "স্বপ্নীল",
+      "crop.free": "ফ্রি"
     }
   },
   "createReel": {
@@ -5041,32 +5066,5 @@
     "changelog.smartNotifications.description": "ব্যাচড নোটিফিকেশন, প্রকার অনুযায়ী নিয়ন্ত্রণ, লাইক এবং ফলো পুশ",
     "changelog.forYouFeed.title": "আপনার জন্য ফিড",
     "changelog.forYouFeed.description": "3-পর্যায় AI র্যাঙ্কিং ইসলামিক বুস্ট, এক্সপ্লোরেশন স্লট, হ্যাশট্যাগ বৈচিত্র্য সহ"
-  },
-  "imageEditor": {
-    "filter.normal": "নরমাল",
-    "filter.warm": "উষ্ণ",
-    "filter.cool": "শীতল",
-    "filter.vivid": "প্রাণবন্ত",
-    "filter.noir": "নোয়ার",
-    "filter.emerald": "পান্না",
-    "filter.gold": "সোনা",
-    "filter.fade": "ফেড",
-    "filter.sharp": "তীক্ষ্ণ",
-    "filter.dreamy": "স্বপ্নীল",
-    "crop.free": "ফ্রি"
-  },
-  "report": {
-    "reason.hateSpeech": "ঘৃণামূলক বক্তব্য",
-    "reason.harassment": "হয়রানি",
-    "reason.violence": "সহিংসতা",
-    "reason.spam": "স্প্যাম",
-    "reason.misinformation": "ভুল তথ্য",
-    "reason.nudity": "নগ্নতা",
-    "reason.selfHarm": "আত্মক্ষতি",
-    "reason.terrorism": "সন্ত্রাসবাদ",
-    "reason.doxxing": "ডক্সিং",
-    "reason.copyright": "কপিরাইট",
-    "reason.impersonation": "ছদ্মবেশ",
-    "reason.other": "অন্যান্য"
   }
 }

@@ -146,12 +146,12 @@ export default function CreateStoryScreen() {
   const CANVAS_H = SCREEN_H * 0.7;
 
   const EID_OCCASIONS: Array<{ id: Occasion; label: string }> = [
-    { id: 'eid-fitr', label: 'Eid al-Fitr' },
-    { id: 'eid-adha', label: 'Eid al-Adha' },
-    { id: 'ramadan', label: 'Ramadan' },
-    { id: 'mawlid', label: 'Mawlid' },
-    { id: 'isra-miraj', label: "Isra' & Mi'raj" },
-    { id: 'hijri-new-year', label: 'Islamic New Year' },
+    { id: 'eid-fitr', label: t('eidCards.occasion.eidFitr') },
+    { id: 'eid-adha', label: t('eidCards.occasion.eidAdha') },
+    { id: 'ramadan', label: t('eidCards.occasion.ramadan') },
+    { id: 'mawlid', label: t('eidCards.occasion.mawlid') },
+    { id: 'isra-miraj', label: t('eidCards.occasion.israMiraj') },
+    { id: 'hijri-new-year', label: t('eidCards.occasion.hijriNewYear') },
   ];
 
   // ── Hooks ──

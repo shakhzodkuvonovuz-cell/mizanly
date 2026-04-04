@@ -2090,7 +2090,19 @@
       "selectReason": "Please select a reason",
       "successTitle": "Report Submitted",
       "successMessage": "Thank you. We will review this content.",
-      "errorTitle": "Error"
+      "errorTitle": "Error",
+      "reason.hateSpeech": "Ucapan kebencian",
+      "reason.harassment": "Gangguan",
+      "reason.violence": "Keganasan",
+      "reason.spam": "Spam",
+      "reason.misinformation": "Maklumat salah",
+      "reason.nudity": "Ketelanjangan",
+      "reason.selfHarm": "Mencederakan diri",
+      "reason.terrorism": "Keganasan",
+      "reason.doxxing": "Doxxing",
+      "reason.copyright": "Hak cipta",
+      "reason.impersonation": "Penyamaran",
+      "reason.other": "Lain-lain"
     },
     "playlist": {
       "title": "Playlist",
@@ -2719,6 +2731,19 @@
       "errorLoadFailed": "Could not load tip settings",
       "tipPreferencesDesc": "Choose how you'd like to receive tips from your supporters.",
       "stripeConnectDesc": "Connect your Stripe account to receive payouts."
+    },
+    "imageEditor": {
+      "filter.normal": "Normal",
+      "filter.warm": "Hangat",
+      "filter.cool": "Sejuk",
+      "filter.vivid": "Terang",
+      "filter.noir": "Noir",
+      "filter.emerald": "Zamrud",
+      "filter.gold": "Emas",
+      "filter.fade": "Pudar",
+      "filter.sharp": "Tajam",
+      "filter.dreamy": "Bermimpi",
+      "crop.free": "Bebas"
     }
   },
   "createReel": {
@@ -5041,32 +5066,5 @@
     "changelog.smartNotifications.description": "Pemberitahuan berkumpulan, kawalan mengikut jenis, tolak untuk suka dan ikuti",
     "changelog.forYouFeed.title": "Suapan Untuk Anda",
     "changelog.forYouFeed.description": "Kedudukan AI 3 peringkat dengan peningkatan Islam, slot penerokaan, kepelbagaian hashtag"
-  },
-  "imageEditor": {
-    "filter.normal": "Normal",
-    "filter.warm": "Hangat",
-    "filter.cool": "Sejuk",
-    "filter.vivid": "Terang",
-    "filter.noir": "Noir",
-    "filter.emerald": "Zamrud",
-    "filter.gold": "Emas",
-    "filter.fade": "Pudar",
-    "filter.sharp": "Tajam",
-    "filter.dreamy": "Bermimpi",
-    "crop.free": "Bebas"
-  },
-  "report": {
-    "reason.hateSpeech": "Ucapan kebencian",
-    "reason.harassment": "Gangguan",
-    "reason.violence": "Keganasan",
-    "reason.spam": "Spam",
-    "reason.misinformation": "Maklumat salah",
-    "reason.nudity": "Ketelanjangan",
-    "reason.selfHarm": "Mencederakan diri",
-    "reason.terrorism": "Keganasan",
-    "reason.doxxing": "Doxxing",
-    "reason.copyright": "Hak cipta",
-    "reason.impersonation": "Penyamaran",
-    "reason.other": "Lain-lain"
   }
 }

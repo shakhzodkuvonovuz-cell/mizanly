@@ -36,11 +36,13 @@ interface SolidColor {
 
 interface GradientPair {
   name: string;
+  i18nKey: string;
   colors: [string, string];
 }
 
 interface PatternItem {
   name: string;
+  i18nKey: string;
   color: string;
 }
 
@@ -60,23 +62,23 @@ const SOLID_COLORS: SolidColor[] = [
 ];
 
 const GRADIENT_PAIRS: GradientPair[] = [
-  { name: 'Emerald Night', colors: [colors.emerald, '#0D1117'] },
-  { name: 'Golden Dusk', colors: [colors.gold, '#0D1117'] },
-  { name: 'Purple Night', colors: [colors.extended.violet, '#0D1117'] },
-  { name: 'Ocean Deep', colors: ['#2563EB', '#0D1117'] },
-  { name: 'Emerald Gold', colors: [colors.emerald, colors.gold] },
-  { name: 'Sunset', colors: ['#EA580C', '#DC2626'] },
-  { name: 'Teal Depth', colors: ['#0D9488', '#0D1117'] },
-  { name: 'Rose Night', colors: ['#DB2777', '#0D1117'] },
+  { name: 'Emerald Night', i18nKey: 'chatWallpaper.gradient.emeraldNight', colors: [colors.emerald, '#0D1117'] },
+  { name: 'Golden Dusk', i18nKey: 'chatWallpaper.gradient.goldenDusk', colors: [colors.gold, '#0D1117'] },
+  { name: 'Purple Night', i18nKey: 'chatWallpaper.gradient.purpleNight', colors: [colors.extended.violet, '#0D1117'] },
+  { name: 'Ocean Deep', i18nKey: 'chatWallpaper.gradient.oceanDeep', colors: ['#2563EB', '#0D1117'] },
+  { name: 'Emerald Gold', i18nKey: 'chatWallpaper.gradient.emeraldGold', colors: [colors.emerald, colors.gold] },
+  { name: 'Sunset', i18nKey: 'chatWallpaper.gradient.sunset', colors: ['#EA580C', '#DC2626'] },
+  { name: 'Teal Depth', i18nKey: 'chatWallpaper.gradient.tealDepth', colors: ['#0D9488', '#0D1117'] },
+  { name: 'Rose Night', i18nKey: 'chatWallpaper.gradient.roseNight', colors: ['#DB2777', '#0D1117'] },
 ];
 
 const PATTERNS: PatternItem[] = [
-  { name: 'Arabesque', color: '#1A3A2A' },
-  { name: 'Zellige', color: '#2A1A3A' },
-  { name: 'Stars', color: '#1A2A3A' },
-  { name: 'Hexagon', color: '#3A2A1A' },
-  { name: 'Lattice', color: '#1A3A3A' },
-  { name: 'Muqarnas', color: '#2A3A1A' },
+  { name: 'Arabesque', i18nKey: 'chatWallpaper.pattern.arabesque', color: '#1A3A2A' },
+  { name: 'Zellige', i18nKey: 'chatWallpaper.pattern.zellige', color: '#2A1A3A' },
+  { name: 'Stars', i18nKey: 'chatWallpaper.pattern.stars', color: '#1A2A3A' },
+  { name: 'Hexagon', i18nKey: 'chatWallpaper.pattern.hexagon', color: '#3A2A1A' },
+  { name: 'Lattice', i18nKey: 'chatWallpaper.pattern.lattice', color: '#1A3A3A' },
+  { name: 'Muqarnas', i18nKey: 'chatWallpaper.pattern.muqarnas', color: '#2A3A1A' },
 ];
 
 const TABS: WallpaperTab[] = ['solid', 'gradient', 'pattern', 'custom'];
@@ -214,7 +216,7 @@ function ChatWallpaperScreen() {
       const pattern = PATTERNS.find((p) => p.name === selectedPattern);
       return (
         <View style={[styles.previewInner, { backgroundColor: pattern?.color ?? tc.bg }]}>
-          <Text style={styles.patternPreviewLabel}>{selectedPattern}</Text>
+          <Text style={styles.patternPreviewLabel}>{pattern ? t(pattern.i18nKey) : selectedPattern}</Text>
         </View>
       );
     }
@@ -250,7 +252,7 @@ function ChatWallpaperScreen() {
           onPress={() => handleSelectColor(color.value)}
           style={({ pressed }) => [styles.colorItem, pressed && { opacity: 0.7 }]}
           accessibilityRole="button"
-          accessibilityLabel={color.name}
+          accessibilityLabel={t(`chatWallpaper.color.${color.name.toLowerCase()}`)}
         >
           <View
             style={[
@@ -263,7 +265,7 @@ function ChatWallpaperScreen() {
               <Icon name="check" size="sm" color={tc.text.primary} />
             )}
           </View>
-          <Text style={[styles.colorName, { color: tc.text.secondary }]}>{color.name}</Text>
+          <Text style={[styles.colorName, { color: tc.text.secondary }]}>{t(`chatWallpaper.color.${color.name.toLowerCase()}`)}</Text>
         </Pressable>
       ))}
     </Animated.View>
@@ -281,7 +283,7 @@ function ChatWallpaperScreen() {
             onPress={() => handleSelectGradient(pair.colors)}
             style={({ pressed }) => [styles.gradientItem, pressed && { opacity: 0.7 }]}
             accessibilityRole="button"
-            accessibilityLabel={pair.name}
+            accessibilityLabel={t(pair.i18nKey)}
           >
             <LinearGradient
               colors={pair.colors}
@@ -296,7 +298,7 @@ function ChatWallpaperScreen() {
                 <Icon name="check" size="md" color={tc.text.primary} />
               )}
             </LinearGradient>
-            <Text style={[styles.gradientName, { color: tc.text.secondary }]}>{pair.name}</Text>
+            <Text style={[styles.gradientName, { color: tc.text.secondary }]}>{t(pair.i18nKey)}</Text>
           </Pressable>
         );
       })}
@@ -313,7 +315,7 @@ function ChatWallpaperScreen() {
             onPress={() => handleSelectPattern(pattern.name)}
             style={({ pressed }) => [styles.gradientItem, pressed && { opacity: 0.7 }]}
             accessibilityRole="button"
-            accessibilityLabel={pattern.name}
+            accessibilityLabel={t(pattern.i18nKey)}
           >
             <View
               style={[
@@ -322,7 +324,7 @@ function ChatWallpaperScreen() {
                 isSelected && styles.gradientSelected,
               ]}
             >
-              <Text style={styles.patternLabel}>{pattern.name}</Text>
+              <Text style={styles.patternLabel}>{t(pattern.i18nKey)}</Text>
               {isSelected && (
                 <View style={styles.patternCheck}>
                   <Icon name="check" size="sm" color={tc.text.primary} />

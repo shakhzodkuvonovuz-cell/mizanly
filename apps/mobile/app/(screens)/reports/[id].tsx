@@ -29,18 +29,18 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { showToast } from '@/components/ui/Toast';
 
 const REASONS = [
-  { label: 'Hate speech', value: 'HATE_SPEECH' },
-  { label: 'Harassment', value: 'HARASSMENT' },
-  { label: 'Violence', value: 'VIOLENCE' },
-  { label: 'Spam', value: 'SPAM' },
-  { label: 'Misinformation', value: 'MISINFORMATION' },
-  { label: 'Nudity', value: 'NUDITY' },
-  { label: 'Self‑harm', value: 'SELF_HARM' },
-  { label: 'Terrorism', value: 'TERRORISM' },
-  { label: 'Doxxing', value: 'DOXXING' },
-  { label: 'Copyright', value: 'COPYRIGHT' },
-  { label: 'Impersonation', value: 'IMPERSONATION' },
-  { label: 'Other', value: 'OTHER' },
+  { i18nKey: 'screens.report.reason.hateSpeech', value: 'HATE_SPEECH' },
+  { i18nKey: 'screens.report.reason.harassment', value: 'HARASSMENT' },
+  { i18nKey: 'screens.report.reason.violence', value: 'VIOLENCE' },
+  { i18nKey: 'screens.report.reason.spam', value: 'SPAM' },
+  { i18nKey: 'screens.report.reason.misinformation', value: 'MISINFORMATION' },
+  { i18nKey: 'screens.report.reason.nudity', value: 'NUDITY' },
+  { i18nKey: 'screens.report.reason.selfHarm', value: 'SELF_HARM' },
+  { i18nKey: 'screens.report.reason.terrorism', value: 'TERRORISM' },
+  { i18nKey: 'screens.report.reason.doxxing', value: 'DOXXING' },
+  { i18nKey: 'screens.report.reason.copyright', value: 'COPYRIGHT' },
+  { i18nKey: 'screens.report.reason.impersonation', value: 'IMPERSONATION' },
+  { i18nKey: 'screens.report.reason.other', value: 'OTHER' },
 ] as const;
 
 type ReportReason = typeof REASONS[number]['value'];
@@ -181,7 +181,7 @@ export default function ReportScreen() {
                       )}
                     </LinearGradient>
                     <Text style={[styles.reasonLabel, { color: tc.text.primary }, selectedReason === reason.value && styles.reasonLabelSelected]}>
-                      {reason.label}
+                      {t(reason.i18nKey)}
                     </Text>
                   </LinearGradient>
                 </Pressable>

@@ -1801,7 +1801,19 @@
       "selectReason": "يرجى اختيار سبب",
       "successTitle": "تم إرسال البلاغ",
       "successMessage": "شكراً لك. سنراجع هذا المحتوى.",
-      "errorTitle": "خطأ"
+      "errorTitle": "خطأ",
+      "reason.hateSpeech": "خطاب كراهية",
+      "reason.harassment": "تحرش",
+      "reason.violence": "عنف",
+      "reason.spam": "رسائل مزعجة",
+      "reason.misinformation": "معلومات مضللة",
+      "reason.nudity": "عُري",
+      "reason.selfHarm": "إيذاء النفس",
+      "reason.terrorism": "إرهاب",
+      "reason.doxxing": "نشر معلومات شخصية",
+      "reason.copyright": "حقوق النشر",
+      "reason.impersonation": "انتحال شخصية",
+      "reason.other": "أخرى"
     },
     "playlist": {
       "title": "قائمة تشغيل",
@@ -2430,6 +2442,19 @@
       "errorLoadFailed": "تعذر تحميل إعدادات الإكراميات",
       "tipPreferencesDesc": "اختر كيف تريد تلقي الإكراميات من داعميك.",
       "stripeConnectDesc": "اربط حسابك في Stripe لتلقي المدفوعات."
+    },
+    "imageEditor": {
+      "filter.normal": "عادي",
+      "filter.warm": "دافئ",
+      "filter.cool": "بارد",
+      "filter.vivid": "حيوي",
+      "filter.noir": "نوار",
+      "filter.emerald": "زمردي",
+      "filter.gold": "ذهبي",
+      "filter.fade": "باهت",
+      "filter.sharp": "حاد",
+      "filter.dreamy": "حالم",
+      "crop.free": "حر"
     }
   },
   "createReel": {
@@ -5035,32 +5060,5 @@
     "changelog.smartNotifications.description": "إشعارات مجمعة، تحكم حسب النوع، إشعارات للإعجابات والمتابعات",
     "changelog.forYouFeed.title": "خلاصة لك",
     "changelog.forYouFeed.description": "تصنيف ذكاء اصطناعي من 3 مراحل مع تعزيز إسلامي وفتحات استكشاف وتنوع الهاشتاق"
-  },
-  "imageEditor": {
-    "filter.normal": "عادي",
-    "filter.warm": "دافئ",
-    "filter.cool": "بارد",
-    "filter.vivid": "حيوي",
-    "filter.noir": "نوار",
-    "filter.emerald": "زمردي",
-    "filter.gold": "ذهبي",
-    "filter.fade": "باهت",
-    "filter.sharp": "حاد",
-    "filter.dreamy": "حالم",
-    "crop.free": "حر"
-  },
-  "report": {
-    "reason.hateSpeech": "خطاب كراهية",
-    "reason.harassment": "تحرش",
-    "reason.violence": "عنف",
-    "reason.spam": "رسائل مزعجة",
-    "reason.misinformation": "معلومات مضللة",
-    "reason.nudity": "عُري",
-    "reason.selfHarm": "إيذاء النفس",
-    "reason.terrorism": "إرهاب",
-    "reason.doxxing": "نشر معلومات شخصية",
-    "reason.copyright": "حقوق النشر",
-    "reason.impersonation": "انتحال شخصية",
-    "reason.other": "أخرى"
   }
 }

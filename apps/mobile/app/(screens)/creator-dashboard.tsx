@@ -83,10 +83,10 @@ interface SalesData {
 }
 
 const TABS = [
-  { key: 'content', label: 'Content' },
-  { key: 'audience', label: 'Audience' },
-  { key: 'revenue', label: 'Revenue' },
-  { key: 'sales', label: 'Sales' },
+  { key: 'content', i18nKey: 'creatorDashboard.tabContent' },
+  { key: 'audience', i18nKey: 'creatorDashboard.tabAudience' },
+  { key: 'revenue', i18nKey: 'creatorDashboard.tabRevenue' },
+  { key: 'sales', i18nKey: 'creatorDashboard.tabSales' },
 ] as const;
 
 function CreatorDashboardContent() {
@@ -113,14 +113,7 @@ function CreatorDashboardContent() {
     () =>
       TABS.map((tab) => ({
         key: tab.key,
-        label:
-          tab.key === 'content'
-            ? t('creatorDashboard.tabContent', 'Content')
-            : tab.key === 'audience'
-              ? t('creatorDashboard.tabAudience', 'Audience')
-              : tab.key === 'sales'
-                ? t('creatorDashboard.tabSales', 'Sales')
-                : t('creatorDashboard.tabRevenue', 'Revenue'),
+        label: t(tab.i18nKey),
       })),
     [t],
   );

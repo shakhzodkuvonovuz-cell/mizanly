@@ -2091,7 +2091,19 @@
       "selectReason": "Please select a reason",
       "successTitle": "Report Submitted",
       "successMessage": "Thank you. We will review this content.",
-      "errorTitle": "Error"
+      "errorTitle": "Error",
+      "reason.hateSpeech": "Discours de haine",
+      "reason.harassment": "Harcelement",
+      "reason.violence": "Violence",
+      "reason.spam": "Spam",
+      "reason.misinformation": "Desinformation",
+      "reason.nudity": "Nudite",
+      "reason.selfHarm": "Automutilation",
+      "reason.terrorism": "Terrorisme",
+      "reason.doxxing": "Doxxing",
+      "reason.copyright": "Droit d'auteur",
+      "reason.impersonation": "Usurpation d'identite",
+      "reason.other": "Autre"
     },
     "playlist": {
       "title": "Playlist",
@@ -2720,6 +2732,19 @@
       "errorLoadFailed": "Could not load tip settings",
       "tipPreferencesDesc": "Choose how you'd like to receive tips from your supporters.",
       "stripeConnectDesc": "Connect your Stripe account to receive payouts."
+    },
+    "imageEditor": {
+      "filter.normal": "Normal",
+      "filter.warm": "Chaud",
+      "filter.cool": "Froid",
+      "filter.vivid": "Vif",
+      "filter.noir": "Noir",
+      "filter.emerald": "Emeraude",
+      "filter.gold": "Or",
+      "filter.fade": "Fondu",
+      "filter.sharp": "Net",
+      "filter.dreamy": "Reveur",
+      "crop.free": "Libre"
     }
   },
   "createReel": {
@@ -5042,32 +5067,5 @@
     "changelog.smartNotifications.description": "Notifications groupees, controles par type, push pour likes et abonnements",
     "changelog.forYouFeed.title": "Fil Pour Vous",
     "changelog.forYouFeed.description": "Classement IA en 3 etapes avec boost islamique, creneaux d'exploration, diversite hashtag"
-  },
-  "imageEditor": {
-    "filter.normal": "Normal",
-    "filter.warm": "Chaud",
-    "filter.cool": "Froid",
-    "filter.vivid": "Vif",
-    "filter.noir": "Noir",
-    "filter.emerald": "Emeraude",
-    "filter.gold": "Or",
-    "filter.fade": "Fondu",
-    "filter.sharp": "Net",
-    "filter.dreamy": "Reveur",
-    "crop.free": "Libre"
-  },
-  "report": {
-    "reason.hateSpeech": "Discours de haine",
-    "reason.harassment": "Harcelement",
-    "reason.violence": "Violence",
-    "reason.spam": "Spam",
-    "reason.misinformation": "Desinformation",
-    "reason.nudity": "Nudite",
-    "reason.selfHarm": "Automutilation",
-    "reason.terrorism": "Terrorisme",
-    "reason.doxxing": "Doxxing",
-    "reason.copyright": "Droit d'auteur",
-    "reason.impersonation": "Usurpation d'identite",
-    "reason.other": "Autre"
   }
 }

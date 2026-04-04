@@ -2084,7 +2084,19 @@
       "selectReason": "Lütfen bir neden seçin",
       "successTitle": "Şikâyet Gönderildi",
       "successMessage": "Teşekkürler. Bu içeriği inceleyeceğiz.",
-      "errorTitle": "Hata"
+      "errorTitle": "Hata",
+      "reason.hateSpeech": "Nefret soylemi",
+      "reason.harassment": "Taciz",
+      "reason.violence": "Siddet",
+      "reason.spam": "Spam",
+      "reason.misinformation": "Yanlis bilgi",
+      "reason.nudity": "Ciplaklık",
+      "reason.selfHarm": "Kendine zarar",
+      "reason.terrorism": "Terorizm",
+      "reason.doxxing": "Doxxing",
+      "reason.copyright": "Telif hakki",
+      "reason.impersonation": "Kimlik taklidi",
+      "reason.other": "Diger"
     },
     "playlist": {
       "title": "Oynatma Listesi",
@@ -2713,6 +2725,19 @@
       "errorLoadFailed": "Could not load tip settings",
       "tipPreferencesDesc": "Choose how you'd like to receive tips from your supporters.",
       "stripeConnectDesc": "Connect your Stripe account to receive payouts."
+    },
+    "imageEditor": {
+      "filter.normal": "Normal",
+      "filter.warm": "Sicak",
+      "filter.cool": "Soguk",
+      "filter.vivid": "Canli",
+      "filter.noir": "Noir",
+      "filter.emerald": "Zumrut",
+      "filter.gold": "Altin",
+      "filter.fade": "Soluk",
+      "filter.sharp": "Keskin",
+      "filter.dreamy": "Ruya gibi",
+      "crop.free": "Serbest"
     }
   },
   "createReel": {
@@ -5035,32 +5060,5 @@
     "changelog.smartNotifications.description": "Toplu bildirimler, tur bazli kontroller, begeni ve takip bildirimleri",
     "changelog.forYouFeed.title": "Senin Icin Akisi",
     "changelog.forYouFeed.description": "3 asamali yapay zeka siralamasi, Islami destek, kesif alanlari, hashtag cesitliligi"
-  },
-  "imageEditor": {
-    "filter.normal": "Normal",
-    "filter.warm": "Sicak",
-    "filter.cool": "Soguk",
-    "filter.vivid": "Canli",
-    "filter.noir": "Noir",
-    "filter.emerald": "Zumrut",
-    "filter.gold": "Altin",
-    "filter.fade": "Soluk",
-    "filter.sharp": "Keskin",
-    "filter.dreamy": "Ruya gibi",
-    "crop.free": "Serbest"
-  },
-  "report": {
-    "reason.hateSpeech": "Nefret soylemi",
-    "reason.harassment": "Taciz",
-    "reason.violence": "Siddet",
-    "reason.spam": "Spam",
-    "reason.misinformation": "Yanlis bilgi",
-    "reason.nudity": "Ciplaklık",
-    "reason.selfHarm": "Kendine zarar",
-    "reason.terrorism": "Terorizm",
-    "reason.doxxing": "Doxxing",
-    "reason.copyright": "Telif hakki",
-    "reason.impersonation": "Kimlik taklidi",
-    "reason.other": "Diger"
   }
 }

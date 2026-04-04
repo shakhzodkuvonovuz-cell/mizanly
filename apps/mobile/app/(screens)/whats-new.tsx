@@ -11,19 +11,20 @@ import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { rtlFlexRow } from '@/utils/rtl';
 
 // Changelog entries — add new ones at the top
+// Keys reference i18n whatsNew.changelog.* for translated title/description
 const CHANGELOG = [
   {
     version: '1.0.0',
     date: '2026-03-25',
     items: [
-      { icon: 'video' as const, title: 'Video Editor', description: 'CapCut-level editor with 10 tool tabs, FFmpeg processing, multi-clip recording' },
-      { icon: 'image' as const, title: 'Photo Carousel', description: 'Multi-photo posts with up to 35 slides, music, per-slide text' },
-      { icon: 'pencil' as const, title: 'Story Drawing', description: 'Pen, highlighter, neon glow, eraser tools with 24-color palette' },
-      { icon: 'heart' as const, title: 'Interactive Stickers', description: '10 story sticker types — poll, quiz, countdown, GIF, music, location' },
-      { icon: 'globe' as const, title: 'Islamic Features', description: 'Prayer times, Quran rooms, dhikr counter, Ramadan mode, mosque finder' },
-      { icon: 'shield' as const, title: 'Safety', description: 'AI content moderation, word filters, kindness reminders, report system' },
-      { icon: 'bell' as const, title: 'Smart Notifications', description: 'Batched notifications, per-type controls, push for likes and follows' },
-      { icon: 'trending-up' as const, title: 'For You Feed', description: '3-stage AI ranking with Islamic boost, exploration slots, hashtag diversity' },
+      { icon: 'video' as const, titleKey: 'whatsNew.changelog.videoEditor.title', descKey: 'whatsNew.changelog.videoEditor.description' },
+      { icon: 'image' as const, titleKey: 'whatsNew.changelog.photoCarousel.title', descKey: 'whatsNew.changelog.photoCarousel.description' },
+      { icon: 'pencil' as const, titleKey: 'whatsNew.changelog.storyDrawing.title', descKey: 'whatsNew.changelog.storyDrawing.description' },
+      { icon: 'heart' as const, titleKey: 'whatsNew.changelog.interactiveStickers.title', descKey: 'whatsNew.changelog.interactiveStickers.description' },
+      { icon: 'globe' as const, titleKey: 'whatsNew.changelog.islamicFeatures.title', descKey: 'whatsNew.changelog.islamicFeatures.description' },
+      { icon: 'shield' as const, titleKey: 'whatsNew.changelog.safety.title', descKey: 'whatsNew.changelog.safety.description' },
+      { icon: 'bell' as const, titleKey: 'whatsNew.changelog.smartNotifications.title', descKey: 'whatsNew.changelog.smartNotifications.description' },
+      { icon: 'trending-up' as const, titleKey: 'whatsNew.changelog.forYouFeed.title', descKey: 'whatsNew.changelog.forYouFeed.description' },
     ],
   },
 ];
@@ -56,8 +57,8 @@ function ChangelogContent() {
                   <Icon name={item.icon} size="sm" color={colors.emerald} />
                 </View>
                 <View style={styles.itemText}>
-                  <Text style={[styles.itemTitle, { color: tc.text.primary }]}>{item.title}</Text>
-                  <Text style={[styles.itemDesc, { color: tc.text.secondary }]}>{item.description}</Text>
+                  <Text style={[styles.itemTitle, { color: tc.text.primary }]}>{t(item.titleKey)}</Text>
+                  <Text style={[styles.itemDesc, { color: tc.text.secondary }]}>{t(item.descKey)}</Text>
                 </View>
               </Animated.View>
             ))}
