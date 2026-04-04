@@ -2,7 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, ForbiddenException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
-import { NotificationsService } from '../notifications/notifications.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NOTIFICATION_REQUESTED, NotificationRequestedEvent } from '../../common/events/notification.events';
 import { PostsService } from './posts.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
@@ -10,7 +11,7 @@ describe('PostsService', () => {
   let service: PostsService;
   let prisma: any;
   let redis: jest.Mocked<Redis>;
-  let notifications: jest.Mocked<NotificationsService>;
+  let eventEmitter: jest.Mocked<EventEmitter2>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -98,14 +99,6 @@ describe('PostsService', () => {
           },
         },
         {
-          provide: NotificationsService,
-          useValue: {
-            notifyLike: jest.fn(),
-            notifyComment: jest.fn(),
-            create: jest.fn().mockResolvedValue({}),
-          },
-        },
-        {
           provide: 'REDIS',
           useValue: (() => {
             const sortedSets = new Map<string, { score: number; member: string }[]>();
@@ -163,7 +156,7 @@ describe('PostsService', () => {
     service = module.get<PostsService>(PostsService);
     prisma = module.get(PrismaService) as any;
     redis = module.get('REDIS');
-    notifications = module.get(NotificationsService);
+    eventEmitter = module.get(EventEmitter2);
   });
 
   describe('createPost', () => {
@@ -276,8 +269,6 @@ describe('PostsService', () => {
       prisma.postReaction.create.mockResolvedValue({} as any);
       prisma.post.update.mockResolvedValue({ ...mockPost, likesCount: 6 });
       prisma.$transaction.mockResolvedValue([undefined, undefined]);
-      notifications.create.mockResolvedValue({} as any);
-
       await service.react(postId, userId, 'LIKE');
 
       expect(prisma.postReaction.create).toHaveBeenCalledWith({
@@ -291,12 +282,15 @@ describe('PostsService', () => {
         where: { id: postId },
         data: { likesCount: { increment: 1 } },
       });
-      expect(notifications.create).toHaveBeenCalledWith({
-        userId: 'post-owner',
-        actorId: userId,
-        type: 'LIKE',
-        postId,
-      });
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        NOTIFICATION_REQUESTED,
+        expect.objectContaining({
+          userId: 'post-owner',
+          actorId: userId,
+          type: 'LIKE',
+          postId,
+        }),
+      );
     });
   });
 
@@ -685,8 +679,6 @@ describe('PostsService', () => {
       prisma.comment.create.mockResolvedValue(mockComment);
       prisma.post.update.mockResolvedValue({});
       prisma.$transaction.mockResolvedValue([mockComment, {}]);
-      notifications.create.mockResolvedValue({} as any);
-
       const result = await service.addComment(postId, userId, dto);
 
       expect(prisma.post.findUnique).toHaveBeenCalledWith({ where: { id: postId } });
@@ -714,14 +706,17 @@ describe('PostsService', () => {
         where: { id: postId },
         data: { commentsCount: { increment: 1 } },
       });
-      expect(notifications.create).toHaveBeenCalledWith({
-        userId: 'owner',
-        actorId: userId,
-        type: 'COMMENT',
-        postId,
-        commentId: mockComment.id,
-        body: dto.content.substring(0, 100),
-      });
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        NOTIFICATION_REQUESTED,
+        expect.objectContaining({
+          userId: 'owner',
+          actorId: userId,
+          type: 'COMMENT',
+          postId,
+          commentId: mockComment.id,
+          body: dto.content.substring(0, 100),
+        }),
+      );
       expect(result).toEqual(mockComment);
     });
 

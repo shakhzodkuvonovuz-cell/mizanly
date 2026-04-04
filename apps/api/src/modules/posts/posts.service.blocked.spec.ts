@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { PostsService } from './posts.service';
-import { NotificationsService } from '../notifications/notifications.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('PostsService — Blocked User Content Access', () => {

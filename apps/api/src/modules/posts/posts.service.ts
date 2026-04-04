@@ -13,7 +13,8 @@ import Redis from 'ioredis';
 import { TIME_WINDOWS } from '../../common/constants/feed-scoring';
 import { CreatePostDto } from './dto/create-post.dto';
 import { AddCommentDto } from './dto/add-comment.dto';
-import { NotificationsService } from '../notifications/notifications.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NOTIFICATION_REQUESTED, NotificationRequestedEvent } from '../../common/events/notification.events';
 import { sanitizeText } from '@/common/utils/sanitize';
 import { extractHashtags } from '@/common/utils/hashtag';
 import { Prisma, PostType, PostVisibility, CommentPermission, ReactionType, ReportReason, ContentSpace } from '@prisma/client';
@@ -78,7 +79,7 @@ export class PostsService {
   private readonly scoredFeedCache: ScoredFeedCache;
   constructor(
     private prisma: PrismaService,
-    private notifications: NotificationsService,
+    private readonly eventEmitter: EventEmitter2,
     @Inject('REDIS') private redis: Redis,
     private ai: AiService,
     private contentSafety: ContentSafetyService,
@@ -575,17 +576,14 @@ export class PostsService {
         for (const mentioned of mentionedUsers) {
           if (mentioned.id !== userId) {
             try {
-              const notification = await this.notifications.create({
+              this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
                 userId: mentioned.id,
                 actorId: userId,
                 type: 'MENTION',
                 postId: post.id,
                 title: 'Mentioned you',
                 body: `@${actor?.username ?? 'Someone'} mentioned you in a post`,
-              });
-              if (notification) {
-                // Push delivery owned by NotificationsService.create() — no duplicate enqueue
-              }
+              }));
             } catch (err) {
               this.logger.error('Failed to create mention notification', err instanceof Error ? err.message : err);
             }
@@ -606,18 +604,18 @@ export class PostsService {
         });
         for (const record of taggedRecords) {
           if (record.userId !== userId) {
-            this.notifications.create({
-              userId: record.userId,
-              actorId: userId,
-              type: 'TAG',
-              postId: post.id,
-              title: 'Tagged you',
-              body: `@${actorUsername} tagged you in a post`,
-            }).then((n) => {
-              // Push delivery owned by NotificationsService.create() — no duplicate enqueue
-            }).catch((err) => {
+            try {
+              this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
+                userId: record.userId,
+                actorId: userId,
+                type: 'TAG',
+                postId: post.id,
+                title: 'Tagged you',
+                body: `@${actorUsername} tagged you in a post`,
+              }));
+            } catch (err) {
               this.logger.error('Failed to create tag notification', err instanceof Error ? err.message : err);
-            });
+            }
           }
         }
       }
@@ -629,18 +627,18 @@ export class PostsService {
           select: { id: true },
         });
         if (invitee && invitee.id !== userId) {
-          this.notifications.create({
-            userId: invitee.id,
-            actorId: userId,
-            type: 'COLLAB_INVITE',
-            postId: post.id,
-            title: 'Collaboration invite',
-            body: `@${actorUsername} invited you to collaborate on a post`,
-          }).then((n) => {
-            // Push delivery owned by NotificationsService.create() — no duplicate enqueue
-          }).catch((err) => {
+          try {
+            this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
+              userId: invitee.id,
+              actorId: userId,
+              type: 'COLLAB_INVITE',
+              postId: post.id,
+              title: 'Collaboration invite',
+              body: `@${actorUsername} invited you to collaborate on a post`,
+            }));
+          } catch (err) {
             this.logger.error('Failed to create collab notification', err instanceof Error ? err.message : err);
-          });
+          }
         }
       }
 
@@ -958,13 +956,10 @@ export class PostsService {
         // Notify post owner (skip if reacting to own post)
         if (post.userId && post.userId !== userId) {
           try {
-            const notification = await this.notifications.create({
+            this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
               userId: post.userId, actorId: userId,
               type: 'LIKE', postId,
-            });
-            if (notification) {
-              // Push delivery owned by NotificationsService.create() — no duplicate enqueue
-            }
+            }));
           } catch (err) {
             this.logger.error('Failed to create notification', err);
           }
@@ -1161,12 +1156,16 @@ export class PostsService {
     // Notify original post owner about the share (not self)
     // Use QUOTE_POST when user added their own text, REPOST for plain share
     if (original.userId && original.userId !== userId) {
-      this.notifications.create({
-        userId: original.userId,
-        actorId: userId,
-        type: content ? 'QUOTE_POST' : 'REPOST',
-        postId,
-      }).catch((err) => this.logger.error('Failed to create share notification', err));
+      try {
+        this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
+          userId: original.userId,
+          actorId: userId,
+          type: content ? 'QUOTE_POST' : 'REPOST',
+          postId,
+        }));
+      } catch (err) {
+        this.logger.error('Failed to create share notification', err);
+      }
     }
 
     return shared;
@@ -1406,27 +1405,21 @@ export class PostsService {
           select: { userId: true },
         });
         if (parentComment && parentComment.userId !== userId) {
-          const notification = await this.notifications.create({
+          this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
             userId: parentComment.userId, actorId: userId,
             type: 'REPLY',
             postId, commentId: comment.id,
             body: dto.content.substring(0, 100),
-          });
-          if (notification) {
-            // Push delivery owned by NotificationsService.create() — no duplicate enqueue
-          }
+          }));
         }
       } else if (post.userId && post.userId !== userId) {
         // Top-level comment — notify post owner (skip self-notification)
-        const notification = await this.notifications.create({
+        this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
           userId: post.userId, actorId: userId,
           type: 'COMMENT',
           postId, commentId: comment.id,
           body: dto.content.substring(0, 100),
-        });
-        if (notification) {
-          // Push delivery owned by NotificationsService.create() — no duplicate enqueue
-        }
+        }));
       }
     } catch (err) {
       this.logger.error('Failed to create notification', err);
@@ -1901,14 +1894,18 @@ export class PostsService {
         });
 
         // Notify the user that their content was removed
-        this.notifications.create({
-          userId,
-          actorId: userId,
-          type: 'SYSTEM',
-          postId,
-          title: 'Content removed',
-          body: 'Your post was removed because it violates community guidelines. You can appeal this decision in Settings > Account > Appeals.',
-        }).catch(err => this.logger.warn('Failed to send content removal notification', err instanceof Error ? err.message : err));
+        try {
+          this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
+            userId,
+            actorId: userId,
+            type: 'SYSTEM',
+            postId,
+            title: 'Content removed',
+            body: 'Your post was removed because it violates community guidelines. You can appeal this decision in Settings > Account > Appeals.',
+          }));
+        } catch (err) {
+          this.logger.warn('Failed to send content removal notification', err instanceof Error ? err.message : err);
+        }
       } else if (result.classification === 'WARNING') {
         // Mark as sensitive — blurred in feed, tap to reveal
         await this.prisma.post.update({

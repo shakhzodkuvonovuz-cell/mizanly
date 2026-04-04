@@ -12,7 +12,8 @@ import * as Sentry from '@sentry/node';
 import Redis from 'ioredis';
 import { PrismaService } from '../../config/prisma.service';
 import { PushTriggerService } from '../notifications/push-trigger.service';
-import { NotificationsService } from '../notifications/notifications.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NOTIFICATION_REQUESTED, NotificationRequestedEvent } from '../../common/events/notification.events';
 import { AiService } from '../ai/ai.service';
 import { ContentSafetyService } from '../moderation/content-safety.service';
 import { MessageType } from '@prisma/client';
@@ -113,7 +114,7 @@ export class MessagesService {
   constructor(
     private prisma: PrismaService,
     private pushTrigger: PushTriggerService,
-    private notifications: NotificationsService,
+    private readonly eventEmitter: EventEmitter2,
     private ai: AiService,
     private contentSafety: ContentSafetyService,
     @Inject('REDIS') private redis: Redis,
@@ -510,7 +511,7 @@ export class MessagesService {
 
   /**
    * Notify all non-muted conversation members about a new message (except the sender).
-   * Uses NotificationsService.create() for full pipeline (settings, block/mute, dedup, push, socket).
+   * Emits NotificationRequestedEvent for full pipeline (settings, block/mute, dedup, push, socket).
    */
   private async notifyConversationMembers(
     conversationId: string,
@@ -532,25 +533,21 @@ export class MessagesService {
       ? (content.length > 100 ? content.slice(0, 99) + '\u2026' : content)
       : 'Sent a message';
 
-    // Process in batches of 20 to avoid overwhelming notification service
-    const NOTIFY_BATCH = 20;
-    for (let i = 0; i < members.length; i += NOTIFY_BATCH) {
-      const batch = members.slice(i, i + NOTIFY_BATCH);
-      await Promise.all(
-        batch.map((member) =>
-          this.notifications.create({
-            userId: member.userId,
-            actorId: senderId,
-            type: 'MESSAGE',
-            conversationId,
-            body: truncatedBody,
-            // E2E encrypted preview is stored on the Conversation model (encryptedLastMessagePreview).
-            // The push notification handler on the client reads it from the cached conversation data.
-          }).catch((err) => {
-            this.logger.warn(`Notification to ${member.userId} failed: ${err?.message}`);
-          }),
-        ),
-      );
+    // Emit notification event for each member
+    for (const member of members) {
+      try {
+        this.eventEmitter.emit(NOTIFICATION_REQUESTED, new NotificationRequestedEvent({
+          userId: member.userId,
+          actorId: senderId,
+          type: 'MESSAGE',
+          conversationId,
+          body: truncatedBody,
+          // E2E encrypted preview is stored on the Conversation model (encryptedLastMessagePreview).
+          // The push notification handler on the client reads it from the cached conversation data.
+        }));
+      } catch (err) {
+        this.logger.warn(`Notification to ${member.userId} failed: ${err instanceof Error ? err.message : String(err)}`);
+      }
     }
   }
 

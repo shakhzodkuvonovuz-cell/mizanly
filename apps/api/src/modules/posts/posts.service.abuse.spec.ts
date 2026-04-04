@@ -3,7 +3,6 @@ import { NotFoundException, ForbiddenException, ConflictException, BadRequestExc
 import { PrismaService } from '../../config/prisma.service';
 import { PostsService } from './posts.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
-import { NotificationsService } from '../notifications/notifications.service';
 
 describe('PostsService — abuse vectors (Task 101, 103)', () => {
   let service: PostsService;
@@ -42,7 +41,6 @@ describe('PostsService — abuse vectors (Task 101, 103)', () => {
             restrict: { findMany: jest.fn().mockResolvedValue([]) },
           },
         },
-        { provide: NotificationsService, useValue: { create: jest.fn().mockResolvedValue({}) } },
         { provide: 'REDIS', useValue: { get: jest.fn().mockResolvedValue(null), set: jest.fn(), setex: jest.fn(), del: jest.fn(), publish: jest.fn().mockResolvedValue(1), pfadd: jest.fn().mockResolvedValue(1), pfcount: jest.fn().mockResolvedValue(0) } },
       ],
     }).compile();

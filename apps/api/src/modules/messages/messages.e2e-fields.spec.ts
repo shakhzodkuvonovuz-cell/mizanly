@@ -557,7 +557,7 @@ describe('MessagesService — E2E Encryption Fields', () => {
       const txMock = makeTxMock();
       prisma.$transaction.mockImplementation((fn: (tx: any) => Promise<unknown>) => fn(txMock));
 
-      const notificationService = (service as any).notifications;
+      const emitter = (service as any).eventEmitter;
       // Reset mock for findMany on conversationMember (used by notifyConversationMembers)
       prisma.conversationMember.findMany.mockResolvedValue([{ userId: 'user-2' }]);
 
@@ -569,10 +569,12 @@ describe('MessagesService — E2E Encryption Fields', () => {
       // Wait a tick for async notification
       await new Promise((r) => setTimeout(r, 50));
 
-      // Verify NotificationsService.create was called with generic body
-      if (notificationService.create.mock.calls.length > 0) {
-        const call = notificationService.create.mock.calls[0][0];
-        expect(call.body).toBe('New message');
+      // Verify event was emitted with generic body
+      const notifCalls = emitter.emit.mock.calls.filter(
+        (c: any[]) => c[0] === 'notification.requested',
+      );
+      if (notifCalls.length > 0) {
+        expect(notifCalls[0][1].body).toBe('New message');
       }
     });
   });

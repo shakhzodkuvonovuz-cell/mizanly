@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
-import { NotificationsService } from '../notifications/notifications.service';
 import { PostsService } from './posts.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
@@ -62,10 +61,6 @@ describe('PostsService — Comment Permission Enforcement', () => {
             circleMember: { findMany: jest.fn().mockResolvedValue([]) },
             postTaggedUser: { findMany: jest.fn().mockResolvedValue([]) },
           },
-        },
-        {
-          provide: NotificationsService,
-          useValue: { notifyLike: jest.fn(), notifyComment: jest.fn(), create: jest.fn().mockResolvedValue({ id: 'n1' }) },
         },
         {
           provide: 'REDIS',

@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
-import { NotificationsService } from '../notifications/notifications.service';
 import { PostsService } from './posts.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
@@ -59,7 +58,7 @@ describe('PostsService — Schedule Posting', () => {
             postTaggedUser: { findMany: jest.fn().mockResolvedValue([]) },
           },
         },
-        { provide: NotificationsService, useValue: { notifyLike: jest.fn(), notifyComment: jest.fn(), create: jest.fn() } },
+
         { provide: 'REDIS', useValue: { get: jest.fn(), setex: jest.fn(), del: jest.fn() } },
       ],
     }).compile();
@@ -137,7 +136,7 @@ describe('PostsService — Tag Resolution (OR query)', () => {
             postTaggedUser: { findMany: jest.fn().mockResolvedValue([]) },
           },
         },
-        { provide: NotificationsService, useValue: { notifyLike: jest.fn(), notifyComment: jest.fn(), create: jest.fn() } },
+
         { provide: 'REDIS', useValue: { get: jest.fn(), setex: jest.fn(), del: jest.fn() } },
       ],
     }).compile();

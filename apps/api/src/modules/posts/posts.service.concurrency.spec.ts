@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../../config/prisma.service';
 import { PostsService } from './posts.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
-import { NotificationsService } from '../notifications/notifications.service';
 
 describe('PostsService — concurrency (Task 86)', () => {
   let service: PostsService;
@@ -39,7 +38,6 @@ describe('PostsService — concurrency (Task 86)', () => {
             circleMember: { findMany: jest.fn().mockResolvedValue([]) },
           },
         },
-        { provide: NotificationsService, useValue: { create: jest.fn() } },
         { provide: 'REDIS', useValue: { get: jest.fn().mockResolvedValue(null), setex: jest.fn(), del: jest.fn(), publish: jest.fn().mockResolvedValue(1), pfadd: jest.fn().mockResolvedValue(1), pfcount: jest.fn().mockResolvedValue(0) } },
       ],
     }).compile();

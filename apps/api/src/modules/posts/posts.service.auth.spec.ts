@@ -3,7 +3,6 @@ import { NotFoundException, ForbiddenException, ConflictException } from '@nestj
 import { PrismaService } from '../../config/prisma.service';
 import { PostsService } from './posts.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
-import { NotificationsService } from '../notifications/notifications.service';
 
 describe('PostsService — authorization matrix', () => {
   let service: PostsService;
@@ -72,10 +71,6 @@ describe('PostsService — authorization matrix', () => {
             report: { create: jest.fn() },
             circleMember: { findMany: jest.fn().mockResolvedValue([]) },
           },
-        },
-        {
-          provide: NotificationsService,
-          useValue: { create: jest.fn(), notifyLike: jest.fn(), notifyComment: jest.fn() },
         },
         {
           provide: 'REDIS',

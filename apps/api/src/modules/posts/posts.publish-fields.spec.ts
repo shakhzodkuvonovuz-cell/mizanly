@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../../config/prisma.service';
-import { NotificationsService } from '../notifications/notifications.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NOTIFICATION_REQUESTED } from '../../common/events/notification.events';
 import { PostsService } from './posts.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
@@ -13,7 +14,7 @@ import { globalMockProviders } from '../../common/test/mock-providers';
 describe('PostsService — Publish Fields', () => {
   let service: PostsService;
   let prisma: any;
-  let notifications: any;
+  let eventEmitter: any;
 
   const userId = 'user-creator';
 
@@ -114,10 +115,6 @@ describe('PostsService — Publish Fields', () => {
           },
         },
         {
-          provide: NotificationsService,
-          useValue: { notifyLike: jest.fn(), notifyComment: jest.fn(), create: jest.fn().mockResolvedValue({ id: 'notif-1' }) },
-        },
-        {
           provide: 'REDIS',
           useValue: { get: jest.fn(), setex: jest.fn(), del: jest.fn() },
         },
@@ -126,7 +123,9 @@ describe('PostsService — Publish Fields', () => {
 
     service = module.get<PostsService>(PostsService);
     prisma = module.get(PrismaService) as any;
-    notifications = module.get(NotificationsService);
+    eventEmitter = module.get(EventEmitter2);
+    // Clear shared mock state between tests
+    (eventEmitter.emit as jest.Mock).mockClear();
   });
 
   // ── commentPermission ──
@@ -243,7 +242,8 @@ describe('PostsService — Publish Fields', () => {
 
       // Wait for async notification fire
       await new Promise(resolve => setTimeout(resolve, 50));
-      expect(notifications.create).toHaveBeenCalledWith(
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        NOTIFICATION_REQUESTED,
         expect.objectContaining({
           userId: 'user-a',
           actorId: userId,
@@ -263,8 +263,8 @@ describe('PostsService — Publish Fields', () => {
       await service.create(userId, { ...baseDto, taggedUserIds: [userId] });
 
       await new Promise(resolve => setTimeout(resolve, 50));
-      const tagCalls = (notifications.create as jest.Mock).mock.calls.filter(
-        (c: any[]) => c[0]?.title === 'Tagged you',
+      const tagCalls = (eventEmitter.emit as jest.Mock).mock.calls.filter(
+        (c: any[]) => c[0] === NOTIFICATION_REQUESTED && c[1]?.title === 'Tagged you',
       );
       expect(tagCalls).toHaveLength(0);
     });
@@ -325,8 +325,8 @@ describe('PostsService — Publish Fields', () => {
       await service.create(userId, { ...baseDto, collaboratorUsername: 'collaborator' });
 
       await new Promise(resolve => setTimeout(resolve, 50));
-      const collabCalls = (notifications.create as jest.Mock).mock.calls.filter(
-        (c: any[]) => c[0]?.title === 'Collaboration invite',
+      const collabCalls = (eventEmitter.emit as jest.Mock).mock.calls.filter(
+        (c: any[]) => c[0] === NOTIFICATION_REQUESTED && c[1]?.title === 'Collaboration invite',
       );
       expect(collabCalls.length).toBeGreaterThanOrEqual(1);
     });
