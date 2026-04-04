@@ -21,6 +21,8 @@ import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { useIsOffline } from '@/hooks/useIsOffline';
+import { useQueryClient } from '@tanstack/react-query';
 import { promotionsApi } from '@/services/promotionsApi';
 
 function BrandedContentContent() {
@@ -29,6 +31,8 @@ function BrandedContentContent() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const haptic = useContextualHaptic();
+  const isOffline = useIsOffline();
+  const queryClient = useQueryClient();
   const { postId } = useLocalSearchParams<{ postId: string }>();
 
   const [isPaidPartnership, setIsPaidPartnership] = useState(false);
@@ -36,7 +40,10 @@ function BrandedContentContent() {
   const [saving, setSaving] = useState(false);
 
   const handleSave = useCallback(async () => {
-    if (!postId || saving) return;
+    if (!postId || saving || isOffline) {
+      if (isOffline) showToast({ message: t('network.offline'), variant: 'error' });
+      return;
+    }
     if (isPaidPartnership && !partnerName.trim()) return;
     haptic.tick();
     setSaving(true);
@@ -48,6 +55,10 @@ function BrandedContentContent() {
       }
       haptic.success();
       showToast({ message: t('branded.savedMessage'), variant: 'success' });
+      // Cross-screen invalidation: branded content status changed
+      queryClient.invalidateQueries({ queryKey: ['post', postId] });
+      queryClient.invalidateQueries({ queryKey: ['saf-feed'] });
+      queryClient.invalidateQueries({ queryKey: ['profile-posts'] });
       router.back();
     } catch {
       haptic.error();
@@ -168,10 +179,10 @@ function BrandedContentContent() {
         {/* Save Button */}
         <Animated.View entering={FadeInUp.delay(400).duration(400)} style={styles.buttonWrapper}>
           <GradientButton
-            label={t('branded.save')}
+            label={isOffline ? t('network.offline') : t('branded.save')}
             onPress={handleSave}
             loading={saving}
-            disabled={isPaidPartnership && !partnerName.trim()}
+            disabled={isOffline || (isPaidPartnership && !partnerName.trim())}
             fullWidth
             size="lg"
             icon="check"

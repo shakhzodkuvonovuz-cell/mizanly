@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   ScrollView,
@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInUp, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -33,6 +33,31 @@ const sectionIcons: Record<string, IconName> = {
   'blockedKeywords': 'slash',
   'digitalWellbeing': 'clock',
 };
+
+function AnimatedToggle({ value, label, onToggle }: { value: boolean; label: string; onToggle: (v: boolean) => void }) {
+  const tc = useThemeColors();
+  const translateX = useSharedValue(value ? 24 : 0);
+  // Update animation when value changes
+  translateX.value = withSpring(value ? 24 : 0, { damping: 15, stiffness: 300 });
+  const thumbStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
+  return (
+    <Pressable
+      accessibilityRole="switch"
+      accessibilityLabel={label}
+      style={[styles.toggleTrack, { backgroundColor: tc.border }, value && styles.toggleTrackActive]}
+      onPress={() => onToggle(!value)}
+    >
+      <Animated.View style={[styles.toggleThumbBase, thumbStyle]}>
+        <LinearGradient
+          colors={value ? [colors.emerald, colors.emerald] : [tc.bgCard, tc.border]}
+          style={styles.toggleThumbGradient}
+        />
+      </Animated.View>
+    </Pressable>
+  );
+}
 
 // Reuse Row and SectionHeader with premium styling
 function Row({
@@ -80,19 +105,7 @@ function Row({
           </View>
         </View>
         {onToggle !== undefined && value !== undefined ? (
-          <Pressable
-            accessibilityRole="switch"
-            accessibilityLabel={label}
-            style={[styles.toggleTrack, { backgroundColor: tc.border }, value && styles.toggleTrackActive]}
-            onPress={() => onToggle(!value)}
-          >
-            <View style={[styles.toggleThumb, value && styles.toggleThumbActive]}>
-              <LinearGradient
-                colors={value ? [colors.emerald, colors.emerald] : [tc.bgCard, tc.border]}
-                style={styles.toggleThumbGradient}
-              />
-            </View>
-          </Pressable>
+          <AnimatedToggle value={value} label={label} onToggle={onToggle} />
         ) : onPress ? (
           <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
         ) : null}
@@ -157,10 +170,17 @@ export default function ContentSettingsScreen() {
     });
   }, [s]);
 
-  // BottomSheet states
+  // BottomSheet states with double-tap guard
   const [safPickerVisible, setSafPickerVisible] = useState(false);
   const [majlisPickerVisible, setMajlisPickerVisible] = useState(false);
   const [dailyReminderPickerVisible, setDailyReminderPickerVisible] = useState(false);
+  const pickerDebounceRef = useRef(false);
+  const openPicker = useCallback((setter: (v: boolean) => void) => {
+    if (pickerDebounceRef.current) return;
+    pickerDebounceRef.current = true;
+    setter(true);
+    setTimeout(() => { pickerDebounceRef.current = false; }, 500);
+  }, []);
 
   const wellbeingMutation = useMutation<Settings, Error, WellbeingSettings>({
     mutationFn: settingsApi.updateWellbeing,
@@ -258,7 +278,7 @@ export default function ContentSettingsScreen() {
             >
               <Pressable
                 style={styles.rowPressable}
-                onPress={() => setSafPickerVisible(true)}
+                onPress={() => openPicker(setSafPickerVisible)}
                 accessibilityLabel={t('settings.safDefaultFeed')}
                 accessibilityRole="button"
               >
@@ -289,7 +309,7 @@ export default function ContentSettingsScreen() {
               <View style={[styles.divider, { backgroundColor: tc.border }]} />
               <Pressable
                 style={styles.rowPressable}
-                onPress={() => setMajlisPickerVisible(true)}
+                onPress={() => openPicker(setMajlisPickerVisible)}
                 accessibilityLabel={t('settings.majlisDefaultFeed')}
                 accessibilityRole="button"
               >
@@ -372,7 +392,7 @@ export default function ContentSettingsScreen() {
             >
               <Pressable
                 style={styles.rowPressable}
-                onPress={() => setDailyReminderPickerVisible(true)}
+                onPress={() => openPicker(setDailyReminderPickerVisible)}
                 accessibilityLabel={t('settings.dailyReminder.label')}
                 accessibilityRole="button"
               >
@@ -494,13 +514,9 @@ const styles = StyleSheet.create({
   toggleTrackActive: {
     backgroundColor: colors.active.emerald30,
   },
-  toggleThumb: {
+  toggleThumbBase: {
     width: 24, height: 24, borderRadius: radius.full,
     backgroundColor: '#fff',
-    transform: [{ translateX: 0 }],
-  },
-  toggleThumbActive: {
-    transform: [{ translateX: 24 }],
   },
   toggleThumbGradient: {
     width: '100%', height: '100%', borderRadius: radius.full,

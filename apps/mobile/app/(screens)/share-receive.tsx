@@ -295,7 +295,7 @@ function ShareReceiveContent() {
 
   if (!hasContent) {
     return (
-      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <SafeAreaView style={styles.container} edges={['bottom']}>
         <GlassHeader
           title={t('shareReceive.title')}
           leftAction={{

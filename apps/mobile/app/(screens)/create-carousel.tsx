@@ -198,33 +198,41 @@ function CreateCarouselScreen() {
       setUploading(true);
       setUploadProgress(0);
 
-      const carouselUrls: string[] = [];
-      const carouselTexts: string[] = [];
+      // Parallel upload: resize all slides concurrently, then upload concurrently
+      const progressPerSlide = new Map<number, number>();
+      const updateTotalProgress = () => {
+        let total = 0;
+        progressPerSlide.forEach((v) => { total += v; });
+        setUploadProgress(total / slides.length);
+      };
 
-      // Upload each slide image
-      for (let i = 0; i < slides.length; i++) {
-        const slide = slides[i];
-        // Resize before upload (saves bandwidth + storage)
-        const resized = await resizeForUpload(slide.uri, slide.width, slide.height);
-        const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl(resized.mimeType, 'posts');
+      const uploadResults = await Promise.all(
+        slides.map(async (slide, i) => {
+          progressPerSlide.set(i, 0);
+          const resized = await resizeForUpload(slide.uri, slide.width, slide.height);
+          const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl(resized.mimeType, 'posts');
 
-        const fileRes = await fetch(resized.uri);
-        const blob = await fileRes.blob();
+          const fileRes = await fetch(resized.uri);
+          const blob = await fileRes.blob();
 
-        const baseProgress = (i / slides.length) * 100;
-        const itemWeight = 100 / slides.length;
-        const { promise, abort } = uploadWithProgress(
-          uploadUrl,
-          blob,
-          resized.mimeType,
-          (percent) => setUploadProgress(baseProgress + (percent / 100) * itemWeight),
-        );
-        uploadAbortRef.current = abort;
-        await promise;
+          const { promise, abort } = uploadWithProgress(
+            uploadUrl,
+            blob,
+            resized.mimeType,
+            (percent) => {
+              progressPerSlide.set(i, percent);
+              updateTotalProgress();
+            },
+          );
+          uploadAbortRef.current = abort;
+          await promise;
 
-        carouselUrls.push(publicUrl);
-        carouselTexts.push(slide.text);
-      }
+          return { publicUrl, text: slide.text };
+        }),
+      );
+
+      const carouselUrls = uploadResults.map((r) => r.publicUrl);
+      const carouselTexts = uploadResults.map((r) => r.text);
 
       uploadAbortRef.current = null;
       setUploading(false);

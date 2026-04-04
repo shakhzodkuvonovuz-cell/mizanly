@@ -139,8 +139,19 @@ export default function EditChannelScreen() {
     });
   };
 
+  // Timeout fallback: if loading takes more than 15 seconds, show error
+  const [loadTimedOut, setLoadTimedOut] = useState(false);
   const isLoading = isChannelsLoading || isChannelLoading;
-  const isError = isChannelsError || isChannelError;
+  useEffect(() => {
+    if (!isLoading) {
+      setLoadTimedOut(false);
+      return;
+    }
+    const timer = setTimeout(() => setLoadTimedOut(true), 15_000);
+    return () => clearTimeout(timer);
+  }, [isLoading]);
+
+  const isError = isChannelsError || isChannelError || loadTimedOut;
 
   if (isError) {
     return (

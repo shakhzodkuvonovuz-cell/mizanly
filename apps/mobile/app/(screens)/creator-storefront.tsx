@@ -25,6 +25,7 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useIsOffline } from '@/hooks/useIsOffline';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { api } from '@/services/api';
+import { useFocusEffect } from '@react-navigation/native';
 import { navigate } from '@/utils/navigation';
 import { showToast } from '@/components/ui/Toast';
 import { formatCount } from '@/utils/formatCount';
@@ -56,6 +57,7 @@ function CreatorStorefrontContent() {
   const tc = useThemeColors();
   const { t } = useTranslation();
   const haptic = useContextualHaptic();
+  const isOffline = useIsOffline();
   const insets = useSafeAreaInsets();
   const { userId, username } = useLocalSearchParams<{ userId: string; username: string }>();
   const { width: SCREEN_WIDTH } = useWindowDimensions();
@@ -99,6 +101,15 @@ function CreatorStorefrontContent() {
   useEffect(() => {
     fetchStorefront();
   }, [fetchStorefront]);
+
+  // Refetch on focus (e.g., returning from product edit)
+  useFocusEffect(
+    useCallback(() => {
+      if (!loading) {
+        fetchStorefront(true);
+      }
+    }, [loading, fetchStorefront])
+  );
 
   const handleRefresh = useCallback(() => {
     haptic.tick();
@@ -282,8 +293,9 @@ function CreatorStorefrontContent() {
           style={[styles.fab, { bottom: insets.bottom + spacing.xl }]}
         >
           <Pressable
-            onPress={handleAddProduct}
-            style={({ pressed }) => [styles.fabButton, pressed && { opacity: 0.7 }]}
+            onPress={() => { if (!isOffline) handleAddProduct(); }}
+            disabled={isOffline}
+            style={({ pressed }) => [styles.fabButton, pressed && { opacity: 0.7 }, isOffline && { opacity: 0.5 }]}
             accessibilityRole="button"
             accessibilityLabel={t('storefront.addProduct')}
           >

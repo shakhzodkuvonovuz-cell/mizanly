@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
@@ -93,6 +93,7 @@ export default function ChatThemePickerScreen() {
   const { t } = useTranslation();
   const haptic = useContextualHaptic();
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<TabType>('solid');
   const [selectedTheme, setSelectedTheme] = useState<string>('default');
   const [opacity, setOpacity] = useState(30);
@@ -496,8 +497,8 @@ export default function ChatThemePickerScreen() {
           </LinearGradient>
         </Animated.View>
 
-        {/* Bottom Spacer */}
-        <View style={styles.bottomSpacer} />
+        {/* Bottom Spacer — accounts for the fixed bottom bar + safe area */}
+        <View style={{ height: 60 + insets.bottom }} />
       </ScrollView>
 
       {/* Bottom Bar */}
@@ -825,9 +826,7 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: colors.emerald,
   },
-  bottomSpacer: {
-    height: 100,
-  },
+  // bottomSpacer removed — now computed inline from useSafeAreaInsets().bottom
   bottomBar: {
     position: 'absolute',
     bottom: 0,

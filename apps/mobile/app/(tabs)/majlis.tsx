@@ -34,8 +34,10 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useScrollLinkedHeader } from '@/hooks/useScrollLinkedHeader';
+import { useIsOffline } from '@/hooks/useIsOffline';
+import { feedCache, CACHE_KEYS } from '@/utils/feedCache';
 import { rtlFlexRow, rtlTextAlign, rtlAbsoluteEnd, rtlBorderStart } from '@/utils/rtl';
-import type { Thread } from '@/types';
+import type { Thread, PaginatedResponse } from '@/types';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -90,6 +92,7 @@ export default function MajlisScreen() {
   const tc = useThemeColors();
   const feedType = useStore((s) => s.majlisFeedType);
   const setFeedType = useStore((s) => s.setMajlisFeedType);
+  const isOffline = useIsOffline();
   const [refreshing, setRefreshing] = useState(false);
   const [lastReadAt, setLastReadAt] = useState<string | null>(null);
   const hasAnimatedSkeletons = useRef(false);
@@ -157,15 +160,13 @@ export default function MajlisScreen() {
   const feedRef = useRef<FlashListRef<Thread>>(null);
   useScrollToTop(feedRef as React.RefObject<FlashListRef<Thread>>);
 
-  // Restore scroll position when tab regains focus
+  // Restore scroll position when tab regains focus (triggered by data availability, not arbitrary timeout)
+  const pendingScrollOffset = useRef<number>(0);
   useFocusEffect(
     useCallback(() => {
       const offset = useStore.getState().majlisScrollOffset;
       if (offset > 0) {
-        const timer = setTimeout(() => {
-          feedRef.current?.scrollToOffset({ offset, animated: false });
-        }, 100);
-        return () => clearTimeout(timer);
+        pendingScrollOffset.current = offset;
       }
     }, [])
   );
@@ -185,13 +186,31 @@ export default function MajlisScreen() {
     return () => clearTimeout(timer);
   }, [feedType, feedOpacity]);
 
+  // Load cached feed data for stale-while-revalidate
+  const [cachedMajlisData, setCachedMajlisData] = useState<Record<string, unknown> | null>(null);
+  useEffect(() => {
+    feedCache.get(CACHE_KEYS.MAJLIS_FEED + ':' + feedType).then((cached) => {
+      if (cached) setCachedMajlisData(cached as Record<string, unknown>);
+      else setCachedMajlisData(null);
+    });
+  }, [feedType]);
+
   const feedQuery = useInfiniteQuery({
     queryKey: ['majlis-feed', feedType],
-    queryFn: ({ pageParam }) => {
-      return threadsApi.getFeed(feedType as 'foryou' | 'following' | 'trending' | 'video', pageParam as string | undefined);
+    queryFn: async ({ pageParam }) => {
+      const res = await threadsApi.getFeed(feedType as 'foryou' | 'following' | 'trending' | 'video', pageParam as string | undefined);
+      // Cache first page for offline / stale-while-revalidate
+      if (!pageParam) {
+        feedCache.set(CACHE_KEYS.MAJLIS_FEED + ':' + feedType, res);
+      }
+      return res;
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last?.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
+    placeholderData: cachedMajlisData ? {
+      pages: [cachedMajlisData as unknown as PaginatedResponse<Thread>],
+      pageParams: [undefined],
+    } : undefined,
   });
 
   const trendingHashtagsQuery = useQuery({
@@ -215,6 +234,14 @@ export default function MajlisScreen() {
   const threads = feedType === 'video'
     ? allThreads.filter((t) => t.mediaTypes?.some((mt: string) => mt.startsWith('video')))
     : allThreads;
+
+  // Perform deferred scroll when feed data is available (after tab switch)
+  useEffect(() => {
+    if (pendingScrollOffset.current > 0 && threads.length > 0) {
+      feedRef.current?.scrollToOffset({ offset: pendingScrollOffset.current, animated: false });
+      pendingScrollOffset.current = 0;
+    }
+  }, [threads.length]);
 
   // Compare latest server post with current top of feed
   useEffect(() => {
@@ -435,8 +462,9 @@ export default function MajlisScreen() {
 
       {/* Floating compose button */}
       <AnimatedPressable
-        style={[styles.fab, fabStyle]}
+        style={[styles.fab, fabStyle, isOffline && { opacity: 0.5 }]}
         onPress={() => {
+          if (isOffline) return;
           haptic.send();
           fabScale.value = withSequence(
             withSpring(0.85, animation.spring.bouncy),

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   FlatList, Alert, TextInput,
@@ -8,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect } from '@react-navigation/native';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Icon } from '@/components/ui/Icon';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -138,6 +139,13 @@ export default function CirclesScreen() {
   });
 
   const circles: Circle[] = (circlesQuery.data as Circle[]) ?? [];
+
+  // Refetch when screen gains focus (e.g., returning from circle edit)
+  useFocusEffect(
+    useCallback(() => {
+      circlesQuery.refetch();
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => circlesApi.delete(id),

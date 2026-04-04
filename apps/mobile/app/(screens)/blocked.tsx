@@ -56,10 +56,13 @@ export default function BlockedScreen() {
 
   const unblockMutation = useMutation({
     mutationFn: (userId: string) => blocksApi.unblock(userId),
-    onSuccess: () => {
+    onSuccess: (_data, unblockedUserId) => {
       haptic.success();
       showToast({ message: t('screens.blocked.unblockSuccess'), variant: 'success' });
       queryClient.invalidateQueries({ queryKey: ['blocked'] });
+      // Cross-screen invalidation: unblocking changes relationship state elsewhere
+      queryClient.invalidateQueries({ queryKey: ['profile', unblockedUserId] });
+      queryClient.invalidateQueries({ queryKey: ['user', unblockedUserId] });
     },
     onError: (err: Error) => {
       haptic.error();

@@ -16,6 +16,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { chatExportApi } from '@/services/chatExportApi';
 import type { ChatExportStats } from '@/services/chatExportApi';
+import { useIsOffline } from '@/hooks/useIsOffline';
 
 type ExportFormat = 'text' | 'json';
 
@@ -31,30 +32,49 @@ function ChatExportContent() {
   const [exporting, setExporting] = useState(false);
   const [format, setFormat] = useState<ExportFormat>('text');
   const [includeMedia, setIncludeMedia] = useState(false);
+  const isOffline = useIsOffline();
 
   useEffect(() => {
     if (!conversationId) return;
     let cancelled = false;
+    let attempt = 0;
+    const MAX_RETRIES = 3;
+
     async function loadStats() {
-      try {
-        const result = await chatExportApi.getStats(conversationId);
-        if (!cancelled) {
-          setStats(result as ChatExportStats);
+      while (attempt < MAX_RETRIES && !cancelled) {
+        try {
+          const result = await chatExportApi.getStats(conversationId);
+          if (!cancelled) {
+            setStats(result as ChatExportStats);
+          }
+          return; // success — exit retry loop
+        } catch {
+          attempt++;
+          if (attempt >= MAX_RETRIES) {
+            if (!cancelled) {
+              showToast({ message: t('chatExport.errorLoadStats', 'Failed to load chat statistics'), variant: 'error' });
+            }
+          } else {
+            // Exponential backoff: 1s, 2s, 4s
+            await new Promise<void>((resolve) => {
+              const timer = setTimeout(resolve, Math.pow(2, attempt - 1) * 1000);
+              if (cancelled) clearTimeout(timer);
+            });
+          }
         }
-      } catch {
-        if (!cancelled) {
-          showToast({ message: t('chatExport.errorLoadStats', 'Failed to load chat statistics'), variant: 'error' });
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
       }
+      if (!cancelled) setLoading(false);
     }
-    loadStats();
+    loadStats().finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [conversationId, t]);
 
   const handleExport = useCallback(async () => {
     if (!conversationId || exporting) return;
+    if (isOffline) {
+      showToast({ message: t('chatExport.offlineWarning', 'You are offline. Please check your connection and try again.'), variant: 'error' });
+      return;
+    }
     setExporting(true);
     try {
       const result = await chatExportApi.generateExport(conversationId, {
@@ -74,7 +94,7 @@ function ChatExportContent() {
     } finally {
       setExporting(false);
     }
-  }, [conversationId, format, includeMedia, exporting, t]);
+  }, [conversationId, format, includeMedia, exporting, isOffline, t]);
 
   const formatOptions: { key: ExportFormat; label: string; description: string; icon: 'layers' | 'bar-chart-2' }[] = [
     {

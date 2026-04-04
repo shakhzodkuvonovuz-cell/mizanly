@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
   ScrollView, Platform, KeyboardAvoidingView, Alert,
+  useWindowDimensions,
 } from 'react-native';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter } from 'expo-router';
@@ -42,6 +43,9 @@ export default function EditProfileScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const { width: screenWidth } = useWindowDimensions();
+  // Responsive cover height: ~25% of screen width (min 140, max 220)
+  const coverHeight = Math.min(220, Math.max(140, Math.round(screenWidth * 0.25)));
 
   const haptic = useContextualHaptic();
 
@@ -276,7 +280,7 @@ export default function EditProfileScreen() {
           <Pressable onPress={pickCover} accessibilityRole="button" accessibilityLabel={t('editProfile.changeCover', 'Change cover photo')}>
             {currentCover ? (
               <Animated.View entering={FadeIn.duration(400)}>
-                <ProgressiveImage uri={currentCover} width="100%" height={160} />
+                <ProgressiveImage uri={currentCover} width="100%" height={coverHeight} />
                 <LinearGradient
                   colors={['transparent', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.7)']}
                   style={styles.coverGradient}
@@ -294,7 +298,7 @@ export default function EditProfileScreen() {
             ) : (
               <LinearGradient
                 colors={['rgba(10,123,79,0.15)', 'rgba(200,150,62,0.1)']}
-                style={styles.coverPlaceholder}
+                style={[styles.coverPlaceholder, { height: coverHeight }]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
@@ -648,15 +652,13 @@ const styles = StyleSheet.create({
 
   body: { flex: 1 },
 
-  // Cover photo styles
-  cover: { width: '100%', height: 160 },
+  // Cover photo styles — height is now dynamic via coverHeight
+  cover: { width: '100%' },
   coverGradient: {
     ...StyleSheet.absoluteFillObject,
-    height: 160,
   },
   coverOverlay: {
     ...StyleSheet.absoluteFillObject,
-    height: 160,
     alignItems: 'center', justifyContent: 'center',
   },
   coverEditBadge: {
@@ -667,7 +669,7 @@ const styles = StyleSheet.create({
   },
   coverEditText: { color: '#fff', fontSize: fontSize.sm, fontWeight: '600' },
   coverPlaceholder: {
-    width: '100%', height: 160,
+    width: '100%',
     alignItems: 'center', justifyContent: 'center',
   },
   coverPlaceholderInner: { alignItems: 'center', gap: spacing.sm },

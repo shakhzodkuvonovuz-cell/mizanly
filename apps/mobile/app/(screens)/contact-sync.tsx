@@ -25,6 +25,7 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { useIsOffline } from '@/hooks/useIsOffline';
 
 type ContactUser = {
   id: string;
@@ -105,6 +106,7 @@ export default function ContactSyncScreen() {
   const tc = useThemeColors();
 
   const haptic = useContextualHaptic();
+  const isOffline = useIsOffline();
   const backLockRef = useRef(false);
   const handleBack = useCallback(() => {
     if (backLockRef.current) return;
@@ -293,6 +295,13 @@ export default function ContactSyncScreen() {
           leftAction={{ icon: 'arrow-left', onPress: handleBack, accessibilityLabel: t('common.back') }}
         />
 
+        {isOffline && (
+          <Animated.View entering={FadeInUp.duration(300)} style={[styles.offlineBanner, { backgroundColor: colors.active.gold10, borderColor: colors.gold }]}>
+            <Icon name="alert-circle" size="xs" color={colors.gold} />
+            <Text style={[styles.offlineText, { color: colors.gold }]}>{t('common.offline', 'You are offline')}</Text>
+          </Animated.View>
+        )}
+
         {loading && !refreshing ? (
           <View style={[styles.skeletonList, { paddingTop: insets.top + 52 }]}>
             <Text style={[styles.scanningText, { color: tc.text.secondary }]}>{t('contactSync.scanning')}</Text>
@@ -390,4 +399,13 @@ const styles = StyleSheet.create({
   },
 
   centeredContent: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  offlineBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
+    marginHorizontal: spacing.base, marginTop: spacing.sm,
+    borderRadius: radius.md, borderWidth: 1,
+  },
+  offlineText: {
+    fontSize: fontSize.sm, fontWeight: '600',
+  },
 });
