@@ -203,6 +203,9 @@ class ApiClient {
   private forceRefreshToken: (() => Promise<string | null>) | null = null;
   private onSessionExpired: (() => void) | null = null;
 
+  /** Dedup lock: ensures only one token refresh runs at a time (thundering herd prevention). */
+  private refreshPromise: Promise<string | null> | null = null;
+
   setTokenGetter(getter: () => Promise<string | null>) {
     this.getToken = getter;
   }
@@ -215,6 +218,18 @@ class ApiClient {
   /** Register a callback invoked when token refresh fails (navigate to sign-in). */
   setSessionExpiredHandler(handler: () => void) {
     this.onSessionExpired = handler;
+  }
+
+  /**
+   * Deduplicated token refresh. If a refresh is already in-flight, all callers
+   * share the same Promise instead of hammering Clerk SDK with parallel requests.
+   */
+  private refreshTokenOnce(): Promise<string | null> {
+    if (this.refreshPromise) return this.refreshPromise;
+    this.refreshPromise = this.forceRefreshToken!().finally(() => {
+      this.refreshPromise = null;
+    });
+    return this.refreshPromise;
   }
 
   private async request<T>(
@@ -277,7 +292,7 @@ class ApiClient {
       if (res.status === 401 && !retryFlags._retried401 && this.forceRefreshToken) {
         if (__DEV__) console.warn(`[API] 401 on ${path} — attempting token refresh`);
         try {
-          const freshToken = await this.forceRefreshToken();
+          const freshToken = await this.refreshTokenOnce();
           if (freshToken) {
             // Inject the fresh token into the request headers for the retry
             const retryHeaders = {

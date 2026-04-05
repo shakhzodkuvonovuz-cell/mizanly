@@ -25,11 +25,14 @@ export class ClerkAuthGuard implements CanActivate {
     }
 
     let clerkId: string;
+    let clerkSessionId: string | undefined;
     try {
       const payload = await verifyToken(token, {
         secretKey: this.config.get('CLERK_SECRET_KEY'),
       });
       clerkId = payload.sub;
+      // Clerk JWTs include `sid` (session ID) — used for session-bound 2FA verification
+      clerkSessionId = payload.sid as string | undefined;
     } catch {
       throw new UnauthorizedException('Invalid token');
     }
@@ -112,7 +115,8 @@ export class ClerkAuthGuard implements CanActivate {
       }
     }
 
-    request.user = user;
+    // Attach sessionId from Clerk JWT for session-bound 2FA verification
+    request.user = { ...user, sessionId: clerkSessionId };
     return true;
   }
 

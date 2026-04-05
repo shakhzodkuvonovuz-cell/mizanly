@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { DevicesController } from './devices.controller';
 import { DevicesService } from './devices.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
+import { TwoFactorService } from '../two-factor/two-factor.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('DevicesController', () => {
@@ -26,6 +27,14 @@ describe('DevicesController', () => {
           },
         },
         { provide: ClerkAuthGuard, useValue: { canActivate: jest.fn(() => true) } },
+        {
+          provide: TwoFactorService,
+          useValue: {
+            getStatus: jest.fn().mockResolvedValue(false),
+            isTwoFactorVerified: jest.fn().mockResolvedValue(true),
+            clearTwoFactorSession: jest.fn().mockResolvedValue(undefined),
+          },
+        },
       ],
     }).compile();
 

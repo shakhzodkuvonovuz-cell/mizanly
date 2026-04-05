@@ -292,6 +292,31 @@ describe('MessagesService', () => {
       expect(result).toEqual({ deleted: true });
     });
 
+    // F5-3: Verify sealed-sender envelope material is nulled on delete
+    it('should null sealed-sender envelope fields on delete (F5-3)', async () => {
+      const messageId = 'msg-sealed';
+      const userId = 'user-sealed';
+      const mockMessage = { id: messageId, senderId: userId, conversationId: 'conv-sealed' };
+      prisma.message.findUnique.mockResolvedValue(mockMessage);
+      prisma.message.update.mockResolvedValue({ ...mockMessage, isDeleted: true });
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ isMuted: false, isBanned: false });
+
+      await service.deleteMessage(messageId, userId);
+
+      const updateCall = prisma.message.update.mock.calls[0][0];
+      expect(updateCall.data).toHaveProperty('e2eSealedEphemeralKey', null);
+      expect(updateCall.data).toHaveProperty('e2eSealedCiphertext', null);
+      // Also verify all other E2E fields are nulled
+      expect(updateCall.data).toHaveProperty('encryptedContent', null);
+      expect(updateCall.data).toHaveProperty('encNonce', null);
+      expect(updateCall.data).toHaveProperty('e2eSenderRatchetKey', null);
+      expect(updateCall.data).toHaveProperty('e2eVersion', null);
+      expect(updateCall.data).toHaveProperty('e2eSenderDeviceId', null);
+      expect(updateCall.data).toHaveProperty('e2eCounter', null);
+      expect(updateCall.data).toHaveProperty('e2ePreviousCounter', null);
+      expect(updateCall.data).toHaveProperty('e2eSenderKeyId', null);
+    });
+
     it('should throw ForbiddenException if user is not sender', async () => {
       const messageId = 'msg-123';
       const userId = 'user-123';

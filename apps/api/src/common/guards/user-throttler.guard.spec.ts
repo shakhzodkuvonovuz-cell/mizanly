@@ -25,10 +25,23 @@ describe('UserThrottlerGuard', () => {
       expect(tracker).toBe('ip:192.168.1.1');
     });
 
-    it('should use x-forwarded-for IP when behind proxy', async () => {
+    it('should use req.ip even when x-forwarded-for is present (trust proxy handles resolution)', async () => {
+      // SECURITY: The guard must NOT read x-forwarded-for directly.
+      // Express 'trust proxy' resolves req.ip correctly. If the guard
+      // read x-forwarded-for, attackers could spoof IPs to bypass rate limiting.
       const req = { ip: '10.0.0.1', headers: { 'x-forwarded-for': '203.0.113.50, 10.0.0.1' } };
       const tracker = await (guard as any).getTracker(req);
-      expect(tracker).toBe('ip:203.0.113.50');
+      // Should use req.ip (10.0.0.1), NOT the x-forwarded-for value (203.0.113.50)
+      expect(tracker).toBe('ip:10.0.0.1');
+    });
+
+    it('should NOT be bypassable by spoofing x-forwarded-for', async () => {
+      // An attacker sends a spoofed x-forwarded-for header with a random IP
+      // The guard should ignore it and use req.ip which Express resolves safely
+      const req = { ip: '1.2.3.4', headers: { 'x-forwarded-for': '99.99.99.99' } };
+      const tracker = await (guard as any).getTracker(req);
+      expect(tracker).toBe('ip:1.2.3.4');
+      expect(tracker).not.toContain('99.99.99.99');
     });
 
     it('should use header fingerprint when no IP can be determined', async () => {

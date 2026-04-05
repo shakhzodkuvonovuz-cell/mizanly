@@ -151,14 +151,12 @@ describe('PaymentsService', () => {
 
   describe('handlePaymentIntentSucceeded — routing', () => {
     it('should route coin_purchase to handleCoinPurchaseSucceeded', async () => {
-      prisma.paymentMapping.findUnique.mockResolvedValue(null); // No existing mapping (not yet processed)
-      prisma.coinTransaction.findFirst.mockResolvedValue(null); // No existing credit
       prisma.coinBalance = { findUnique: jest.fn().mockResolvedValue({ coins: 500 }) };
       prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<void>) =>
         fn({
           coinBalance: { upsert: jest.fn().mockResolvedValue({}) },
-          coinTransaction: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
-          paymentMapping: { upsert: jest.fn().mockResolvedValue({}) },
+          coinTransaction: { updateMany: jest.fn().mockResolvedValue({ count: 1 }), create: jest.fn().mockResolvedValue({}) },
+          paymentMapping: { create: jest.fn().mockResolvedValue({}) }, // Claim-first: create succeeds
         }),
       );
       await service.handlePaymentIntentSucceeded({
@@ -172,30 +170,33 @@ describe('PaymentsService', () => {
       mockNotifications.create = jest.fn().mockResolvedValue({});
       prisma.order = {
         findFirst: jest.fn().mockResolvedValue({ id: 'order-1', status: 'PENDING' }),
-        update: jest.fn().mockResolvedValue({}),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
         findUnique: jest.fn()
-          .mockResolvedValueOnce({ id: 'order-1', status: 'PENDING' }) // idempotency check
-          .mockResolvedValueOnce({ status: 'PAID', stripePaymentId: 'pi_order' }) // reconciliation verify
           .mockResolvedValueOnce({ product: { title: 'Test' }, buyerId: 'u1' }), // notification lookup
       };
       await service.handlePaymentIntentSucceeded({
         id: 'pi_order', metadata: { type: 'marketplace_order', orderId: 'pending', sellerId: 'seller-1' },
       } as any);
-      expect(prisma.order.update).toHaveBeenCalledWith(
+      expect(prisma.order.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({ data: expect.objectContaining({ status: 'PAID' }) }),
       );
     });
 
     it('should route premium_subscription to handlePremiumPaymentSucceeded', async () => {
-      prisma.premiumSubscription = {
-        findUnique: jest.fn().mockResolvedValue(null), // No existing premium (new purchase)
-        upsert: jest.fn().mockResolvedValue({ id: 'prem-1', status: 'ACTIVE' }),
-      };
-      prisma.paymentMapping.upsert.mockResolvedValue({});
+      const mockUpsert = jest.fn().mockResolvedValue({ id: 'prem-1', status: 'ACTIVE' });
+      prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<unknown>) =>
+        fn({
+          paymentMapping: { create: jest.fn().mockResolvedValue({}) }, // Claim-first: create succeeds
+          premiumSubscription: {
+            findUnique: jest.fn().mockResolvedValue(null), // No existing premium
+            upsert: mockUpsert,
+          },
+        }),
+      );
       await service.handlePaymentIntentSucceeded({
         id: 'pi_premium', metadata: { type: 'premium_subscription', userId: 'u1', plan: 'MONTHLY' },
       } as any);
-      expect(prisma.premiumSubscription.upsert).toHaveBeenCalledWith(
+      expect(mockUpsert).toHaveBeenCalledWith(
         expect.objectContaining({
           create: expect.objectContaining({ status: 'ACTIVE' }),
           update: expect.objectContaining({ status: 'ACTIVE' }),
@@ -205,12 +206,14 @@ describe('PaymentsService', () => {
 
     it('should default to tip handler (legacy) when no type in metadata', async () => {
       redis.get.mockResolvedValue('tip-1');
-      prisma.tip.findUnique.mockResolvedValue({ status: 'pending' }); // idempotency check
       const mockNotifications = (service as any).notifications;
       mockNotifications.create = jest.fn().mockResolvedValue({});
       prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<unknown>) =>
         fn({
-          tip: { update: jest.fn().mockResolvedValue({ receiverId: 'u2', senderId: 'u1', amount: 10, platformFee: 1 }) },
+          tip: {
+            updateMany: jest.fn().mockResolvedValue({ count: 1 }), // Conditional update succeeds
+            findUnique: jest.fn().mockResolvedValue({ receiverId: 'u2', senderId: 'u1', amount: 10, platformFee: 1 }),
+          },
           coinBalance: { upsert: jest.fn().mockResolvedValue({}) },
           coinTransaction: { create: jest.fn().mockResolvedValue({}) },
         }),
@@ -223,14 +226,16 @@ describe('PaymentsService', () => {
 
     it('should credit receiver diamonds on tip completion (Bug 16)', async () => {
       redis.get.mockResolvedValue('tip-1');
-      prisma.tip.findUnique.mockResolvedValue({ status: 'pending' }); // idempotency check
       const mockNotifications = (service as any).notifications;
       mockNotifications.create = jest.fn().mockResolvedValue({});
       const mockUpsert = jest.fn().mockResolvedValue({});
       const mockTxCreate = jest.fn().mockResolvedValue({});
       prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<unknown>) =>
         fn({
-          tip: { update: jest.fn().mockResolvedValue({ receiverId: 'u2', senderId: 'u1', amount: 10, platformFee: 1 }) },
+          tip: {
+            updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+            findUnique: jest.fn().mockResolvedValue({ receiverId: 'u2', senderId: 'u1', amount: 10, platformFee: 1 }),
+          },
           coinBalance: { upsert: mockUpsert },
           coinTransaction: { create: mockTxCreate },
         }),
@@ -346,10 +351,12 @@ describe('PaymentsService', () => {
       };
       const mockNotifications = (service as any).notifications;
       mockNotifications.create = jest.fn().mockResolvedValue({});
-      const mockTipUpdate = jest.fn().mockResolvedValue({ receiverId: 'u2', senderId: 'u1', amount: 5, platformFee: 0.5 });
       prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<unknown>) =>
         fn({
-          tip: { update: mockTipUpdate },
+          tip: {
+            updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+            findUnique: jest.fn().mockResolvedValue({ receiverId: 'u2', senderId: 'u1', amount: 5, platformFee: 0.5 }),
+          },
           coinBalance: { upsert: jest.fn().mockResolvedValue({}) },
           coinTransaction: { create: jest.fn().mockResolvedValue({}) },
         }),
@@ -365,13 +372,14 @@ describe('PaymentsService', () => {
     it('should find tip via PaymentMapping when Redis is empty', async () => {
       redis.get.mockResolvedValue(null);
       prisma.paymentMapping.findUnique.mockResolvedValue({ internalId: 'tip-from-mapping' });
-      prisma.tip.findUnique.mockResolvedValue({ status: 'pending' }); // idempotency check
       const mockNotifications = (service as any).notifications;
       mockNotifications.create = jest.fn().mockResolvedValue({});
-      const mockTipUpdate = jest.fn().mockResolvedValue({ receiverId: 'u2', senderId: 'u1', amount: 5, platformFee: 0.5 });
       prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<unknown>) =>
         fn({
-          tip: { update: mockTipUpdate },
+          tip: {
+            updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+            findUnique: jest.fn().mockResolvedValue({ receiverId: 'u2', senderId: 'u1', amount: 5, platformFee: 0.5 }),
+          },
           coinBalance: { upsert: jest.fn().mockResolvedValue({}) },
           coinTransaction: { create: jest.fn().mockResolvedValue({}) },
         }),
@@ -407,13 +415,13 @@ describe('PaymentsService', () => {
 
     it('should find tip via Redis and reverse diamonds', async () => {
       redis.get.mockResolvedValue('tip-d1');
-      const mockTipFindUnique = jest.fn().mockResolvedValue({ status: 'completed' });
-      const mockTipUpdate = jest.fn().mockResolvedValue({ receiverId: 'u2', amount: 10, platformFee: 1 });
+      const mockTipUpdateMany = jest.fn().mockResolvedValue({ count: 1 }); // Conditional update succeeds
+      const mockTipFindUnique = jest.fn().mockResolvedValue({ receiverId: 'u2', amount: 10, platformFee: 1 });
       const mockCoinUpdateMany = jest.fn().mockResolvedValue({ count: 1 });
       const mockCoinTxCreate = jest.fn().mockResolvedValue({});
       prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<unknown>) =>
         fn({
-          tip: { findUnique: mockTipFindUnique, update: mockTipUpdate },
+          tip: { updateMany: mockTipUpdateMany, findUnique: mockTipFindUnique },
           coinBalance: { updateMany: mockCoinUpdateMany },
           coinTransaction: { create: mockCoinTxCreate },
         }),
@@ -437,11 +445,11 @@ describe('PaymentsService', () => {
     it('should fallback to PaymentMapping when Redis misses', async () => {
       redis.get.mockResolvedValue(null);
       prisma.paymentMapping.findUnique.mockResolvedValue({ internalId: 'tip-from-mapping' });
-      const mockTipFindUnique = jest.fn().mockResolvedValue({ status: 'completed' });
-      const mockTipUpdate = jest.fn().mockResolvedValue({ receiverId: 'u2', amount: 5, platformFee: 0.5 });
+      const mockTipUpdateMany = jest.fn().mockResolvedValue({ count: 1 });
+      const mockTipFindUnique = jest.fn().mockResolvedValue({ receiverId: 'u2', amount: 5, platformFee: 0.5 });
       prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<unknown>) =>
         fn({
-          tip: { findUnique: mockTipFindUnique, update: mockTipUpdate },
+          tip: { updateMany: mockTipUpdateMany, findUnique: mockTipFindUnique },
           coinBalance: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
           coinTransaction: { create: jest.fn().mockResolvedValue({}) },
         }),
@@ -457,11 +465,11 @@ describe('PaymentsService', () => {
       redis.get.mockResolvedValue(null);
       prisma.paymentMapping.findUnique.mockResolvedValue(null);
       prisma.tip.findFirst.mockResolvedValue({ id: 'tip-from-pi-search' });
-      const mockTipFindUnique = jest.fn().mockResolvedValue({ status: 'completed' });
-      const mockTipUpdate = jest.fn().mockResolvedValue({ receiverId: 'u2', amount: 5, platformFee: 0.5 });
+      const mockTipUpdateMany = jest.fn().mockResolvedValue({ count: 1 });
+      const mockTipFindUnique = jest.fn().mockResolvedValue({ receiverId: 'u2', amount: 5, platformFee: 0.5 });
       prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<unknown>) =>
         fn({
-          tip: { findUnique: mockTipFindUnique, update: mockTipUpdate },
+          tip: { updateMany: mockTipUpdateMany, findUnique: mockTipFindUnique },
           coinBalance: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
           coinTransaction: { create: jest.fn().mockResolvedValue({}) },
         }),
@@ -486,19 +494,19 @@ describe('PaymentsService', () => {
 
     it('should skip reversal when tip already disputed (idempotency)', async () => {
       redis.get.mockResolvedValue('tip-already-disputed');
-      const mockTipFindUnique = jest.fn().mockResolvedValue({ status: 'disputed' });
-      const mockTipUpdate = jest.fn();
+      const mockTipUpdateMany = jest.fn().mockResolvedValue({ count: 0 }); // Already disputed — conditional update fails
+      const mockCoinUpdateMany = jest.fn();
       prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<unknown>) =>
         fn({
-          tip: { findUnique: mockTipFindUnique, update: mockTipUpdate },
-          coinBalance: { updateMany: jest.fn() },
+          tip: { updateMany: mockTipUpdateMany, findUnique: jest.fn() },
+          coinBalance: { updateMany: mockCoinUpdateMany },
           coinTransaction: { create: jest.fn() },
         }),
       );
       const loggerSpy = jest.spyOn(service['logger'], 'warn');
       await service.handleDisputeCreated(disputeBase);
-      expect(mockTipFindUnique).toHaveBeenCalled();
-      expect(mockTipUpdate).not.toHaveBeenCalled();
+      expect(mockTipUpdateMany).toHaveBeenCalled();
+      expect(mockCoinUpdateMany).not.toHaveBeenCalled(); // Diamond reversal skipped
       expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('already disputed'));
     });
 
@@ -508,8 +516,8 @@ describe('PaymentsService', () => {
       prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<unknown>) =>
         fn({
           tip: {
-            findUnique: jest.fn().mockResolvedValue({ status: 'completed' }),
-            update: jest.fn().mockResolvedValue({ receiverId: 'u2', amount: 100, platformFee: 10 }),
+            updateMany: jest.fn().mockResolvedValue({ count: 1 }), // Conditional update succeeds
+            findUnique: jest.fn().mockResolvedValue({ receiverId: 'u2', amount: 100, platformFee: 10 }),
           },
           coinBalance: { updateMany: mockCoinUpdateMany },
           coinTransaction: { create: jest.fn().mockResolvedValue({}) },
@@ -749,29 +757,64 @@ describe('PaymentsService', () => {
     });
   });
 
-  describe('handleCoinPurchaseSucceeded — idempotency — M8', () => {
-    it('should skip when PaymentMapping exists for this PI (primary idempotency)', async () => {
-      prisma.paymentMapping.findUnique.mockResolvedValue({ stripeId: 'pi_dupe_coin', internalId: 'u1', type: 'coin_purchase' });
-      prisma.$transaction = jest.fn();
+  describe('handleCoinPurchaseSucceeded — claim-first idempotency — M8', () => {
+    it('should skip coin crediting when PaymentMapping create throws P2002 (duplicate claim)', async () => {
+      const mockCoinUpsert = jest.fn();
+      prisma.coinBalance = { findUnique: jest.fn().mockResolvedValue({ coins: 500 }) };
+      prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<unknown>) =>
+        fn({
+          paymentMapping: {
+            create: jest.fn().mockRejectedValue(new Error('Unique constraint failed on the fields: (`stripeId`)')),
+          },
+          coinBalance: { upsert: mockCoinUpsert },
+          coinTransaction: { updateMany: jest.fn(), create: jest.fn() },
+        }),
+      );
       const loggerSpy = jest.spyOn(service['logger'], 'log');
       await service.handlePaymentIntentSucceeded({
         id: 'pi_dupe_coin', metadata: { type: 'coin_purchase', userId: 'u1', coinAmount: '500' },
       } as any);
-      expect(prisma.$transaction).not.toHaveBeenCalled();
+      // Transaction was called but claim-first returned false — no coin crediting
+      expect(prisma.$transaction).toHaveBeenCalled();
+      expect(mockCoinUpsert).not.toHaveBeenCalled();
       expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('already processed'));
     });
 
-    it('should skip when CoinTransaction already exists for this PI (legacy fallback)', async () => {
-      prisma.paymentMapping.findUnique.mockResolvedValue(null); // No mapping
-      prisma.coinTransaction.findFirst.mockResolvedValue({ id: 'ct-existing' });
-      prisma.paymentMapping.upsert.mockResolvedValue({}); // Backfill
-      prisma.$transaction = jest.fn();
-      const loggerSpy = jest.spyOn(service['logger'], 'log');
+    it('should re-throw non-P2002 errors from PaymentMapping create', async () => {
+      prisma.coinBalance = { findUnique: jest.fn() };
+      prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<unknown>) =>
+        fn({
+          paymentMapping: {
+            create: jest.fn().mockRejectedValue(new Error('Database connection lost')),
+          },
+          coinBalance: { upsert: jest.fn() },
+          coinTransaction: { updateMany: jest.fn(), create: jest.fn() },
+        }),
+      );
+      await expect(service.handlePaymentIntentSucceeded({
+        id: 'pi_db_err', metadata: { type: 'coin_purchase', userId: 'u1', coinAmount: '500' },
+      } as any)).rejects.toThrow('Database connection lost');
+    });
+
+    it('should credit coins when PaymentMapping create succeeds (first-time processing)', async () => {
+      const mockCoinUpsert = jest.fn().mockResolvedValue({});
+      prisma.coinBalance = { findUnique: jest.fn().mockResolvedValue({ coins: 500 }) };
+      prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<unknown>) =>
+        fn({
+          paymentMapping: { create: jest.fn().mockResolvedValue({}) },
+          coinBalance: { upsert: mockCoinUpsert },
+          coinTransaction: { updateMany: jest.fn().mockResolvedValue({ count: 0 }), create: jest.fn().mockResolvedValue({}) },
+        }),
+      );
       await service.handlePaymentIntentSucceeded({
-        id: 'pi_dupe_coin_legacy', metadata: { type: 'coin_purchase', userId: 'u1', coinAmount: '500' },
+        id: 'pi_new_coin', metadata: { type: 'coin_purchase', userId: 'u1', coinAmount: '500' },
       } as any);
-      expect(prisma.$transaction).not.toHaveBeenCalled();
-      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('already credited'));
+      expect(mockCoinUpsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId: 'u1' },
+          update: { coins: { increment: 500 } },
+        }),
+      );
     });
   });
 
@@ -848,18 +891,23 @@ describe('PaymentsService', () => {
 
   // --- R2 Tab4 Part 2: Premium endDate extension tests (X03-#16) ---
 
-  describe('handlePremiumPaymentSucceeded — endDate extension', () => {
+  describe('handlePremiumPaymentSucceeded — claim-first idempotency + endDate extension', () => {
     it('should extend premium from current endDate, not from now', async () => {
       const futureDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
-      prisma.premiumSubscription = {
-        findUnique: jest.fn().mockResolvedValue({ endDate: futureDate, stripePaymentIntentId: 'pi_old', status: 'ACTIVE' }),
-        upsert: jest.fn().mockResolvedValue({ id: 'prem-1', status: 'ACTIVE' }),
-      };
-      prisma.paymentMapping.upsert.mockResolvedValue({});
+      const mockUpsert = jest.fn().mockResolvedValue({ id: 'prem-1', status: 'ACTIVE' });
+      prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<unknown>) =>
+        fn({
+          paymentMapping: { create: jest.fn().mockResolvedValue({}) },
+          premiumSubscription: {
+            findUnique: jest.fn().mockResolvedValue({ endDate: futureDate }),
+            upsert: mockUpsert,
+          },
+        }),
+      );
       await service.handlePaymentIntentSucceeded({
         id: 'pi_extend', metadata: { type: 'premium_subscription', userId: 'u1', plan: 'MONTHLY' },
       } as any);
-      const upsertCall = prisma.premiumSubscription.upsert.mock.calls[0][0];
+      const upsertCall = mockUpsert.mock.calls[0][0];
       const newEndDate = new Date(upsertCall.create.endDate);
       // Should be ~60 days from now (30 existing + 30 extension), not 30
       const daysFromNow = (newEndDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000);
@@ -868,31 +916,41 @@ describe('PaymentsService', () => {
 
     it('should extend expired premium from now (not from past endDate)', async () => {
       const pastDate = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000); // 10 days ago
-      prisma.premiumSubscription = {
-        findUnique: jest.fn().mockResolvedValue({ endDate: pastDate, stripePaymentIntentId: 'pi_expired_old', status: 'EXPIRED' }),
-        upsert: jest.fn().mockResolvedValue({ id: 'prem-1', status: 'ACTIVE' }),
-      };
-      prisma.paymentMapping.upsert.mockResolvedValue({});
+      const mockUpsert = jest.fn().mockResolvedValue({ id: 'prem-1', status: 'ACTIVE' });
+      prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<unknown>) =>
+        fn({
+          paymentMapping: { create: jest.fn().mockResolvedValue({}) },
+          premiumSubscription: {
+            findUnique: jest.fn().mockResolvedValue({ endDate: pastDate }),
+            upsert: mockUpsert,
+          },
+        }),
+      );
       await service.handlePaymentIntentSucceeded({
         id: 'pi_renew', metadata: { type: 'premium_subscription', userId: 'u1', plan: 'MONTHLY' },
       } as any);
-      const upsertCall = prisma.premiumSubscription.upsert.mock.calls[0][0];
+      const upsertCall = mockUpsert.mock.calls[0][0];
       const newEndDate = new Date(upsertCall.create.endDate);
       const daysFromNow = (newEndDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000);
       expect(daysFromNow).toBeGreaterThan(25); // ~30 days from now
       expect(daysFromNow).toBeLessThan(35);
     });
 
-    it('should skip duplicate premium activation (same PI processed twice)', async () => {
-      prisma.premiumSubscription = {
-        findUnique: jest.fn().mockResolvedValue({ endDate: new Date(), stripePaymentIntentId: 'pi_dupe_prem', status: 'ACTIVE' }),
-        upsert: jest.fn(),
-      };
+    it('should skip duplicate premium activation when PaymentMapping create throws P2002', async () => {
+      const mockUpsert = jest.fn();
+      prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<unknown>) =>
+        fn({
+          paymentMapping: {
+            create: jest.fn().mockRejectedValue(new Error('Unique constraint failed on the fields: (`stripeId`)')),
+          },
+          premiumSubscription: { findUnique: jest.fn(), upsert: mockUpsert },
+        }),
+      );
       const loggerSpy = jest.spyOn(service['logger'], 'log');
       await service.handlePaymentIntentSucceeded({
         id: 'pi_dupe_prem', metadata: { type: 'premium_subscription', userId: 'u1', plan: 'MONTHLY' },
       } as any);
-      expect(prisma.premiumSubscription.upsert).not.toHaveBeenCalled();
+      expect(mockUpsert).not.toHaveBeenCalled();
       expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('already activated'));
     });
   });
@@ -942,14 +1000,12 @@ describe('PaymentsService', () => {
 
   describe('handleCoinPurchaseSucceeded — reconciliation verification', () => {
     it('should log CRITICAL when balance check fails after credit', async () => {
-      prisma.paymentMapping.findUnique.mockResolvedValue(null);
-      prisma.coinTransaction.findFirst.mockResolvedValue(null);
       prisma.coinBalance = { findUnique: jest.fn().mockResolvedValue(null) }; // Balance not found after credit
       prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<void>) =>
         fn({
           coinBalance: { upsert: jest.fn().mockResolvedValue({}) },
           coinTransaction: { updateMany: jest.fn().mockResolvedValue({ count: 0 }), create: jest.fn().mockResolvedValue({}) },
-          paymentMapping: { upsert: jest.fn().mockResolvedValue({}) },
+          paymentMapping: { create: jest.fn().mockResolvedValue({}) },
         }),
       );
       const loggerSpy = jest.spyOn(service['logger'], 'error');
@@ -960,14 +1016,12 @@ describe('PaymentsService', () => {
     });
 
     it('should pass reconciliation when balance is correct', async () => {
-      prisma.paymentMapping.findUnique.mockResolvedValue(null);
-      prisma.coinTransaction.findFirst.mockResolvedValue(null);
       prisma.coinBalance = { findUnique: jest.fn().mockResolvedValue({ coins: 500 }) };
       prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<void>) =>
         fn({
           coinBalance: { upsert: jest.fn().mockResolvedValue({}) },
           coinTransaction: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
-          paymentMapping: { upsert: jest.fn().mockResolvedValue({}) },
+          paymentMapping: { create: jest.fn().mockResolvedValue({}) },
         }),
       );
       const loggerSpy = jest.spyOn(service['logger'], 'error');
@@ -979,6 +1033,92 @@ describe('PaymentsService', () => {
         (call: unknown[]) => typeof call[0] === 'string' && (call[0] as string).includes('CRITICAL RECONCILIATION MISMATCH'),
       );
       expect(criticalCalls).toHaveLength(0);
+    });
+  });
+
+  // ═══ Claim-first idempotency: comprehensive race condition tests ═══
+
+  describe('claim-first idempotency — tip conditional update', () => {
+    it('should skip when tip.updateMany returns count=0 (already completed)', async () => {
+      // Tip lookup: Redis returns the tipId
+      redis.get.mockReset().mockResolvedValue('tip-already-done'); // payment:intent:pi_tip_dup
+      redis.del.mockResolvedValue(1);
+      prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<unknown>) =>
+        fn({
+          tip: {
+            updateMany: jest.fn().mockResolvedValue({ count: 0 }), // Already completed
+            findUnique: jest.fn(),
+          },
+          coinBalance: { upsert: jest.fn() },
+          coinTransaction: { create: jest.fn() },
+        }),
+      );
+      const loggerSpy = jest.spyOn(service['logger'], 'log');
+      await service.handlePaymentIntentSucceeded({
+        id: 'pi_tip_dup', metadata: { type: 'tip' },
+      } as any);
+      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('already completed or not found'));
+    });
+
+    it('should complete tip and credit diamonds when updateMany returns count=1', async () => {
+      redis.get.mockReset().mockResolvedValue('tip-pending'); // payment:intent:pi_tip_ok
+      redis.del.mockResolvedValue(1);
+      const mockUpsert = jest.fn().mockResolvedValue({});
+      prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<unknown>) =>
+        fn({
+          tip: {
+            updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+            findUnique: jest.fn().mockResolvedValue({ receiverId: 'u2', senderId: 'u1', amount: 10, platformFee: 1 }),
+          },
+          coinBalance: { upsert: mockUpsert },
+          coinTransaction: { create: jest.fn().mockResolvedValue({}) },
+        }),
+      );
+      const mockNotifications = (service as any).notifications;
+      mockNotifications.create = jest.fn().mockResolvedValue({});
+      prisma.user.findUnique.mockResolvedValue({ username: 'sender' });
+      await service.handlePaymentIntentSucceeded({
+        id: 'pi_tip_ok', metadata: { type: 'tip' },
+      } as any);
+      expect(mockUpsert).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { userId: 'u2' } }),
+      );
+    });
+  });
+
+  describe('claim-first idempotency — dispute conditional update', () => {
+    it('should reverse diamonds only when tip.updateMany returns count=1', async () => {
+      redis.get.mockReset().mockResolvedValue('tip-for-dispute'); // payment:intent lookup
+      const mockCoinUpdateMany = jest.fn().mockResolvedValue({ count: 1 });
+      prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<unknown>) =>
+        fn({
+          tip: {
+            updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+            findUnique: jest.fn().mockResolvedValue({ receiverId: 'u2', amount: 10, platformFee: 1 }),
+          },
+          coinBalance: { updateMany: mockCoinUpdateMany },
+          coinTransaction: { create: jest.fn().mockResolvedValue({}) },
+        }),
+      );
+      await service.handleDisputeCreated({ payment_intent: 'pi_dispute_ok', reason: 'fraud', amount: 1000 });
+      expect(mockCoinUpdateMany).toHaveBeenCalled();
+    });
+
+    it('should not reverse diamonds when tip.updateMany returns count=0 (already disputed)', async () => {
+      redis.get.mockReset().mockResolvedValue('tip-already-disputed-2'); // payment:intent lookup
+      const mockCoinUpdateMany = jest.fn();
+      prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<unknown>) =>
+        fn({
+          tip: {
+            updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+            findUnique: jest.fn(),
+          },
+          coinBalance: { updateMany: mockCoinUpdateMany },
+          coinTransaction: { create: jest.fn() },
+        }),
+      );
+      await service.handleDisputeCreated({ payment_intent: 'pi_dispute_dup', reason: 'fraud', amount: 1000 });
+      expect(mockCoinUpdateMany).not.toHaveBeenCalled();
     });
   });
 });

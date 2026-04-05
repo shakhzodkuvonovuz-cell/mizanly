@@ -18,6 +18,7 @@ import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { authApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { showToast } from '@/components/ui/Toast';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 function useDebounce<T>(value: T, delay: number): T {
@@ -120,8 +121,9 @@ function UsernameScreenContent() {
       await authApi.register({ username, displayName: username });
       router.push('/onboarding/interests');
     } catch {
-      // Continue even if registration fails — webhook may create the user
-      router.push('/onboarding/interests');
+      // [F4-4] Do NOT advance on failure — stay on screen so user can retry.
+      // Silently continuing could leave the user without a backend account.
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
     } finally {
       setLoading(false);
     }

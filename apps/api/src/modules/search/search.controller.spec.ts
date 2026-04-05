@@ -99,12 +99,20 @@ describe('SearchController', () => {
   });
 
   describe('querySuggestions', () => {
-    it('should call searchService.getSuggestions with capped limit', async () => {
+    it('should call searchService.getSuggestions with capped limit and userId', async () => {
+      service.getSuggestions.mockResolvedValue({ users: [], hashtags: [] } as any);
+
+      await controller.querySuggestions({ q: 'isl', limit: '5' } as any, 'user-123');
+
+      expect(service.getSuggestions).toHaveBeenCalledWith('isl', 5, 'user-123');
+    });
+
+    it('should pass undefined userId for unauthenticated requests', async () => {
       service.getSuggestions.mockResolvedValue({ users: [], hashtags: [] } as any);
 
       await controller.querySuggestions({ q: 'isl', limit: '5' } as any);
 
-      expect(service.getSuggestions).toHaveBeenCalledWith('isl', 5);
+      expect(service.getSuggestions).toHaveBeenCalledWith('isl', 5, undefined);
     });
   });
 

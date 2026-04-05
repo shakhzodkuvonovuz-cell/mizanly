@@ -72,20 +72,20 @@ export class StripeWebhookController {
       throw new BadRequestException('Invalid webhook signature');
     }
 
-    // Idempotency: check if this event ID has already been processed (Redis first, DB fallback)
-    const dedupeKey = `stripe_webhook:${event.id}`;
-    const alreadyProcessed = await this.redis.get(dedupeKey);
-    if (alreadyProcessed) {
-      this.logger.debug(`Stripe webhook ${event.id} already processed (Redis) — skipping`);
+    // Atomic idempotency: SET NX ensures exactly one processor wins the race.
+    // If two concurrent deliveries of the same event arrive, only one SET NX succeeds.
+    const claimKey = `stripe:event:${event.id}`;
+    const claimed = await this.redis.set(claimKey, '1', 'EX', 172800, 'NX'); // 48h TTL
+    if (!claimed) {
+      this.logger.log(`Duplicate Stripe event ${event.id} — atomic claim failed, skipping`);
       return { received: true, deduplicated: true };
     }
-    // DB fallback: Redis may have been flushed
+
+    // DB fallback: if Redis was flushed, check persistent record
     const dbEvent = await this.prisma.processedWebhookEvent.findUnique({
       where: { eventId: event.id },
     });
     if (dbEvent) {
-      // Re-populate Redis from DB so future retries are fast
-      await this.redis.setex(dedupeKey, 604800, '1').catch((e) => this.logger.debug('Webhook dedup cache failed', e?.message));
       this.logger.debug(`Stripe webhook ${event.id} already processed (DB) — skipping`);
       return { received: true, deduplicated: true };
     }
@@ -153,15 +153,13 @@ export class StripeWebhookController {
         return { received: true, error: 'deterministic_failure' };
       }
 
+      // Non-deterministic error: release the Redis claim so Stripe's retry can succeed
+      await this.redis.del(claimKey).catch(() => {/* best effort */});
       throw error;
     }
 
-    // Mark as processed ONLY after handler succeeds — write to both Redis (fast) AND DB (durable)
-    try {
-      await this.redis.setex(dedupeKey, 604800, '1');
-    } catch (redisErr) {
-      this.logger.error(`Failed to set webhook dedup key in Redis: ${dedupeKey}`, redisErr);
-    }
+    // Persist to DB for durability (Redis claim already acquired before handler).
+    // If Redis is flushed, DB record prevents re-processing on Stripe retry.
     try {
       await this.prisma.processedWebhookEvent.create({
         data: { eventId: event.id },

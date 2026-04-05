@@ -42,13 +42,19 @@ export class AuthController {
   }
 
   @Get('check-username')
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Check if username is available' })
-  checkUsername(@Query('username') username: string) {
+  async checkUsername(@Query('username') username: string) {
     if (!username || typeof username !== 'string' || username.length < 3 || username.length > 30 || !/^[a-zA-Z0-9._]+$/.test(username)) {
       throw new BadRequestException('Username must be 3-30 characters (letters, numbers, dots, underscores)');
     }
-    return this.authService.checkUsername(username);
+    // F2-6: Timing-safe delay — always respond after 150ms regardless of whether
+    // the username exists or not, to prevent timing-based enumeration attacks.
+    const [result] = await Promise.all([
+      this.authService.checkUsername(username),
+      new Promise<void>((resolve) => setTimeout(resolve, 150)),
+    ]);
+    return result;
   }
 
   @Post('interests')

@@ -100,8 +100,11 @@ export class SearchController {
   @UseGuards(OptionalClerkAuthGuard)
   @Throttle({ default: { ttl: 60000, limit: 30 } })
   @ApiOperation({ summary: 'Get search query autocomplete suggestions' })
-  querySuggestions(@Query() dto: SearchSuggestionsDto) {
+  querySuggestions(
+    @Query() dto: SearchSuggestionsDto,
+    @CurrentUser('id') userId?: string,
+  ) {
     const safeLimit = Math.min(Math.max(1, dto.limit ? parseInt(dto.limit, 10) || 10 : 10), 20);
-    return this.searchService.getSuggestions(dto.q || '', safeLimit);
+    return this.searchService.getSuggestions(dto.q || '', safeLimit, userId);
   }
 }

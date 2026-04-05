@@ -31,6 +31,10 @@ export const useStore = create<StoreState>()(
       name: 'mizanly-store',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
+        // Auth — cached to prevent flash between unauth/auth UI on app open.
+        // Clerk still verifies the token in background; if expired, logout() clears these.
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
         theme: state.theme,
         safFeedType: state.safFeedType,
         majlisFeedType: state.majlisFeedType,

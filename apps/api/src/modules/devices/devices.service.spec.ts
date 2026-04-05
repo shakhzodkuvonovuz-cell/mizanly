@@ -1,10 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DevicesService } from './devices.service';
 import { PrismaService } from '../../config/prisma.service';
+import { TwoFactorService } from '../two-factor/two-factor.service';
 
 describe('DevicesService', () => {
   let service: DevicesService;
   let prisma: { [key: string]: { [key: string]: jest.Mock } };
+  let twoFactorService: { clearTwoFactorSession: jest.Mock };
 
   beforeEach(async () => {
     // Create mock prisma with jest.fn() for each method used
@@ -19,6 +21,10 @@ describe('DevicesService', () => {
       },
     };
 
+    twoFactorService = {
+      clearTwoFactorSession: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         DevicesService,
@@ -30,6 +36,7 @@ describe('DevicesService', () => {
             get: jest.fn().mockResolvedValue(null),
           },
         },
+        { provide: TwoFactorService, useValue: twoFactorService },
       ],
     }).compile();
 
@@ -164,17 +171,73 @@ describe('DevicesService', () => {
         data: { isActive: false },
       });
     });
+
+    it('F2-4: should clear 2FA session flag on logout', async () => {
+      prisma.device.updateMany.mockResolvedValue({ count: 1 });
+      await service.logoutSession('session-1', 'user-1');
+      expect(twoFactorService.clearTwoFactorSession).toHaveBeenCalledWith('user-1', 'session-1');
+    });
+
+    it('F2-4: should not throw if 2FA clear fails', async () => {
+      prisma.device.updateMany.mockResolvedValue({ count: 1 });
+      twoFactorService.clearTwoFactorSession.mockRejectedValue(new Error('Redis down'));
+      const result = await service.logoutSession('session-1', 'user-1');
+      expect(result).toEqual({ loggedOut: true });
+    });
   });
 
   describe('logoutAllOtherSessions', () => {
     it('should deactivate all sessions except current', async () => {
-      prisma.device.updateMany.mockResolvedValue({ count: 3 });
+      prisma.device.findMany.mockResolvedValue([
+        { id: 'session-2' },
+        { id: 'session-3' },
+      ]);
+      prisma.device.updateMany.mockResolvedValue({ count: 2 });
       const result = await service.logoutAllOtherSessions('user-1', 'current-session');
       expect(result).toEqual({ loggedOut: true });
       expect(prisma.device.updateMany).toHaveBeenCalledWith({
         where: { userId: 'user-1', isActive: true, id: { not: 'current-session' } },
         data: { isActive: false },
       });
+    });
+
+    it('F2-4: should clear 2FA flags for each deactivated session', async () => {
+      prisma.device.findMany.mockResolvedValue([
+        { id: 'session-2' },
+        { id: 'session-3' },
+        { id: 'session-4' },
+      ]);
+      prisma.device.updateMany.mockResolvedValue({ count: 3 });
+
+      await service.logoutAllOtherSessions('user-1', 'current-session');
+
+      expect(twoFactorService.clearTwoFactorSession).toHaveBeenCalledTimes(3);
+      expect(twoFactorService.clearTwoFactorSession).toHaveBeenCalledWith('user-1', 'session-2');
+      expect(twoFactorService.clearTwoFactorSession).toHaveBeenCalledWith('user-1', 'session-3');
+      expect(twoFactorService.clearTwoFactorSession).toHaveBeenCalledWith('user-1', 'session-4');
+    });
+
+    it('F2-4: should not throw if 2FA clear fails for some sessions', async () => {
+      prisma.device.findMany.mockResolvedValue([
+        { id: 'session-2' },
+        { id: 'session-3' },
+      ]);
+      prisma.device.updateMany.mockResolvedValue({ count: 2 });
+      twoFactorService.clearTwoFactorSession
+        .mockResolvedValueOnce(undefined)
+        .mockRejectedValueOnce(new Error('Redis down'));
+
+      const result = await service.logoutAllOtherSessions('user-1', 'current-session');
+      expect(result).toEqual({ loggedOut: true });
+    });
+
+    it('F2-4: should handle zero other sessions gracefully', async () => {
+      prisma.device.findMany.mockResolvedValue([]);
+      prisma.device.updateMany.mockResolvedValue({ count: 0 });
+
+      const result = await service.logoutAllOtherSessions('user-1', 'current-session');
+      expect(result).toEqual({ loggedOut: true });
+      expect(twoFactorService.clearTwoFactorSession).not.toHaveBeenCalled();
     });
   });
 

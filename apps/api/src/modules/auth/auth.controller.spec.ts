@@ -86,24 +86,43 @@ describe('AuthController', () => {
       expect(result).toEqual({ available: false });
     });
 
-    it('should throw BadRequestException for too short username', () => {
-      expect(() => controller.checkUsername('ab')).toThrow(BadRequestException);
+    it('should throw BadRequestException for too short username', async () => {
+      await expect(controller.checkUsername('ab')).rejects.toThrow(BadRequestException);
     });
 
-    it('should throw BadRequestException for too long username', () => {
-      expect(() => controller.checkUsername('a'.repeat(31))).toThrow(BadRequestException);
+    it('should throw BadRequestException for too long username', async () => {
+      await expect(controller.checkUsername('a'.repeat(31))).rejects.toThrow(BadRequestException);
     });
 
-    it('should throw BadRequestException for invalid characters', () => {
-      expect(() => controller.checkUsername('user@name')).toThrow(BadRequestException);
+    it('should throw BadRequestException for invalid characters', async () => {
+      await expect(controller.checkUsername('user@name')).rejects.toThrow(BadRequestException);
     });
 
-    it('should throw BadRequestException for empty username', () => {
-      expect(() => controller.checkUsername('')).toThrow(BadRequestException);
+    it('should throw BadRequestException for empty username', async () => {
+      await expect(controller.checkUsername('')).rejects.toThrow(BadRequestException);
     });
 
-    it('should throw BadRequestException for undefined username', () => {
-      expect(() => controller.checkUsername(undefined as any)).toThrow(BadRequestException);
+    it('should throw BadRequestException for undefined username', async () => {
+      await expect(controller.checkUsername(undefined as any)).rejects.toThrow(BadRequestException);
+    });
+
+    it('F2-6: should enforce timing-safe delay (minimum 150ms response time)', async () => {
+      service.checkUsername.mockResolvedValue({ available: true } as any);
+
+      const start = Date.now();
+      await controller.checkUsername('testuser');
+      const elapsed = Date.now() - start;
+
+      // The delay is 150ms — allow 140ms lower bound for timer imprecision
+      expect(elapsed).toBeGreaterThanOrEqual(140);
+    });
+
+    it('F2-6: should return correct result despite timing delay', async () => {
+      service.checkUsername.mockResolvedValue({ available: false } as any);
+
+      const result = await controller.checkUsername('takenname');
+
+      expect(result).toEqual({ available: false });
     });
   });
 

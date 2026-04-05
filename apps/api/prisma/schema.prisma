@@ -3200,6 +3200,7 @@ model AudioRoomParticipant {
   user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   role       AudioRoomRole @default(listener) // S02-#7
   isMuted    Boolean       @default(true)
+  hostMuted  Boolean       @default(false)
   handRaised Boolean       @default(false)
   joinedAt   DateTime      @default(now())
 

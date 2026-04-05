@@ -10,6 +10,7 @@ describe('TwoFactorController', () => {
   let service: jest.Mocked<TwoFactorService>;
 
   const userId = 'user-123';
+  const sessionId = 'sess_abc123';
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -71,20 +72,20 @@ describe('TwoFactorController', () => {
     it('should return twoFactorEnabled false when 2FA not enabled', async () => {
       service.getStatus.mockResolvedValue(false as any);
 
-      const result = await controller.validate(userId, { code: '123456' } as any);
+      const result = await controller.validate(userId, sessionId, { code: '123456' } as any);
 
       expect(service.getStatus).toHaveBeenCalledWith(userId);
       expect(result).toEqual({ valid: true, twoFactorEnabled: false, sessionVerified: true, message: '2FA not enabled — no code required' });
     });
 
-    it('should call validate and set session flag when 2FA is enabled', async () => {
+    it('should call validate with sessionId and set session flag when 2FA is enabled', async () => {
       service.getStatus.mockResolvedValue(true as any);
       service.validate.mockResolvedValue(true as any);
 
-      const result = await controller.validate(userId, { code: '123456' } as any);
+      const result = await controller.validate(userId, sessionId, { code: '123456' } as any);
 
       expect(service.getStatus).toHaveBeenCalledWith(userId);
-      expect(service.validate).toHaveBeenCalledWith(userId, '123456');
+      expect(service.validate).toHaveBeenCalledWith(userId, '123456', sessionId);
       expect(result).toEqual({ valid: true, twoFactorEnabled: true, sessionVerified: true });
     });
 
@@ -92,9 +93,19 @@ describe('TwoFactorController', () => {
       service.getStatus.mockResolvedValue(true as any);
       service.validate.mockResolvedValue(false as any);
 
-      const result = await controller.validate(userId, { code: '000000' } as any);
+      const result = await controller.validate(userId, sessionId, { code: '000000' } as any);
 
       expect(result).toEqual({ valid: false, twoFactorEnabled: true, sessionVerified: false });
+    });
+
+    it('should forward undefined sessionId when not available', async () => {
+      service.getStatus.mockResolvedValue(true as any);
+      service.validate.mockResolvedValue(true as any);
+
+      const result = await controller.validate(userId, undefined, { code: '123456' } as any);
+
+      expect(service.validate).toHaveBeenCalledWith(userId, '123456', undefined);
+      expect(result).toEqual({ valid: true, twoFactorEnabled: true, sessionVerified: true });
     });
   });
 
@@ -110,14 +121,14 @@ describe('TwoFactorController', () => {
   });
 
   describe('status', () => {
-    it('should return isEnabled and sessionVerified from service', async () => {
+    it('should return isEnabled and sessionVerified from service with sessionId', async () => {
       service.getStatus.mockResolvedValue(true as any);
       service.isTwoFactorVerified.mockResolvedValue(true as any);
 
-      const result = await controller.status(userId);
+      const result = await controller.status(userId, sessionId);
 
       expect(service.getStatus).toHaveBeenCalledWith(userId);
-      expect(service.isTwoFactorVerified).toHaveBeenCalledWith(userId);
+      expect(service.isTwoFactorVerified).toHaveBeenCalledWith(userId, sessionId);
       expect(result).toEqual({ isEnabled: true, sessionVerified: true });
     });
 
@@ -125,8 +136,18 @@ describe('TwoFactorController', () => {
       service.getStatus.mockResolvedValue(true as any);
       service.isTwoFactorVerified.mockResolvedValue(false as any);
 
-      const result = await controller.status(userId);
+      const result = await controller.status(userId, sessionId);
 
+      expect(result).toEqual({ isEnabled: true, sessionVerified: false });
+    });
+
+    it('should handle undefined sessionId gracefully', async () => {
+      service.getStatus.mockResolvedValue(true as any);
+      service.isTwoFactorVerified.mockResolvedValue(false as any);
+
+      const result = await controller.status(userId, undefined);
+
+      expect(service.isTwoFactorVerified).toHaveBeenCalledWith(userId, undefined);
       expect(result).toEqual({ isEnabled: true, sessionVerified: false });
     });
   });

@@ -252,5 +252,72 @@ describe('WebhooksController', () => {
         username: 'new_username',
       }));
     });
+
+    // ── F2-5: Idempotency dedup key set AFTER side effects ──
+
+    it('F2-5: should set dedup key AFTER successful side effects', async () => {
+      const eventData = {
+        type: 'user.created',
+        data: {
+          id: 'clerk_new',
+          email_addresses: [{ email_address: 'new@test.com' }],
+          first_name: 'New',
+          last_name: 'User',
+        },
+      };
+      mockVerify.mockReturnValue(eventData);
+      authService.syncClerkUser.mockResolvedValue(undefined as any);
+
+      const redis = (controller as any).redis;
+      const callOrder: string[] = [];
+      authService.syncClerkUser.mockImplementation(async () => {
+        callOrder.push('syncClerkUser');
+        return undefined as any;
+      });
+      redis.setex.mockImplementation(async () => {
+        callOrder.push('setex');
+        return 'OK';
+      });
+
+      await controller.handleClerkWebhook(makeReq(eventData) as any, 'svix-f25', 'ts', 'sig');
+
+      expect(callOrder).toEqual(['syncClerkUser', 'setex']);
+      expect(redis.setex).toHaveBeenCalledWith('clerk_webhook:svix-f25', 86400, '1');
+    });
+
+    it('F2-5: should NOT set dedup key when side effects throw', async () => {
+      const eventData = {
+        type: 'user.created',
+        data: {
+          id: 'clerk_fail',
+          email_addresses: [{ email_address: 'fail@test.com' }],
+          first_name: 'Fail',
+          last_name: '',
+        },
+      };
+      mockVerify.mockReturnValue(eventData);
+      authService.syncClerkUser.mockRejectedValue(new Error('DB connection lost'));
+
+      const redis = (controller as any).redis;
+
+      await expect(
+        controller.handleClerkWebhook(makeReq(eventData) as any, 'svix-fail', 'ts', 'sig'),
+      ).rejects.toThrow('DB connection lost');
+
+      // Dedup key should NOT be set since side effects failed
+      expect(redis.setex).not.toHaveBeenCalled();
+    });
+
+    it('F2-5: should still set dedup key for events with no side effects', async () => {
+      const eventData = { type: 'session.ended', data: { id: 'sess_x', user_id: 'u1' } };
+      mockVerify.mockReturnValue(eventData);
+
+      const redis = (controller as any).redis;
+
+      await controller.handleClerkWebhook(makeReq(eventData) as any, 'svix-noop', 'ts', 'sig');
+
+      // session.ended has no side effects, but dedup key should still be set
+      expect(redis.setex).toHaveBeenCalledWith('clerk_webhook:svix-noop', 86400, '1');
+    });
   });
 });

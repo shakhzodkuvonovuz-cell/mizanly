@@ -17,6 +17,7 @@ import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { authApi, usersApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { showToast } from '@/components/ui/Toast';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const INTERESTS: { id: string; label: string; icon: IconName }[] = [
@@ -88,12 +89,15 @@ function InterestsScreenContent() {
       if (selectedMadhab && selectedMadhab !== 'none') {
         await usersApi.updateMe({ madhab: selectedMadhab }).catch(() => {});
       }
-    } catch {
-      // continue anyway
-    } finally {
+      // [F4-4] Only mark onboarding complete after successful backend confirmation.
+      // Moving this out of `finally` prevents completing onboarding when the
+      // backend never recorded the user's interests.
       await markOnboardingComplete();
-      setLoading(false);
       router.replace('/(tabs)/saf');
+    } catch {
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+    } finally {
+      setLoading(false);
     }
   };
 

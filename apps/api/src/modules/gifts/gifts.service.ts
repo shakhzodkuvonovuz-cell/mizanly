@@ -290,6 +290,7 @@ export class GiftsService {
   async cashout(userId: string, diamonds: number): Promise<CashoutResult> {
     throw new NotImplementedException('Cashout requires Stripe Connect payout integration. Coming soon.');
 
+    // eslint-disable-next-line no-unreachable -- dead code below kept for when Stripe Connect is wired up
     if (!Number.isInteger(diamonds) || diamonds <= 0) {
       throw new BadRequestException('Diamonds must be a positive integer');
     }
@@ -300,53 +301,46 @@ export class GiftsService {
       );
     }
 
-    const balance = await this.prisma.coinBalance.findUnique({
-      where: { userId },
-    });
-    if (!balance || balance!.diamonds < diamonds) {
-      throw new BadRequestException('Insufficient diamonds');
-    }
-
     // 100 diamonds = $0.70
     const usdCents = Math.floor(diamonds / DIAMONDS_PER_USD_CENT);
     const usdAmount = usdCents / 100;
 
-    // Use conditional update to prevent going negative in a race condition
-    const updated = await this.prisma.coinBalance.updateMany({
-      where: { userId, diamonds: { gte: diamonds } },
-      data: { diamonds: { decrement: diamonds } },
-    });
-
-    if (updated.count === 0) {
-      throw new BadRequestException('Insufficient diamonds');
-    }
-
-    // Application-level guard: verify balance never went negative
-    const postBalance = await this.prisma.coinBalance.findUnique({ where: { userId } });
-    const postDiamonds = postBalance?.diamonds ?? 0;
-    if (postDiamonds < 0) {
-      // This should never happen due to the conditional update, but guard against race conditions
-      await this.prisma.coinBalance.update({
-        where: { userId },
-        data: { diamonds: { increment: diamonds } },
+    // Wrap entire cashout in ACID transaction — deduction + audit trail are atomic
+    const result = await this.prisma.$transaction(async (tx: Parameters<Parameters<typeof this.prisma.$transaction>[0]>[0]) => {
+      // Use conditional update to prevent going negative in a race condition
+      const updated = await tx.coinBalance.updateMany({
+        where: { userId, diamonds: { gte: diamonds } },
+        data: { diamonds: { decrement: diamonds } },
       });
-      throw new BadRequestException('Balance integrity violation — cashout reversed');
-    }
 
-    await this.prisma.coinTransaction.create({
-      data: {
-        userId,
-        type: 'CASHOUT',
-        amount: -diamonds,
-        description: `Cashed out ${diamonds} diamonds for $${usdAmount.toFixed(2)}`,
-      },
+      if (updated.count === 0) {
+        throw new BadRequestException('Insufficient diamonds');
+      }
+
+      // Application-level guard: verify balance never went negative
+      const postBalance = await tx.coinBalance.findUnique({ where: { userId } });
+      const postDiamonds = postBalance?.diamonds ?? 0;
+      if (postDiamonds < 0) {
+        throw new BadRequestException('Balance integrity violation — cashout reversed');
+      }
+
+      await tx.coinTransaction.create({
+        data: {
+          userId,
+          type: 'CASHOUT',
+          amount: -diamonds,
+          description: `Cashed out ${diamonds} diamonds for $${usdAmount.toFixed(2)}`,
+        },
+      });
+
+      return {
+        diamondsDeducted: diamonds,
+        usdAmount,
+        remainingDiamonds: postDiamonds,
+      };
     });
 
-    return {
-      diamondsDeducted: diamonds,
-      usdAmount,
-      remainingDiamonds: postDiamonds,
-    };
+    return result;
   }
 
   async getReceivedGifts(userId: string) {

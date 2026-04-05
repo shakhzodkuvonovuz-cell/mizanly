@@ -51,10 +51,12 @@ export class UserThrottlerGuard extends ThrottlerGuard {
     if (user?.id) {
       return `user:${user.id}`;
     }
-    // Fall back to IP for unauthenticated requests
-    // Use forwarded IP header if behind proxy, then direct IP
-    const forwarded = (req as { headers?: Record<string, string> }).headers?.['x-forwarded-for'];
-    const ip = forwarded?.split(',')[0]?.trim() || (req as { ip?: string }).ip;
+    // Fall back to IP for unauthenticated requests.
+    // SECURITY: Use req.ip which respects Express 'trust proxy' setting.
+    // Do NOT read x-forwarded-for directly — it can be spoofed by clients.
+    // When 'trust proxy' is configured in main.ts, req.ip correctly resolves
+    // to the first trusted proxy hop (e.g., Cloudflare → nginx → app).
+    const ip = (req as { ip?: string }).ip;
     if (ip) {
       return `ip:${ip}`;
     }

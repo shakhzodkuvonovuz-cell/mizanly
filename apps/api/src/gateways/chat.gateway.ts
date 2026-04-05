@@ -244,9 +244,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 
   async handleConnection(client: Socket) {
     try {
-      // Rate limit connections per IP (max 10/min) to prevent connection floods
-      const ip = client.handshake.headers['x-forwarded-for']?.toString().split(',')[0]?.trim()
-        || client.handshake.address || 'unknown';
+      // Rate limit connections per IP (max 10/min) to prevent connection floods.
+      // SECURITY: Do NOT read x-forwarded-for directly — clients can spoof it to bypass
+      // rate limiting. Use socket.conn.remoteAddress (TCP-level) or socket.handshake.address
+      // (which Socket.IO resolves from the underlying connection).
+      // In production, Cloudflare/nginx should set X-Real-IP which is more trustworthy,
+      // but remoteAddress is the safest default since it cannot be spoofed.
+      const ip = client.conn?.remoteAddress || client.handshake.address || 'unknown';
       const connKey = `ws:conn:${ip}`;
       // J07-H6: Atomic INCR + conditional EXPIRE via Lua script to eliminate crash-between race
       const connCount = await atomicIncr(this.redis, connKey, 60);
@@ -646,25 +650,9 @@ return evicted`,
       return;
     }
 
-    // V6-F1: Route to recipient's USER room — NOT the conversation room.
-    // The server sees the recipientId for routing but the forwarded event contains
-    // ONLY the opaque sealed envelope. No senderId, no conversation context.
-    // The recipient unseals the envelope to discover sender + inner ciphertext.
-    this.server.to(`user:${data.recipientId}`).emit('sealed_message', {
-      ephemeralKey: data.ephemeralKey,
-      sealedCiphertext: data.sealedCiphertext,
-      // V6-F1: Include conversationId so the recipient knows which conversation
-      // this sealed message belongs to (needed to route to correct session).
-      // This is NOT a privacy leak — the recipient already knows their conversations.
-      conversationId: data.conversationId,
-    });
-
-    // Codex-V7-F2 FIX: Persist with senderId from authenticated socket.
-    // Previously: senderId=null → history render can't determine sender after app restart.
-    // The sealed envelope hides the sender from TRANSPORT (socket logs, routing).
-    // But the persisted DB record NEEDS the senderId for history/undo/receipts.
-    // The sender's identity is ALSO inside the sealed envelope (defense-in-depth),
-    // so even if the DB is compromised, the inner encryption layer protects content.
+    // SEC-FIX-1: Persist FIRST, then emit. Previously the emit happened before DB write,
+    // so if DB failed the recipient already had the message but the sender got an error.
+    // This caused non-durable delivery, duplicates on retry, and history divergence.
     let message;
     try {
       message = await this.messagesService.sendMessage(
@@ -688,9 +676,24 @@ return evicted`,
       );
     } catch {
       // Codex-V7-F3 FIX: Persistence failure = message NOT delivered durably.
-      // Previously returned { success: true } — sender thought message was stored. It wasn't.
+      // Do NOT emit to recipient — the message was never stored.
       throw new WsException('Failed to persist sealed message');
     }
+
+    // V6-F1: Route to recipient's USER room — NOT the conversation room.
+    // The server sees the recipientId for routing but the forwarded event contains
+    // ONLY the opaque sealed envelope. No senderId, no conversation context.
+    // The recipient unseals the envelope to discover sender + inner ciphertext.
+    // SEC-FIX-1: This emit now happens AFTER successful persistence — if DB write
+    // fails above, we throw WsException and never reach this code.
+    this.server.to(`user:${data.recipientId}`).emit('sealed_message', {
+      ephemeralKey: data.ephemeralKey,
+      sealedCiphertext: data.sealedCiphertext,
+      // V6-F1: Include conversationId so the recipient knows which conversation
+      // this sealed message belongs to (needed to route to correct session).
+      // This is NOT a privacy leak — the recipient already knows their conversations.
+      conversationId: data.conversationId,
+    });
 
     return { success: true, messageId: message?.id, clientMessageId: data.clientMessageId, createdAt: message?.createdAt };
   }
@@ -766,20 +769,40 @@ return evicted`,
       throw new WsException('Not a member of this conversation');
     }
 
+    // SEC-FIX-2: Look up the message FIRST to enforce sender/idempotency checks.
+    // Previously any conversation member could forge delivery receipts for any message,
+    // and a sender could mark their own message as delivered.
+    const msg = await this.prisma.message.findUnique({
+      where: { id: dto.messageId },
+      select: { senderId: true, deliveredAt: true, conversationId: true },
+    });
+
+    if (!msg || msg.conversationId !== dto.conversationId) {
+      client.emit('error', { message: 'Message not found in this conversation' });
+      return;
+    }
+
+    // SEC-FIX-2a: Sender cannot mark their own message as delivered
+    if (msg.senderId === client.data.userId) {
+      client.emit('error', { message: 'Cannot mark own message as delivered' });
+      return;
+    }
+
+    // SEC-FIX-2b: Idempotent — if already delivered, skip the update but don't error
+    if (msg.deliveredAt) {
+      return;
+    }
+
     const now = new Date();
     // X07-#3: Await the delivery update instead of fire-and-forget to ensure data consistency
     await this.prisma.message.updateMany({
-      where: { id: dto.messageId, conversationId: dto.conversationId },
+      where: { id: dto.messageId, conversationId: dto.conversationId, deliveredAt: null },
       data: { deliveredAt: now },
-    }).catch((e) => this.logger.error('Failed to update delivery', e));
+    }).catch((e: Error) => this.logger.error('Failed to update delivery', e));
 
     // Emit delivery receipt only to the message sender, not the entire room (F11 — privacy)
     try {
-      const msg = await this.prisma.message.findUnique({
-        where: { id: dto.messageId },
-        select: { senderId: true },
-      });
-      if (msg?.senderId) {
+      if (msg.senderId) {
         const senderSockets = await this.getUserSockets(msg.senderId);
         for (const s of senderSockets) {
           this.server.to(s).emit('delivery_receipt', { messageId: dto.messageId, deliveredAt: now.toISOString(), deliveredTo: client.data.userId });
@@ -807,29 +830,46 @@ return evicted`,
     const userId = client.data.userId;
     const { roomId } = dto;
 
-    // Create room in Redis if doesn't exist (first joiner is host)
+    // F29-1: Verify roomId exists in DB before allowing join (prevents phantom room creation)
+    const dbRoom = await this.prisma.audioRoom.findUnique({
+      where: { id: roomId },
+      select: { id: true, status: true, hostId: true },
+    });
+    if (!dbRoom || dbRoom.status === 'ended') {
+      client.emit('error', { message: 'Room not found or has ended' });
+      return;
+    }
+
+    // Create room in Redis if doesn't exist — use DB hostId, not first joiner (F29-1)
     const roomKey = this.quranRoomKey(roomId);
     const exists = await this.redis.exists(roomKey);
     if (!exists) {
       const pipe = this.redis.pipeline();
-      pipe.hmset(roomKey, { hostId: userId, currentSurah: '1', currentVerse: '1', reciterId: '' });
+      pipe.hmset(roomKey, { hostId: dbRoom.hostId, currentSurah: '1', currentVerse: '1', reciterId: '' });
       pipe.expire(roomKey, this.QURAN_ROOM_TTL);
       await pipe.exec();
     }
 
-    // Enforce participant cap
+    // F29-5: Atomic participant cap check+add via Lua script (prevents race condition)
     const partKey = this.quranParticipantsKey(roomId);
-    const currentCount = await this.redis.scard(partKey);
-    if (currentCount >= this.MAX_QURAN_ROOM_PARTICIPANTS) {
+    const LUA_CAP_ADD = `
+      local count = redis.call('SCARD', KEYS[1])
+      if count >= tonumber(ARGV[2]) then
+        return 0
+      end
+      redis.call('SADD', KEYS[1], ARGV[1])
+      return 1
+    `;
+    const added = await this.redis.eval(
+      LUA_CAP_ADD, 1, partKey, client.id, String(this.MAX_QURAN_ROOM_PARTICIPANTS),
+    );
+    if (added === 0) {
       client.emit('error', { message: `Room is full (max ${this.MAX_QURAN_ROOM_PARTICIPANTS} participants)` });
       return;
     }
 
-    // Add participant and track on socket for disconnect cleanup (pipelined)
-    const partPipe = this.redis.pipeline();
-    partPipe.sadd(partKey, client.id);
-    partPipe.expire(partKey, this.QURAN_ROOM_TTL);
-    await partPipe.exec();
+    // Set TTL on participant set (non-critical — Lua already added the member)
+    await this.redis.expire(partKey, this.QURAN_ROOM_TTL);
     client.join(`quran:${roomId}`);
     if (!client.data.quranRooms) client.data.quranRooms = [];
     if (!client.data.quranRooms.includes(roomId)) client.data.quranRooms.push(roomId);

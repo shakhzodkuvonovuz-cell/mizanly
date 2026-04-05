@@ -93,14 +93,19 @@ export class TwoFactorController {
   @Throttle({ default: { limit: 5, ttl: 300000 } })
   @ApiOperation({ summary: 'Validate TOTP code and set session flag (5 attempts per 5 min)' })
   @ApiResponse({ status: 200, description: 'Returns validation result with session verification status' })
-  async validate(@CurrentUser('id') userId: string, @Body() dto: VerifyDto) {
+  async validate(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('sessionId') sessionId: string | undefined,
+    @Body() dto: VerifyDto,
+  ) {
     // A01-#10: Use validate() which sets session-level 2FA flag in Redis on success.
     // Also returns twoFactorEnabled so caller knows if 2FA was actually checked.
+    // Session-bound: Redis key includes sessionId so one TOTP doesn't bless all sessions.
     const isEnabled = await this.twoFactorService.getStatus(userId);
     if (!isEnabled) {
       return { valid: true, twoFactorEnabled: false, sessionVerified: true, message: '2FA not enabled — no code required' };
     }
-    const valid = await this.twoFactorService.validate(userId, dto.code);
+    const valid = await this.twoFactorService.validate(userId, dto.code, sessionId);
     return { valid, twoFactorEnabled: true, sessionVerified: valid };
   }
 
@@ -124,9 +129,12 @@ export class TwoFactorController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Check if 2FA is enabled and session is verified' })
   @ApiResponse({ status: 200, description: 'Returns 2FA status and session verification' })
-  async status(@CurrentUser('id') userId: string) {
+  async status(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('sessionId') sessionId: string | undefined,
+  ) {
     const isEnabled = await this.twoFactorService.getStatus(userId);
-    const sessionVerified = await this.twoFactorService.isTwoFactorVerified(userId);
+    const sessionVerified = await this.twoFactorService.isTwoFactorVerified(userId, sessionId);
     return { isEnabled, sessionVerified };
   }
 

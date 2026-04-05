@@ -4,6 +4,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsOptional, IsIn, Matches, MaxLength } from 'class-validator';
 import { DevicesService } from './devices.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
+import { TwoFactorGuard } from '../../common/guards/two-factor.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 class RegisterDeviceDto {
@@ -49,7 +50,8 @@ export class DevicesController {
   }
 
   @Delete('sessions/:id')
-  @ApiOperation({ summary: 'Log out a specific device session' })
+  @UseGuards(TwoFactorGuard)
+  @ApiOperation({ summary: 'Log out a specific device session (2FA required)' })
   logoutSession(
     @CurrentUser('id') userId: string,
     @Param('id') sessionId: string,
@@ -60,7 +62,8 @@ export class DevicesController {
   // A01-#9: Changed from DELETE to POST — DELETE with body is discouraged by RFC 7231
   // and some proxies strip the body, which would cause all sessions to be logged out
   @Post('sessions/logout-others')
-  @ApiOperation({ summary: 'Log out all other device sessions' })
+  @UseGuards(TwoFactorGuard)
+  @ApiOperation({ summary: 'Log out all other device sessions (2FA required)' })
   logoutAllOtherSessions(
     @CurrentUser('id') userId: string,
     @Body() body: LogoutSessionDto,

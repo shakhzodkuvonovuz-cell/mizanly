@@ -330,6 +330,19 @@ export class TwoFactorService {
   private readonly TWO_FACTOR_SESSION_TTL = 24 * 60 * 60;
 
   /**
+   * Build the Redis key for a 2FA-verified session.
+   * Includes sessionId when available to prevent one TOTP validation from
+   * blessing ALL concurrent sessions for 24 hours (Finding 2: session binding).
+   */
+  private buildSessionKey(userId: string, sessionId?: string): string {
+    if (sessionId) {
+      return `2fa:verified:${userId}:${sessionId}`;
+    }
+    // Fallback for edge cases where sessionId is unavailable (shouldn't happen with Clerk)
+    return `2fa:verified:${userId}`;
+  }
+
+  /**
    * Validate a TOTP code for login flow.
    * Returns true if 2FA is not enabled (user doesn't need to provide code).
    * For sensitive operations that REQUIRE 2FA, use validateStrict() instead.
@@ -337,8 +350,12 @@ export class TwoFactorService {
    * When validation succeeds for a user with 2FA enabled, a session-level flag
    * is stored in Redis so subsequent requests can verify the user has completed
    * 2FA without re-prompting. The flag expires after 24 hours.
+   *
+   * The Redis key is bound to both userId AND sessionId (from Clerk JWT `sid`)
+   * so that one successful TOTP validation only blesses the specific session
+   * that submitted it, not all concurrent sessions for the user.
    */
-  async validate(userId: string, code: string): Promise<boolean> {
+  async validate(userId: string, code: string, sessionId?: string): Promise<boolean> {
     const secretRecord = await this.prisma.twoFactorSecret.findUnique({
       where: { userId },
     });
@@ -350,8 +367,9 @@ export class TwoFactorService {
     const plaintextSecret = decryptSecretWithFallback(secretRecord.secret, this.encryptionKey, this.oldEncryptionKey);
     const isValid = verifyTotp(code, plaintextSecret);
     if (isValid) {
-      // Store session-level 2FA verification flag in Redis
-      await this.redis.setex(`2fa:verified:${userId}`, this.TWO_FACTOR_SESSION_TTL, '1');
+      // Store session-level 2FA verification flag in Redis (bound to session)
+      const key = this.buildSessionKey(userId, sessionId);
+      await this.redis.setex(key, this.TWO_FACTOR_SESSION_TTL, '1');
     }
     return isValid;
   }
@@ -360,21 +378,23 @@ export class TwoFactorService {
    * Check if the user has verified 2FA in the current session.
    * Returns true if:
    * - 2FA is not enabled for the user (no verification needed), OR
-   * - 2FA was verified within the session TTL (24 hours)
+   * - 2FA was verified within the session TTL (24 hours) for this specific session
    */
-  async isTwoFactorVerified(userId: string): Promise<boolean> {
+  async isTwoFactorVerified(userId: string, sessionId?: string): Promise<boolean> {
     const isEnabled = await this.getStatus(userId);
     if (!isEnabled) return true; // 2FA not enabled — no verification needed
 
-    const verified = await this.redis.get(`2fa:verified:${userId}`);
+    const key = this.buildSessionKey(userId, sessionId);
+    const verified = await this.redis.get(key);
     return verified === '1';
   }
 
   /**
    * Clear the 2FA session flag (e.g., on logout or session revocation).
    */
-  async clearTwoFactorSession(userId: string): Promise<void> {
-    await this.redis.del(`2fa:verified:${userId}`);
+  async clearTwoFactorSession(userId: string, sessionId?: string): Promise<void> {
+    const key = this.buildSessionKey(userId, sessionId);
+    await this.redis.del(key);
   }
 
   /**

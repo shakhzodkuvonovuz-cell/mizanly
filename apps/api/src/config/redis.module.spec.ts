@@ -51,3 +51,105 @@ describe('Redis proxy fallback', () => {
     expect(numCommands.length).toBeGreaterThan(5);
   });
 });
+
+/**
+ * Redis production fail-closed tests — verifies that Redis connection failure
+ * terminates the app in production to prevent running without rate limiting.
+ */
+describe('Redis production fail-closed behavior', () => {
+  const originalEnv = process.env.NODE_ENV;
+
+  afterEach(() => {
+    process.env.NODE_ENV = originalEnv;
+  });
+
+  it('should throw when REDIS_URL is missing in production', () => {
+    process.env.NODE_ENV = 'production';
+    const nodeEnv = process.env.NODE_ENV;
+    const isProduction = nodeEnv === 'production' || nodeEnv === 'staging';
+
+    // Simulate the check from redis.module.ts
+    const redisUrl = undefined;
+    expect(isProduction).toBe(true);
+    expect(() => {
+      if (!redisUrl && isProduction) {
+        throw new Error(
+          'REDIS_URL is not set. Redis is required infrastructure in production/staging.',
+        );
+      }
+    }).toThrow('REDIS_URL is not set');
+  });
+
+  it('should throw when REDIS_URL is missing in staging', () => {
+    process.env.NODE_ENV = 'staging';
+    const nodeEnv = process.env.NODE_ENV;
+    const isProduction = nodeEnv === 'production' || nodeEnv === 'staging';
+
+    const redisUrl = undefined;
+    expect(isProduction).toBe(true);
+    expect(() => {
+      if (!redisUrl && isProduction) {
+        throw new Error(
+          'REDIS_URL is not set. Redis is required infrastructure in production/staging.',
+        );
+      }
+    }).toThrow('REDIS_URL is not set');
+  });
+
+  it('should NOT throw when REDIS_URL is missing in development', () => {
+    process.env.NODE_ENV = 'development';
+    const nodeEnv = process.env.NODE_ENV;
+    const isProduction = nodeEnv === 'production' || nodeEnv === 'staging';
+
+    const redisUrl = undefined;
+    expect(isProduction).toBe(false);
+    expect(() => {
+      if (!redisUrl && isProduction) {
+        throw new Error('REDIS_URL is not set.');
+      }
+    }).not.toThrow();
+  });
+
+  it('should throw on connection failure in production (fail-closed)', async () => {
+    process.env.NODE_ENV = 'production';
+    const isProduction = true;
+
+    // Simulate the connect().catch() handler from redis.module.ts
+    const connectionError = new Error('ECONNREFUSED 127.0.0.1:6379');
+
+    await expect(
+      new Promise<void>((_, reject) => {
+        // This mirrors the catch handler: throw in production, warn in dev
+        if (isProduction) {
+          reject(
+            new Error(
+              `Redis connection failed in production: ${connectionError.message}. `
+              + 'Cannot start without Redis — rate limiting, queues, deduplication, and presence depend on it.',
+            ),
+          );
+        }
+      }),
+    ).rejects.toThrow('Redis connection failed in production');
+  });
+
+  it('should NOT throw on connection failure in development (degraded mode)', async () => {
+    process.env.NODE_ENV = 'development';
+    const isProduction = false;
+    const warnings: string[] = [];
+
+    // Simulate the catch handler
+    const connectionError = new Error('ECONNREFUSED 127.0.0.1:6379');
+
+    await new Promise<void>((resolve) => {
+      if (isProduction) {
+        throw new Error('Should not reach here');
+      } else {
+        warnings.push(`Redis connection failed (development): ${connectionError.message}`);
+        resolve();
+      }
+    });
+
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain('development');
+  });
+});

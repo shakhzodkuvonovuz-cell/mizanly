@@ -1,0 +1,13 @@
+# Lane 01: API Bootstrap / Config / Common
+
+## High
+
+- Throttling can be bypassed by spoofing `X-Forwarded-For`, because the global rate-limit key trusts that header unconditionally and the app never enables or validates trusted proxies. An unauthenticated client can rotate arbitrary header values and evade the `APP_GUARD` throttler entirely. References: `C:\dev\mizanly\apps\api\src\common\guards\user-throttler.guard:56`, `C:\dev\mizanly\apps\api\src\common\guards\user-throttler.guard:57`, `C:\dev\mizanly\apps\api\src\app.module.ts:227`, `C:\dev\mizanly\apps\api\src\main.ts:121`.
+
+- Production Redis bootstrap does not fail closed when Redis is unreachable. `RedisModule` throws only when `REDIS_URL` is absent, but if the URL exists and connection fails, startup continues after logging an error even though comments say the app "cannot start safely" without Redis. That leaves rate limiting, queues, deduplication, and presence in an undefined partially-broken state. References: `C:\dev\mizanly\apps\api\src\config\redis.module.ts:14`, `C:\dev\mizanly\apps\api\src\config\redis.module.ts:43`, `C:\dev\mizanly\apps\api\src\config\redis.module.ts:45`, `C:\dev\mizanly\apps\api\src\app.module.ts:137`.
+
+## Medium
+
+- A transient first database connection failure skips `applyCheckConstraints()` permanently for that process. On the retry path, the service reconnects and logs success but never reapplies the DB-level counter constraints or startup indexes, so the app can come up without invariants it assumes are enforced. References: `C:\dev\mizanly\apps\api\src\config\prisma.service.ts:35`, `C:\dev\mizanly\apps\api\src\config\prisma.service.ts:39`, `C:\dev\mizanly\apps\api\src\config\prisma.service.ts:43`, `C:\dev\mizanly\apps\api\src\config\prisma.service.ts:46`, `C:\dev\mizanly\apps\api\src\config\prisma.service.ts:55`.
+
+- `NODE_ENV` handling is internally inconsistent around staging. `RedisModule` and `QueueModule` treat `staging` as a production-like mode, but the global env schema rejects `staging`, and `main.ts` only enables production protections when `NODE_ENV === 'production'`. If deployment tooling sets `NODE_ENV=staging`, bootstrap behavior diverges by file and can either crash validation or run with development-only logging/CORS/Swagger assumptions before config validation. References: `C:\dev\mizanly\apps\api\src\config\redis.module.ts:10`, `C:\dev\mizanly\apps\api\src\common\queue\queue.module.ts:49`, `C:\dev\mizanly\apps\api\src\common\queue\queue.module.ts:51`, `C:\dev\mizanly\apps\api\src\app.module.ts:128`, `C:\dev\mizanly\apps\api\src\main.ts:22`, `C:\dev\mizanly\apps\api\src\main.ts:140`, `C:\dev\mizanly\apps\api\src\main.ts:194`.

@@ -296,7 +296,7 @@ describe('TwoFactorService', () => {
   });
 
   describe('validate — session flag (#85)', () => {
-    it('should set Redis session flag on successful validation', async () => {
+    it('should set Redis session flag with sessionId on successful validation', async () => {
       // Setup secret first to get a real TOTP
       mockPrismaService.twoFactorSecret.findUnique.mockResolvedValueOnce(null);
       mockPrismaService.twoFactorSecret.create.mockImplementation(({ data }: any) => Promise.resolve(data));
@@ -332,19 +332,71 @@ describe('TwoFactorService', () => {
       const code = ((hmac[offset] & 0x7f) << 24 | hmac[offset + 1] << 16 | hmac[offset + 2] << 8 | hmac[offset + 3]) % (10 ** 6);
       const validCode = code.toString().padStart(6, '0');
 
-      // Now validate with the real code
+      // Now validate with the real code AND a sessionId
       const createCall = mockPrismaService.twoFactorSecret.create.mock.calls[0][0];
       mockPrismaService.twoFactorSecret.findUnique.mockResolvedValue({
         secret: createCall.data.secret,
         isEnabled: true,
       });
 
-      const result = await service.validate(mockUserId, validCode);
+      const testSessionId = 'sess_test123';
+      const result = await service.validate(mockUserId, validCode, testSessionId);
       expect(result).toBe(true);
-      // Should have stored session flag in Redis
+      // Redis key MUST include sessionId to prevent cross-session blessing (Finding 2)
+      expect(mockRedis.setex).toHaveBeenCalledWith(
+        `2fa:verified:${mockUserId}:${testSessionId}`,
+        86400, // 24 hours
+        '1',
+      );
+    });
+
+    it('should fall back to userId-only key when sessionId is undefined', async () => {
+      // Setup secret first to get a real TOTP
+      mockPrismaService.twoFactorSecret.findUnique.mockResolvedValueOnce(null);
+      mockPrismaService.twoFactorSecret.create.mockImplementation(({ data }: any) => Promise.resolve(data));
+      const setup = await service.setup(mockUserId);
+      const totpSecret = setup.secret;
+
+      const crypto = require('crypto');
+      const BASE32_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+      function base32Decode(encoded: string): Buffer {
+        const cleaned = encoded.replace(/=+$/, '').toUpperCase();
+        const bytes: number[] = [];
+        let bits = 0;
+        let value = 0;
+        for (const char of cleaned) {
+          const idx = BASE32_CHARS.indexOf(char);
+          if (idx === -1) continue;
+          value = (value << 5) | idx;
+          bits += 5;
+          if (bits >= 8) {
+            bytes.push((value >>> (bits - 8)) & 255);
+            bits -= 8;
+          }
+        }
+        return Buffer.from(bytes);
+      }
+      const time = Math.floor(Date.now() / 1000 / 30);
+      const buf = Buffer.alloc(8);
+      buf.writeUInt32BE(0, 0);
+      buf.writeUInt32BE(time, 4);
+      const hmac = crypto.createHmac('sha1', base32Decode(totpSecret)).update(buf).digest();
+      const offset = hmac[hmac.length - 1] & 0xf;
+      const code = ((hmac[offset] & 0x7f) << 24 | hmac[offset + 1] << 16 | hmac[offset + 2] << 8 | hmac[offset + 3]) % (10 ** 6);
+      const validCode = code.toString().padStart(6, '0');
+
+      const createCall = mockPrismaService.twoFactorSecret.create.mock.calls[0][0];
+      mockPrismaService.twoFactorSecret.findUnique.mockResolvedValue({
+        secret: createCall.data.secret,
+        isEnabled: true,
+      });
+
+      const result = await service.validate(mockUserId, validCode, undefined);
+      expect(result).toBe(true);
+      // Without sessionId, falls back to userId-only key
       expect(mockRedis.setex).toHaveBeenCalledWith(
         `2fa:verified:${mockUserId}`,
-        86400, // 24 hours
+        86400,
         '1',
       );
     });
@@ -354,30 +406,97 @@ describe('TwoFactorService', () => {
         secret: 'ABCDEFGHIJK',
         isEnabled: true,
       });
-      const result = await service.validate(mockUserId, '000000');
+      const result = await service.validate(mockUserId, '000000', 'sess_test');
       expect(result).toBe(false);
       expect(mockRedis.setex).not.toHaveBeenCalled();
     });
 
     it('should return true without Redis call when 2FA not enabled', async () => {
       mockPrismaService.twoFactorSecret.findUnique.mockResolvedValue(null);
-      const result = await service.validate(mockUserId, '123456');
+      const result = await service.validate(mockUserId, '123456', 'sess_test');
       expect(result).toBe(true);
       expect(mockRedis.setex).not.toHaveBeenCalled();
+    });
+
+    it('should isolate sessions — different sessionIds get different Redis keys', async () => {
+      // Setup secret first
+      mockPrismaService.twoFactorSecret.findUnique.mockResolvedValueOnce(null);
+      mockPrismaService.twoFactorSecret.create.mockImplementation(({ data }: any) => Promise.resolve(data));
+      const setup = await service.setup(mockUserId);
+      const totpSecret = setup.secret;
+
+      const crypto = require('crypto');
+      const BASE32_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+      function base32Decode(encoded: string): Buffer {
+        const cleaned = encoded.replace(/=+$/, '').toUpperCase();
+        const bytes: number[] = [];
+        let bits = 0;
+        let value = 0;
+        for (const char of cleaned) {
+          const idx = BASE32_CHARS.indexOf(char);
+          if (idx === -1) continue;
+          value = (value << 5) | idx;
+          bits += 5;
+          if (bits >= 8) {
+            bytes.push((value >>> (bits - 8)) & 255);
+            bits -= 8;
+          }
+        }
+        return Buffer.from(bytes);
+      }
+      const time = Math.floor(Date.now() / 1000 / 30);
+      const buf = Buffer.alloc(8);
+      buf.writeUInt32BE(0, 0);
+      buf.writeUInt32BE(time, 4);
+      const hmac = crypto.createHmac('sha1', base32Decode(totpSecret)).update(buf).digest();
+      const offset = hmac[hmac.length - 1] & 0xf;
+      const code = ((hmac[offset] & 0x7f) << 24 | hmac[offset + 1] << 16 | hmac[offset + 2] << 8 | hmac[offset + 3]) % (10 ** 6);
+      const validCode = code.toString().padStart(6, '0');
+
+      const createCall = mockPrismaService.twoFactorSecret.create.mock.calls[0][0];
+      mockPrismaService.twoFactorSecret.findUnique.mockResolvedValue({
+        secret: createCall.data.secret,
+        isEnabled: true,
+      });
+
+      // Validate from session A
+      await service.validate(mockUserId, validCode, 'sess_A');
+      expect(mockRedis.setex).toHaveBeenCalledWith(
+        `2fa:verified:${mockUserId}:sess_A`,
+        86400,
+        '1',
+      );
+
+      // Validate from session B
+      mockRedis.setex.mockClear();
+      await service.validate(mockUserId, validCode, 'sess_B');
+      expect(mockRedis.setex).toHaveBeenCalledWith(
+        `2fa:verified:${mockUserId}:sess_B`,
+        86400,
+        '1',
+      );
     });
   });
 
   describe('isTwoFactorVerified (#85)', () => {
     it('should return true when 2FA is not enabled', async () => {
       mockPrismaService.twoFactorSecret.findUnique.mockResolvedValue(null);
-      const result = await service.isTwoFactorVerified(mockUserId);
+      const result = await service.isTwoFactorVerified(mockUserId, 'sess_test');
       expect(result).toBe(true);
     });
 
-    it('should return true when 2FA is enabled and session flag exists', async () => {
+    it('should check session-bound Redis key when sessionId provided', async () => {
       mockPrismaService.twoFactorSecret.findUnique.mockResolvedValue({ isEnabled: true });
       mockRedis.get.mockResolvedValue('1');
-      const result = await service.isTwoFactorVerified(mockUserId);
+      const result = await service.isTwoFactorVerified(mockUserId, 'sess_xyz');
+      expect(result).toBe(true);
+      expect(mockRedis.get).toHaveBeenCalledWith(`2fa:verified:${mockUserId}:sess_xyz`);
+    });
+
+    it('should fall back to userId-only key when sessionId is undefined', async () => {
+      mockPrismaService.twoFactorSecret.findUnique.mockResolvedValue({ isEnabled: true });
+      mockRedis.get.mockResolvedValue('1');
+      const result = await service.isTwoFactorVerified(mockUserId, undefined);
       expect(result).toBe(true);
       expect(mockRedis.get).toHaveBeenCalledWith(`2fa:verified:${mockUserId}`);
     });
@@ -385,14 +504,34 @@ describe('TwoFactorService', () => {
     it('should return false when 2FA is enabled but session flag missing', async () => {
       mockPrismaService.twoFactorSecret.findUnique.mockResolvedValue({ isEnabled: true });
       mockRedis.get.mockResolvedValue(null);
-      const result = await service.isTwoFactorVerified(mockUserId);
+      const result = await service.isTwoFactorVerified(mockUserId, 'sess_test');
       expect(result).toBe(false);
+    });
+
+    it('should not cross-verify different sessions (Finding 2)', async () => {
+      mockPrismaService.twoFactorSecret.findUnique.mockResolvedValue({ isEnabled: true });
+      // Session A is verified
+      mockRedis.get.mockImplementation((key: string) => {
+        if (key === `2fa:verified:${mockUserId}:sess_A`) return Promise.resolve('1');
+        return Promise.resolve(null);
+      });
+
+      const resultA = await service.isTwoFactorVerified(mockUserId, 'sess_A');
+      expect(resultA).toBe(true);
+
+      const resultB = await service.isTwoFactorVerified(mockUserId, 'sess_B');
+      expect(resultB).toBe(false);
     });
   });
 
   describe('clearTwoFactorSession (#85)', () => {
-    it('should delete the Redis session key', async () => {
-      await service.clearTwoFactorSession(mockUserId);
+    it('should delete the session-bound Redis key', async () => {
+      await service.clearTwoFactorSession(mockUserId, 'sess_test');
+      expect(mockRedis.del).toHaveBeenCalledWith(`2fa:verified:${mockUserId}:sess_test`);
+    });
+
+    it('should delete userId-only key when sessionId is undefined', async () => {
+      await service.clearTwoFactorSession(mockUserId, undefined);
       expect(mockRedis.del).toHaveBeenCalledWith(`2fa:verified:${mockUserId}`);
     });
   });

@@ -19,9 +19,22 @@ jest.mock('stripe', () => {
 describe('StripeWebhookController', () => {
   let controller: StripeWebhookController;
   let service: jest.Mocked<PaymentsService>;
+  let redis: Record<string, jest.Mock>;
+  let prisma: Record<string, Record<string, jest.Mock>>;
 
   beforeEach(async () => {
     process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test';
+
+    redis = {
+      set: jest.fn().mockResolvedValue('OK'), // SET NX succeeds by default
+      del: jest.fn().mockResolvedValue(1),
+    };
+    prisma = {
+      processedWebhookEvent: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockResolvedValue({}),
+      },
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [StripeWebhookController],
@@ -31,16 +44,21 @@ describe('StripeWebhookController', () => {
           provide: PaymentsService,
           useValue: {
             handlePaymentIntentSucceeded: jest.fn(),
+            handlePaymentIntentFailed: jest.fn(),
             handleInvoicePaid: jest.fn(),
+            handleInvoicePaymentFailed: jest.fn(),
             handleSubscriptionDeleted: jest.fn(),
+            handleSubscriptionUpdated: jest.fn(),
+            handleDisputeCreated: jest.fn(),
           },
         },
         {
+          provide: PrismaService,
+          useValue: prisma,
+        },
+        {
           provide: 'REDIS',
-          useValue: {
-            get: jest.fn().mockResolvedValue(null),
-            setex: jest.fn().mockResolvedValue('OK'),
-          },
+          useValue: redis,
         },
       ],
     }).compile();
@@ -64,8 +82,8 @@ describe('StripeWebhookController', () => {
       providers: [
         { provide: PaymentsService, useValue: service },
         { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue(null) } },
-        { provide: PrismaService, useValue: { processedWebhookEvent: { findUnique: jest.fn().mockResolvedValue(null), create: jest.fn() } } },
-        { provide: 'REDIS', useValue: { get: jest.fn().mockResolvedValue(null), setex: jest.fn().mockResolvedValue('OK') } },
+        { provide: PrismaService, useValue: prisma },
+        { provide: 'REDIS', useValue: redis },
       ],
     }).compile();
     const ctrl2 = module2.get(StripeWebhookController);
@@ -88,6 +106,7 @@ describe('StripeWebhookController', () => {
   it('should handle payment_intent.succeeded event', async () => {
     const stripe = (controller as any).stripe;
     stripe.webhooks.constructEvent.mockReturnValue({
+      id: 'evt_success_1',
       type: 'payment_intent.succeeded',
       data: { object: { id: 'pi_1' } },
     });
@@ -102,6 +121,7 @@ describe('StripeWebhookController', () => {
   it('should handle invoice.paid event', async () => {
     const stripe = (controller as any).stripe;
     stripe.webhooks.constructEvent.mockReturnValue({
+      id: 'evt_inv_1',
       type: 'invoice.paid',
       data: { object: { id: 'inv_1' } },
     });
@@ -116,6 +136,7 @@ describe('StripeWebhookController', () => {
   it('should handle customer.subscription.deleted event', async () => {
     const stripe = (controller as any).stripe;
     stripe.webhooks.constructEvent.mockReturnValue({
+      id: 'evt_sub_del',
       type: 'customer.subscription.deleted',
       data: { object: { id: 'sub_1' } },
     });
@@ -130,7 +151,6 @@ describe('StripeWebhookController', () => {
   // ═══ T08 Audit: Missing webhook event branches ═══
 
   it('should handle payment_intent.payment_failed event — C5', async () => {
-    (service as any).handlePaymentIntentFailed = jest.fn();
     const stripe = (controller as any).stripe;
     stripe.webhooks.constructEvent.mockReturnValue({
       id: 'evt_fail_1',
@@ -141,12 +161,11 @@ describe('StripeWebhookController', () => {
     const req = { rawBody: Buffer.from('body') } as any;
     const result = await controller.handleStripeWebhook(req, 'valid-sig');
 
-    expect((service as any).handlePaymentIntentFailed).toHaveBeenCalledWith({ id: 'pi_failed_1' });
+    expect(service.handlePaymentIntentFailed).toHaveBeenCalledWith({ id: 'pi_failed_1' });
     expect(result).toEqual({ received: true });
   });
 
   it('should handle invoice.payment_failed event — C7', async () => {
-    (service as any).handleInvoicePaymentFailed = jest.fn();
     const stripe = (controller as any).stripe;
     stripe.webhooks.constructEvent.mockReturnValue({
       id: 'evt_inv_fail',
@@ -157,12 +176,11 @@ describe('StripeWebhookController', () => {
     const req = { rawBody: Buffer.from('body') } as any;
     const result = await controller.handleStripeWebhook(req, 'valid-sig');
 
-    expect((service as any).handleInvoicePaymentFailed).toHaveBeenCalledWith({ id: 'inv_fail_1' });
+    expect(service.handleInvoicePaymentFailed).toHaveBeenCalledWith({ id: 'inv_fail_1' });
     expect(result).toEqual({ received: true });
   });
 
   it('should handle customer.subscription.updated event — C9', async () => {
-    (service as any).handleSubscriptionUpdated = jest.fn();
     const stripe = (controller as any).stripe;
     stripe.webhooks.constructEvent.mockReturnValue({
       id: 'evt_sub_update',
@@ -173,12 +191,11 @@ describe('StripeWebhookController', () => {
     const req = { rawBody: Buffer.from('body') } as any;
     const result = await controller.handleStripeWebhook(req, 'valid-sig');
 
-    expect((service as any).handleSubscriptionUpdated).toHaveBeenCalledWith({ id: 'sub_updated_1', status: 'active' });
+    expect(service.handleSubscriptionUpdated).toHaveBeenCalledWith({ id: 'sub_updated_1', status: 'active' });
     expect(result).toEqual({ received: true });
   });
 
   it('should handle charge.dispute.created event — H10', async () => {
-    (service as any).handleDisputeCreated = jest.fn();
     const stripe = (controller as any).stripe;
     stripe.webhooks.constructEvent.mockReturnValue({
       id: 'evt_dispute',
@@ -189,15 +206,17 @@ describe('StripeWebhookController', () => {
     const req = { rawBody: Buffer.from('body') } as any;
     const result = await controller.handleStripeWebhook(req, 'valid-sig');
 
-    expect((service as any).handleDisputeCreated).toHaveBeenCalledWith(
+    expect(service.handleDisputeCreated).toHaveBeenCalledWith(
       expect.objectContaining({ payment_intent: 'pi_disputed' }),
     );
     expect(result).toEqual({ received: true });
   });
 
-  it('should deduplicate already-processed events via Redis — H13', async () => {
-    const redis = (controller as any).redis;
-    redis.get.mockResolvedValue('1'); // Already processed
+  // ═══ Atomic idempotency (SET NX) tests ═══
+
+  it('should reject duplicate events via atomic SET NX — returns deduplicated', async () => {
+    // SET NX returns null when key already exists (concurrent/duplicate delivery)
+    redis.set.mockResolvedValue(null);
 
     const stripe = (controller as any).stripe;
     stripe.webhooks.constructEvent.mockReturnValue({
@@ -211,6 +230,95 @@ describe('StripeWebhookController', () => {
 
     expect(result).toEqual({ received: true, deduplicated: true });
     expect(service.handlePaymentIntentSucceeded).not.toHaveBeenCalled();
+  });
+
+  it('should call SET NX with correct key format and 48h TTL', async () => {
+    const stripe = (controller as any).stripe;
+    stripe.webhooks.constructEvent.mockReturnValue({
+      id: 'evt_claim_test',
+      type: 'payment_intent.succeeded',
+      data: { object: { id: 'pi_claim' } },
+    });
+
+    const req = { rawBody: Buffer.from('body') } as any;
+    await controller.handleStripeWebhook(req, 'valid-sig');
+
+    expect(redis.set).toHaveBeenCalledWith(
+      'stripe:event:evt_claim_test',
+      '1',
+      'EX',
+      172800, // 48 hours
+      'NX',
+    );
+  });
+
+  it('should process first-time event when SET NX succeeds', async () => {
+    redis.set.mockResolvedValue('OK'); // SET NX succeeds
+
+    const stripe = (controller as any).stripe;
+    stripe.webhooks.constructEvent.mockReturnValue({
+      id: 'evt_first',
+      type: 'payment_intent.succeeded',
+      data: { object: { id: 'pi_first' } },
+    });
+
+    const req = { rawBody: Buffer.from('body') } as any;
+    const result = await controller.handleStripeWebhook(req, 'valid-sig');
+
+    expect(service.handlePaymentIntentSucceeded).toHaveBeenCalledWith({ id: 'pi_first' });
+    expect(result).toEqual({ received: true });
+  });
+
+  it('should deduplicate via DB fallback when Redis was flushed but DB has record', async () => {
+    redis.set.mockResolvedValue('OK'); // SET NX succeeds (Redis was flushed)
+    prisma.processedWebhookEvent.findUnique.mockResolvedValue({ eventId: 'evt_db_dupe' }); // DB has it
+
+    const stripe = (controller as any).stripe;
+    stripe.webhooks.constructEvent.mockReturnValue({
+      id: 'evt_db_dupe',
+      type: 'payment_intent.succeeded',
+      data: { object: { id: 'pi_db' } },
+    });
+
+    const req = { rawBody: Buffer.from('body') } as any;
+    const result = await controller.handleStripeWebhook(req, 'valid-sig');
+
+    expect(result).toEqual({ received: true, deduplicated: true });
+    expect(service.handlePaymentIntentSucceeded).not.toHaveBeenCalled();
+  });
+
+  it('should persist to DB after successful handler execution', async () => {
+    const stripe = (controller as any).stripe;
+    stripe.webhooks.constructEvent.mockReturnValue({
+      id: 'evt_persist',
+      type: 'payment_intent.succeeded',
+      data: { object: { id: 'pi_persist' } },
+    });
+
+    const req = { rawBody: Buffer.from('body') } as any;
+    await controller.handleStripeWebhook(req, 'valid-sig');
+
+    expect(prisma.processedWebhookEvent.create).toHaveBeenCalledWith({
+      data: { eventId: 'evt_persist' },
+    });
+  });
+
+  it('should release Redis claim on non-deterministic handler error', async () => {
+    const stripe = (controller as any).stripe;
+    stripe.webhooks.constructEvent.mockReturnValue({
+      id: 'evt_transient_err',
+      type: 'payment_intent.succeeded',
+      data: { object: { id: 'pi_err' } },
+    });
+
+    // Handler throws a non-deterministic error (e.g., DB timeout)
+    service.handlePaymentIntentSucceeded.mockRejectedValue(new Error('DB connection timeout'));
+
+    const req = { rawBody: Buffer.from('body') } as any;
+    await expect(controller.handleStripeWebhook(req, 'valid-sig')).rejects.toThrow('DB connection timeout');
+
+    // Redis claim should be released so Stripe retry can succeed
+    expect(redis.del).toHaveBeenCalledWith('stripe:event:evt_transient_err');
   });
 
   it('should log debug for payment_method.attached — L11', async () => {
@@ -228,7 +336,7 @@ describe('StripeWebhookController', () => {
     expect(result).toEqual({ received: true });
   });
 
-  it('should log warning for unhandled event type — L12', async () => {
+  it('should log warning for unhandled event type ��� L12', async () => {
     const stripe = (controller as any).stripe;
     stripe.webhooks.constructEvent.mockReturnValue({
       id: 'evt_unknown',
@@ -240,25 +348,5 @@ describe('StripeWebhookController', () => {
     const result = await controller.handleStripeWebhook(req, 'valid-sig');
 
     expect(result).toEqual({ received: true });
-  });
-
-  it('should write dedup records after handler success — M15', async () => {
-    const redis = (controller as any).redis;
-    const stripe = (controller as any).stripe;
-    stripe.webhooks.constructEvent.mockReturnValue({
-      id: 'evt_dedup_write',
-      type: 'payment_intent.succeeded',
-      data: { object: { id: 'pi_dedup_w' } },
-    });
-
-    const req = { rawBody: Buffer.from('body') } as any;
-    await controller.handleStripeWebhook(req, 'valid-sig');
-
-    // After handler success, should write dedup to Redis with 7-day TTL
-    expect(redis.setex).toHaveBeenCalledWith(
-      'stripe_webhook:evt_dedup_write',
-      604800,
-      '1',
-    );
   });
 });

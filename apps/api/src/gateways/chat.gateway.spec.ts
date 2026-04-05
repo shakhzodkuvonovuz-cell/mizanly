@@ -99,6 +99,7 @@ describe('ChatGateway', () => {
               findUnique: jest.fn().mockResolvedValue(null),
             },
             audioRoom: {
+              findUnique: jest.fn().mockResolvedValue({ id: 'room-1', status: 'live', hostId: 'db-host-1' }),
               update: jest.fn().mockResolvedValue(undefined),
             },
             post: {
@@ -471,6 +472,65 @@ describe('ChatGateway', () => {
       await gateway.handleConnection(client as any);
       expect(client.disconnect).toHaveBeenCalled();
     });
+
+    it('should use conn.remoteAddress for IP, not x-forwarded-for (prevents spoofing)', async () => {
+      // SECURITY: An attacker sets x-forwarded-for to a random IP to bypass connection flood limit.
+      // The gateway must use conn.remoteAddress (TCP-level, unspoofable) instead.
+      const client = {
+        ...mockSocket,
+        id: 'socket-spoof',
+        data: {},
+        conn: { remoteAddress: '10.20.30.40' },
+        handshake: {
+          auth: { token: 'token' },
+          headers: { 'x-forwarded-for': '99.99.99.99, 88.88.88.88' },
+          address: '10.20.30.40',
+        },
+        disconnect: jest.fn(),
+      };
+      // First connection — should pass
+      redis.eval.mockResolvedValue([]);
+      (verifyToken as jest.Mock).mockResolvedValue({ sub: 'clerk-1' });
+      prisma.user.findUnique.mockResolvedValue({
+        id: 'user-1', username: 'test', isBanned: false, isDeactivated: false, isDeleted: false,
+      });
+
+      await gateway.handleConnection(client as any);
+
+      // The Redis rate limit key should be based on the real IP (10.20.30.40),
+      // NOT the spoofed x-forwarded-for (99.99.99.99)
+      const evalCalls = redis.eval.mock.calls;
+      // atomicIncr is called with the connection key pattern ws:conn:<ip>
+      // Check that none of the Redis calls contain the spoofed IP
+      const allCallArgs = JSON.stringify(evalCalls);
+      expect(allCallArgs).not.toContain('99.99.99.99');
+    });
+
+    it('should fall back to handshake.address when conn.remoteAddress unavailable', async () => {
+      const client = {
+        ...mockSocket,
+        id: 'socket-fallback',
+        data: {},
+        // No conn.remoteAddress
+        handshake: {
+          auth: { token: 'token' },
+          headers: {},
+          address: '5.6.7.8',
+        },
+        disconnect: jest.fn(),
+      };
+      redis.eval.mockResolvedValue([]);
+      (verifyToken as jest.Mock).mockResolvedValue({ sub: 'clerk-1' });
+      prisma.user.findUnique.mockResolvedValue({
+        id: 'user-1', username: 'test', isBanned: false, isDeactivated: false, isDeleted: false,
+      });
+
+      await gateway.handleConnection(client as any);
+
+      // Should not disconnect (rate limit not exceeded)
+      // The key point is it fell through to handshake.address, not x-forwarded-for
+      expect(client.disconnect).not.toHaveBeenCalled();
+    });
   });
 
   describe('handleDisconnect — no userId', () => {
@@ -603,10 +663,11 @@ describe('ChatGateway', () => {
     it('should update delivery and emit receipt to message sender only', async () => {
       const client = { ...mockSocket, data: { userId: 'user-1' }, emit: jest.fn() };
       messagesService.requireMembership.mockResolvedValue({});
+      // SEC-FIX-2: findUnique is now called FIRST with senderId + deliveredAt + conversationId
+      prisma.message.findUnique.mockResolvedValue({ senderId: 'sender-1', deliveredAt: null, conversationId: UUID2 });
       prisma.message.updateMany.mockReturnValue({
         catch: jest.fn().mockReturnThis(),
       });
-      prisma.message.findUnique.mockResolvedValue({ senderId: 'sender-1' });
       redis.smembers.mockResolvedValue(['sender-socket-1']);
 
       await gateway.handleMessageDelivered(client as any, {
@@ -614,16 +675,80 @@ describe('ChatGateway', () => {
         conversationId: UUID2,
       });
 
-      expect(prisma.message.updateMany).toHaveBeenCalled();
       expect(prisma.message.findUnique).toHaveBeenCalledWith({
         where: { id: UUID1 },
-        select: { senderId: true },
+        select: { senderId: true, deliveredAt: true, conversationId: true },
       });
+      expect(prisma.message.updateMany).toHaveBeenCalled();
       expect(gateway.server.to).toHaveBeenCalledWith('sender-socket-1');
       expect(gateway.server.emit).toHaveBeenCalledWith('delivery_receipt', expect.objectContaining({
         messageId: UUID1,
         deliveredTo: 'user-1',
       }));
+    });
+
+    // SEC-FIX-2a: Sender cannot mark their own message as delivered
+    it('should reject delivery receipt from message sender (cannot deliver own message)', async () => {
+      const client = { ...mockSocket, data: { userId: 'sender-1' }, emit: jest.fn() };
+      messagesService.requireMembership.mockResolvedValue({});
+      // The caller IS the sender
+      prisma.message.findUnique.mockResolvedValue({ senderId: 'sender-1', deliveredAt: null, conversationId: UUID2 });
+
+      await gateway.handleMessageDelivered(client as any, {
+        messageId: UUID1,
+        conversationId: UUID2,
+      });
+
+      expect(client.emit).toHaveBeenCalledWith('error', { message: 'Cannot mark own message as delivered' });
+      expect(prisma.message.updateMany).not.toHaveBeenCalled();
+    });
+
+    // SEC-FIX-2b: Idempotent — already-delivered message should silently succeed
+    it('should skip update when message is already delivered (idempotent)', async () => {
+      const client = { ...mockSocket, data: { userId: 'user-1' }, emit: jest.fn() };
+      messagesService.requireMembership.mockResolvedValue({});
+      // deliveredAt is already set
+      prisma.message.findUnique.mockResolvedValue({ senderId: 'sender-1', deliveredAt: new Date('2026-04-01'), conversationId: UUID2 });
+
+      await gateway.handleMessageDelivered(client as any, {
+        messageId: UUID1,
+        conversationId: UUID2,
+      });
+
+      // Should NOT update again and should NOT error
+      expect(prisma.message.updateMany).not.toHaveBeenCalled();
+      expect(client.emit).not.toHaveBeenCalledWith('error', expect.anything());
+    });
+
+    // SEC-FIX-2: Message not found in conversation
+    it('should emit error when message not found in conversation', async () => {
+      const client = { ...mockSocket, data: { userId: 'user-1' }, emit: jest.fn() };
+      messagesService.requireMembership.mockResolvedValue({});
+      prisma.message.findUnique.mockResolvedValue(null);
+
+      await gateway.handleMessageDelivered(client as any, {
+        messageId: UUID1,
+        conversationId: UUID2,
+      });
+
+      expect(client.emit).toHaveBeenCalledWith('error', { message: 'Message not found in this conversation' });
+      expect(prisma.message.updateMany).not.toHaveBeenCalled();
+    });
+
+    // SEC-FIX-2: Message belongs to different conversation
+    it('should emit error when message conversationId does not match', async () => {
+      const client = { ...mockSocket, data: { userId: 'user-1' }, emit: jest.fn() };
+      messagesService.requireMembership.mockResolvedValue({});
+      // Message exists but belongs to a different conversation
+      prisma.message.findUnique.mockResolvedValue({ senderId: 'sender-1', deliveredAt: null, conversationId: UUID3 });
+
+      await gateway.handleMessageDelivered(client as any, {
+        messageId: UUID1,
+        conversationId: UUID2,
+      });
+
+      expect(client.emit).toHaveBeenCalledWith('error', { message: 'Message not found in this conversation' });
+      expect(prisma.message.updateMany).not.toHaveBeenCalled();
     });
   });
 
@@ -641,48 +766,113 @@ describe('ChatGateway', () => {
       expect(client.emit).toHaveBeenCalledWith('error', { message: 'Invalid join_quran_room data' });
     });
 
-    it('should create room in Redis if first joiner', async () => {
+    it('should create room in Redis using DB hostId if first joiner (F29-1)', async () => {
       const client = {
         ...mockSocket,
         id: 'socket-qr1',
-        data: { userId: 'host-1', quranRooms: [] } as any,
+        data: { userId: 'some-joiner', quranRooms: [] } as any,
         join: jest.fn(),
       };
+      // DB room exists with different host than the joiner
+      prisma.audioRoom.findUnique.mockResolvedValue({ id: 'room-1', status: 'live', hostId: 'db-host-1' });
       redis.exists.mockResolvedValue(0);
+      // F29-5: Lua script returns 1 (added successfully)
+      redis.eval.mockResolvedValue(1);
+      redis.hgetall.mockResolvedValue({ hostId: 'db-host-1', currentSurah: '1', currentVerse: '1', reciterId: '' });
       redis.scard.mockResolvedValue(1);
-      redis.hgetall.mockResolvedValue({ hostId: 'host-1', currentSurah: '1', currentVerse: '1', reciterId: '' });
 
       await gateway.handleJoinQuranRoom({ roomId: 'room-1' }, client as any);
 
-      // hmset + expire are now pipelined (J07-L4)
+      // F29-1: verify DB lookup happened
+      expect(prisma.audioRoom.findUnique).toHaveBeenCalledWith({
+        where: { id: 'room-1' },
+        select: { id: true, status: true, hostId: true },
+      });
+
+      // hmset + expire are now pipelined (J07-L4) — host is from DB, not the joiner
       const pipelineCalls = redis.pipeline.mock.results.map((r: { value: Record<string, jest.Mock> }) => r.value);
       const roomPipe = pipelineCalls.find((p: Record<string, jest.Mock>) => p.hmset?.mock?.calls?.length > 0);
       expect(roomPipe).toBeDefined();
       expect(roomPipe.hmset).toHaveBeenCalledWith('quran:room:room-1', {
-        hostId: 'host-1', currentSurah: '1', currentVerse: '1', reciterId: '',
+        hostId: 'db-host-1', currentSurah: '1', currentVerse: '1', reciterId: '',
       });
-      // sadd + expire for participants are also pipelined
-      expect(redis.pipeline).toHaveBeenCalled();
       expect(client.join).toHaveBeenCalledWith('quran:room-1');
       expect(client.data.quranRooms).toContain('room-1');
     });
 
-    it('should not create room if it already exists', async () => {
+    it('should reject join when room does not exist in DB (F29-1)', async () => {
+      const client = {
+        ...mockSocket,
+        id: 'socket-phantom',
+        data: { userId: 'attacker', quranRooms: [] } as any,
+        join: jest.fn(),
+        emit: jest.fn(),
+      };
+      prisma.audioRoom.findUnique.mockResolvedValue(null);
+
+      await gateway.handleJoinQuranRoom({ roomId: 'room-1' }, client as any);
+
+      expect(client.emit).toHaveBeenCalledWith('error', { message: 'Room not found or has ended' });
+      expect(client.join).not.toHaveBeenCalled();
+      // Should NOT touch Redis at all
+      expect(redis.exists).not.toHaveBeenCalled();
+    });
+
+    it('should reject join when room has ended in DB (F29-1)', async () => {
+      const client = {
+        ...mockSocket,
+        id: 'socket-ended',
+        data: { userId: 'late-joiner', quranRooms: [] } as any,
+        join: jest.fn(),
+        emit: jest.fn(),
+      };
+      prisma.audioRoom.findUnique.mockResolvedValue({ id: 'room-1', status: 'ended', hostId: 'old-host' });
+
+      await gateway.handleJoinQuranRoom({ roomId: 'room-1' }, client as any);
+
+      expect(client.emit).toHaveBeenCalledWith('error', { message: 'Room not found or has ended' });
+      expect(client.join).not.toHaveBeenCalled();
+    });
+
+    it('should not create room if it already exists in Redis', async () => {
       const client = {
         ...mockSocket,
         id: 'socket-qr2',
         data: { userId: 'joiner-1', quranRooms: [] } as any,
         join: jest.fn(),
       };
-      redis.exists.mockResolvedValue(1); // Room exists
-      redis.scard.mockResolvedValue(2);
+      prisma.audioRoom.findUnique.mockResolvedValue({ id: 'room-1', status: 'live', hostId: 'db-host-1' });
+      redis.exists.mockResolvedValue(1); // Room exists in Redis
+      // F29-5: Lua script returns 1 (added successfully)
+      redis.eval.mockResolvedValue(1);
       redis.hgetall.mockResolvedValue({ hostId: 'host-1', currentSurah: '1', currentVerse: '1', reciterId: '' });
+      redis.scard.mockResolvedValue(2);
 
       await gateway.handleJoinQuranRoom({ roomId: 'room-1' }, client as any);
 
+      // No hmset should be called on the base redis (only via pipeline for new rooms)
       expect(redis.hmset).not.toHaveBeenCalled();
-      // sadd is now pipelined — verify pipeline was used for participant add
-      expect(redis.pipeline).toHaveBeenCalled();
+      // F29-5: Lua eval was used for atomic cap+add
+      expect(redis.eval).toHaveBeenCalled();
+    });
+
+    it('should reject join when room is full via atomic Lua cap (F29-5)', async () => {
+      const client = {
+        ...mockSocket,
+        id: 'socket-full',
+        data: { userId: 'late-joiner', quranRooms: [] } as any,
+        join: jest.fn(),
+        emit: jest.fn(),
+      };
+      prisma.audioRoom.findUnique.mockResolvedValue({ id: 'room-1', status: 'live', hostId: 'db-host-1' });
+      redis.exists.mockResolvedValue(1);
+      // F29-5: Lua script returns 0 (room full, not added)
+      redis.eval.mockResolvedValue(0);
+
+      await gateway.handleJoinQuranRoom({ roomId: 'room-1' }, client as any);
+
+      expect(client.emit).toHaveBeenCalledWith('error', { message: 'Room is full (max 50 participants)' });
+      expect(client.join).not.toHaveBeenCalled();
     });
 
     it('should broadcast quran_room_update to all participants', async () => {
@@ -692,7 +882,10 @@ describe('ChatGateway', () => {
         data: { userId: 'joiner-2', quranRooms: [] } as any,
         join: jest.fn(),
       };
+      prisma.audioRoom.findUnique.mockResolvedValue({ id: 'room-1', status: 'live', hostId: 'host-1' });
       redis.exists.mockResolvedValue(1);
+      // F29-5: Lua script returns 1 (added)
+      redis.eval.mockResolvedValue(1);
       redis.scard.mockResolvedValue(3);
       redis.hgetall.mockResolvedValue({ hostId: 'host-1', currentSurah: '2', currentVerse: '10', reciterId: 'r1' });
 
@@ -1006,6 +1199,53 @@ describe('ChatGateway', () => {
       ).rejects.toThrow(WsException);
     });
 
+    // SEC-FIX-1: When DB write fails, sealed_message must NOT be emitted to recipient
+    it('should NOT emit sealed_message to recipient when persistence fails', async () => {
+      const client = { ...mockSocket, data: { userId: 'sender-1' }, emit: jest.fn() };
+      prisma.conversationMember.findUnique
+        .mockResolvedValueOnce({ userId: 'sender-1' })
+        .mockResolvedValueOnce({ userId: 'user-recipient' });
+      messagesService.sendMessage.mockRejectedValue(new Error('DB error'));
+
+      await expect(
+        gateway.handleSealedMessage(client as any, sealedPayload),
+      ).rejects.toThrow(WsException);
+
+      // The critical check: sealed_message must NOT have been emitted
+      const sealedEmitCall = (gateway.server.emit as jest.Mock).mock.calls.find(
+        (c: unknown[]) => c[0] === 'sealed_message',
+      );
+      expect(sealedEmitCall).toBeUndefined();
+    });
+
+    // SEC-FIX-1: Verify persist-then-emit ordering (emit only after successful DB write)
+    it('should emit sealed_message AFTER successful persistence (not before)', async () => {
+      const client = { ...mockSocket, data: { userId: 'sender-1' }, emit: jest.fn() };
+      prisma.conversationMember.findUnique
+        .mockResolvedValueOnce({ userId: 'sender-1' })
+        .mockResolvedValueOnce({ userId: 'user-recipient' });
+
+      // Track call order: sendMessage should be called before server.to().emit()
+      const callOrder: string[] = [];
+      messagesService.sendMessage.mockImplementation(async () => {
+        callOrder.push('persist');
+        return { id: 'msg-order', createdAt: new Date() };
+      });
+      (gateway.server.to as jest.Mock).mockImplementation(() => {
+        callOrder.push('emit');
+        return gateway.server; // chain .emit()
+      });
+
+      await gateway.handleSealedMessage(client as any, sealedPayload);
+
+      // Persist must come before emit
+      const persistIdx = callOrder.indexOf('persist');
+      const emitIdx = callOrder.indexOf('emit');
+      expect(persistIdx).toBeGreaterThanOrEqual(0);
+      expect(emitIdx).toBeGreaterThanOrEqual(0);
+      expect(persistIdx).toBeLessThan(emitIdx);
+    });
+
     it('should respect rate limit', async () => {
       const client = { ...mockSocket, data: { userId: 'sender-1' }, emit: jest.fn() };
       redis.incr.mockResolvedValue(31); // exceeds 30/60s
@@ -1210,7 +1450,10 @@ describe('ChatGateway', () => {
     it('should send delivery receipt only to message sender, not entire room', async () => {
       const client = { ...mockSocket, data: { userId: 'recipient-1' } };
       const senderId = 'sender-1';
-      prisma.message.findUnique.mockResolvedValue({ senderId });
+      messagesService.requireMembership.mockResolvedValue({});
+      // SEC-FIX-2: findUnique now requires senderId, deliveredAt, AND conversationId
+      prisma.message.findUnique.mockResolvedValue({ senderId, deliveredAt: null, conversationId: UUID1 });
+      prisma.message.updateMany.mockResolvedValue({ count: 1 });
       redis.smembers.mockResolvedValue(['sender-socket-1', 'sender-socket-2']);
 
       await gateway.handleMessageDelivered(client as any, { messageId: UUID2, conversationId: UUID1 });

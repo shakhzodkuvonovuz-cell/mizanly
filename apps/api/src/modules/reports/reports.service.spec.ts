@@ -465,4 +465,183 @@ describe('ReportsService', () => {
       );
     });
   });
+
+  // ── F3-3: Report creation accepts thread/reel/video-only targets ──
+  describe('create — thread/reel/video-only targets (F3-3)', () => {
+    it('should accept a report targeting only a thread', async () => {
+      const userId = 'user123';
+      const dto = {
+        reason: ReportReason.HARASSMENT,
+        reportedThreadId: 'thread-1',
+      } as any;
+      prisma.thread.findUnique.mockResolvedValue({ userId: 'other-user' });
+      prisma.report.findFirst.mockResolvedValue(null);
+      prisma.report.count.mockResolvedValue(0);
+      prisma.report.create.mockResolvedValue({ id: 'r1', status: 'PENDING', createdAt: new Date() });
+
+      const result = await service.create(userId, dto);
+      expect(result.id).toBe('r1');
+      expect(prisma.report.create).toHaveBeenCalled();
+    });
+
+    it('should accept a report targeting only a reel', async () => {
+      const userId = 'user123';
+      const dto = {
+        reason: ReportReason.SPAM,
+        reportedReelId: 'reel-1',
+      } as any;
+      prisma.reel.findUnique.mockResolvedValue({ userId: 'other-user' });
+      prisma.report.findFirst.mockResolvedValue(null);
+      prisma.report.count.mockResolvedValue(0);
+      prisma.report.create.mockResolvedValue({ id: 'r2', status: 'PENDING', createdAt: new Date() });
+
+      const result = await service.create(userId, dto);
+      expect(result.id).toBe('r2');
+      expect(prisma.report.create).toHaveBeenCalled();
+    });
+
+    it('should accept a report targeting only a video', async () => {
+      const userId = 'user123';
+      const dto = {
+        reason: ReportReason.HATE_SPEECH,
+        reportedVideoId: 'video-1',
+      } as any;
+      prisma.video.findUnique.mockResolvedValue({ userId: 'other-user' });
+      prisma.report.findFirst.mockResolvedValue(null);
+      prisma.report.count.mockResolvedValue(0);
+      prisma.report.create.mockResolvedValue({ id: 'r3', status: 'PENDING', createdAt: new Date() });
+
+      const result = await service.create(userId, dto);
+      expect(result.id).toBe('r3');
+      expect(prisma.report.create).toHaveBeenCalled();
+    });
+
+    it('should still reject when no target fields are set at all', async () => {
+      const userId = 'user123';
+      const dto = { reason: ReportReason.HARASSMENT } as any;
+
+      await expect(service.create(userId, dto)).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  // ── F3-4: Dismiss restores auto-hidden threads/reels/videos ──
+  describe('dismiss — restore thread/reel/video on dismiss (F3-4)', () => {
+    it('should restore auto-hidden thread on dismiss of urgent report', async () => {
+      const report = {
+        id: 'r-urgent-thread',
+        status: 'PENDING',
+        reason: 'VIOLENCE',
+        reportedPostId: null,
+        reportedCommentId: null,
+        reportedThreadId: 'thread-1',
+        reportedReelId: null,
+        reportedVideoId: null,
+      };
+      prisma.user.findUnique.mockResolvedValue({ role: 'ADMIN' });
+      prisma.report.findUnique.mockResolvedValue(report);
+      prisma.report.count.mockResolvedValue(0); // no other urgent reports
+      prisma.report.update.mockResolvedValue({ ...report, status: 'DISMISSED' });
+
+      await service.dismiss('r-urgent-thread', 'admin1');
+
+      expect(prisma.thread.update).toHaveBeenCalledWith({
+        where: { id: 'thread-1' },
+        data: { isRemoved: false },
+      });
+    });
+
+    it('should restore auto-hidden reel on dismiss of urgent report', async () => {
+      const report = {
+        id: 'r-urgent-reel',
+        status: 'PENDING',
+        reason: 'NUDITY',
+        reportedPostId: null,
+        reportedCommentId: null,
+        reportedThreadId: null,
+        reportedReelId: 'reel-1',
+        reportedVideoId: null,
+      };
+      prisma.user.findUnique.mockResolvedValue({ role: 'ADMIN' });
+      prisma.report.findUnique.mockResolvedValue(report);
+      prisma.report.count.mockResolvedValue(0); // no other urgent reports
+      prisma.report.update.mockResolvedValue({ ...report, status: 'DISMISSED' });
+
+      await service.dismiss('r-urgent-reel', 'admin1');
+
+      expect(prisma.reel.update).toHaveBeenCalledWith({
+        where: { id: 'reel-1' },
+        data: { isRemoved: false },
+      });
+    });
+
+    it('should restore auto-hidden video on dismiss of urgent report', async () => {
+      const report = {
+        id: 'r-urgent-video',
+        status: 'PENDING',
+        reason: 'TERRORISM',
+        reportedPostId: null,
+        reportedCommentId: null,
+        reportedThreadId: null,
+        reportedReelId: null,
+        reportedVideoId: 'video-1',
+      };
+      prisma.user.findUnique.mockResolvedValue({ role: 'ADMIN' });
+      prisma.report.findUnique.mockResolvedValue(report);
+      prisma.report.count.mockResolvedValue(0); // no other urgent reports
+      prisma.report.update.mockResolvedValue({ ...report, status: 'DISMISSED' });
+
+      await service.dismiss('r-urgent-video', 'admin1');
+
+      expect(prisma.video.update).toHaveBeenCalledWith({
+        where: { id: 'video-1' },
+        data: { isRemoved: false },
+      });
+    });
+
+    it('should NOT restore thread/reel/video if other urgent reports exist', async () => {
+      const report = {
+        id: 'r-urgent-multi',
+        status: 'PENDING',
+        reason: 'VIOLENCE',
+        reportedPostId: null,
+        reportedCommentId: null,
+        reportedThreadId: 'thread-1',
+        reportedReelId: 'reel-1',
+        reportedVideoId: 'video-1',
+      };
+      prisma.user.findUnique.mockResolvedValue({ role: 'ADMIN' });
+      prisma.report.findUnique.mockResolvedValue(report);
+      prisma.report.count.mockResolvedValue(2); // other urgent reports exist
+      prisma.report.update.mockResolvedValue({ ...report, status: 'DISMISSED' });
+
+      await service.dismiss('r-urgent-multi', 'admin1');
+
+      // None should be restored because other urgent reports exist
+      expect(prisma.thread.update).not.toHaveBeenCalled();
+      expect(prisma.reel.update).not.toHaveBeenCalled();
+      expect(prisma.video.update).not.toHaveBeenCalled();
+    });
+
+    it('should NOT restore content for non-urgent report reasons', async () => {
+      const report = {
+        id: 'r-non-urgent',
+        status: 'PENDING',
+        reason: 'SPAM', // not in URGENT_REPORT_REASONS
+        reportedPostId: null,
+        reportedCommentId: null,
+        reportedThreadId: 'thread-1',
+        reportedReelId: null,
+        reportedVideoId: null,
+      };
+      prisma.user.findUnique.mockResolvedValue({ role: 'ADMIN' });
+      prisma.report.findUnique.mockResolvedValue(report);
+      prisma.report.update.mockResolvedValue({ ...report, status: 'DISMISSED' });
+
+      await service.dismiss('r-non-urgent', 'admin1');
+
+      // No restore should happen for non-urgent reasons
+      expect(prisma.thread.update).not.toHaveBeenCalled();
+      expect(prisma.report.count).not.toHaveBeenCalled();
+    });
+  });
 });

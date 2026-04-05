@@ -364,6 +364,9 @@ export class AudioRoomsService {
   }
 
   // Toggle mute (self or host for others)
+  // F5-4 FIX: Host-mute is now enforceable — participants cannot self-unmute
+  // when host has muted them. The `hostMuted` flag is set by the host and can
+  // only be cleared by the host.
   async toggleMute(id: string, userId: string, targetUserId?: string) {
     const room = await this.prisma.audioRoom.findUnique({
       where: { id },
@@ -389,23 +392,43 @@ export class AudioRoomsService {
       throw new NotFoundException('Participant not found');
     }
 
-    // Permission check
     if (!isSelf) {
-      // Must be host to mute others
+      // Host muting/unmuting another participant
       const hostParticipant = await this.prisma.audioRoomParticipant.findUnique({
         where: { roomId_userId: { roomId: id, userId } },
       });
       if (!hostParticipant || hostParticipant.role !== AudioRoomRole.HOST) {
         throw new ForbiddenException('Only host can mute others');
       }
+
+      // Host mute: toggle the hostMuted flag AND set isMuted accordingly
+      const newHostMuted = !targetParticipant.hostMuted;
+      await this.prisma.audioRoomParticipant.update({
+        where: { roomId_userId: { roomId: id, userId: targetId } },
+        data: {
+          hostMuted: newHostMuted,
+          // When host mutes: force isMuted true. When host unmutes: leave isMuted as-is
+          // (participant can then self-unmute if they choose).
+          ...(newHostMuted ? { isMuted: true } : {}),
+        },
+      });
+
+      return { isMuted: newHostMuted || targetParticipant.isMuted, hostMuted: newHostMuted };
     }
 
+    // Self mute/unmute — but reject unmute if host-muted
+    if (targetParticipant.isMuted && targetParticipant.hostMuted) {
+      // Trying to unmute self while host-muted → reject
+      throw new ForbiddenException('You have been muted by the host');
+    }
+
+    const newMuted = !targetParticipant.isMuted;
     await this.prisma.audioRoomParticipant.update({
       where: { roomId_userId: { roomId: id, userId: targetId } },
-      data: { isMuted: !targetParticipant.isMuted },
+      data: { isMuted: newMuted },
     });
 
-    return { isMuted: !targetParticipant.isMuted };
+    return { isMuted: newMuted };
   }
 
   // List participants by role

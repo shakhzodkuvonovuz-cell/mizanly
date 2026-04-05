@@ -261,13 +261,16 @@ describe('Rate Limiting Integration', () => {
       expect(tracker).toBe('ip:192.168.1.1');
     });
 
-    it('should prefer x-forwarded-for over direct IP', async () => {
+    it('should use req.ip and ignore x-forwarded-for (trust proxy handles resolution)', async () => {
+      // SECURITY: The guard must NOT read x-forwarded-for directly — clients can spoof it.
+      // Express 'trust proxy' resolves req.ip correctly from the first trusted proxy hop.
       const req = {
         ip: '10.0.0.1',
         headers: { 'x-forwarded-for': '203.0.113.50, 70.41.3.18' },
       } as Record<string, unknown>;
       const tracker = await (guard as any).getTracker(req);
-      expect(tracker).toBe('ip:203.0.113.50');
+      // Should use req.ip, NOT parse x-forwarded-for
+      expect(tracker).toBe('ip:10.0.0.1');
     });
 
     it('should prefer userId over IP when both are present', async () => {

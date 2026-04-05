@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../../config/prisma.service';
 import { DevicesService } from './devices.service';
+import { TwoFactorService } from '../two-factor/two-factor.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('DevicesService — authorization matrix', () => {
@@ -25,6 +26,12 @@ describe('DevicesService — authorization matrix', () => {
               deleteMany: jest.fn(),
               updateMany: jest.fn(),
             },
+          },
+        },
+        {
+          provide: TwoFactorService,
+          useValue: {
+            clearTwoFactorSession: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],

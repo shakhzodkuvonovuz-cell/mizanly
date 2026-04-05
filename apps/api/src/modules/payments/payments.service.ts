@@ -528,36 +528,25 @@ export class PaymentsService {
       return;
     }
 
-    // PI-based idempotency: check PaymentMapping first (durable, exact match), then CoinTransaction (legacy fallback)
-    const existingMapping = await this.prisma.paymentMapping.findUnique({
-      where: { stripeId: paymentIntent.id },
-    });
-    if (existingMapping) {
-      this.logger.log(`Coin purchase already processed for PI ${paymentIntent.id} — skipping (idempotent via PaymentMapping)`);
-      return;
-    }
+    // Claim-first pattern: create PaymentMapping FIRST inside the transaction.
+    // The unique constraint on stripeId is the true serialization point.
+    // If two concurrent transactions race, the first CREATE wins and the second
+    // gets a P2002 unique constraint violation — caught and returned as false.
+    // This eliminates the check-then-act race of findUnique + conditional logic.
+    const credited = await this.prisma.$transaction(async (tx) => {
+      // Atomic claim: try to insert PaymentMapping. P2002 = already claimed by another request.
+      try {
+        await tx.paymentMapping.create({
+          data: { stripeId: paymentIntent.id, internalId: userId, type: 'coin_purchase' },
+        });
+      } catch (err: unknown) {
+        // P2002 = unique constraint violation on stripeId — already processed
+        if (err instanceof Error && err.message.includes('Unique constraint')) {
+          return false;
+        }
+        throw err; // Re-throw unexpected errors
+      }
 
-    // Legacy fallback: check CoinTransaction description (for pre-mapping records)
-    const alreadyCredited = await this.prisma.coinTransaction.findFirst({
-      where: {
-        userId,
-        type: 'PURCHASE',
-        description: { equals: `Coin purchase completed (${coinAmount} coins) — Stripe PI: ${paymentIntent.id}` },
-      },
-    });
-    if (alreadyCredited) {
-      this.logger.log(`Coin purchase already credited for PI ${paymentIntent.id} — skipping (idempotent via CoinTransaction)`);
-      // Backfill PaymentMapping for future lookups
-      await this.prisma.paymentMapping.upsert({
-        where: { stripeId: paymentIntent.id },
-        create: { stripeId: paymentIntent.id, internalId: alreadyCredited.id, type: 'coin_purchase' },
-        update: {},
-      }).catch((e: Error) => this.logger.debug('Backfill PaymentMapping failed (non-critical)', e.message));
-      return;
-    }
-
-    // Credit coins atomically
-    await this.prisma.$transaction(async (tx) => {
       await tx.coinBalance.upsert({
         where: { userId },
         update: { coins: { increment: coinAmount } },
@@ -589,13 +578,13 @@ export class PaymentsService {
         });
       }
 
-      // Store PaymentMapping for idempotency (inside transaction for atomicity)
-      await tx.paymentMapping.upsert({
-        where: { stripeId: paymentIntent.id },
-        create: { stripeId: paymentIntent.id, internalId: userId, type: 'coin_purchase' },
-        update: {},
-      });
+      return true;
     });
+
+    if (!credited) {
+      this.logger.log(`Coin purchase already processed for PI ${paymentIntent.id} — skipping (idempotent)`);
+      return;
+    }
 
     // Reconciliation: verify coins were actually credited
     const balance = await this.prisma.coinBalance.findUnique({
@@ -635,35 +624,19 @@ export class PaymentsService {
       orderId = order.id;
     }
 
-    // Idempotency: check current status before updating
-    const existingOrder = await this.prisma.order.findUnique({
-      where: { id: orderId },
-      select: { id: true, status: true },
-    });
-    if (!existingOrder) {
-      this.logger.error(`CRITICAL RECONCILIATION: Order ${orderId} not found in DB for PI ${paymentIntent.id}`);
-      return;
-    }
-    if (existingOrder.status === 'PAID') {
-      this.logger.log(`Marketplace order ${orderId} already PAID for PI ${paymentIntent.id} — skipping (idempotent)`);
-      return;
-    }
-
-    await this.prisma.order.update({
-      where: { id: orderId },
+    // Conditional update: only transition if status is NOT already PAID.
+    // updateMany with WHERE status != 'PAID' is atomic — no read-then-write race.
+    const updateResult = await this.prisma.order.updateMany({
+      where: { id: orderId, status: { not: 'PAID' } },
       data: {
         status: 'PAID',
         stripePaymentId: paymentIntent.id,
       },
     });
 
-    // Reconciliation: verify the update applied
-    const verifiedOrder = await this.prisma.order.findUnique({
-      where: { id: orderId },
-      select: { status: true, stripePaymentId: true },
-    });
-    if (verifiedOrder?.status !== 'PAID' || verifiedOrder?.stripePaymentId !== paymentIntent.id) {
-      this.logger.error(`CRITICAL RECONCILIATION MISMATCH: Order ${orderId} update failed verification. status=${verifiedOrder?.status}, stripePaymentId=${verifiedOrder?.stripePaymentId}, expectedPI=${paymentIntent.id}`);
+    if (updateResult.count === 0) {
+      this.logger.log(`Marketplace order ${orderId} already PAID or not found for PI ${paymentIntent.id} — skipping (idempotent)`);
+      return;
     }
 
     // Best-effort notification — don't fail the webhook if notification fails
@@ -703,36 +676,50 @@ export class PaymentsService {
       return;
     }
 
-    // Idempotency: check if this exact PaymentIntent already activated premium
-    const existing = await this.prisma.premiumSubscription.findUnique({
-      where: { userId },
-      select: { endDate: true, stripePaymentIntentId: true, status: true },
+    // Claim-first pattern: create PaymentMapping FIRST inside the transaction.
+    // The unique constraint on stripeId is the true serialization point.
+    // If two concurrent transactions race, the first CREATE wins and the second
+    // gets a P2002 unique constraint violation — caught and returned as false.
+    const activated = await this.prisma.$transaction(async (tx) => {
+      // Atomic claim: try to insert PaymentMapping. P2002 = already claimed by another request.
+      try {
+        await tx.paymentMapping.create({
+          data: { stripeId: paymentIntent.id, internalId: userId, type: 'premium' },
+        });
+      } catch (err: unknown) {
+        if (err instanceof Error && err.message.includes('Unique constraint')) {
+          return false;
+        }
+        throw err;
+      }
+
+      // Read current subscription to calculate extension base
+      const existing = await tx.premiumSubscription.findUnique({
+        where: { userId },
+        select: { endDate: true },
+      });
+
+      // Extend from current endDate if still in the future (don't lose remaining days on early renewal)
+      const baseDate = existing?.endDate && new Date(existing.endDate) > new Date()
+        ? new Date(existing.endDate)
+        : new Date();
+      const months = plan === 'YEARLY' ? 12 : 1;
+      const endDate = new Date(baseDate);
+      endDate.setMonth(endDate.getMonth() + months);
+
+      await tx.premiumSubscription.upsert({
+        where: { userId },
+        create: { userId, plan: plan as 'MONTHLY' | 'YEARLY', status: 'ACTIVE', endDate, stripePaymentIntentId: paymentIntent.id },
+        update: { status: 'ACTIVE', endDate, stripePaymentIntentId: paymentIntent.id },
+      });
+
+      return true;
     });
-    if (existing?.stripePaymentIntentId === paymentIntent.id) {
+
+    if (!activated) {
       this.logger.log(`Premium already activated for PI ${paymentIntent.id} — skipping (idempotent)`);
       return;
     }
-
-    // Extend from current endDate if still in the future (don't lose remaining days on early renewal)
-    const baseDate = existing?.endDate && new Date(existing.endDate) > new Date()
-      ? new Date(existing.endDate)
-      : new Date();
-    const months = plan === 'YEARLY' ? 12 : 1;
-    const endDate = new Date(baseDate);
-    endDate.setMonth(endDate.getMonth() + months);
-
-    await this.prisma.premiumSubscription.upsert({
-      where: { userId },
-      create: { userId, plan: plan as 'MONTHLY' | 'YEARLY', status: 'ACTIVE', endDate, stripePaymentIntentId: paymentIntent.id },
-      update: { status: 'ACTIVE', endDate, stripePaymentIntentId: paymentIntent.id },
-    });
-
-    // Store PaymentMapping for cross-reference reconciliation
-    await this.prisma.paymentMapping.upsert({
-      where: { stripeId: paymentIntent.id },
-      create: { stripeId: paymentIntent.id, internalId: userId, type: 'premium' },
-      update: {},
-    }).catch((e: Error) => this.logger.warn('Premium PaymentMapping store failed (non-critical)', e.message));
 
     this.logger.log(`Premium activated for user ${userId} (${plan}) via PI ${paymentIntent.id}`);
   }
@@ -795,26 +782,29 @@ export class PaymentsService {
       }
     }
 
-    // Idempotency guard: check if tip is already completed before entering $transaction
-    const existingTip = await this.prisma.tip.findUnique({
-      where: { id: tipId as string },
-      select: { status: true },
-    });
-    if (existingTip?.status === 'completed') {
-      this.logger.log(`Tip ${tipId} already completed — skipping (idempotent)`);
-      return;
-    }
-
-    // Atomically: update tip status + credit receiver
+    // Atomic conditional: transition tip from 'pending' to 'completed' inside transaction.
+    // updateMany with WHERE status = 'pending' is the idempotency gate — no external read-then-write race.
     const completedTip = await this.prisma.$transaction(async (tx) => {
-      const tip = await tx.tip.update({
-        where: { id: tipId as string },
+      // Conditional update: only transition if still pending
+      const updated = await tx.tip.updateMany({
+        where: { id: tipId as string, status: 'pending' },
         data: {
           status: 'completed',
           stripePaymentId: paymentIntent.id,
         },
+      });
+
+      if (updated.count === 0) {
+        // Already completed or status changed — no-op
+        return null;
+      }
+
+      // Fetch the tip data we need for crediting
+      const tip = await tx.tip.findUnique({
+        where: { id: tipId as string },
         select: { receiverId: true, senderId: true, amount: true, platformFee: true },
       });
+      if (!tip) return null;
 
       // Credit receiver's diamond balance (amount minus platform fee, converted to diamonds)
       if (tip.receiverId) {
@@ -842,6 +832,13 @@ export class PaymentsService {
 
       return tip;
     });
+
+    if (!completedTip) {
+      this.logger.log(`Tip ${tipId} already completed or not found — skipping (idempotent)`);
+      // Clean up Redis mapping even on skip
+      await this.redis.del(`payment:intent:${paymentIntent.id}`);
+      return;
+    }
 
     // Best-effort notification — tip payment is already committed; notification failure is non-critical
     if (completedTip?.receiverId) {
@@ -1085,20 +1082,13 @@ export class PaymentsService {
       return;
     }
 
-    // Atomically: mark tip as disputed AND reverse diamond credit to receiver
+    // Atomically: mark tip as disputed AND reverse diamond credit to receiver.
+    // Uses conditional updateMany (WHERE status != 'disputed') to eliminate read-then-write race.
     await this.prisma.$transaction(async (tx) => {
-      // Idempotency: skip if already disputed (e.g. dispute update event for same PI)
-      const currentTip = await tx.tip.findUnique({
-        where: { id: tipId as string },
-        select: { status: true },
-      });
-      if (currentTip?.status === 'disputed') {
-        this.logger.warn(`Tip ${tipId} already disputed — skipping duplicate reversal`);
-        return;
-      }
-
-      const tip = await tx.tip.update({
-        where: { id: tipId as string },
+      // Conditional update: only transition if NOT already disputed.
+      // updateMany is atomic — two concurrent disputes can't both succeed.
+      const disputeResult = await tx.tip.updateMany({
+        where: { id: tipId as string, status: { not: 'disputed' } },
         data: {
           status: 'disputed',
           message: JSON.stringify({
@@ -1108,8 +1098,19 @@ export class PaymentsService {
             disputedAt: new Date().toISOString(),
           }),
         },
+      });
+
+      if (disputeResult.count === 0) {
+        this.logger.warn(`Tip ${tipId} already disputed or not found — skipping duplicate reversal`);
+        return;
+      }
+
+      // Fetch tip data for diamond reversal (now guaranteed to be 'disputed' by us)
+      const tip = await tx.tip.findUnique({
+        where: { id: tipId as string },
         select: { receiverId: true, amount: true, platformFee: true },
       });
+      if (!tip) return;
 
       // Reverse the diamond credit that was given to the receiver
       if (tip.receiverId) {

@@ -3,6 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import Redis from 'ioredis';
 import { PrismaService } from '../../config/prisma.service';
 import { acquireCronLock } from '../../common/utils/cron-lock';
+import { TwoFactorService } from '../two-factor/two-factor.service';
 
 @Injectable()
 export class DevicesService {
@@ -11,6 +12,7 @@ export class DevicesService {
   constructor(
     private prisma: PrismaService,
     @Inject('REDIS') private redis: Redis,
+    private twoFactorService: TwoFactorService,
   ) {}
 
   async register(userId: string, pushToken: string, platform: string, deviceId?: string) {
@@ -79,23 +81,49 @@ export class DevicesService {
 
   /**
    * Log out a specific session (deactivate device).
+   * F2-4: Also clears 2FA verification flag so the session cannot bypass TOTP on re-auth.
    */
   async logoutSession(sessionId: string, userId: string) {
     await this.prisma.device.updateMany({
       where: { id: sessionId, userId },
       data: { isActive: false },
     });
+
+    // F2-4: Clear the 2FA verification flag for this specific session.
+    // We use the device sessionId as the Clerk session identifier since the device
+    // record maps 1:1 to a user session. Also clear the fallback (no-session) key.
+    await this.twoFactorService.clearTwoFactorSession(userId, sessionId).catch((err: unknown) => {
+      this.logger.warn(`Failed to clear 2FA session for ${userId}:${sessionId}`, err instanceof Error ? err.message : String(err));
+    });
+
     return { loggedOut: true };
   }
 
   /**
    * Log out all other sessions (keep current device active).
+   * F2-4: Also clears 2FA verification flags for all sessions except current,
+   * so logged-out sessions cannot bypass TOTP on re-auth.
    */
   async logoutAllOtherSessions(userId: string, currentSessionId: string) {
+    // Fetch IDs of sessions being deactivated so we can clear their 2FA flags
+    const sessionsToDeactivate = await this.prisma.device.findMany({
+      where: { userId, isActive: true, id: { not: currentSessionId } },
+      select: { id: true },
+    });
+
     await this.prisma.device.updateMany({
       where: { userId, isActive: true, id: { not: currentSessionId } },
       data: { isActive: false },
     });
+
+    // F2-4: Clear 2FA verification flags for each deactivated session
+    const clearPromises = sessionsToDeactivate.map((session) =>
+      this.twoFactorService.clearTwoFactorSession(userId, session.id).catch((err: unknown) => {
+        this.logger.warn(`Failed to clear 2FA for session ${session.id}`, err instanceof Error ? err.message : String(err));
+      }),
+    );
+    await Promise.all(clearPromises);
+
     return { loggedOut: true };
   }
 

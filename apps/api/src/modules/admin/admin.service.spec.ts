@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 import { AdminService } from './admin.service';
@@ -844,6 +844,96 @@ describe('AdminService', () => {
       await expect(service.unbanUser('user-id', 'target')).rejects.toThrow(
         ForbiddenException,
       );
+    });
+  });
+
+  // ── F3-2: Prevent replay of already-resolved/dismissed reports ──
+  describe('resolveReport idempotency (F3-2)', () => {
+    it('should throw BadRequestException when resolving an already RESOLVED report', async () => {
+      prisma.user.findUnique.mockResolvedValueOnce({ role: 'ADMIN' });
+      prisma.report.findUnique.mockResolvedValue({
+        status: 'RESOLVED',
+        reportedPostId: null,
+        reportedCommentId: null,
+        reportedMessageId: null,
+        reportedUserId: 'target-1',
+        reportedThreadId: null,
+        reportedReelId: null,
+        reportedVideoId: null,
+      });
+
+      await expect(
+        service.resolveReport('admin-id', 'r1', 'WARN', 'note'),
+      ).rejects.toThrow(BadRequestException);
+
+      // Verify no side effects were applied
+      expect(prisma.report.update).not.toHaveBeenCalled();
+      expect(prisma.moderationLog.create).not.toHaveBeenCalled();
+      expect(prisma.adminAuditLog.create).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException when resolving an already DISMISSED report', async () => {
+      prisma.user.findUnique.mockResolvedValueOnce({ role: 'ADMIN' });
+      prisma.report.findUnique.mockResolvedValue({
+        status: 'DISMISSED',
+        reportedPostId: 'post-1',
+        reportedCommentId: null,
+        reportedMessageId: null,
+        reportedUserId: null,
+        reportedThreadId: null,
+        reportedReelId: null,
+        reportedVideoId: null,
+      });
+
+      await expect(
+        service.resolveReport('admin-id', 'r1', 'REMOVE_CONTENT'),
+      ).rejects.toThrow(BadRequestException);
+
+      // No side effects should have been applied
+      expect(prisma.report.update).not.toHaveBeenCalled();
+      expect(prisma.adminAuditLog.create).not.toHaveBeenCalled();
+    });
+
+    it('should allow resolving a PENDING report', async () => {
+      prisma.user.findUnique.mockResolvedValueOnce({ role: 'ADMIN' });
+      prisma.report.findUnique.mockResolvedValue({
+        status: 'PENDING',
+        reportedPostId: null,
+        reportedCommentId: null,
+        reportedMessageId: null,
+        reportedUserId: null,
+        reportedThreadId: null,
+        reportedReelId: null,
+        reportedVideoId: null,
+      });
+      prisma.report.update.mockResolvedValue({ id: 'r1', status: 'DISMISSED' });
+
+      await expect(
+        service.resolveReport('admin-id', 'r1', 'DISMISS'),
+      ).resolves.toBeDefined();
+
+      expect(prisma.report.update).toHaveBeenCalled();
+    });
+
+    it('should allow resolving a REVIEWING report', async () => {
+      prisma.user.findUnique.mockResolvedValueOnce({ role: 'ADMIN' });
+      prisma.report.findUnique.mockResolvedValue({
+        status: 'REVIEWING',
+        reportedPostId: null,
+        reportedCommentId: null,
+        reportedMessageId: null,
+        reportedUserId: null,
+        reportedThreadId: null,
+        reportedReelId: null,
+        reportedVideoId: null,
+      });
+      prisma.report.update.mockResolvedValue({ id: 'r1', status: 'RESOLVED' });
+
+      await expect(
+        service.resolveReport('admin-id', 'r1', 'WARN'),
+      ).resolves.toBeDefined();
+
+      expect(prisma.report.update).toHaveBeenCalled();
     });
   });
 });

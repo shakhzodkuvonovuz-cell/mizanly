@@ -1,5 +1,6 @@
 import { Linking } from 'react-native';
 import { navigate } from '@/utils/navigation';
+import { useStore } from '@/store';
 
 type DeepLinkScreen =
   | 'post'
@@ -124,13 +125,33 @@ function parseDeepLink(url: string): ParsedDeepLink | null {
 }
 
 /**
- * Navigate to a deep link URL using expo-router
+ * Screens that require authentication.
+ * Unauthenticated users following deep links to these screens
+ * will be silently ignored — the auth guard handles redirection.
+ */
+const PROTECTED_SCREENS: ReadonlySet<DeepLinkScreen> = new Set([
+  'conversation',
+  'notifications',
+  'settings',
+]);
+
+/**
+ * Navigate to a deep link URL using expo-router.
+ * Protected screens are gated by auth state — unauthenticated users
+ * are silently blocked (the auth guard will redirect to sign-in).
  */
 function navigateToDeepLink(url: string): boolean {
   const parsed = parseDeepLink(url);
   if (!parsed) return false;
 
   const { screen, params } = parsed;
+
+  // Block navigation to protected screens when not authenticated
+  const { isAuthenticated } = useStore.getState();
+  if (!isAuthenticated && PROTECTED_SCREENS.has(screen)) {
+    if (__DEV__) console.warn(`[DeepLink] Blocked navigation to protected screen "${screen}" — user not authenticated`);
+    return false;
+  }
 
   switch (screen) {
     case 'post':

@@ -102,16 +102,17 @@ export class WebhooksController {
       throw new BadRequestException('Invalid webhook signature');
     }
 
-    // Idempotency: check if this svix-id has already been processed
+    // F2-5: Idempotency check — verify this svix-id hasn't been processed yet.
+    // The dedup key is set AFTER side effects succeed (not before) so that if the
+    // handler throws, Clerk retries are not blocked by a premature dedup marker.
+    let dedupeKey: string | undefined;
     if (svixId) {
-      const dedupeKey = `clerk_webhook:${svixId}`;
+      dedupeKey = `clerk_webhook:${svixId}`;
       const alreadyProcessed = await this.redis.get(dedupeKey);
       if (alreadyProcessed) {
         this.logger.debug(`Clerk webhook ${svixId} already processed — skipping`);
         return { received: true, deduplicated: true };
       }
-      // Mark as processed with 24-hour TTL (Clerk retries for up to 3 days, but svix-id is unique per event)
-      await this.redis.setex(dedupeKey, 86400, '1');
     }
 
     const { type, data } = event;
@@ -162,6 +163,12 @@ export class WebhooksController {
       this.logger.debug(`Clerk webhook acknowledged but no action: ${type}`);
     } else if (!HANDLED_EVENTS.has(type)) {
       this.logger.warn(`Unhandled Clerk webhook event type: ${type}`);
+    }
+
+    // F2-5: Mark as processed AFTER all side effects succeed.
+    // 24-hour TTL — Clerk retries for up to 3 days, but svix-id is unique per event.
+    if (dedupeKey) {
+      await this.redis.setex(dedupeKey, 86400, '1');
     }
 
     return { received: true };

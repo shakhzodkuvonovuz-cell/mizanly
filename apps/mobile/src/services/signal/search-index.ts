@@ -41,6 +41,71 @@ const INDEX_TOKEN_PREFIX = 'searchidx:t:';
 const INDEX_MSG_PREFIX = 'searchidx:m:';
 const INDEX_COUNT_KEY = 'searchidx:__count';
 
+/**
+ * F5-5 FIX: FIFO eviction order list for HMAC-keyed entries.
+ * HMAC keys can't be decrypted to check age, so we maintain an ordered
+ * list of messageIds in insertion order. Eviction pops from the front (oldest).
+ */
+const INDEX_FIFO_KEY = 'searchidx:__fifo';
+
+/** Max FIFO entries per chunk to avoid oversized MMKV values */
+const FIFO_CHUNK_SIZE = 5000;
+
+// ============================================================
+// FIFO HELPERS (F5-5)
+// ============================================================
+
+/**
+ * Load the FIFO eviction order list. Returns messageIds in insertion order
+ * (oldest first). The list is sharded into chunks to avoid oversized values.
+ */
+async function loadFifoOrder(): Promise<string[]> {
+  const metaStr = await secureLoad(HMAC_TYPE.SEARCH_FIFO, INDEX_FIFO_KEY);
+  if (!metaStr) return [];
+  return JSON.parse(metaStr) as string[];
+}
+
+/**
+ * Save the FIFO eviction order list.
+ */
+async function saveFifoOrder(order: string[]): Promise<void> {
+  await secureStore(HMAC_TYPE.SEARCH_FIFO, INDEX_FIFO_KEY, JSON.stringify(order));
+}
+
+/**
+ * Append a messageId to the FIFO order. O(1) amortized if we batch saves.
+ */
+async function fifoAppend(messageId: string): Promise<void> {
+  const order = await loadFifoOrder();
+  if (!order.includes(messageId)) {
+    order.push(messageId);
+    await saveFifoOrder(order);
+  }
+}
+
+/**
+ * Remove a messageId from the FIFO order (on delete).
+ */
+async function fifoRemove(messageId: string): Promise<void> {
+  const order = await loadFifoOrder();
+  const idx = order.indexOf(messageId);
+  if (idx !== -1) {
+    order.splice(idx, 1);
+    await saveFifoOrder(order);
+  }
+}
+
+/**
+ * Pop the oldest N messageIds from the FIFO order for eviction.
+ * Returns the popped IDs and saves the updated order.
+ */
+async function fifoPop(count: number): Promise<string[]> {
+  const order = await loadFifoOrder();
+  const popped = order.splice(0, count);
+  await saveFifoOrder(order);
+  return popped;
+}
+
 // ============================================================
 // COUNT HELPERS
 // ============================================================
@@ -107,6 +172,9 @@ export async function indexMessage(
     }
   }
 
+  // F5-5: Track in FIFO order for HMAC-safe eviction
+  await fifoAppend(messageId);
+
   // Track count for LRU
   const count = (await getIndexCount()) + 1;
   await setIndexCount(count);
@@ -124,6 +192,9 @@ export async function indexMessage(
 export async function removeFromIndex(messageId: string): Promise<void> {
   const msgOriginalKey = `${INDEX_MSG_PREFIX}${messageId}`;
   await secureDelete(HMAC_TYPE.SEARCH_MSG, msgOriginalKey);
+
+  // F5-5: Remove from FIFO order
+  await fifoRemove(messageId);
 
   // We don't clean up token posting lists (too expensive).
   // Stale messageIds in posting lists are filtered during search.
@@ -237,43 +308,35 @@ function tokenize(text: string): string[] {
 // ============================================================
 
 async function evictOldestIndexEntries(count: number): Promise<void> {
-  const mmkv = await getMMKV();
-  const allMsgKeys = mmkv.getAllKeys().filter((k) =>
-    k.startsWith(HMAC_TYPE.SEARCH_MSG) || k.startsWith(INDEX_MSG_PREFIX),
-  );
+  // F5-5 FIX: Use FIFO order for HMAC entries instead of skipping them.
+  // The FIFO list tracks messageIds in insertion order. Pop the oldest N
+  // and delete their HMAC-keyed metadata. This works for both legacy and
+  // HMAC entries — FIFO is the single source of truth for eviction order.
+  const evicted = await fifoPop(count);
 
-  const entries: Array<{ originalKey: string; messageId: string; timestamp: number }> = [];
-  for (const key of allMsgKeys) {
+  for (const messageId of evicted) {
+    const msgOriginalKey = `${INDEX_MSG_PREFIX}${messageId}`;
+    await secureDelete(HMAC_TYPE.SEARCH_MSG, msgOriginalKey);
+  }
+
+  // Also clean up any legacy plaintext keys that aren't in the FIFO
+  const mmkv = await getMMKV();
+  const legacyKeys = mmkv.getAllKeys().filter((k) => k.startsWith(INDEX_MSG_PREFIX));
+  let legacyEvicted = 0;
+  const maxLegacyEvict = Math.max(0, count - evicted.length);
+  for (const key of legacyKeys) {
+    if (legacyEvicted >= maxLegacyEvict) break;
     try {
-      // For legacy keys (original prefix), read directly
-      if (key.startsWith(INDEX_MSG_PREFIX)) {
-        const raw = mmkv.getString(key);
-        if (!raw) { mmkv.delete(key); continue; }
-        const str = raw.startsWith('A1:') ? null : raw;
-        if (!str) continue;
-        const meta = JSON.parse(str);
-        entries.push({
-          originalKey: key,
-          messageId: key.replace(INDEX_MSG_PREFIX, ''),
-          timestamp: meta.timestamp ?? 0,
-        });
-      }
-      // HMAC keys: we can't decrypt without original key, skip for eviction.
-      // The per-index cap and periodic clearSearchIndex handle cleanup.
+      mmkv.delete(key);
+      legacyEvicted++;
     } catch {
       mmkv.delete(key);
     }
   }
 
-  entries.sort((a, b) => a.timestamp - b.timestamp);
-  const toEvict = entries.slice(0, count);
-
-  for (const entry of toEvict) {
-    await secureDelete(HMAC_TYPE.SEARCH_MSG, entry.originalKey);
-  }
-
+  const totalEvicted = evicted.length + legacyEvicted;
   const globalCount = await getIndexCount();
-  await setIndexCount(Math.max(0, globalCount - toEvict.length));
+  await setIndexCount(Math.max(0, globalCount - totalEvicted));
 }
 
 /**
@@ -291,7 +354,8 @@ export async function clearSearchIndex(): Promise<void> {
       key === INDEX_COUNT_KEY ||
       key.startsWith(HMAC_TYPE.SEARCH_TOKEN) ||
       key.startsWith(HMAC_TYPE.SEARCH_MSG) ||
-      key.startsWith(HMAC_TYPE.SEARCH_COUNT)
+      key.startsWith(HMAC_TYPE.SEARCH_COUNT) ||
+      key.startsWith(HMAC_TYPE.SEARCH_FIFO)
     ) {
       mmkv.delete(key);
     }

@@ -533,28 +533,28 @@ describe('AudioRoomsService', () => {
       });
     });
 
-    it('should toggle mute for others (host only)', async () => {
+    it('should host-mute another participant (sets hostMuted flag)', async () => {
       const roomId = 'room1';
       const hostId = 'host123';
       const targetUserId = 'listener123';
       const mockRoom = { id: roomId, status: 'live' };
-      const mockTargetParticipant = { roomId, userId: targetUserId, isMuted: false };
+      const mockTargetParticipant = { roomId, userId: targetUserId, isMuted: false, hostMuted: false };
       const mockHostParticipant = { roomId, userId: hostId, role: AudioRoomRole.HOST };
 
       mockPrismaService.audioRoom.findUnique.mockResolvedValue(mockRoom);
-      mockPrismaService.audioRoomParticipant.findUnique.mockImplementation((args) => {
+      mockPrismaService.audioRoomParticipant.findUnique.mockImplementation((args: any) => {
         if (args.where.roomId_userId.userId === targetUserId) return mockTargetParticipant;
         if (args.where.roomId_userId.userId === hostId) return mockHostParticipant;
         return null;
       });
-      mockPrismaService.audioRoomParticipant.update.mockResolvedValue({ isMuted: true });
+      mockPrismaService.audioRoomParticipant.update.mockResolvedValue({ isMuted: true, hostMuted: true });
 
       const result = await service.toggleMute(roomId, hostId, targetUserId);
 
-      expect(result).toEqual({ isMuted: true });
+      expect(result).toEqual({ isMuted: true, hostMuted: true });
       expect(mockPrismaService.audioRoomParticipant.update).toHaveBeenCalledWith({
         where: { roomId_userId: { roomId, userId: targetUserId } },
-        data: { isMuted: true },
+        data: { hostMuted: true, isMuted: true },
       });
     });
 
@@ -590,6 +590,81 @@ describe('AudioRoomsService', () => {
       });
 
       await expect(service.toggleMute('room1', 'caller', 'target')).rejects.toThrow(ForbiddenException);
+    });
+
+    // F5-4: Host-mute enforcement tests
+    it('should reject self-unmute when host-muted (F5-4)', async () => {
+      const roomId = 'room1';
+      const userId = 'participant123';
+      const mockRoom = { id: roomId, status: 'live' };
+      const mockParticipant = { roomId, userId, isMuted: true, hostMuted: true };
+
+      mockPrismaService.audioRoom.findUnique.mockResolvedValue(mockRoom);
+      mockPrismaService.audioRoomParticipant.findUnique.mockResolvedValue(mockParticipant);
+
+      await expect(service.toggleMute(roomId, userId)).rejects.toThrow(ForbiddenException);
+      await expect(service.toggleMute(roomId, userId)).rejects.toThrow('You have been muted by the host');
+    });
+
+    it('should allow self-mute when not host-muted (F5-4)', async () => {
+      const roomId = 'room1';
+      const userId = 'participant123';
+      const mockRoom = { id: roomId, status: 'live' };
+      const mockParticipant = { roomId, userId, isMuted: false, hostMuted: false };
+
+      mockPrismaService.audioRoom.findUnique.mockResolvedValue(mockRoom);
+      mockPrismaService.audioRoomParticipant.findUnique.mockResolvedValue(mockParticipant);
+      mockPrismaService.audioRoomParticipant.update.mockResolvedValue({ isMuted: true });
+
+      const result = await service.toggleMute(roomId, userId);
+
+      expect(result).toEqual({ isMuted: true });
+      expect(mockPrismaService.audioRoomParticipant.update).toHaveBeenCalledWith({
+        where: { roomId_userId: { roomId, userId } },
+        data: { isMuted: true },
+      });
+    });
+
+    it('should host-unmute a previously host-muted participant (F5-4)', async () => {
+      const roomId = 'room1';
+      const hostId = 'host123';
+      const targetUserId = 'listener123';
+      const mockRoom = { id: roomId, status: 'live' };
+      const mockTargetParticipant = { roomId, userId: targetUserId, isMuted: true, hostMuted: true };
+      const mockHostParticipant = { roomId, userId: hostId, role: AudioRoomRole.HOST };
+
+      mockPrismaService.audioRoom.findUnique.mockResolvedValue(mockRoom);
+      mockPrismaService.audioRoomParticipant.findUnique.mockImplementation((args: any) => {
+        if (args.where.roomId_userId.userId === targetUserId) return mockTargetParticipant;
+        if (args.where.roomId_userId.userId === hostId) return mockHostParticipant;
+        return null;
+      });
+      mockPrismaService.audioRoomParticipant.update.mockResolvedValue({ isMuted: false, hostMuted: false });
+
+      const result = await service.toggleMute(roomId, hostId, targetUserId);
+
+      // hostMuted toggles from true → false; isMuted stays as-is (participant can self-unmute now)
+      expect(result).toEqual({ isMuted: true, hostMuted: false });
+      expect(mockPrismaService.audioRoomParticipant.update).toHaveBeenCalledWith({
+        where: { roomId_userId: { roomId, userId: targetUserId } },
+        data: { hostMuted: false },
+      });
+    });
+
+    it('should allow self-unmute after host removes host-mute (F5-4)', async () => {
+      const roomId = 'room1';
+      const userId = 'participant123';
+      const mockRoom = { id: roomId, status: 'live' };
+      // hostMuted is false, isMuted is true — participant can self-unmute
+      const mockParticipant = { roomId, userId, isMuted: true, hostMuted: false };
+
+      mockPrismaService.audioRoom.findUnique.mockResolvedValue(mockRoom);
+      mockPrismaService.audioRoomParticipant.findUnique.mockResolvedValue(mockParticipant);
+      mockPrismaService.audioRoomParticipant.update.mockResolvedValue({ isMuted: false });
+
+      const result = await service.toggleMute(roomId, userId);
+
+      expect(result).toEqual({ isMuted: false });
     });
   });
 

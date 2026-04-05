@@ -20,6 +20,7 @@ import { ReportDto } from './dto/report.dto';
 import { ContactSyncDto } from './dto/contact-sync.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
+import { TwoFactorGuard } from '../../common/guards/two-factor.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { NasheedModeDto } from './dto/nasheed-mode.dto';
 import { RequestVerificationDto } from './dto/request-verification.dto';
@@ -61,10 +62,10 @@ export class UsersController {
   }
 
   @Delete('me/deactivate')
-  @UseGuards(ClerkAuthGuard)
+  @UseGuards(ClerkAuthGuard, TwoFactorGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Deactivate account (soft delete)' })
+  @ApiOperation({ summary: 'Deactivate account (soft delete, 2FA required)' })
   deactivate(@CurrentUser('id') userId: string) {
     return this.usersService.deactivate(userId);
   }
@@ -76,11 +77,11 @@ export class UsersController {
    * See also: POST /me/delete-account for the 30-day grace period variant.
    */
   @Delete('me')
-  @UseGuards(ClerkAuthGuard)
+  @UseGuards(ClerkAuthGuard, TwoFactorGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 1, ttl: 86400000 } })
-  @ApiOperation({ summary: 'Permanently delete account (1/day)' })
+  @ApiOperation({ summary: 'Permanently delete account (1/day, 2FA required)' })
   deleteAccount(@CurrentUser('id') userId: string) {
     return this.usersService.deleteAccount(userId);
   }
@@ -234,10 +235,10 @@ export class UsersController {
    * See also: DELETE /me for immediate permanent deletion.
    */
   @Post('me/delete-account')
-  @UseGuards(ClerkAuthGuard)
+  @UseGuards(ClerkAuthGuard, TwoFactorGuard)
   @ApiBearerAuth()
   @Throttle({ default: { limit: 1, ttl: 86400000 } })
-  @ApiOperation({ summary: 'Request account deletion with 30-day grace (1/day)' })
+  @ApiOperation({ summary: 'Request account deletion with 30-day grace (1/day, 2FA required)' })
   requestAccountDeletion(@CurrentUser('id') userId: string) {
     return this.usersService.requestAccountDeletion(userId);
   }
@@ -251,9 +252,9 @@ export class UsersController {
   }
 
   @Post('me/reactivate')
-  @UseGuards(ClerkAuthGuard)
+  @UseGuards(ClerkAuthGuard, TwoFactorGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Reactivate deactivated account' })
+  @ApiOperation({ summary: 'Reactivate deactivated account (2FA required)' })
   reactivateAccount(@CurrentUser('id') userId: string) {
     return this.usersService.reactivateAccount(userId);
   }

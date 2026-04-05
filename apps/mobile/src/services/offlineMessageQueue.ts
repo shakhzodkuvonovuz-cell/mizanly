@@ -92,7 +92,12 @@ function loadQueue(): QueuedMessage[] {
   try {
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed as QueuedMessage[];
+    // `content` is stripped before persisting (see saveQueue).
+    // Restore it as empty string so the type is satisfied.
+    return (parsed as QueuedMessage[]).map((m) => ({
+      ...m,
+      content: m.content ?? '',
+    }));
   } catch {
     return [];
   }
@@ -103,7 +108,12 @@ function saveQueue(queue: QueuedMessage[]): void {
   if (queue.length === 0) {
     mmkv.delete(STORAGE_KEY);
   } else {
-    mmkv.set(STORAGE_KEY, JSON.stringify(queue));
+    // Strip plaintext `content` before persisting to MMKV.
+    // On rooted devices MMKV files are readable — only the pre-encrypted
+    // e2ePayload / sealedEnvelope should be stored on disk.
+    // The `content` field is only needed in-memory for "sending..." UI state.
+    const sanitized = queue.map(({ content: _content, ...rest }) => rest);
+    mmkv.set(STORAGE_KEY, JSON.stringify(sanitized));
   }
 }
 

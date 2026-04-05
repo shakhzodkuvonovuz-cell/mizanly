@@ -132,6 +132,12 @@ async function bootstrap() {
       : ['error', 'warn', 'log', 'debug', 'verbose'],
   });
 
+  // SECURITY: Configure Express to trust the first reverse proxy hop (Cloudflare/nginx).
+  // This makes req.ip resolve correctly instead of trusting raw x-forwarded-for headers,
+  // which clients can spoof to bypass rate limiting.
+  // Value of 1 means: trust the FIRST proxy in the chain (Cloudflare or nginx).
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+
   // Global prefix
   app.setGlobalPrefix('api/v1');
 

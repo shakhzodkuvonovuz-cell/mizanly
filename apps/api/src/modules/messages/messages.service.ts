@@ -583,6 +583,8 @@ export class MessagesService {
         e2eCounter: null,
         e2ePreviousCounter: null,
         e2eSenderKeyId: null,
+        e2eSealedEphemeralKey: null,
+        e2eSealedCiphertext: null,
         transcription: null,
         mediaUrl: null,
         fileName: null,

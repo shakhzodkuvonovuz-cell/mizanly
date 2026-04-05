@@ -50,8 +50,10 @@ export class ReportsService {
   // Submit a report — any user can report content
   async create(userId: string, dto: CreateReportDto) {
     // Must report at least one target
-    if (!dto.reportedPostId && !dto.reportedUserId && !dto.reportedCommentId && !dto.reportedMessageId) {
-      throw new BadRequestException('At least one report target (user, post, comment, or message) is required');
+    // F3-3 FIX: Include thread/reel/video in the validation (they exist in DTO and are handled below)
+    if (!dto.reportedPostId && !dto.reportedUserId && !dto.reportedCommentId &&
+        !dto.reportedMessageId && !dto.reportedThreadId && !dto.reportedReelId && !dto.reportedVideoId) {
+      throw new BadRequestException('At least one report target is required');
     }
 
     // Prevent users from reporting themselves
@@ -497,6 +499,7 @@ export class ReportsService {
     // If the report was urgent and triggered auto-hide, restore the content on dismiss (A10-#2)
     if (ReportsService.URGENT_REPORT_REASONS.has(report.reason as string)) {
       // Only restore if no OTHER unresolved urgent reports exist for the same target
+      // F3-4 FIX: Include thread/reel/video in the "other urgent reports" check
       const otherUrgentReports = await this.prisma.report.count({
         where: {
           id: { not: reportId },
@@ -504,6 +507,9 @@ export class ReportsService {
           reason: { in: [...ReportsService.URGENT_REPORT_REASONS] as ReportReason[] },
           ...(report.reportedPostId ? { reportedPostId: report.reportedPostId } : {}),
           ...(report.reportedCommentId ? { reportedCommentId: report.reportedCommentId } : {}),
+          ...(report.reportedThreadId ? { reportedThreadId: report.reportedThreadId } : {}),
+          ...(report.reportedReelId ? { reportedReelId: report.reportedReelId } : {}),
+          ...(report.reportedVideoId ? { reportedVideoId: report.reportedVideoId } : {}),
         },
       });
 
@@ -522,6 +528,31 @@ export class ReportsService {
             data: { isRemoved: false },
           }).catch((err: unknown) => {
             this.logger.warn(`Failed to restore comment ${report.reportedCommentId} on dismiss`, err instanceof Error ? err.message : err);
+          });
+        }
+        // F3-4 FIX: Restore threads, reels, and videos that were auto-hidden by urgent reports
+        if (report.reportedThreadId) {
+          await this.prisma.thread.update({
+            where: { id: report.reportedThreadId },
+            data: { isRemoved: false },
+          }).catch((err: unknown) => {
+            this.logger.warn(`Failed to restore thread ${report.reportedThreadId} on dismiss`, err instanceof Error ? err.message : err);
+          });
+        }
+        if (report.reportedReelId) {
+          await this.prisma.reel.update({
+            where: { id: report.reportedReelId },
+            data: { isRemoved: false },
+          }).catch((err: unknown) => {
+            this.logger.warn(`Failed to restore reel ${report.reportedReelId} on dismiss`, err instanceof Error ? err.message : err);
+          });
+        }
+        if (report.reportedVideoId) {
+          await this.prisma.video.update({
+            where: { id: report.reportedVideoId },
+            data: { isRemoved: false },
+          }).catch((err: unknown) => {
+            this.logger.warn(`Failed to restore video ${report.reportedVideoId} on dismiss`, err instanceof Error ? err.message : err);
           });
         }
       }

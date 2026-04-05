@@ -93,7 +93,14 @@ export default function TwoFactorVerifyScreen() {
     try {
       if (mode === 'code') {
         const code = verificationCode.join('');
-        await twoFactorApi.validate({ code });
+        const response = await twoFactorApi.validate({ code });
+        // CRITICAL: Must check the `valid` flag — API returns 200 even for bad codes
+        if (!response.valid) {
+          setError(true);
+          triggerShake();
+          showToast({ message: t('screens.2faVerify.invalidCodeMessage'), variant: 'error' });
+          return;
+        }
       } else {
         await twoFactorApi.backup({ backupCode });
       }

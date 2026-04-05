@@ -146,9 +146,11 @@ export class AdminService {
     const { status, actionTaken } = mapped;
 
     // X08-#1 FIX: Fetch ALL content type IDs including thread/reel/video
+    // F3-2 FIX: Also fetch status to prevent replay of already-resolved reports
     const report = await this.prisma.report.findUnique({
       where: { id: reportId },
       select: {
+        status: true,
         reportedPostId: true,
         reportedCommentId: true,
         reportedMessageId: true,
@@ -159,6 +161,11 @@ export class AdminService {
       },
     });
     if (!report) throw new NotFoundException('Report not found');
+
+    // F3-2 FIX: Prevent replay of already-resolved/dismissed reports
+    if (report.status === 'RESOLVED' || report.status === 'DISMISSED') {
+      throw new BadRequestException('Report has already been resolved');
+    }
 
     // X08-#1/#17 FIX: Remove ALL content types in transaction for atomicity
     if (actionTaken === 'CONTENT_REMOVED') {

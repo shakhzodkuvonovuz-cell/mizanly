@@ -134,7 +134,7 @@ describe('SearchService', () => {
         }),
         select: expect.any(Object),
         take: 21,
-        orderBy: { likesCount: 'desc' },
+        orderBy: [{ likesCount: 'desc' }, { id: 'desc' }],
       });
       expect(result).toEqual({
         data: mockThreads.slice(0, 20),
@@ -173,7 +173,7 @@ describe('SearchService', () => {
         }),
         select: expect.any(Object),
         take: 21,
-        orderBy: { likesCount: 'desc' },
+        orderBy: [{ likesCount: 'desc' }, { id: 'desc' }],
       });
       expect(result).toEqual({
         data: mockPosts.slice(0, 20),
@@ -355,7 +355,7 @@ describe('SearchService', () => {
         }),
         select: expect.any(Object),
         take: 21,
-        orderBy: { subscribersCount: 'desc' },
+        orderBy: [{ subscribersCount: 'desc' }, { id: 'desc' }],
       });
       expect(result).toEqual({
         data: mockChannels.slice(0, 20),
@@ -384,7 +384,7 @@ describe('SearchService', () => {
         take: 21,
         cursor: { id: cursor },
         skip: 1,
-        orderBy: { likesCount: 'desc' },
+        orderBy: [{ likesCount: 'desc' }, { id: 'desc' }],
       });
       expect((result as any).data).toHaveLength(20);
       expect((result as any).meta.hasMore).toBe(true);
@@ -406,7 +406,7 @@ describe('SearchService', () => {
         where: expect.any(Object),
         select: expect.any(Object),
         take: limit + 1,
-        orderBy: { likesCount: 'desc' },
+        orderBy: [{ likesCount: 'desc' }, { id: 'desc' }],
       });
       expect((result as any).data).toHaveLength(limit);
       expect((result as any).meta.hasMore).toBe(true);
@@ -446,7 +446,7 @@ describe('SearchService', () => {
         take: 21,
         cursor: { id: cursor },
         skip: 1,
-        orderBy: { likesCount: 'desc' },
+        orderBy: [{ likesCount: 'desc' }, { id: 'desc' }],
       });
       expect((result as any).data).toHaveLength(20);
       expect((result as any).meta.hasMore).toBe(true);
@@ -545,7 +545,7 @@ describe('SearchService', () => {
         take: 21,
         cursor: { id: cursor },
         skip: 1,
-        orderBy: { subscribersCount: 'desc' },
+        orderBy: [{ subscribersCount: 'desc' }, { id: 'desc' }],
       });
       expect((result as any).data).toHaveLength(20);
       expect((result as any).meta.hasMore).toBe(true);
@@ -674,7 +674,7 @@ describe('SearchService', () => {
         }),
         select: expect.any(Object),
         take: 21,
-        orderBy: { createdAt: 'desc' },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       });
       expect(result).toEqual({
         hashtag: mockHashtag,
@@ -710,7 +710,7 @@ describe('SearchService', () => {
         take: 21,
         cursor: { id: cursor },
         skip: 1,
-        orderBy: { createdAt: 'desc' },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       });
       expect((result as any).data).toHaveLength(20);
       expect((result as any).meta.hasMore).toBe(true);
@@ -981,6 +981,91 @@ describe('SearchService', () => {
     });
   });
 
+  describe('getSuggestions — blocked user exclusion (privacy fix)', () => {
+    it('should exclude blocked users from suggestions when userId is provided', async () => {
+      // Setup: user-1 has blocked user-blocked
+      prisma.block.findMany.mockResolvedValue([
+        { blockerId: 'user-1', blockedId: 'user-blocked' },
+      ]);
+      prisma.mute.findMany.mockResolvedValue([]);
+      prisma.restrict.findMany.mockResolvedValue([]);
+      prisma.user.findMany.mockResolvedValue([]);
+      prisma.hashtag.findMany.mockResolvedValue([]);
+
+      await service.getSuggestions('ah', 10, 'user-1');
+
+      expect(prisma.user.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            id: { notIn: ['user-blocked'] },
+          }),
+        }),
+      );
+    });
+
+    it('should exclude muted users from suggestions when userId is provided', async () => {
+      prisma.block.findMany.mockResolvedValue([]);
+      prisma.mute.findMany.mockResolvedValue([
+        { mutedId: 'user-muted' },
+      ]);
+      prisma.restrict.findMany.mockResolvedValue([]);
+      prisma.user.findMany.mockResolvedValue([]);
+      prisma.hashtag.findMany.mockResolvedValue([]);
+
+      await service.getSuggestions('ah', 10, 'user-1');
+
+      expect(prisma.user.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            id: { notIn: ['user-muted'] },
+          }),
+        }),
+      );
+    });
+
+    it('should NOT apply exclusion filter when userId is not provided', async () => {
+      prisma.user.findMany.mockResolvedValue([]);
+      prisma.hashtag.findMany.mockResolvedValue([]);
+
+      await service.getSuggestions('ah', 10);
+
+      // No block/mute queries should have been made
+      expect(prisma.block.findMany).not.toHaveBeenCalled();
+      expect(prisma.mute.findMany).not.toHaveBeenCalled();
+      expect(prisma.restrict.findMany).not.toHaveBeenCalled();
+
+      // User query should NOT have id notIn filter
+      expect(prisma.user.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.not.objectContaining({
+            id: expect.anything(),
+          }),
+        }),
+      );
+    });
+
+    it('should exclude bidirectional blocks from suggestions', async () => {
+      // user-2 blocked user-1 (reverse direction — user-1 should still not see user-2)
+      prisma.block.findMany.mockResolvedValue([
+        { blockerId: 'user-2', blockedId: 'user-1' },
+      ]);
+      prisma.mute.findMany.mockResolvedValue([]);
+      prisma.restrict.findMany.mockResolvedValue([]);
+      prisma.user.findMany.mockResolvedValue([]);
+      prisma.hashtag.findMany.mockResolvedValue([]);
+
+      await service.getSuggestions('ah', 10, 'user-1');
+
+      expect(prisma.user.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            id: { notIn: ['user-2'] },
+          }),
+        }),
+      );
+    });
+  });
+
   describe('getHashtagPosts error paths', () => {
     it('should return null hashtag when tag does not exist', async () => {
       prisma.hashtag.findUnique.mockResolvedValue(null);
@@ -990,6 +1075,154 @@ describe('SearchService', () => {
       expect(result.hashtag).toBeNull();
       expect(result.data).toEqual([]);
       expect(result.meta.hasMore).toBe(false);
+    });
+  });
+
+  describe('F3-5: stable pagination with composite orderBy', () => {
+    it('should use composite orderBy [likesCount, id] for posts search', async () => {
+      prisma.post.findMany.mockResolvedValue([]);
+      await service.search('test', 'posts');
+      expect(prisma.post.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: [{ likesCount: 'desc' }, { id: 'desc' }],
+        }),
+      );
+    });
+
+    it('should use composite orderBy [likesCount, id] for threads search', async () => {
+      prisma.thread.findMany.mockResolvedValue([]);
+      await service.search('test', 'threads');
+      expect(prisma.thread.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: [{ likesCount: 'desc' }, { id: 'desc' }],
+        }),
+      );
+    });
+
+    it('should use composite orderBy [viewsCount, id] for videos search', async () => {
+      prisma.video.findMany.mockResolvedValue([]);
+      await service.search('test', 'videos');
+      expect(prisma.video.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: [{ viewsCount: 'desc' }, { id: 'desc' }],
+        }),
+      );
+    });
+
+    it('should use composite orderBy [subscribersCount, id] for channels search', async () => {
+      prisma.channel.findMany.mockResolvedValue([]);
+      await service.search('test', 'channels');
+      expect(prisma.channel.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: [{ subscribersCount: 'desc' }, { id: 'desc' }],
+        }),
+      );
+    });
+
+    it('should use composite orderBy [createdAt, id] for reels search', async () => {
+      prisma.reel.findMany.mockResolvedValue([]);
+      await service.search('test', 'reels');
+      expect(prisma.reel.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        }),
+      );
+    });
+
+    it('should use composite orderBy [createdAt, id] for hashtag posts', async () => {
+      prisma.hashtag.findUnique.mockResolvedValue({ id: 'h1', name: 'test', postsCount: 5 });
+      prisma.post.findMany.mockResolvedValue([]);
+      await service.getHashtagPosts('test');
+      expect(prisma.post.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        }),
+      );
+    });
+
+    it('should use composite orderBy [likesCount, id] for searchPosts', async () => {
+      prisma.post.findMany.mockResolvedValue([]);
+      await service.searchPosts('test');
+      expect(prisma.post.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: [{ likesCount: 'desc' }, { id: 'desc' }],
+        }),
+      );
+    });
+
+    it('should use composite orderBy [likesCount, id] for searchThreads', async () => {
+      prisma.thread.findMany.mockResolvedValue([]);
+      await service.searchThreads('test');
+      expect(prisma.thread.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: [{ likesCount: 'desc' }, { id: 'desc' }],
+        }),
+      );
+    });
+
+    it('should use composite orderBy [createdAt, id] for searchReels', async () => {
+      prisma.reel.findMany.mockResolvedValue([]);
+      await service.searchReels('test');
+      expect(prisma.reel.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        }),
+      );
+    });
+
+    it('should use composite orderBy [likesCount, id] for getExploreFeed', async () => {
+      prisma.post.findMany.mockResolvedValue([]);
+      await service.getExploreFeed();
+      expect(prisma.post.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: [{ likesCount: 'desc' }, { id: 'desc' }],
+        }),
+      );
+    });
+
+    it('should produce stable cursor with items having equal likesCount', async () => {
+      // Simulate 3 posts with identical likesCount — cursor should still be deterministic
+      const mockPosts = [
+        { id: 'post-aaa', content: 'A', likesCount: 50, commentsCount: 0, createdAt: new Date(), postType: 'TEXT', mediaUrls: [], mediaTypes: [], user: { id: 'u1', username: 'a', avatarUrl: null } },
+        { id: 'post-bbb', content: 'B', likesCount: 50, commentsCount: 0, createdAt: new Date(), postType: 'TEXT', mediaUrls: [], mediaTypes: [], user: { id: 'u2', username: 'b', avatarUrl: null } },
+        { id: 'post-ccc', content: 'C', likesCount: 50, commentsCount: 0, createdAt: new Date(), postType: 'TEXT', mediaUrls: [], mediaTypes: [], user: { id: 'u3', username: 'c', avatarUrl: null } },
+      ];
+      prisma.post.findMany.mockResolvedValue(mockPosts);
+
+      const result = await service.search('test', 'posts', undefined, 2);
+
+      // With 3 items and limit 2, hasMore=true, cursor should be the id of the last returned item
+      expect((result as any).meta.hasMore).toBe(true);
+      expect((result as any).meta.cursor).toBe('post-bbb');
+      expect((result as any).data).toHaveLength(2);
+
+      // The orderBy should include id as tiebreaker for stable results
+      expect(prisma.post.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: [{ likesCount: 'desc' }, { id: 'desc' }],
+        }),
+      );
+    });
+
+    it('should produce stable cursor for second page with equal viewsCount', async () => {
+      const cursor = 'video-50';
+      const mockVideos = [
+        { id: 'video-49', title: 'V49', description: '', thumbnailUrl: '', duration: 100, category: 'Ed', tags: [], viewsCount: 100, likesCount: 0, dislikesCount: 0, commentsCount: 0, publishedAt: new Date(), createdAt: new Date(), user: { id: 'u1', username: 'a', displayName: 'A', avatarUrl: null, isVerified: false }, channel: { id: 'c1', handle: 'c', name: 'C', avatarUrl: null, isVerified: false } },
+        { id: 'video-48', title: 'V48', description: '', thumbnailUrl: '', duration: 100, category: 'Ed', tags: [], viewsCount: 100, likesCount: 0, dislikesCount: 0, commentsCount: 0, publishedAt: new Date(), createdAt: new Date(), user: { id: 'u2', username: 'b', displayName: 'B', avatarUrl: null, isVerified: false }, channel: { id: 'c2', handle: 'd', name: 'D', avatarUrl: null, isVerified: false } },
+      ];
+      prisma.video.findMany.mockResolvedValue(mockVideos);
+
+      const result = await service.search('test', 'videos', cursor, 1);
+
+      expect(prisma.video.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cursor: { id: cursor },
+          skip: 1,
+          orderBy: [{ viewsCount: 'desc' }, { id: 'desc' }],
+        }),
+      );
+      expect((result as any).meta.hasMore).toBe(true);
+      expect((result as any).meta.cursor).toBe('video-49');
     });
   });
 

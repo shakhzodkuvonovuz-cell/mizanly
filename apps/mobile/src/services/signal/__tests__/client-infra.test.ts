@@ -411,4 +411,49 @@ describe('search index', () => {
     const stats = await getSearchIndexStats();
     expect(stats.indexedMessages).toBe(0);
   });
+
+  // F5-5: FIFO eviction order tests — HMAC entries are evictable
+  it('FIFO eviction order tracks insertions for HMAC entries (F5-5)', async () => {
+    // Index several messages
+    for (let i = 0; i < 10; i++) {
+      await indexMessage(`fifo${i}`, 'conv1', `fifo message content ${i}`, i * 1000);
+    }
+    const stats = await getSearchIndexStats();
+    expect(stats.indexedMessages).toBe(10);
+
+    // All should be searchable
+    for (let i = 0; i < 10; i++) {
+      const results = await searchMessages(`content`);
+      expect(results.length).toBe(10);
+    }
+  });
+
+  it('removeFromIndex removes from FIFO order (F5-5)', async () => {
+    await indexMessage('fifo_a', 'conv1', 'removable fifo entry alpha', 1000);
+    await indexMessage('fifo_b', 'conv1', 'removable fifo entry beta', 2000);
+
+    expect((await searchMessages('removable')).length).toBe(2);
+
+    await removeFromIndex('fifo_a');
+
+    const results = await searchMessages('removable');
+    expect(results.length).toBe(1);
+    expect(results[0].messageId).toBe('fifo_b');
+  });
+
+  it('clearSearchIndex clears FIFO data (F5-5)', async () => {
+    await indexMessage('fifo_c1', 'conv1', 'clearable fifo data', 1000);
+    await indexMessage('fifo_c2', 'conv1', 'clearable fifo more', 2000);
+
+    await clearSearchIndex();
+
+    const stats = await getSearchIndexStats();
+    expect(stats.indexedMessages).toBe(0);
+    expect(stats.uniqueTokens).toBe(0);
+
+    // Index new messages after clear — should work cleanly
+    await indexMessage('fifo_c3', 'conv1', 'fresh fifo start', 3000);
+    const results = await searchMessages('fresh');
+    expect(results.length).toBe(1);
+  });
 });

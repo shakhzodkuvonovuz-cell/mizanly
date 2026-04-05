@@ -87,6 +87,8 @@ export const HMAC_TYPE = {
   SENDER_GROUPS: 'sg:',
   CACHE_COUNT: 'nc:',
   SEARCH_COUNT: 'ns:',
+  /** F5-5: FIFO eviction order for search index HMAC entries */
+  SEARCH_FIFO: 'nf:',
   /** Sealed sender monotonic counter (V4-F4) */
   SEALED_CTR: 'sc:',
 } as const;

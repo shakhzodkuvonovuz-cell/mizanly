@@ -42,8 +42,14 @@ const REDIS_PROVIDER = {
 
     redis.connect().catch((err: Error) => {
       if (isProduction) {
-        redisLogger.error(`Redis connection FAILED in production: ${err.message}. Platform integrity compromised.`);
-        // Don't crash here — the app is already started. But log at error level so monitoring catches it.
+        // SECURITY: Redis is critical infrastructure in production (rate limiting, queues,
+        // deduplication, presence). Without it, the app is in undefined state — rate limiting
+        // is disabled (DDoS vector), queues don't work, dedup fails. Fail closed.
+        redisLogger.error(`Redis connection FAILED in production: ${err.message}. Terminating.`);
+        throw new Error(
+          `Redis connection failed in production: ${err.message}. `
+          + 'Cannot start without Redis — rate limiting, queues, deduplication, and presence depend on it.',
+        );
       } else {
         redisLogger.warn(`Redis connection failed (development): ${err.message}. Redis-dependent features disabled.`);
       }

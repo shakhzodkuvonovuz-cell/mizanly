@@ -1,0 +1,19 @@
+# Lane 02: Auth / Identity
+
+## Critical
+
+- 2FA can be bypassed on mobile because the client treats any HTTP 200 from `/two-factor/validate` as success and never checks the returned `valid` flag. The API explicitly returns `200 { valid: false, sessionVerified: false }` for a bad TOTP, but the screen still shows success and closes. That lets an attacker enter any six digits and proceed through the app's 2FA gate. References: [two-factor.controller.ts](/C:/dev/mizanly/apps/api/src/modules/two-factor/two-factor.controller.ts#L90), [2fa-verify.tsx](/C:/dev/mizanly/apps/mobile/app/(screens)/2fa-verify.tsx#L88), [twoFactorApi.ts](/C:/dev/mizanly/apps/mobile/src/services/twoFactorApi.ts#L11)
+
+## High
+
+- The "session verified" 2FA state is keyed only as `2fa:verified:${userId}`, so one successful TOTP validation blesses every concurrent session for that user for 24 hours. There is no session ID, device ID, or token binding in the Redis key. Any feature that trusts `isTwoFactorVerified()` inherits cross-device 2FA bypass if another session already validated. References: [two-factor.service.ts](/C:/dev/mizanly/apps/api/src/modules/two-factor/two-factor.service.ts#L341), [two-factor.service.ts](/C:/dev/mizanly/apps/api/src/modules/two-factor/two-factor.service.ts#L365)
+
+- Sensitive account actions are not actually gated by 2FA at all. The only runtime consumer of the 2FA session flag is the `/two-factor/status` endpoint; destructive identity endpoints like permanent delete, scheduled deletion, reactivation, and device-session logout rely only on `ClerkAuthGuard`. In practice this makes 2FA advisory UI state, not an enforcement control. References: [two-factor.controller.ts](/C:/dev/mizanly/apps/api/src/modules/two-factor/two-factor.controller.ts#L122), [users.controller.ts](/C:/dev/mizanly/apps/api/src/modules/users/users.controller.ts#L78), [users.controller.ts](/C:/dev/mizanly/apps/api/src/modules/users/users.controller.ts#L236), [devices.controller.ts](/C:/dev/mizanly/apps/api/src/modules/devices/devices.controller.ts#L47)
+
+- "Log out session" and "log out other sessions" only mark local `device` rows inactive; they do not revoke Clerk sessions, invalidate JWTs, or clear the Redis 2FA flag. If a token is stolen, these endpoints do not terminate the attacker’s authenticated API access. References: [devices.service.ts](/C:/dev/mizanly/apps/api/src/modules/devices/devices.service.ts#L83), [devices.service.ts](/C:/dev/mizanly/apps/api/src/modules/devices/devices.service.ts#L94), [two-factor.service.ts](/C:/dev/mizanly/apps/api/src/modules/two-factor/two-factor.service.ts#L376)
+
+## Medium
+
+- Clerk webhook idempotency is marked before any side effect runs. If `syncClerkUser`, `deactivateByClerkId`, or session-revocation publishing fails after `setex`, Clerk retries will be dropped as duplicates for 24 hours and local auth state can diverge from the identity provider. That is especially dangerous for `user.deleted` and `session.revoked`, where stale local access should be closed quickly. References: [webhooks.controller.ts](/C:/dev/mizanly/apps/api/src/modules/auth/webhooks.controller.ts#L105), [webhooks.controller.ts](/C:/dev/mizanly/apps/api/src/modules/auth/webhooks.controller.ts#L120), [webhooks.controller.ts](/C:/dev/mizanly/apps/api/src/modules/auth/webhooks.controller.ts#L148)
+
+- `GET /auth/check-username` is unauthenticated and returns exact availability, which makes username enumeration trivial. The current throttle only slows this slightly. That endpoint can be used to confirm account existence at scale or precompute targets for passwordless/social-engineering attacks. References: [auth.controller.ts](/C:/dev/mizanly/apps/api/src/modules/auth/auth.controller.ts#L44), [auth.service.ts](/C:/dev/mizanly/apps/api/src/modules/auth/auth.service.ts#L253)

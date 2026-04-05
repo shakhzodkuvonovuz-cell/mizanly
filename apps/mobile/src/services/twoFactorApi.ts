@@ -13,7 +13,7 @@ export const twoFactorApi = {
 
   verify: (data: VerifyTwoFactorDto) => api.post<TwoFactorStatus>('/two-factor/verify', data),
 
-  validate: (data: ValidateTwoFactorDto) => api.post<{ valid: boolean }>('/two-factor/validate', data),
+  validate: (data: ValidateTwoFactorDto) => api.post<{ valid: boolean; twoFactorEnabled: boolean; sessionVerified: boolean }>('/two-factor/validate', data),
 
   // Uses DELETE with body — backend expects @Delete with @Body. Works on most infra;
   // some proxies may strip DELETE bodies. If issues arise, change both client+server to POST.
