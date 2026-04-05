@@ -30,20 +30,20 @@ describe('VideoRepliesService', () => {
 
   describe('create', () => {
     it('should create video reply for post comment', async () => {
-      prisma.videoReply.create.mockResolvedValue({ id: 'vr1', commentId: 'c1', mediaUrl: 'https://cdn.test/v.mp4' });
-      const result = await service.create('u1', { commentId: 'c1', commentType: 'POST', mediaUrl: 'https://cdn.test/v.mp4' });
+      prisma.videoReply.create.mockResolvedValue({ id: 'vr1', commentId: 'c1', mediaUrl: 'https://media.mizanly.app/videos/u1/v.mp4' });
+      const result = await service.create('u1', { commentId: 'c1', commentType: 'POST', mediaUrl: 'https://media.mizanly.app/videos/u1/v.mp4' });
       expect(result.id).toBe('vr1');
     });
 
     it('should create video reply for reel comment', async () => {
       prisma.videoReply.create.mockResolvedValue({ id: 'vr2' });
-      const result = await service.create('u1', { commentId: 'rc1', commentType: 'REEL', mediaUrl: 'https://cdn.test/v.mp4' });
+      const result = await service.create('u1', { commentId: 'rc1', commentType: 'REEL', mediaUrl: 'https://media.mizanly.app/videos/u1/v.mp4' });
       expect(result).toBeDefined();
       expect(result).toHaveProperty('id', 'vr2');
     });
 
     it('should throw for invalid commentType', async () => {
-      await expect(service.create('u1', { commentId: 'c1', commentType: 'INVALID' as any, mediaUrl: 'https://cdn.test/v.mp4' }))
+      await expect(service.create('u1', { commentId: 'c1', commentType: 'INVALID' as any, mediaUrl: 'https://media.mizanly.app/videos/u1/v.mp4' }))
         .rejects.toThrow(BadRequestException);
     });
 
@@ -57,14 +57,30 @@ describe('VideoRepliesService', () => {
         .rejects.toThrow(BadRequestException);
     });
 
+    it('should throw for external URL (non-storage domain)', async () => {
+      await expect(service.create('u1', { commentId: 'c1', commentType: 'POST', mediaUrl: 'https://evil.com/payload.mp4' }))
+        .rejects.toThrow('mediaUrl must point to application-owned storage');
+    });
+
+    it('should throw for HTTP URL (non-HTTPS)', async () => {
+      await expect(service.create('u1', { commentId: 'c1', commentType: 'POST', mediaUrl: 'http://media.mizanly.app/v.mp4' }))
+        .rejects.toThrow('mediaUrl must point to application-owned storage');
+    });
+
+    it('should accept valid storage URL', async () => {
+      prisma.videoReply.create.mockResolvedValue({ id: 'vr3', commentId: 'c1', mediaUrl: 'https://media.mizanly.app/videos/u1/v.mp4' });
+      const result = await service.create('u1', { commentId: 'c1', commentType: 'POST', mediaUrl: 'https://media.mizanly.app/videos/u1/v.mp4' });
+      expect(result.id).toBe('vr3');
+    });
+
     it('should throw if duration out of range', async () => {
-      await expect(service.create('u1', { commentId: 'c1', commentType: 'POST', mediaUrl: 'https://cdn.test/v.mp4', duration: 500 }))
+      await expect(service.create('u1', { commentId: 'c1', commentType: 'POST', mediaUrl: 'https://media.mizanly.app/videos/u1/v.mp4', duration: 500 }))
         .rejects.toThrow(BadRequestException);
     });
 
     it('should throw if comment not found', async () => {
       prisma.comment.findUnique.mockResolvedValue(null);
-      await expect(service.create('u1', { commentId: 'missing', commentType: 'POST', mediaUrl: 'https://cdn.test/v.mp4' }))
+      await expect(service.create('u1', { commentId: 'missing', commentType: 'POST', mediaUrl: 'https://media.mizanly.app/videos/u1/v.mp4' }))
         .rejects.toThrow(NotFoundException);
     });
   });
@@ -122,7 +138,7 @@ describe('VideoRepliesService', () => {
       await expect(service.create('u1', {
         commentId: 'missing-reel-comment',
         commentType: 'REEL',
-        mediaUrl: 'https://cdn.test/v.mp4',
+        mediaUrl: 'https://media.mizanly.app/videos/u1/v.mp4',
       })).rejects.toThrow(NotFoundException);
     });
   });

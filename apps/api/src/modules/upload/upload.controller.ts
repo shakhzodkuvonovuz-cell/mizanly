@@ -30,6 +30,12 @@ class PresignDto {
   maxFileSize?: number;
 }
 
+class VerifyUploadDto {
+  @IsString()
+  @Matches(/^[a-zA-Z0-9\/_.-]+$/, { message: 'key must be a valid R2 object key' })
+  key: string;
+}
+
 @ApiTags('Upload')
 @Controller('upload')
 @UseGuards(ClerkAuthGuard)
@@ -45,6 +51,21 @@ export class UploadController {
     @Body() dto: PresignDto,
   ) {
     return this.uploadService.getPresignedUrl(userId, dto.contentType, dto.folder, 300, dto.maxFileSize);
+  }
+
+  @Post('verify')
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Verify uploaded file size and type against folder limits',
+    description:
+      'Call after completing a presigned PUT upload. Checks actual object size via HeadObject. ' +
+      'Deletes the object and returns 400 if it exceeds the folder limit or has wrong content type.',
+  })
+  verifyUpload(
+    @CurrentUser('id') userId: string,
+    @Body() dto: VerifyUploadDto,
+  ) {
+    return this.uploadService.verifyUpload(dto.key, userId);
   }
 
   @Delete(':key(*)')

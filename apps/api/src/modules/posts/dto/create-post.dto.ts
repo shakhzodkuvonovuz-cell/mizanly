@@ -1,8 +1,9 @@
 import {
   IsString, IsOptional, IsEnum, IsArray, IsDateString,
-  MaxLength, IsBoolean, IsUrl, ArrayMaxSize, IsNumber, Min, Max,
+  MaxLength, IsBoolean, ArrayMaxSize, IsNumber, Min, Max,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsStorageUrl } from '../../../common/validators/is-storage-url.validator';
 
 export class CreatePostDto {
   @ApiProperty({ enum: ['TEXT', 'IMAGE', 'VIDEO', 'CAROUSEL'] })
@@ -28,7 +29,7 @@ export class CreatePostDto {
   @ApiProperty({ required: false, type: [String], maxItems: 10 })
   @IsOptional()
   @IsArray()
-  @IsUrl({}, { each: true })
+  @IsStorageUrl({ each: true })
   @ArrayMaxSize(10)
   mediaUrls?: string[];
 
@@ -41,7 +42,7 @@ export class CreatePostDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
-  @IsUrl()
+  @IsStorageUrl()
   thumbnailUrl?: string;
 
   @ApiProperty({ required: false })

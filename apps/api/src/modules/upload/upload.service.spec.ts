@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { UploadService } from './upload.service';
 import { v4 as uuidv4 } from 'uuid';
@@ -20,12 +20,17 @@ jest.mock('@aws-sdk/client-s3', () => {
     this.input = params;
   });
 
+  const MockHeadObjectCommand = jest.fn().mockImplementation(function(params) {
+    this.input = params;
+  });
+
   return {
     S3Client: jest.fn().mockImplementation(() => ({
       send: mockSend,
     })),
     PutObjectCommand: MockPutObjectCommand,
     DeleteObjectCommand: MockDeleteObjectCommand,
+    HeadObjectCommand: MockHeadObjectCommand,
     // Export the mock send so we can access it in tests
     __mockSend: mockSend,
   };
@@ -191,6 +196,90 @@ describe('UploadService', () => {
       const serviceAsAny = service as any;
       expect(serviceAsAny.getExtension('audio/wav')).toBe('wav');
       expect(serviceAsAny.getExtension('audio/mp4')).toBe('m4a');
+    });
+  });
+
+  describe('verifyUpload', () => {
+    it('should verify a correctly-sized upload', async () => {
+      const { __mockSend } = require('@aws-sdk/client-s3');
+      __mockSend.mockResolvedValue({
+        ContentLength: 2 * 1024 * 1024, // 2 MB
+        ContentType: 'image/jpeg',
+      });
+
+      const result = await service.verifyUpload('avatars/user-123/file.jpg', 'user-123');
+      expect(result).toEqual({
+        verified: true,
+        contentLength: 2 * 1024 * 1024,
+        contentType: 'image/jpeg',
+      });
+      expect(__mockSend).toHaveBeenCalledWith(expect.any(HeadObjectCommand));
+    });
+
+    it('should reject and delete oversized upload', async () => {
+      const { __mockSend } = require('@aws-sdk/client-s3');
+      // First call: HeadObject returns oversized file
+      // Second call: DeleteObject succeeds
+      __mockSend
+        .mockResolvedValueOnce({ ContentLength: 200 * 1024 * 1024, ContentType: 'image/jpeg' })
+        .mockResolvedValueOnce({});
+
+      await expect(
+        service.verifyUpload('avatars/user-123/file.jpg', 'user-123'),
+      ).rejects.toThrow(BadRequestException);
+
+      // Should have called HeadObject then DeleteObject
+      expect(__mockSend).toHaveBeenCalledTimes(2);
+      expect(__mockSend.mock.calls[1][0]).toBeInstanceOf(DeleteObjectCommand);
+    });
+
+    it('should reject and delete upload with wrong content type for folder', async () => {
+      const { __mockSend } = require('@aws-sdk/client-s3');
+      __mockSend
+        .mockResolvedValueOnce({ ContentLength: 1024, ContentType: 'video/mp4' })
+        .mockResolvedValueOnce({});
+
+      await expect(
+        service.verifyUpload('avatars/user-123/file.mp4', 'user-123'),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(__mockSend).toHaveBeenCalledTimes(2);
+    });
+
+    it('should reject key with path traversal', async () => {
+      await expect(
+        service.verifyUpload('avatars/../secrets/key', 'user-123'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject key owned by different user', async () => {
+      await expect(
+        service.verifyUpload('avatars/other-user/file.jpg', 'user-123'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject key with too few segments', async () => {
+      await expect(
+        service.verifyUpload('avatars', 'user-123'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject unknown folder', async () => {
+      await expect(
+        service.verifyUpload('unknown/user-123/file.jpg', 'user-123'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should allow video in posts folder', async () => {
+      const { __mockSend } = require('@aws-sdk/client-s3');
+      __mockSend.mockResolvedValue({
+        ContentLength: 10 * 1024 * 1024,
+        ContentType: 'video/mp4',
+      });
+
+      const result = await service.verifyUpload('posts/user-123/video.mp4', 'user-123');
+      expect(result.verified).toBe(true);
+      expect(result.contentType).toBe('video/mp4');
     });
   });
 

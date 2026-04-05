@@ -196,7 +196,10 @@ export class ReelsService {
     }
 
     // Media processing: EXIF strip, resize variants, BlurHash for thumbnail (fire-and-forget)
-    if (dto.thumbnailUrl) {
+    // F6-4 FIX: Skip media processing if thumbnailUrl is the same as videoUrl —
+    // sharp cannot process MP4 files, and the old mobile client used to fall back
+    // to the video URL when no thumbnail was selected.
+    if (dto.thumbnailUrl && dto.thumbnailUrl !== dto.videoUrl) {
       const mediaKey = dto.thumbnailUrl.split('/').slice(-3).join('/');
       this.queueService.addMediaProcessingJob({
         mediaUrl: dto.thumbnailUrl, mediaKey, userId, contentType: 'reel', contentId: reel.id,
@@ -315,7 +318,8 @@ export class ReelsService {
     }
 
     // Image moderation on thumbnail (async, non-blocking)
-    if (dto.thumbnailUrl) {
+    // F6-4: Also guard against thumbnailUrl === videoUrl (can't moderate an MP4 as image)
+    if (dto.thumbnailUrl && dto.thumbnailUrl !== dto.videoUrl) {
       this.moderateReelThumbnail(userId, reel.id, dto.thumbnailUrl).catch((err: Error) => {
         this.logger.error(`Reel thumbnail moderation failed for ${reel.id}: ${err.message}`);
       });

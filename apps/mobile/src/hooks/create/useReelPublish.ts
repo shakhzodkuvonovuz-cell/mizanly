@@ -58,8 +58,11 @@ export function useReelPublish(
         });
         if (!videoUploadRes.ok) throw new Error('Video upload failed');
 
-        // Step 2: Upload thumbnail if we have one
-        let thumbnailUrl = presign.publicUrl;
+        // Step 2: Upload thumbnail if the user selected one.
+        // F6-4 FIX: When no thumbnail is provided, pass undefined instead of the
+        // video URL. Falling back to the video URL causes image-processing jobs
+        // (sharp) to choke on an MP4 file.
+        let thumbnailUrl: string | undefined;
         if (params.thumbnailUri) {
           const resizedThumb = await resizeForUpload(params.thumbnailUri);
           const thumbPresign = await uploadApi.getPresignUrl(resizedThumb.mimeType, 'thumbnails');

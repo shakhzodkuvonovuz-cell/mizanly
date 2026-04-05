@@ -6,6 +6,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { isAllowedStorageHostname } from '../../common/validators/is-storage-url.validator';
 
 interface CreateVideoReplyData {
   commentId: string;
@@ -45,10 +46,14 @@ export class VideoRepliesService {
       throw new BadRequestException('mediaUrl is required');
     }
 
-    // Validate URL format
+    // Validate URL format and enforce storage domain
     try {
-      new URL(mediaUrl);
-    } catch {
+      const parsed = new URL(mediaUrl);
+      if (parsed.protocol !== 'https:' || !isAllowedStorageHostname(parsed.hostname)) {
+        throw new BadRequestException('mediaUrl must point to application-owned storage');
+      }
+    } catch (e) {
+      if (e instanceof BadRequestException) throw e;
       throw new BadRequestException('mediaUrl must be a valid URL');
     }
 

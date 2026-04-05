@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
 import { getResponsiveImageUrls } from '../../common/utils/image';
@@ -152,6 +152,68 @@ export class UploadService {
       throw new InternalServerErrorException('Failed to delete file');
     }
     return { deleted: true, key };
+  }
+
+  /**
+   * Verify an uploaded object's size against folder limits.
+   * Called after the client completes a presigned PUT upload, before the
+   * public URL is used in content creation.
+   *
+   * This is the server-side enforcement for F6-1: presigned PUT URLs cannot
+   * carry content-length-range conditions (R2 does not support presigned POST
+   * policies), so we verify after upload and delete oversized objects.
+   */
+  async verifyUpload(key: string, userId: string): Promise<{ verified: true; contentLength: number; contentType: string }> {
+    this.ensureR2Configured();
+
+    // Validate key format and ownership (same as deleteFile)
+    if (key.includes('..') || key.includes('//') || !/^[a-zA-Z0-9\/_.-]+$/.test(key)) {
+      throw new BadRequestException('Invalid file key');
+    }
+    const segments = key.split('/');
+    if (segments.length < 3) {
+      throw new BadRequestException('Invalid file key format');
+    }
+    const folder = segments[0] as UploadFolder;
+    const keyOwnerId = segments[1];
+    if (keyOwnerId !== userId) {
+      throw new BadRequestException('File key does not belong to user');
+    }
+
+    const maxSize = FOLDER_MAX_SIZE[folder];
+    if (!maxSize) {
+      throw new BadRequestException(`Unknown folder: ${folder}`);
+    }
+
+    try {
+      const head = await this.s3.send(new HeadObjectCommand({ Bucket: this.bucket, Key: key }));
+      const contentLength = head.ContentLength ?? 0;
+      const contentType = head.ContentType ?? 'application/octet-stream';
+
+      if (contentLength > maxSize) {
+        // Delete oversized object immediately
+        await this.s3.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }));
+        throw new BadRequestException(
+          `File exceeds maximum size for "${folder}": ${contentLength} bytes (max ${maxSize} bytes / ${Math.round(maxSize / 1024 / 1024)} MB)`,
+        );
+      }
+
+      // Validate content type against folder restrictions
+      const folderAllowed = FOLDER_ALLOWED_TYPES[folder];
+      if (folderAllowed && !folderAllowed.includes(contentType)) {
+        await this.s3.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }));
+        throw new BadRequestException(
+          `Content type ${contentType} is not allowed for folder "${folder}". Allowed: ${folderAllowed.join(', ')}`,
+        );
+      }
+
+      return { verified: true, contentLength, contentType };
+    } catch (error: unknown) {
+      if (error instanceof BadRequestException) throw error;
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Failed to verify upload ${key}: ${msg}`);
+      throw new InternalServerErrorException('Failed to verify uploaded file');
+    }
   }
 
   /**

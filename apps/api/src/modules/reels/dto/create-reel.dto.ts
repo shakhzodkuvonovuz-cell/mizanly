@@ -1,5 +1,4 @@
 import {
-  IsUrl,
   IsOptional,
   IsNumber,
   IsString,
@@ -14,15 +13,16 @@ import {
   IsDateString,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsStorageUrl } from '../../../common/validators/is-storage-url.validator';
 
 export class CreateReelDto {
   @ApiProperty()
-  @IsUrl()
+  @IsStorageUrl()
   videoUrl: string;
 
   @ApiProperty({ required: false })
   @IsOptional()
-  @IsUrl()
+  @IsStorageUrl()
   thumbnailUrl?: string;
 
   @ApiProperty()
@@ -82,7 +82,7 @@ export class CreateReelDto {
   @ApiProperty({ required: false, type: [String], maxItems: 35, description: 'Image URLs for carousel slides' })
   @IsOptional()
   @IsArray()
-  @IsUrl({}, { each: true })
+  @IsStorageUrl({ each: true })
   @ArrayMaxSize(35)
   carouselUrls?: string[];
 

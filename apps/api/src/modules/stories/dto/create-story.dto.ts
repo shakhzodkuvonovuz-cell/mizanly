@@ -1,9 +1,10 @@
-import { IsString, IsOptional, IsBoolean, IsUrl, IsArray, IsNumber, MaxLength, Allow, ArrayMaxSize, Min, Max } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsArray, IsNumber, MaxLength, Allow, ArrayMaxSize, Min, Max } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsStorageUrl } from '../../../common/validators/is-storage-url.validator';
 
 export class CreateStoryDto {
   @ApiProperty({ description: 'URL of the story media' })
-  @IsUrl()
+  @IsStorageUrl()
   mediaUrl: string;
 
   @ApiProperty({ description: 'Media type (e.g., IMAGE, VIDEO)', maxLength: 20 })
@@ -13,7 +14,7 @@ export class CreateStoryDto {
 
   @ApiProperty({ required: false, description: 'Thumbnail URL for video stories' })
   @IsOptional()
-  @IsUrl()
+  @IsStorageUrl()
   thumbnailUrl?: string;
 
   @ApiProperty({ required: false, description: 'Duration in seconds for video stories' })
