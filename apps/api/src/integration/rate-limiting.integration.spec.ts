@@ -93,10 +93,10 @@ describe('Rate Limiting Integration', () => {
       expect(throttle!.ttl).toBe(60000);
     });
 
-    it('checkUsername should be throttled at 10 req / 60s', () => {
+    it('checkUsername should be throttled at 5 req / 60s (tightened for anti-enumeration)', () => {
       const throttle = getMethodThrottle(AuthController, 'checkUsername');
       expect(throttle).not.toBeNull();
-      expect(throttle!.limit).toBe(10);
+      expect(throttle!.limit).toBe(5);
       expect(throttle!.ttl).toBe(60000);
     });
   });

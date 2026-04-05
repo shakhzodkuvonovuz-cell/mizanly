@@ -5,6 +5,7 @@ import { UsersService } from './users.service';
 import { PrismaService } from '../../config/prisma.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
+import { TwoFactorGuard } from '../../common/guards/two-factor.guard';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('UsersController', () => {
@@ -53,6 +54,7 @@ describe('UsersController', () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: ClerkAuthGuard, useValue: { canActivate: jest.fn(() => true) } },
         { provide: OptionalClerkAuthGuard, useValue: { canActivate: jest.fn(() => true) } },
+        { provide: TwoFactorGuard, useValue: { canActivate: jest.fn(() => true) } },
       ],
     }).compile();
 
